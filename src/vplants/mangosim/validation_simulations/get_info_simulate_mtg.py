@@ -10,7 +10,9 @@ def load_obj(filename, dirname = '.'):
   else:
     raise ValueError(gfname)
 
-share_dir = "../../../../share/"
+#from openalea.deploy.shared_data import shared_data
+#import vplants.mangosim
+#share_dir = shared_data(vplants.mangosim, share_path = "share")
 #g = load_obj("mango_B12_asynchrony_pierre_002.bmtg", share_dir+"simulations_mangotree_model_pierre/Cogshall_B12/")
 # g = load_obj("mango_asynchrony_pierre.bmtg", "..")
 #features_names = g.property_names()

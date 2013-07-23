@@ -13,8 +13,9 @@ def load_obj(filename, dirname = '.'):
   else:
     raise ValueError(gfname)
 
-share_dir = "../../../share/"
-
+from openalea.deploy.shared_data import shared_data
+import vplants.mangosim
+share_dir = shared_data(vplants.mangosim, share_path = "share")
 ######## Import result of simulation
 
 ( nb_ucs_04 , nb_ucs_05 , nb_ucs_04_in_extremity , nb_ucs_05_in_extremity , 

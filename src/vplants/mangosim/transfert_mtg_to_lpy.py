@@ -1,9 +1,11 @@
-share_dir = '../../../share/'
+from openalea.deploy.shared_data import shared_data
+import vplants.mangosim
+share_dir = shared_data(vplants.mangosim, share_path = "share")
 
 def load_mtg(name='mango_mtg.pkl'):
     import cPickle as pickle
     if True : # (share_dir+name).isfile():
-        pkl_file = open(share_dir+name, 'rb')
+        pkl_file = open(share_dir+"//"+ name, 'rb')
         g = pickle.load(pkl_file)
         pkl_file.close()
     return g

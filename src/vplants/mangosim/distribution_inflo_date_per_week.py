@@ -1,4 +1,6 @@
-share_dir = '../../../share/'
+from openalea.deploy.shared_data import shared_data
+import vplants.mangosim
+share_dir = shared_data(vplants.mangosim, share_path = "share")
 
 def load_obj(filename, dirname = '.'):
   import cPickle as pickle
