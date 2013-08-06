@@ -1,0 +1,85 @@
+import transfert_mtg_to_lpy_for_glm
+reload(transfert_mtg_to_lpy_for_glm)
+from transfert_mtg_to_lpy_for_glm import *
+
+tree = cogshall_trees[TREE]
+vertice_trunk = tree + 3
+
+order_max = 11
+
+
+module B_UC(order_k)
+
+def EndEach(lstring):
+  print lstring
+
+
+Axiom: G  B(vertice_trunk,0)
+
+derivation length: order_max
+production:
+
+B(vertice,order_k):
+  nproduce /(144) B_UC(order_k)
+  Pchilds,Mchilds = get_children_P_M(vertice)
+  if len(Pchilds) > 0 : 
+    apical, lateral = get_apical_lateral_position(Pchilds)
+    if len(lateral) > 0:
+      for nb in range(1,len(lateral)+1):
+        nproduce /(360./(len(lateral) ) )[&(70) @Gc B(lateral[nb-1],order_k+1)] @Ge
+    if apical != None:
+      produce B(apical,order_k+1)
+  if len(Mchilds) > 0:
+    apical, lateral = get_apical_lateral_position(Mchilds)
+    if len(lateral) > 0:
+      for nb in range(1,len(lateral)+1):
+        nature_bud = get_nature(lateral[nb-1])
+        nproduce /(360./(len(lateral) ) )[&(70) @Gc B_A(order_k+1, "L", nature_bud)] @Ge
+    if apical !=None:
+      nature_bud = get_nature(apical)
+      produce B_A(order_k+1, "A", nature_bud)
+
+
+interpretation:
+
+# Setup  tropism 
+G --> @Tp(0,0,1) @Ts(Elasticity)
+
+B_UC(order_k):
+  color = 1
+  lradius =  radius_base03( order_k/float(order_max) )
+  scale = 1.5
+  ds = scale/4
+  for i in xrange(1,5):
+    nproduce ,(color) _(lradius) @Gc nF(ds,lradius) @Ge
+
+# to verifie if it's ok
+B_A(order, position, nature):
+  if nature == 'V':
+    produce ,(2) _(0.4) F(0.6,0.001)
+  elif nature == 'F':
+    produce ,(4) _(0.4) F(0.6,0.001)
+
+
+
+endlsystem
+###### INITIALISATION ######
+
+__lpy_code_version__ = 1.1
+
+def __initialiseContext__(context):
+	scalars = [('TREE', 1, 0, 4), ('Elasticity', 0.03, 0.0, 1.0, 2)]
+	context["__scalars__"] = scalars
+	for s in scalars:
+		if not s[1] is None : context[s[0]] = s[1]
+	import openalea.plantgl.all as pgl
+	radius_base03 = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.402109, 1),(0, 0.254588, 1),(0.596888, 0.160351, 1),(1, 0.100423, 1)]) , 
+	    )
+	radius_base03.name = "radius_base03"
+	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel 1'},[('Function',radius_base03)])
+	parameterset = [panel_0,]
+	context["__functions__"] = [('radius_base03',radius_base03),]
+	context["__curves__"] = []
+	context["__parameterset__"] = parameterset
+	context["radius_base03"] = pgl.QuantisedFunction(radius_base03)
