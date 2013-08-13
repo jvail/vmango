@@ -1,25 +1,25 @@
-from vplants.statistic.graph.distribution.marginal.discrete import *
-
 labels = {
-        0: "U-V", # Vegetative, unknown flush
-        1: "II-V", # Vegetative, immediate flush 1 (very rare) or 2
-        2: "IL-V", # Vegetative, immediate flush 3
-        3: "DE-V", # Vegetative, one-year delayed flush 1
-        4: "DI-V", # Vegetative, one-year delayed flush 2
-        5: "DL-V", # Vegetative, one-year delayed flush 3
-        6: "U-F",  # Flowering with unknown position of flower, unknown flush (only possibility for flushes)
-        7: "II-T", # Terminal flower and no lateral flower, immediate flush 2 
-        8: "IL-T", # Terminal flower and no lateral flower, immediate flush 3 
-        9: "DI-T", # Terminal flower and no lateral flower, one-year delayed flush 1 (very rare) or 2
-        10: "DL-T", # Terminal flower and no lateral flower, one-year delayed flush 3
-        11: "II-L", # "Lateral flower", immediate flush 2 or 3 (rare)
-        12: "DI-L"  # "Lateral flower", one-year delayed (mostly flush 2)
+        0: "V", # Vegetative, unknown flush
+        1: "IIV", # Vegetative, immediate flush 1 (very rare) or 2
+        2: "ILV", # Vegetative, immediate flush 3
+        3: "DEV", # Vegetative, one-year delayed flush 1
+        4: "DIV", # Vegetative, one-year delayed flush 2
+        5: "DLV", # Vegetative, one-year delayed flush 3
+        6: "F",  # Flowering with unknown position of flower, unknown flush (only possibility for flushes)
+        7: "IIT", # Terminal flower and no lateral flower, immediate flush 2 
+        8: "ILT", # Terminal flower and no lateral flower, immediate flush 3 
+        9: "DIT", # Terminal flower and no lateral flower, one-year delayed flush 1 (very rare) or 2
+        10: "DLT", # Terminal flower and no lateral flower, one-year delayed flush 3
+        11: "IIL", # "Lateral flower", immediate flush 2 or 3 (rare)
+        12: "DIL"  # "Lateral flower", one-year delayed (mostly flush 2)
 }
 
-import vplants.statistic as vs
-from openalea.deploy.shared_data import get_shared_data_path
-distpath = get_shared_data_path(vs,share_path='example/mangotree')
-dist = load(distpath/"13S-dist.pkl")
+from vplants.statistic import *
+from vplants import mangostat
+from openalea.deploy.shared_data import shared_data
+distpath = shared_data(mangostat,share_path='share/mtbp')
+dist = load(distpath/"dst-cogshall-nothinned-nomixture.pkl")
+states = load(distpath/"states.pkl")
 
 
 
@@ -36,8 +36,7 @@ daystep = 7
 nbsteps = ceil((last_date -first_date).days/float(daystep))
 current_date = first_date
 
-states = range(13)
-late2early = [5,10,4,9,12,3,2,8,1,7,11,0,6]
+
 nature = None
 vegetative , inflorescence = range(2)
 no_sons = None
@@ -56,7 +55,7 @@ module Flower(date_flowers) # represente flower
 
 
 Axiom: 
-  produce G  A(first_date, 0, states[0])
+  produce G  A(first_date, 0, "F")
 
 derivation length: total_weeks
 production:
@@ -66,7 +65,8 @@ A(burst_date, order, state):
     burst_date = current_date
     nature_father = get_nature(state) # gives the nature self (vegetative or inflorescence)
     nproduce /(144) UC(burst_date, order, nature_father )
-    sons = dist[labels[state]].simulate() # calculates sons' number for a state
+    sons = dist[state].simulate() # calculates sons' number for a state
+    dict_sons = dict(zip(states,sons))
     nb_lateral_flowers = get_nb_lateral_flowers(state)
     total_sons = sum(sons) + nb_lateral_flowers # gives total numbers of sons & possible nb of lateral flower
     
@@ -80,12 +80,12 @@ A(burst_date, order, state):
     
     if nature_father == inflorescence:
       for sons_state in late2early:
-        if sons[sons_state] > 0:
+        if dict_sons[sons_state] > 0:
           date_sons = get_date(sons_state,current_date,GAUSSIEN)
-          if sons[sons_state] > 1:
-            for i in range(1,sons[sons_state]+1):
+          if dict_sons[sons_state] > 1:
+            for i in range(1,dict_sons[sons_state]+1):
               nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
-          elif sons[sons_state] == 1:
+          elif dict_sons[sons_state] == 1:
             nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
       date_flowers = get_date_flowers(current_date,LOADED) 
       if nb_lateral_flowers > 0:
@@ -98,15 +98,15 @@ A(burst_date, order, state):
       if len(lateral_states) > 0:
         for sons_state in lateral_states: # for each state in lateral position do
           date_sons = get_date(sons_state,current_date,GAUSSIEN) # calculate the burst date of the son 
-          if sons[sons_state] > 1:
-            for i in range(1,sons[sons_state]+1):
+          if dict_sons[sons_state] > 1:
+            for i in range(1,dict_sons[sons_state]+1):
               nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
-          elif sons[sons_state] == 1:
+          elif dict_sons[sons_state] == 1:
             nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
       if not apical_state is None :
         date_sons = get_date(apical_state,current_date,GAUSSIEN) # calculate the burst date of the apical son
-        if sons[apical_state] > 1:
-          for i in range(1,sons[apical_state]):
+        if dict_sons[apical_state] > 1:
+          for i in range(1,dict_sons[apical_state]):
              nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, apical_state)]
         produce A(date_sons,order+1, apical_state)
 

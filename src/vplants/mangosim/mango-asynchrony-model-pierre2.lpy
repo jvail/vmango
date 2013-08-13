@@ -2,7 +2,7 @@ from transfert_mtg_to_lpy import *
 tree = cogshall_trees[TREE]
 line_trunk = tree + 3
 
-from vplants.statistic.graph.distribution.marginal.discrete import *
+
 labels = {
         0: "U-V", # Vegetative, unknown flush
         1: "II-V", # Vegetative, immediate flush 1 (very rare) or 2
@@ -18,10 +18,23 @@ labels = {
         11: "II-L", # "Lateral flower", immediate flush 2 or 3 (rare)
         12: "DI-L"  # "Lateral flower", one-year delayed (mostly flush 2)
 }
-import vplants.statistic as vs
-from openalea.deploy.shared_data import get_shared_data_path
-distpath = get_shared_data_path(vs,share_path='example/mangotree')
-dist = load(distpath/"13S-dist.pkl")
+
+from vplants.statistic import *
+from vplants import mangostat
+from openalea.deploy.shared_data import shared_data
+distpath = shared_data(mangostat,share_path='share/mtbp')
+states = load(distpath/"states.pkl")
+if MIXTURE :
+  if LOADED :
+    dist = load(distpath/"dst-cogshall-thinned-mixture.pkl")
+  else : 
+    dist = load(distpath/"dst-cogshall-nothinned-mixture.pkl")
+else:
+  if LOADED:
+    dist = load(distpath/"dst-cogshall-thinned-nomixture.pkl")
+  else:
+    dist = load(distpath/"dst-cogshall-nothinned-nomixture.pkl")
+
 
 
 from openalea.plantgl.all import Text
@@ -37,8 +50,7 @@ daystep = 7
 nbsteps = ceil((last_date -first_date).days/float(daystep))
 current_date = first_date
 
-states = range(13)
-late2early = [5,10,4,9,12,3,2,8,1,7,11,0,6]
+
 nature = None
 vegetative , inflorescence = range(2)
 no_sons = 20
@@ -90,39 +102,44 @@ decomposition:
 maximum depth : 10
 
 
-B(line,order_k):
+B(vertice,order_k):
   nproduce /(144) B_UC(order_k)
-  children = get_children_cycle3(line)
-  children_num = len(children)
-  if len(children) > 0 :
-    apical, lateral = get_apical_lateral_position(children)
+  Pchilds,Mchilds = get_children_P_M(vertice)
+  if len(Pchilds) > 0 : 
+    apical, lateral = get_apical_lateral_position(Pchilds)
     if len(lateral) > 0:
       for nb in range(1,len(lateral)+1):
-        cycle = get_cycle(lateral[nb-1])
-        if cycle == 3:
-          nproduce /(360./(len(lateral) ) )[&(75) @Gc B(lateral[nb-1],order_k+1)] @Ge
-        elif cycle == 4:
-          date_child = get_date_first_uc_in_cycle4(lateral[nb-1])
-          nature_child = get_state_first_uc_in_cycle4(lateral[nb-1])
-          nproduce /(360./(len(lateral) ) )[&(70) @Gc A(date_child,0,states[nature_child])] @Ge
+        nproduce /(360./(len(lateral) ) )[&(70) @Gc B(lateral[nb-1],order_k+1)] @Ge
     if apical != None:
-      cycle = get_cycle(apical)
-      if cycle == 3:
-        produce B(apical,order_k+1)
-      elif cycle ==4:
-        date_child = get_date_first_uc_in_cycle4(apical)
-        nature_apical = get_state_first_uc_in_cycle4(apical)
-        produce A(date_child,0,states[nature_apical])
+      produce B(apical,order_k+1)
+  if len(Mchilds) > 0:
+    apical, lateral = get_apical_lateral_position(Mchilds)
+    if len(lateral) > 0:
+      for nb in range(1,len(lateral)+1):
+        nature_bud = get_nature_2003(lateral[nb-1])
+        nproduce /(360./(len(lateral) ) )[&(70) @Gc A(date(2003,3,1),0, nature_bud)] @Ge
+    if apical !=None:
+      nature_bud = get_nature_2003(apical)
+      produce A(date(2003,3,1),0, nature_bud)
 
 
 production:
 
+
+B_A(burst_date,order,state):
+  if burst_date <= current_date:
+    burst_date = current_date
+
 A(burst_date, order, state):
   if  burst_date <= current_date :
     burst_date = current_date
-    nature_father = get_nature(state) # gives the nature self (vegetative or inflorescence)    
-    nproduce /(144) UC(burst_date, order, nature_father )
-    sons = dist[labels[state]].simulate() # calculates sons' number for a state
+    nature_father = get_nature(state) # gives the nature self (vegetative or inflorescence)  
+    if state == "V" or state == "F":
+      nproduce /(144) B_UC(order)
+    else:
+      nproduce /(144) UC(burst_date, order, nature_father )
+    sons = dist[state].simulate() # calculates sons' number for a state
+    dict_sons = dict(zip(states,sons))
     nb_lateral_flowers = get_nb_lateral_flowers(state)
     total_sons = sum(sons) + nb_lateral_flowers # gives total numbers of sons & possible nb of lateral flower
     
@@ -136,12 +153,12 @@ A(burst_date, order, state):
     
     if nature_father == inflorescence:
       for sons_state in late2early:
-        if sons[sons_state] > 0:
+        if dict_sons[sons_state] > 0:
           date_sons = get_date(sons_state,current_date,GAUSSIEN)
-          if sons[sons_state] > 1:
-            for i in range(1,sons[sons_state]+1):
+          if dict_sons[sons_state] > 1:
+            for i in range(1,dict_sons[sons_state]+1):
               nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
-          elif sons[sons_state] == 1:
+          elif dict_sons[sons_state] == 1:
             nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
       date_flowers = get_date_flowers(current_date,LOADED) 
       if nb_lateral_flowers > 0:
@@ -154,15 +171,15 @@ A(burst_date, order, state):
       if len(lateral_states) > 0:
         for sons_state in lateral_states: # for each state in lateral position do
           date_sons = get_date(sons_state,current_date,GAUSSIEN) # calculate the burst date of the son 
-          if sons[sons_state] > 1:
-            for i in range(1,sons[sons_state]+1):
+          if dict_sons[sons_state] > 1:
+            for i in range(1,dict_sons[sons_state]+1):
               nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
-          elif sons[sons_state] == 1:
+          elif dict_sons[sons_state] == 1:
             nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
       if not apical_state is None :
         date_sons = get_date(apical_state,current_date,GAUSSIEN) # calculate the burst date of the apical son
-        if sons[apical_state] > 1:
-          for i in range(1,sons[apical_state]):
+        if dict_sons[apical_state] > 1:
+          for i in range(1,dict_sons[apical_state]):
              nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, apical_state)]
         produce A(date_sons,order+1, apical_state)
 
@@ -257,7 +274,7 @@ def __initialiseContext__(context):
 	Color_1.name = "Color_1"
 	context.turtle.setMaterial(1,Color_1)
 	context.options.setSelection('Early return when no matching',0)
-	scalars = [('TREE', 4, 0, 4), ('GAUSSIEN', True), ('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2), ('LOADED', True), ('EXPORT_MTG', False)]
+	scalars = [('TREE', 4, 0, 4), ('GAUSSIEN', True), ('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2), ('LOADED', True), ('EXPORT_MTG', False), ('MIXTURE', True)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] is None : context[s[0]] = s[1]

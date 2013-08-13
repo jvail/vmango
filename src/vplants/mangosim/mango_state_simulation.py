@@ -2,100 +2,151 @@ from datetime import date, timedelta
 from random import randint
 import numpy as np
 
-burst_period = { # for a date in begining of cycle
-   0 : ((0,5,1) , (0,6,30) ),
-   1 : ((0,11,1) , (1,2,28) ),
-   2 : ((1,3,1) , (1,5,31) ),
-   3 : ((1,7,1) , (1,10,31) ),
-   4 : ((1,11,1) , (2,2,28) ),
-   5 : ((2,3,1) , (2,5,31) ),
-   6 : ((0,7,1) , (0,9,30) ),
-   7 : ((0,11,1) , (1,2,28) ),
-   8 : ((1,3,1) , (1,5,31) ),
-   9 : ((1,11,1) , (2,2,28) ),
-   10 : ((2,3,1) , (2,5,31) ),
-   11 : ((0,11,1) , (1,2,28) ),
-   12 : ((1,11,1) , (2,2,28) )
-}
+from vplants.statistic import *
+from vplants import mangostat
+from openalea.deploy.shared_data import shared_data
+distpath = shared_data(mangostat,share_path='share/mtbp')
+states = load(distpath/"states.pkl")
 
+def get_dict_burst_period(list_name_states):
+  """ 
+  Return a dictionnary of burst period : keys are the name of the state and value is a tuple of start and end of period in this format : (add_year,month,day)
+  This is for a date in the begining or cycle
+  Parameters : 
+    list of state names, names are in this format : "year-flush-GU_nature"
+  """
+  dict_burst_period = {}
+  start_day = 1
+  for name_state in list_name_states:
+    if name_state=="V" or name_state=="F": continue
+    if name_state[0]=="I":
+      start_add_year = 0
+    elif name_state[0]=="D":
+      start_add_year = 1
+    else:
+      raise ValueError("No 'D' or 'I' in the name")
+    if name_state[1]=="E":
+      start_month, end_month = 7, 10
+      end_day = 31
+      start_year, end_year = start_add_year, start_add_year
+    elif name_state[1]=="I":
+      start_month, end_month = 11, 2
+      end_day = 28
+      start_year, end_year = start_add_year, start_add_year+1
+    elif name_state[1]=="L":
+      start_month, end_month = 3, 5
+      end_day = 31
+      start_year, end_year = start_add_year+1, start_add_year+1
+    else : raise ValueError("No flush 'E','I' or 'L' ")
+    dict_burst_period[name_state] = ((start_year,start_month,start_day) , (end_year,end_month,end_day))
+  return dict_burst_period
+
+burst_period = get_dict_burst_period(states)
+
+def get_uniform_way(begin_flush_date,end_flush_date,current_date):
+  """
+  """
+  # if current_date is before the period 
+  if current_date < begin_flush_date : 
+    begin_date = begin_flush_date # to add it to gd_mont_burst
+  # if current date is in the period
+  else :
+    begin_date = current_date # must put condition to verify if current_date > end_flush_date and print error if true
+  delta_weeks = (end_flush_date - begin_date).days/7 
+  if delta_weeks > 6:
+    gd_month_burst = randint(6,delta_weeks)
+  else:
+    gd_month_burst = 6
+  date_sons = begin_date + timedelta(weeks=gd_month_burst)
+  return date_sons
+
+def get_gaussien_way(begin_flush_date,end_flush_date,current_date):
+  """ 
+  """
+  date_sons = current_date
+  if current_date < begin_flush_date :        # if current_date is before the period 
+    begin_date = begin_flush_date             # to add it to gd_month_burst
+  else :                                      # if current date is in the period
+    begin_date = current_date                 # must put condition to verify if current_date > end_flush_date and print error if true
+  d_weeks = (end_flush_date - begin_date).days/7
+  weeks_father_sons = (date_sons - current_date).days/7
+  if d_weeks >= 6 :
+    mean_weeks = ( (end_flush_date - begin_flush_date).days/7 )/2
+    std_weeks = 9
+    while weeks_father_sons < 6:
+      gd_month_burst = int(round( np.random.normal(mean_weeks,std_weeks,1) ) )
+      date_sons = begin_date + timedelta(weeks=gd_month_burst)
+      weeks_father_sons = (date_sons - current_date).days/7
+  else:
+    mean_weeks = 8
+    std_weeks = 2
+    while weeks_father_sons < 6:
+      gd_month_burst = int(round( np.random.normal(mean_weeks,std_weeks,1) ) )
+      date_sons = begin_date + timedelta(weeks=gd_month_burst)
+      weeks_father_sons = (date_sons - current_date).days/7
+  return date_sons
 
 def get_date(state, current_date, GAUSSIEN):
-  """ return date of burst of sons for a given son's state """ 
+  """ Return date of burst of sons for a given son's state 
+  Parameters : 
+    state : a string, state of the son
+    current_date : a datetime.date, date of the morther
+    GAUSSIEN : a boleen, for refinement the date in week's scale 
+  """ 
   beg_date, end_date = burst_period[state]
   # construction of valide date
   # determination of which year we are 
-  if 5 < current_date.month < 13 or state == 0 or state == 6:
+  if 5 < current_date.month < 13 :
     begin_flush_date = date(current_date.year+beg_date[0],beg_date[1],beg_date[2])
     end_flush_date = date(current_date.year+end_date[0],end_date[1],end_date[2])
   else:
     begin_flush_date = date(current_date.year+beg_date[0]-1,beg_date[1],beg_date[2]) # = begin_flush_date - timedelta(days=366)
     end_flush_date = date(current_date.year+end_date[0]-1,end_date[1],end_date[2])
-  
+  #
   if not GAUSSIEN :
-    # if current_date is before the period 
-    if current_date < begin_flush_date : 
-      begin_date = begin_flush_date # to add it to gd_mont_burst
-    # if current date is in the period
-    else :
-      begin_date = current_date # must put condition to verify if current_date > end_flush_date and print error if true
-    delta_weeks = (end_flush_date - begin_date).days/7 
-    if delta_weeks > 6:
-      gd_month_burst = randint(6,delta_weeks)
-    else:
-      gd_month_burst = 6
-    date_sons = begin_date + timedelta(weeks=gd_month_burst)
-  
+    date_sons = get_uniform_way(begin_flush_date,end_flush_date,current_date)
   else: # else we have a normal distribution
-    date_sons = current_date
-    if current_date < begin_flush_date :        # if current_date is before the period 
-      begin_date = begin_flush_date             # to add it to gd_month_burst
-    else :                                      # if current date is in the period
-      begin_date = current_date                 # must put condition to verify if current_date > end_flush_date and print error if true
-    d_weeks = (end_flush_date - begin_date).days/7
-    weeks_father_sons = (date_sons - current_date).days/7
-    if d_weeks >= 6 :
-      mean_weeks = ( (end_flush_date - begin_flush_date).days/7 )/2
-      std_weeks = 9
-      while weeks_father_sons < 6:
-        gd_month_burst = int(round( np.random.normal(mean_weeks,std_weeks,1) ) )
-        date_sons = begin_date + timedelta(weeks=gd_month_burst)
-        weeks_father_sons = (date_sons - current_date).days/7
-    else:
-      mean_weeks = 8
-      std_weeks = 2
-      while weeks_father_sons < 6:
-        gd_month_burst = int(round( np.random.normal(mean_weeks,std_weeks,1) ) )
-        date_sons = begin_date + timedelta(weeks=gd_month_burst)
-        weeks_father_sons = (date_sons - current_date).days/7
+    date_sons = get_gaussien_way(begin_flush_date,end_flush_date,current_date)
   return date_sons
 
 vegetative , inflorescence = range(2)
 
 def get_nature(state):
   """ return the nature of the father (vegetative or flowering) """
-  # if the state is upper than 5, it's an inflorescence
-  if state > 5:
-    nature = inflorescence
-  else:
-    nature = vegetative
+  if state[0]=="V": nature = vegetative
+  elif state[0]=="F" : nature = inflorescence
+  elif state[2]=="V": nature =  vegetative
+  else: nature = inflorescence
   return nature
 
 
 
-import copy
+import itertools
+def set_order_appearance(list_name_states):
+  """Return the order of appearance of buds
+  Parameter : 
+    list_name_states : a list of strings, 
+  """
+  tuple_order_case = itertools.product("DI","LIE","VLT")
+  order_case = ["".join(case) for case in list(tuple_order_case)]
+  order_appearance = [o_case for o_case in order_case if o_case in list_name_states]
+  return order_appearance
 
-early2late = [6,0,11,7,1,8,2,3,12,9,4,10,5]
+
+
+late2early = set_order_appearance(states)
+early2late = list(reversed(late2early))
 
 def get_apical_state(sons):
   """It gives the state which will be place in apical position and gives liste of states in lateral position """
-  if sum(sons) == 0 : return None, []
-  
-  for a_state in early2late:
-    if sons[a_state] > 0:
-      apical_state = a_state
-      break
-  
-  lateral_position_states = [state for state in reversed(early2late) if state != apical_state and sons[state] > 0]
+  if sum(sons) == 0 : return (None, [])
+  else :
+    dict_sons = dict(zip(states,sons))
+    for a_state in early2late:
+      if dict_sons[a_state] > 0:
+        apical_state = a_state
+        break
+    lateral_position_states = [state for state in late2early if (state != apical_state and dict_sons[state] > 0)]
   return (apical_state, lateral_position_states)
 
 
@@ -103,10 +154,13 @@ def get_apical_state(sons):
 # import numpy as np
 
 def get_nb_lateral_flowers(state):
-  """For an inflorescence state, it gives the number of lateral flowers. !!!Be carfull, the state 6 wasn't considered !!! """
-  if 6 < state <= 10: # only one flower in apical position
+  """For an inflorescence state, it gives the number of lateral flowers. 
+  """
+  if state[0]=="V" or state[0]=="F":
     nb_lateral_flowers = 0
-  elif 11 <= state <= 12: # flowers in lateral position
+  elif state[2]=="T": # only one flower in apical position
+    nb_lateral_flowers = 0
+  elif state[2]=="L": # flowers in lateral position
     nb_lateral_flowers = np.random.poisson(1.02,1)[0] + 1 # parameter lambda=1.02 where estimated by the mtg
   else: # there are no flowers
     nb_lateral_flowers = 0
