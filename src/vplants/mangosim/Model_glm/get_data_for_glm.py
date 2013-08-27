@@ -28,7 +28,58 @@ def load_mtg(name = 'mango_mtg.pkl'):
 
 g = load_mtg()
 
+from datetime import date, datetime, timedelta
+def set_flowering():
+  if "flowering" in g.property_names():
+    raise IOError('`flowering` property has already been computed !')
+  #warnings.warn('`flowering` property will be added to the mangotree but `date_flo` property will be removed !')
+  old = g.property('date_flo')
+  g.add_property('flowering')
+  new = g.property('flowering')
+  for i in old:
+    dates = []
+    date = old[i].split("+")
+    if len(date) > 1:
+      for j in date:
+        d = j.split("/")
+        if int(d[2]) < 2000:
+          d[2] = 2000 + int(d[2])
+        else: d[2] = int(d[2])
+        dates.append(datetime(d[2], int(d[1]), int(d[0])))
+    else:
+      date = old[i].split('/')
+      if len(date) == 3:
+        dates.append(datetime(int(date[2]), int(date[1]), int(date[0])))
+      else:
+        date = old[i].split("-")
+        if len(date) == 3:
+          d = int(date[0])
+          y = 2000+int(date[2])
+          if date[1] == "juin":
+            m = 6
+          elif date[1] == "oct":
+            m = 10
+          elif date[1] == "sept":
+            m = 9
+          elif date[1] == "dec":
+            m = 12
+          elif date[1] == "aout":
+            m = 8
+          elif date[1] == "juil":
+            m = 7
+          elif date[1] == "mai":
+            m = 5
+          elif date[1] == "nov":
+            m = 11
+          else:
+            raise ValueError('date_flo` property is no more valid for this function')
+          dates.append(datetime(y, m, d))
+    if len(dates) > 0:
+      new[i] = dates
+set_flowering()
 features_names = g.property_names()
+
+
 
 
 def get_trees_loaded_or_not(loaded=True, variety = "cogshall"):
@@ -101,10 +152,9 @@ def get_delta_date(date_a,date_b):
     date_a : a string, date in that form "year-month"
     date_b : a string, date in that form "year-month"
   """
-  from datetime import date, timedelta
   a = date(2000+int(date_a.split("-")[0]),int(date_a.split("-")[1]),1)
   b = date(2000+int(date_b.split("-")[0]),int(date_b.split("-")[1]),1)
-  delta_date_month = (b-a).days/30
+  delta_date_month = (b-a).days/28
   return delta_date_month
 
 
@@ -137,37 +187,6 @@ def get_ucs_tree_cycle_in_extremity(tree, cycle):
     if childrens_in_cycle == [] : extremity.append(i)
   return extremity
 
-yes = 1
-no = 0
-unknow = None
-
-#def get_mother_ucs(cycle=4, loaded=True, variety="cogshall"):
-#  """Return the list of growth unit which can give daugthers in the cycle.
-#  Parameters :
-#    cycle : an integer 4 or 5
-#    loaded : a booleen, if True ucs are from loaded trees, else they are from not loaded trees
-#    variety : a string, the choice or variety is : 
-#             'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
-#  """
-#  mother_ucs = []
-#  trees = get_trees_loaded_or_not(loaded,variety)
-#  for tree in trees : 
-#    ucs_tree_cycle_extremity = get_ucs_tree_cycle_in_extremity(tree, cycle)
-#    total_ucs_tree_cycle = get_total_ucs_tree_cycle(tree, cycle)
-#    mother_ucs += [(uc,no) for uc in total_ucs_tree_cycle if uc not in ucs_tree_cycle_extremity]
-#    ucs_tree_cycleMinus1_extremity = get_ucs_tree_cycle_in_extremity(tree, cycle-1)
-#    mother_ucs += [(UC,yes) for UC in ucs_tree_cycleMinus1_extremity]
-#  return mother_ucs
-#mothers_uc_04_loaded_cogshall = get_mother_ucs(4,True,"cogshall")
-#mothers_uc_05_loaded_cogshall = get_mother_ucs(5,True,"cogshall")
-#mothers_uc_04_notloaded_cogshall = get_mother_ucs(4,False,"cogshall")
-#mothers_uc_05_notloaded_cogshall = get_mother_ucs(5,False,"cogshall")
-
-
-#mother_uc = {(4,True,"cogshall"):mothers_uc_04_loaded_cogshall,
-#  (5,True,"cogshall"): mothers_uc_05_loaded_cogshall,
-#  (4,False,"cogshall"): mothers_uc_04_notloaded_cogshall,
-#  (5,False,"cogshall"): mothers_uc_05_notloaded_cogshall}
 import collections
 
 
@@ -182,52 +201,53 @@ def get_nature_position_ancestor(uc):
       parent_uc = g.parent(parent_uc)
     ancestor = parent_uc
     flo_children = [flo for flo in g.children(ancestor) if g.label(flo)=='F' and g.property('year')[flo]==cycle_uc-1]
-    if len(flo_children) > 0: nature_ancestor = "inflorescence"
-    else : nature_ancestor = "vegetative"
-    position_ancestor = "A" if g.property('edge_type')[ancestor]=="<" else "L"
-  return (nature_ancestor, position_ancestor)
+    if len(flo_children) > 0: is_nature_ancestor_flo = "F"
+    else : is_nature_ancestor_flo = "V"
+    is_position_ancestor_l = "A" if g.property('edge_type')[ancestor]=="<" else "L"
+  return (is_nature_ancestor_flo, is_position_ancestor_l)
 
-def order_flo_date(string):
-  """Put an order in date.
-  Parameter : 
-    string = day-month-year  
-  Return : 
-    year-month-day which month is an integer"""
-  if len( string.split("/") ) == 3: 
-    d,m,y = string.split("/")
-    order_date = '0'+ str(int(y)-2000) + '-' + m + '-' + d
-  else: order_date = ''
-  return order_date
+#def order_flo_date(string):
+#  """Put an order in date.
+#  Parameter : 
+#    string = day-month-year  
+#  Return : 
+#    year-month-day which month is an integer"""
+#  if len( string.split("/") ) == 3: 
+#    d,m,y = string.split("/")
+#    order_date = '0'+ str(int(y)-2000) + '-' + m + '-' + d
+#  else: order_date = ''
+#  return order_date
+
 
 date_weeks_04 = {
-0 : ('04-07-01','04-08-07'),
-1 : ('04-08-08','04-08-14'),
-2 : ('04-08-15','04-08-21'),
-3 : ('04-08-22','04-08-28'),
-4 : ('04-08-29','04-09-04'),
-5 : ('04-09-05','04-09-11'),
-6 : ('04-09-12','04-09-18'),
-7 : ('04-09-19','04-09-25'),
-8 : ('04-09-26','04-10-02'),
-9 : ('04-10-03','04-10-09'),
-10 : ('04-10-10','04-10-16'),
-11 : ('04-10-17','04-10-23'),
-12 : ('04-10-24','04-10-30')  }
+0 : (datetime(2004,7,1),datetime(2004,8,7)),
+1 : (datetime(2004,8,8),datetime(2004,8,14)),
+2 : (datetime(2004,8,15),datetime(2004,8,21)),
+3 : (datetime(2004,8,22),datetime(2004,8,28)),
+4 : (datetime(2004,8,29),datetime(2004,9,4)),
+5 : (datetime(2004,9,5),datetime(2004,9,11)),
+6 : (datetime(2004,9,12),datetime(2004,9,18)),
+7 : (datetime(2004,9,19),datetime(2004,9,25)),
+8 : (datetime(2004,9,26),datetime(2004,10,2)),
+9 : (datetime(2004,10,3),datetime(2004,10,9)),
+10 : (datetime(2004,10,10),datetime(2004,10,16)),
+11 : (datetime(2004,10,17),datetime(2004,10,23)),
+12 : (datetime(2004,10,24),datetime(2004,10,30))  }
 
 date_weeks_05 = {
-0 : ('05-07-01','05-08-07'),
-1 : ('05-08-08','05-08-14'),
-2 : ('05-08-15','05-08-21'),
-3 : ('05-08-22','05-08-28'),
-4 : ('05-08-29','05-09-04'),
-5 : ('05-09-05','05-09-11'),
-6 : ('05-09-12','05-09-18'),
-7 : ('05-09-19','05-09-25'),
-8 : ('05-09-26','05-10-02'),
-9 : ('05-10-03','05-10-09'),
-10 : ('05-10-10','05-10-16'),
-11 : ('05-10-17','05-10-23'),
-12 : ('05-10-24','05-10-30')  }
+0 : (datetime(2005,7,1),datetime(2005,8,7)),
+1 : (datetime(2005,8,8),datetime(2005,8,14)),
+2 : (datetime(2005,8,15),datetime(2005,8,21)),
+3 : (datetime(2005,8,22),datetime(2005,8,28)),
+4 : (datetime(2005,8,29),datetime(2005,9,4)),
+5 : (datetime(2005,9,5),datetime(2005,9,11)),
+6 : (datetime(2005,9,12),datetime(2005,9,18)),
+7 : (datetime(2005,9,19),datetime(2005,9,25)),
+8 : (datetime(2005,9,26),datetime(2005,10,2)),
+9 : (datetime(2005,10,3),datetime(2005,10,9)),
+10 : (datetime(2005,10,10),datetime(2005,10,16)),
+11 : (datetime(2005,10,17),datetime(2005,10,23)),
+12 : (datetime(2005,10,24),datetime(2005,10,30))  }
 date_weeks = {4 : date_weeks_04, 5 : date_weeks_05}
 
 def get_extremity_ucs_variety(cycle=4, loaded=True, variety="cogshall"):
@@ -252,6 +272,12 @@ extremity_04_notloaded_cogshall= get_extremity_ucs_variety(4,False,"cogshall")
 extremity_05_notloaded_cogshall= get_extremity_ucs_variety(5,False,"cogshall")
 extremity_variety = {(3,True,"cogshall"): extremity_03_loaded_cogshall,(4,True,"cogshall"):extremity_04_loaded_cogshall, (5,True,"cogshall"): extremity_05_loaded_cogshall, 
   (3,False,"cogshall"): extremity_03_notloaded_cogshall,(4,False,"cogshall"): extremity_04_notloaded_cogshall, (5,False,"cogshall"):extremity_05_notloaded_cogshall}
+
+
+yes = 1
+no = 0
+unknow = None
+
 
 from pandas import DataFrame, concat
 
@@ -290,12 +316,8 @@ def get_table_INSIDE_for_glm(dict_uc_cycle_variety,extremity_variety, cycle=4, l
     # get position ancestor
     dict_uc["position_ancestor"] = get_nature_position_ancestor(uc)[1]
     # get mother position feature 
-    if g.property('edge_type')[uc] ==  '+' : dict_uc["lateral_position_mother"] = "L"
+    if g.property('edge_type')[uc] ==  '+' : dict_uc["position_mother"] = "L"
     else : dict_uc["position_mother"] = "A"
-    # get ancestor position feature
-    ancestor = g.parent(uc)	
-    if g.property('edge_type')[ancestor] ==  '+' : dict_uc["lateral_position_mother"] = "L"
-    else : dict_uc["lateral_position_mother"] = "A"
     # get burst date feature (of mother)
     dateM = order_uc_date( g.property('date_burst')[uc] )
     dict_uc["burst_date_mother"] = int(dateM.split("-")[1])
@@ -331,13 +353,13 @@ def get_table_INSIDE_for_glm(dict_uc_cycle_variety,extremity_variety, cycle=4, l
         dict_uc["Flowering"] = "yes"
         flo = flo_child[0]
         if g.property('nb_inflo_l')[flo] !='':
-          dict_uc["No_inflo"] = int( g.property('nb_inlo_t')[flo] ) + int( g.property('nb_inflo_l')[flo] )
+          dict_uc["No_inflo"] = int( g.property('nb_inflo_t')[flo] ) + int( g.property('nb_inflo_l')[flo] )
         else : dict_uc["No_inflo"] = unknow
-        date_flo = order_flo_date( g.property('date_flo')[flo] )
+        date_flo = g.property('flowering')[flo] if flo in g.property('flowering') else ""
         if date_flo == '' : dict_uc["Flowering_Date"] = unknow
         else : 
           for j in xrange(len(date_weeks[cycle])):
-            if date_weeks[cycle][j][0] <= date_flo <= date_weeks[cycle][j][1]:
+            if date_weeks[cycle][j][0] <= date_flo[0] <= date_weeks[cycle][j][1]:
               dict_uc["Flowering_Date"] = j
     # put the dictionnary on the list
     table_INSIDE_for_glm.append(dict_uc)
@@ -354,8 +376,8 @@ table_INSIDE_for_glm_05_cogshall = concat([table_INSIDE_for_glm_05_loaded_cogsha
 
 column_names = list( table_INSIDE_for_glm_04_cogshall.columns )
 
-table_INSIDE_for_glm_04_cogshall.to_csv(share_dir + "model_glm/table_INSIDE_04_cogshall.csv",header=column_names, index=False)
-table_INSIDE_for_glm_05_cogshall.to_csv(share_dir + "model_glm/table_INSIDE_05_cogshall.csv",header=column_names, index=False)
+table_INSIDE_for_glm_04_cogshall.to_csv(share_dir + "/model_glm/table_INSIDE_04_cogshall.csv",header=column_names, index=False)
+table_INSIDE_for_glm_05_cogshall.to_csv(share_dir + "/model_glm/table_INSIDE_05_cogshall.csv",header=column_names, index=False)
 
 def get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=True, variety="cogshall"):
   """
@@ -396,20 +418,20 @@ def get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=True, variety
       else : dict_uc["Burst_date_child"] = unknow
     else :
       # get Delta burst date variable (beetween mother and daughters)
-      if dict_uc["Burst"] == "no" : dict_uc["Delta_Burst_date_child"] = unknow
-      elif get_cycle_uc(uc) ==3 : dict_uc["Delta_Burst_date_child"] = "unknow"
+      if dict_uc["Burst"] == "no" : dict_uc["Delta_Burst_date"] = unknow
+      elif get_cycle_uc(uc) ==3 : dict_uc["Delta_Burst_date"] = unknow
       else : 
         dates_daugther = dict(collections.Counter([order_uc_date(d) for childs,d in g.property('date_burst').items() if childs in veg_children]))
         dateD = dates_daugther.items()[0][0]
         diff_date = get_delta_date(dateM,dateD)
-        dict_uc["Delta_Burst_date_child"] = diff_date
+        dict_uc["Delta_Burst_date"] = str(int(diff_date))
     # get mother position feature 
-    if g.property('edge_type')[uc] ==  '+' : dict_uc["lateral_position_mother"] = "L"
-    else : dict_uc["lateral_position_mother"] = "A"
+    if g.property('edge_type')[uc] ==  '+' : dict_uc["position_mother"] = "L"
+    else : dict_uc["position_mother"] = "A"
     # get mother's nature 
     flo_children = [flo for flo in g.children(uc) if g.label(flo)=='F' and get_cycle_uc(flo)==cycle]
-    if len(flo_children) > 0 : dict_uc["mother_nature"] = "florifere"
-    else : dict_uc["mother_nature"] = "vegetative"
+    if len(flo_children) > 0 : dict_uc["nature_mother"] = "F"
+    else : dict_uc["nature_mother"] = "V"
     # get loaded feature
     if loaded==True : dict_uc["is_loaded"] = "yes"
     else : dict_uc["is_loaded"] = "no"
@@ -426,5 +448,5 @@ table_TRANSITION_for_glm_03to04_cogshall = concat([table_TRANSITION_for_glm_03to
 table_TRANSITION_for_glm_04to05_cogshall = concat([table_TRANSITION_for_glm_04to05_loaded_cogshall,table_TRANSITION_for_glm_04to05_notloaded_cogshall],ignore_index=True)
 
 column_names = list( table_TRANSITION_for_glm_03to04_cogshall.columns )
-table_TRANSITION_for_glm_03to04_cogshall.to_csv(share_dir + "model_glm/table_TRANSITION_03to04_cogshall.csv",header=column_names, index=False)
-table_TRANSITION_for_glm_04to05_cogshall.to_csv(share_dir + "model_glm/table_TRANSITION_04to05_cogshall.csv",header=column_names, index=False)
+table_TRANSITION_for_glm_03to04_cogshall.to_csv(share_dir + "/model_glm/table_TRANSITION_03to04_cogshall.csv",header=column_names, index=False)
+table_TRANSITION_for_glm_04to05_cogshall.to_csv(share_dir + "/model_glm/table_TRANSITION_04to05_cogshall.csv",header=column_names, index=False)
