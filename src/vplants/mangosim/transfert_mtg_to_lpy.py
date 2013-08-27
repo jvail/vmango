@@ -13,7 +13,7 @@ def load_mtg(name='mango_mtg.pkl'):
 g = load_mtg()
 
 features_names = g.property_names()
-cogshall_trees = [i for i, v in g.property('var').items() if v == 'cogshall']
+cogshall_trees = [(i,g.property('fr_load')[i]) for i, v in g.property('var').items() if v == 'cogshall']
 
 #ucs_cogshall_B14 = [i for i in g.components_at_scale(1,scale=4)]
 #ucs_Parents_B14 = [i for i in ucs_cogshall_B14 if g.label(i)=='P']

@@ -1,5 +1,6 @@
 from transfert_mtg_to_lpy import *
-tree = cogshall_trees[TREE]
+tree,charge = cogshall_trees[TREE]
+LOADED = True if charge=='C' else False
 line_trunk = tree + 3
 
 
@@ -42,7 +43,7 @@ from datetime import date, timedelta
 from math import floor, ceil
 from mango_state_simulation import *
 
-first_date = date(2003,3,1)
+first_date = date(2003,6,1)
 last_date = date(2005,11,1)
 
 total_weeks = ceil((last_date -first_date).days/7.)
@@ -77,11 +78,11 @@ def export_to_mtg(lstring):
   for m in modules_to_export:
     mod = ModuleClass.get(m)
     scales[m] = 1 # All element will be at the same scale
-    parameters[m] = mod.parameterNames # get the parameter from module definition in line 74-81
+    parameters[m] = mod.parameterNames # get the parameter from module definition in line 87 - 93
   # Convert lstring into mtg
   mtg = axialtree2mtg(lstring,scales,None,parameters)
   # write it in the file
-  dump(mtg,open('mango_asynchrony_pierre.bmtg','wb'),HIGHEST_PROTOCOL)
+  dump(mtg,open('mango_asynchrony_by_glm.bmtg','wb'),HIGHEST_PROTOCOL)
 
 module B(line,order_k)
 module B_UC(order_k)
@@ -117,18 +118,15 @@ B(vertice,order_k):
     if len(lateral) > 0:
       for nb in range(1,len(lateral)+1):
         nature_bud = get_nature_2003(lateral[nb-1])
-        nproduce /(360./(len(lateral) ) )[&(70) @Gc A(date(2003,3,1),0, nature_bud)] @Ge
+        nproduce /(360./(len(lateral) ) )[&(70) @Gc A(date(2003,6,1),0, nature_bud)] @Ge
     if apical !=None:
       nature_bud = get_nature_2003(apical)
-      produce A(date(2003,3,1),0, nature_bud)
+      produce A(date(2003,6,1),0, nature_bud)
 
 
 production:
 
 
-B_A(burst_date,order,state):
-  if burst_date <= current_date:
-    burst_date = current_date
 
 A(burst_date, order, state):
   if  burst_date <= current_date :
@@ -160,11 +158,14 @@ A(burst_date, order, state):
               nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
           elif dict_sons[sons_state] == 1:
             nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
-      date_flowers = get_date_flowers(current_date,LOADED) 
-      if nb_lateral_flowers > 0:
-        for i in range(1, nb_lateral_flowers+1):
-          nproduce /(anglebetweensons) [&(60) Flower(date_flowers,order+1)]
-      produce Flower(date_flowers,order+1)
+      if state != 'F' : 
+        date_flowers = get_date_flowers(current_date,LOADED) 
+        if nb_lateral_flowers > 0:
+          for i in range(1, nb_lateral_flowers+1):
+            nproduce /(anglebetweensons) [&(60) Flower(date_flowers,order+1)]
+        produce Flower(date_flowers,order+1)
+      else : 
+        produce Flower(date(2003,9,15),order+1)
     
     elif nature_father == vegetative:
       apical_state, lateral_states = get_apical_state(sons)
@@ -274,7 +275,7 @@ def __initialiseContext__(context):
 	Color_1.name = "Color_1"
 	context.turtle.setMaterial(1,Color_1)
 	context.options.setSelection('Early return when no matching',0)
-	scalars = [('TREE', 4, 0, 4), ('GAUSSIEN', True), ('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2), ('LOADED', True), ('EXPORT_MTG', False), ('MIXTURE', True)]
+	scalars = [('TREE', 4, 0, 4), ('GAUSSIEN', False), ('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2), ('EXPORT_MTG', False), ('MIXTURE', True)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] is None : context[s[0]] = s[1]

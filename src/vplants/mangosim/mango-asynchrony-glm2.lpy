@@ -1,0 +1,309 @@
+from openalea.plantgl.all import Text
+from transfert_mtg_to_lpy_for_glm import *
+from datetime import date, timedelta, datetime
+from math import floor, ceil
+import mango_asynchrony_simulation
+reload(mango_asynchrony_simulation)
+from mango_asynchrony_simulation import *
+
+
+tree, charge = cogshall_trees[TREE]
+is_loaded = "yes" if charge=='C' else "no"
+vertice_trunk = tree + 3
+
+first_date = date(2003,6,1)
+last_date = date(2005,11,1)
+
+total_weeks = ceil((last_date -first_date).days/7.)
+daystep = 7
+nbsteps = ceil((last_date -first_date).days/float(daystep))
+current_date = first_date
+cycle = 3
+order_max = 10
+
+def Start():
+  global current_date
+  global cycle
+  current_date = first_date
+  cycle = get_cycle(current_date)
+
+def EndEach():
+  global current_date
+  global cycle
+  current_date += timedelta(days = 7)
+  cycle = get_cycle(current_date)
+
+def End(lstring):
+  if EXPORT_MTG:
+    export_to_mtg(lstring)
+
+def export_to_mtg(lstring):
+  from openalea.mtg.io import axialtree2mtg
+  from cPickle import dump,HIGHEST_PROTOCOL
+  parameters = {}
+  scales = {}
+  # Name of the modules to export
+  modules_to_export = ['B_UC','UC','Flower']
+  # Set the 
+  for m in modules_to_export:
+    mod = ModuleClass.get(m)
+    scales[m] = 1 # All element will be at the same scale
+    parameters[m] = mod.parameterNames # get the parameter from module definition in line 59-65
+  # Convert lstring into mtg
+  mtg = axialtree2mtg(lstring,scales,None,parameters)
+  # write it in the file
+  dump(mtg,open('mango_asynchrony_pierre.bmtg','wb'),HIGHEST_PROTOCOL)
+
+
+
+module B(vertice)
+module B_UC(order_k)
+module A(order, flushdate, position, position_ancestor, nature_ancestor, nature ) # represent bud of the plant
+module UC(order, flushdate, nature)
+module LeafSets(lradius, age, scale)
+module Flower(burst_date,order) # represent flower
+module FlowerRepr(day_age,s)
+
+Axiom: G  B(vertice_trunk,0)
+
+derivation length: 60
+production:
+
+
+decomposition:
+maximum depth : order_max
+
+B(vertice,order_k):
+  nproduce /(144) B_UC(order_k)
+  Pchilds,Mchilds = get_children_P_M(vertice)
+  if len(Pchilds) > 0 : 
+    apical, lateral = get_apical_lateral_position(Pchilds)
+    if len(lateral) > 0:
+      for nb in range(len(lateral)):
+        nproduce /(360./(len(lateral) ) )[&(70) @Gc B(lateral[nb],order_k+1)] @Ge
+    if apical != None:
+      produce B(apical,order_k+1)
+  if len(Mchilds) > 0:
+    apical, lateral = get_apical_lateral_position(Mchilds)
+    if len(lateral) > 0:
+      for nb in range(len(lateral)):
+        nature_bud = get_nature(lateral[nb])
+        nproduce /(360./(len(lateral) ) )[&(70) @Gc B_A(order_k+1, "L", nature_bud)] @Ge
+    if apical !=None:
+      nature_bud = get_nature(apical)
+      produce B_A(order_k+1, "A", nature_bud)
+
+production:
+
+B_A(order_k+1, position, nature):
+  date_growth = first_date
+  if date_growth <= current_date:
+    nproduce /(144) B_UC(order_k)
+    Burst_next_cycle = get_value_simulation_glm_distribution("Burst_03_04",is_loaded,"unknow", position,"unknow",nature,nature)
+    if Burst_next_cycle=="yes":
+      Burst_date_child = get_value_simulation_glm_distribution("Burst_date_child_03_04",is_loaded,"unknow", position,"unknow",nature,nature)
+      date_child = get_date_child(int(Burst_date_child))
+      
+      Lateral_next_cycle = get_value_simulation_glm_distribution("Lateral_GU_daughter_03_04",is_loaded, "unknow", position,"unknow",nature,nature)
+      if Lateral_next_cycle=="yes":
+        No_lateral_next_cycle = get_value_simulation_glm_distribution("No_lateral_GU_03_04",is_loaded, "unknow", position,"unknow",nature,nature)
+        anglebetweensons = 360./(No_lateral_next_cycle)
+        for child_lateral in xrange(No_lateral_next_cycle):
+          nproduce /(anglebetweensons) [&(60) A(0, date_child, "L", position,nature,nature)]
+      if nature == "F":
+        produce Flower(0,date(2003,9,1))
+      else : 
+        produce A(0, date_child, "A", position,nature,nature)
+    else :
+      if nature =='F':
+        produce Flower(0,date(2003,9,1))
+
+A(order, burst_date, position, position_ancestor, nature_ancestor, nature ):
+  if  burst_date <= current_date :
+    burst_date = current_date
+    nproduce /(144) UC(order, burst_date, nature)
+    Burst = get_value_simulation_glm_distribution("Burst_0"+str(cycle),is_loaded, burst_date.month, position,position_ancestor,nature_ancestor,nature)
+    if Burst=="yes" :
+      Delta_burst_child = get_value_simulation_glm_distribution("Delta_burst_date_child_0"+str(cycle),is_loaded,burst_date.month, position,position_ancestor,nature_ancestor,nature)
+      date_burst_children = burst_date + timedelta(weeks = 4*int(Delta_burst_child))
+      Lateral = get_value_simulation_glm_distribution("Lateral_GU_daughter_0"+str(cycle),is_loaded,burst_date.month, position,position_ancestor,nature_ancestor,nature)
+      if Lateral=="yes":
+        No_lateral = get_value_simulation_glm_distribution("No_lateral_GU_0"+str(cycle),is_loaded,burst_date.month, position,position_ancestor,nature_ancestor,nature)
+        anglebetweensons = 360./(No_lateral)
+        for child_lateral in xrange(No_lateral):
+          nproduce /(anglebetweensons) [&(60) A(order+1, date_burst_children, "L", position_ancestor,nature_ancestor,"V")]
+      #else:
+      nproduce A(order+1, date_burst_children, "A", position_ancestor,nature_ancestor,"V")
+    else : 
+      Flowering = get_value_simulation_glm_distribution("Flowering_0"+str(cycle),is_loaded,burst_date.month, position,position_ancestor,nature_ancestor,nature)
+      if Flowering=="yes":
+        new_nature_ancestor, new_nature_mother = "F", "F"
+        No_inflo = get_value_simulation_glm_distribution("No_inflo_0"+str(cycle),is_loaded, burst_date.month, position,position_ancestor,nature_ancestor,nature)
+        week_inflo = get_value_simulation_glm_distribution("Date_inflo_05",is_loaded,burst_date.month,position,position_ancestor,nature_ancestor,nature)
+        date_inflo = get_date_flo(week_inflo,cycle)
+      else:
+        new_nature_ancestor, new_nature_mother = "V", "V"
+        No_inflo = 0
+      Burst_next_cycle = get_value_simulation_glm_distribution("Burst_04_05",is_loaded, str(burst_date.month), position,position_ancestor,new_nature_ancestor,new_nature_mother)
+      if Burst_next_cycle=="yes":
+        Delta_burst_child_next_cycle = get_value_simulation_glm_distribution("Delta_burst_date_04_05",is_loaded,burst_date.month, position,position_ancestor,new_nature_ancestor,new_nature_mother)
+        date_burst_child = burst_date + timedelta(weeks = 4*int(Delta_burst_child_next_cycle))
+        
+        Lateral_next_cycle = get_value_simulation_glm_distribution("Lateral_GU_daughter_04_05",is_loaded, str(burst_date.month), position,position_ancestor,new_nature_ancestor,new_nature_mother)
+        if Lateral_next_cycle=="yes":
+          No_lateral_next_cycle = get_value_simulation_glm_distribution("No_lateral_GU_04_05",is_loaded, str(burst_date.month), position,position_ancestor,new_nature_ancestor,new_nature_mother)
+          if No_inflo > 1:
+            anglebetweensons = 360./(No_lateral_next_cycle+No_inflo-1)            
+          else:
+            anglebetweensons = 360./(No_lateral_next_cycle)
+          for child_lateral in xrange(No_lateral_next_cycle):
+            nproduce /(anglebetweensons) [&(60) A(order+1, date_burst_child, "L", position_ancestor,new_nature_ancestor,new_nature_mother)]
+        else :
+          if No_inflo > 1 :
+            anglebetweensons = 360./(No_inflo-1)
+          if No_inflo == 0:
+            nproduce A(order+1, date_burst_child, "A", position_ancestor,new_nature_ancestor,new_nature_mother)
+      else : 
+        if No_inflo > 1:
+          anglebetweensons = 360./(No_inflo-1)
+      if No_inflo > 1 :
+        for flowers in xrange(No_inflo-1):
+          nproduce /(anglebetweensons) [&(60) Flower(order+1,date_inflo)]
+      if No_inflo > 0 :
+        nproduce Flower(order+1,date_inflo)
+
+
+
+
+interpretation:
+maximum depth:5
+
+# Setup  tropism and legend
+# Note that the 2D legend cause a crash of lpy when recording the animation
+G --> @Tp(0,0,1) @Ts(Elasticity) [ -(90),(3) f(2) @g(Text('date: '+str(current_date)+' cycle: '+str(cycle),(5,5,0.9),True))] 
+
+B_UC(order_k):
+  color = 1
+  lradius =  radius_base03( order_k/float(order_max) )
+  scale = 1.5
+  ds = scale/4
+  for i in xrange(1,5):
+    nproduce ,(color) _(lradius) @Gc nF(ds,lradius) @Ge
+
+UC(order, burst_date, nature):
+  day_age = (current_date - burst_date).days
+  week_age = day_age/7
+  
+  lradius = radius(min(1.,1.-(week_age/ float(total_weeks))))
+  scale = 1
+  produce ,(2) _(lradius) LeafSets(lradius, week_age, scale)
+
+LeafSets(lradius, age, scale):
+  ds = scale / 10.
+  if LEAFY and age < 56 :
+    phy = 137.5
+    nproduce @Gc  F(ds) Leaf(0,lradius, leafsize(0.1), scale ) 
+    nbleaf, dl = (ceil((scale-ds)*5),2*ds)
+    for i in xrange(1,int(nbleaf)):
+      nproduce nF(dl,ds) Leaf(phy*i,lradius, leafsize(0.1+0.1*i ), scale )
+    nproduce F(ds) @Ge
+    for i in xrange(1,4):
+      nproduce Leaf(phy*i,lradius, leafsize(1),scale )
+  else:
+    produce  @Gc nF(1,0.1) @Ge
+
+Leaf(angle, radius, length, scale ):
+  produce [ /(angle) &(90)  f(radius) @Ge @Gc @v &(10) Sweep(leafpath,leafsection,length*scale,length*scale/10,scale,leafdiam)]
+
+Flower(order,date_inflo) :
+  day_age = (current_date - date_inflo).days
+  produce FlowerRepr(day_age, date_inflo.year + date_inflo.month + date_inflo.day)
+
+FlowerRepr(day_age,s) :
+  growth_duration = 21.
+  flower_growth_duration = 21.
+  scale = min(1,day_age/growth_duration)
+  if LEAFY:
+    import random as rd
+    rdstate = rd.getstate()
+    rd.seed(s)
+    flower_radius = 0 if day_age < growth_duration else 0.04*min(1,(day_age-flower_growth_duration)/flower_growth_duration)
+    nproduce [
+    if day_age > growth_duration :  nproduce @Tp(0,0,-1) @Ts(inflo_elasticity(min(1,(day_age-growth_duration)/40.))) 
+    nproduce ,(3) _(0.01) F(0.1)
+    nbflower = 4
+    nbelem = int(floor(10 * scale))
+    for i in xrange(10-nbelem,10):
+       nproduce    F(0.1) [ /(rd.randint(0,180))
+       for j in xrange(nbflower):
+           nproduce [ /(j*90)  &(rd.randint(70,110)) F(inflo_radius(i*0.1)) 
+           if flower_radius > 0: nproduce ,(4) @O(flower_radius) 
+           nproduce ]
+       nproduce ]
+    nproduce ,(3) F(0.1)
+    if flower_radius > 0: nproduce ,(4) @O(0.04) 
+    nproduce ]
+    rd.setstate(rdstate)
+  else:
+    scale = 0.3
+    produce ,(4) _(inflo_radius(0))F(scale,inflo_radius(1))
+
+
+
+endlsystem
+###### INITIALISATION ######
+
+__lpy_code_version__ = 1.1
+
+def __initialiseContext__(context):
+	scalars = [('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2), ('TREE', 1, 0, 4), ('EXPORT_MTG', True)]
+	context["__scalars__"] = scalars
+	for s in scalars:
+		if not s[1] is None : context[s[0]] = s[1]
+	import openalea.plantgl.all as pgl
+	radius = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.107326, 1),(0.192635, 0.0975655, 1),(0.457142, 0.000244746, 1),(1, 0.026087, 1)]) , 
+	    )
+	radius.name = "radius"
+	leafsize = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.431282, 1),(0.324129, 0.436757, 1),(0.408886, 0.416427, 1),(0.412274, 0.708684, 1),(0.844357, 0.703533, 1),(1, 0.246499, 1)]) , 
+	    )
+	leafsize.name = "leafsize"
+	import openalea.plantgl.all as pgl
+	leafpath = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.5, 0, 1),(-0.145022, -0.0735931, 1),(0.0844156, -0.212121, 1),(0.123377, -0.497835, 1)]) , 
+	    )
+	leafpath.name = "leafpath"
+	leafsection = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.201299, 0.231602, 1),(-0.253247, 0.181818, 1),(-0.166667, 0, 1),(-0.0196652, -0.0165724, 1),(0.00408221, 0.0220172, 1),(0.0454545, -0.0151515, 1),(0.214286, -0.012987, 1),(0.383117, 0.164502, 1),(0.344156, 0.24026, 1)]) , 
+	    )
+	leafsection.name = "leafsection"
+	leafdiam = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.017316, 1),(0.167909, 0.309417, 1),(0.666667, 0.217373, 1),(1, 0, 1)]) , 
+	    )
+	leafdiam.name = "leafdiam"
+	inflo_radius = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.160173, 1),(0.393939, 0.151515, 1),(0.735931, 0.0649351, 1),(1, 0.025974, 1)]) , 
+	    )
+	inflo_radius.name = "inflo_radius"
+	inflo_elasticity = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.0278664, 1),(0.341991, 0.034632, 1),(0.675325, 0.04329, 1),(1, 0.252183, 1)]) , 
+	    )
+	inflo_elasticity.name = "inflo_elasticity"
+	radius_base03 = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.402109, 1),(0, 0.254588, 1),(0.596888, 0.160351, 1),(1, 0.100423, 1)]) , 
+	    )
+	radius_base03.name = "radius_base03"
+	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel 2'},[('Function',radius),('Function',leafsize),('Curve2D',leafpath),('Curve2D',leafsection),('Function',leafdiam),('Function',inflo_radius),('Function',inflo_elasticity),('Function',radius_base03)])
+	parameterset = [panel_0,]
+	context["__functions__"] = [('radius',radius),('leafsize',leafsize),('leafdiam',leafdiam),('inflo_radius',inflo_radius),('inflo_elasticity',inflo_elasticity),('radius_base03',radius_base03),]
+	context["__curves__"] = [('leafpath',leafpath),('leafsection',leafsection),]
+	context["__parameterset__"] = parameterset
+	context["radius"] = pgl.QuantisedFunction(radius)
+	context["leafsize"] = pgl.QuantisedFunction(leafsize)
+	context["leafpath"] = leafpath
+	context["leafsection"] = leafsection
+	context["leafdiam"] = pgl.QuantisedFunction(leafdiam)
+	context["inflo_radius"] = pgl.QuantisedFunction(inflo_radius)
+	context["inflo_elasticity"] = pgl.QuantisedFunction(inflo_elasticity)
+	context["radius_base03"] = pgl.QuantisedFunction(radius_base03)
