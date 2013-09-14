@@ -60,7 +60,7 @@ def get_value_simulation_glm_distribution(name_table_prob_glm,is_loaded,burst_da
   if dict_table_prob_glm["family"]=="binomial" :
     proba = probs[0]
     value = int( binomial(1,proba,1) )
-    response = "yes" if value==1 else "no"
+    response = True if value==1 else False
   elif dict_table_prob_glm["family"]=="poisson" :
     proba = probs[0]
     value = int( poisson(proba,1) )
@@ -76,7 +76,7 @@ def get_value_simulation_glm_distribution(name_table_prob_glm,is_loaded,burst_da
   return response
 # if cumsum_probs[i] <= unif_value < cumsum_probs[i+1] :
 
-dict_file_glm = {
+dict_file_glm_complet = {
   "Burst_03_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_complet/"+"table_prob_glm_burst_03_04.csv"),"binomial"),
   "Lateral_GU_daughter_03_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_complet/"+"table_prob_glm_Lateral_GU_daughter_03_04.csv"),"binomial"),
   "No_lateral_GU_03_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_complet/"+"table_prob_glm_no_lateral_GU_03_04.csv"),"poisson"),
@@ -100,14 +100,40 @@ dict_file_glm = {
   "No_inflo_05" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_complet/"+"table_prob_glm_No_inflorescences_05.csv"),"poisson")
   }
 
+dict_file_glm_selected = {
+  "Burst_03_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_burst_03_04.csv"),"binomial"),
+  "Lateral_GU_daughter_03_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_Lateral_GU_daughter_03_04.csv"),"binomial"),
+  "No_lateral_GU_03_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_no_lateral_GU_03_04.csv"),"poisson"),
+  "Burst_date_child_03_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_vglm_Burst_date_child_03_04.csv"),"vglm"),
+  "Burst_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_Burst_04.csv"),"binomial"),
+  "Lateral_GU_daughter_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_Lateral_GU_daughter_04.csv"),"binomial"),
+  "No_lateral_GU_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_no_lateral_GU_04.csv"),"poisson"),
+  "Delta_burst_date_child_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_vglm_Delta_Burst_date_child_04.csv"),"vglm"),
+  "Flowering_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_Flowering_04.csv"),"binomial"),
+  "No_inflo_04" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_No_inflorescences_04.csv"),"poisson"),
+  "Date_inflo_05" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_vglm_Date_inflo_05.csv"),"vglm"),
+  "Burst_04_05" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_burst_04_05.csv"),"binomial"),
+  "Lateral_GU_daughter_04_05" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_Lateral_GU_daughter_04_05.csv"),"binomial"),
+  "No_lateral_GU_04_05" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_no_lateral_GU_04_05.csv"),"poisson"),
+  "Delta_burst_date_04_05" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_vglm_Delta_burst_date_04_05.csv"),"vglm"),
+  "Burst_05" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_Burst_05.csv"),"binomial"),
+  "Lateral_GU_daughter_05" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_Lateral_GU_daughter_05.csv"),"binomial"),
+  "No_lateral_GU_05" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_no_lateral_GU_05.csv"),"poisson"),
+  "Delta_burst_date_child_05" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_vglm_Delta_Burst_date_child_05.csv"),"vglm"),
+  "Flowering_05" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_Flowering_05.csv"),"binomial"),
+  "No_inflo_05" : (pd.read_csv(share_dir+"/model_glm/table_prob_glm_selected/"+"table_prob_glm_No_inflorescences_05.csv"),"poisson")
+  }
+
 dict_table_glm = {}
 
-def init_glm_table():
+def init_glm_table(is_selected):
+   if is_selected : dict_file_glm = dict_file_glm_selected
+   else : dict_file_glm = dict_file_glm_complet
    global dict_table_glm
    for name, info in dict_file_glm.iteritems():
       dict_table_glm[name] = get_dict_from_table(*info)
   
-init_glm_table()
+init_glm_table(False)
 
 date_weeks_04 = {
 '0' : (datetime(2004,7,1),datetime(2004,8,7)),

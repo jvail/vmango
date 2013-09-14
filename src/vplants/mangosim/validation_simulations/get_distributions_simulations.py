@@ -1,6 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from vplants.statistic.core.data.marginal.scalar import *
+from openalea.deploy.shared_data import shared_data
+import vplants.mangosim
+share_dir = shared_data(vplants.mangosim, share_path = "share")
+
 
 def get_distribution(list, mtg_value, limit_IC, nb_bar = 10,title =u'Figure 1',subtitle = u'Distribution', xlim = [], ylim = [0,1], xlab= u'x', ylab= u'Probability'):
   """Return a ploting histogram from a list """

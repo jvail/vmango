@@ -127,10 +127,10 @@ def get_histo_nb_inflo_lateral(data):
 ##### then >>> 
 #import matplotlib.pyplot as plt
 #plt.figure()
-#plt.hist(data_inflo_l_2cycles,normed=True)
-#plt.title("Distribution of number of lateral inflorescences")
+#plt.hist(data_inflo_l_2cycles,normed=False)
+#plt.title("Distribution of number of lateral inflorescences, Cogshall variety")
 #plt.xlabel("Number of lateral inflorescences minus 1")
-#plt.ylabel("Probability")
+#plt.ylabel("Count")
 #plt.show()
 #plt.axvline(lambda_2cycles , color = 'r', linestyle = "dashed", linewidth=2, label = "The parameter's value \n estimated")
 #plt.legend()

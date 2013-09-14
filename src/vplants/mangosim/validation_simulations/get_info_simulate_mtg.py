@@ -14,7 +14,7 @@ def load_obj(filename, dirname = '.'):
 #import vplants.mangosim
 #share_dir = shared_data(vplants.mangosim, share_path = "share")
 #g = load_obj("mango_B12_asynchrony_pierre_002.bmtg", share_dir+"simulations_mangotree_model_pierre/Cogshall_B12/")
-# g = load_obj("mango_asynchrony_pierre.bmtg", "..")
+#g = load_obj("mango_asynchrony_pierre.bmtg", "..")
 #features_names = g.property_names()
 
 from datetime import date
@@ -116,6 +116,7 @@ def get_nb_children_per_uc_cycle(g,cycle,ucs, ucs_in_extremity, nb_axe):
     g : a mtg object
     cycle: integer 4 or 5  """
   import copy
+  nb_children_per_uc = {}
   nb_children_per_ucs = copy.deepcopy(nb_axe[cycle]) 
   ucs_cycle = copy.deepcopy(ucs[cycle])
   ucs_in_extremity_cycle = ucs_in_extremity[cycle]
@@ -138,7 +139,7 @@ def get_nb_descendant_per_axe_cycle(g,cycle, ucs_in_extremity):
   ucs_in_extremity_cycleMinus1 = ucs_in_extremity[cycle-1]
   nb_descendant_per_axe_cycle = []
   for i in ucs_in_extremity_cycleMinus1:
-    descendants = g.Descendants(i)
+    descendants = g.children(i)
     veg_descendants_in_cycle = [j for j in descendants if g.label(j)!='Flower' and get_uc_cycle(g,j)==cycle]
     nb_descendant_per_axe_cycle.append(len(veg_descendants_in_cycle))
   import collections 
@@ -237,8 +238,9 @@ def get_monthly_date_ucs_cycle(g,cycle, ucs):
 #  freq_dict = dict( (key, dict_a.get(key, 0) + dict_b.get(key, 0)) for key in set(dict_a)|set(dict_b) )
 #  return freq_dict
 
-def extract_info_from_mtg(filename):
-    g = load_obj(filename)
+def extract_info_from_mtg(mtg):
+    """
+    """
     ucs_03 = get_ucs_cycle(g,3)
     ucs_04 = get_ucs_cycle(g,4)
     ucs_05 = get_ucs_cycle(g,5)
@@ -273,7 +275,7 @@ def extract_info_from_mtg(filename):
     monthly_date_ucs = {4: monthly_date_ucs_04, 5:monthly_date_ucs_05}
     return g, ucs, ucs_in_extremity, nb_ucs_in_extremity_apical_position, terminal_apical_rate, nb_uc_giving_inflorescence, flowering_rate, nb_axe_04, nb_axe_05, nb_children_per_uc, nb_descendant_per_axe, monthly_date_ucs
 	
-(g, ucs, ucs_in_extremity, nb_ucs_in_extremity_apical_position, terminal_apical_rate, 
-  nb_uc_giving_inflorescence, flowering_rate, nb_axe_04, nb_axe_05, nb_children_per_uc, 
-  nb_descendant_per_axe, monthly_date_ucs ) = extract_info_from_mtg("mango_asynchrony_pierre.bmtg")
+#(g, ucs, ucs_in_extremity, nb_ucs_in_extremity_apical_position, terminal_apical_rate, 
+#  nb_uc_giving_inflorescence, flowering_rate, nb_axe_04, nb_axe_05, nb_children_per_uc, 
+#  nb_descendant_per_axe, monthly_date_ucs ) = extract_info_from_mtg(mtg)
 

@@ -3,6 +3,7 @@ tree,charge = cogshall_trees[TREE]
 LOADED = True if charge=='C' else False
 line_trunk = tree + 3
 
+#assert TREE==2
 
 labels = {
         0: "U-V", # Vegetative, unknown flush
@@ -23,18 +24,25 @@ labels = {
 from vplants.statistic import *
 from vplants import mangostat
 from openalea.deploy.shared_data import shared_data
-distpath = shared_data(mangostat,share_path='share/mtbp')
-states = load(distpath/"states.pkl")
+path = shared_data(mangostat, share_path='share')
 if MIXTURE :
   if LOADED :
-    dist = load(distpath/"dst-cogshall-thinned-mixture.pkl")
+    dist = load(path/'mtbp'/'dag'/'not_thinned'/'mixture'/'cogshall.dst')
+    states = load(path/'mtbp'/'dag'/'not_thinned'/'mixture'/'cogshall.lst')
   else : 
-    dist = load(distpath/"dst-cogshall-nothinned-mixture.pkl")
+    dist = load(path/'mtbp'/'dag'/'thinned'/'mixture'/'cogshall.dst')
+    states = load(path/'mtbp'/'dag'/'thinned'/'mixture'/'cogshall.lst')
 else:
   if LOADED:
-    dist = load(distpath/"dst-cogshall-thinned-nomixture.pkl")
+    if IDENTITY_LINK :
+      dist = load(path/'mtbp'/'dag'/'not_thinned'/'no_mixture'/'cogshall-bis.dst')
+    else :
+      dist = load(path/'mtbp'/'dag'/'not_thinned'/'no_mixture'/'cogshall.dst')
+    states = load(path/'mtbp'/'dag'/'not_thinned'/'no_mixture'/'cogshall.lst')
   else:
-    dist = load(distpath/"dst-cogshall-nothinned-nomixture.pkl")
+    dist = load(path/'mtbp'/'dag'/'thinned'/'no_mixture'/'cogshall.dst')
+    states = load(path/'mtbp'/'dag'/'thinned'/'no_mixture'/'cogshall.lst')
+
 
 
 
@@ -43,9 +51,10 @@ from datetime import date, timedelta
 from math import floor, ceil
 from mango_state_simulation import *
 
-first_date = date(2003,6,1)
+first_date = date(2003,5,15)
 last_date = date(2005,11,1)
 
+order_max = 10
 total_weeks = ceil((last_date -first_date).days/7.)
 daystep = 7
 nbsteps = ceil((last_date -first_date).days/float(daystep))
@@ -82,7 +91,7 @@ def export_to_mtg(lstring):
   # Convert lstring into mtg
   mtg = axialtree2mtg(lstring,scales,None,parameters)
   # write it in the file
-  dump(mtg,open('mango_asynchrony_by_glm.bmtg','wb'),HIGHEST_PROTOCOL)
+  dump(mtg,open('mango_asynchrony_graphic_model.bmtg','wb'),HIGHEST_PROTOCOL)
 
 module B(line,order_k)
 module B_UC(order_k)
@@ -100,7 +109,7 @@ derivation length: int(total_weeks)
 production:
 
 decomposition:
-maximum depth : 10
+maximum depth : order_max
 
 
 B(vertice,order_k):
@@ -118,10 +127,10 @@ B(vertice,order_k):
     if len(lateral) > 0:
       for nb in range(1,len(lateral)+1):
         nature_bud = get_nature_2003(lateral[nb-1])
-        nproduce /(360./(len(lateral) ) )[&(70) @Gc A(date(2003,6,1),0, nature_bud)] @Ge
+        nproduce /(360./(len(lateral) ) )[&(70) @Gc A(date(2003,5,15),order_k+1, nature_bud)] @Ge
     if apical !=None:
       nature_bud = get_nature_2003(apical)
-      produce A(date(2003,6,1),0, nature_bud)
+      produce A(date(2003,5,15),order_k+1, nature_bud)
 
 
 production:
@@ -186,21 +195,23 @@ A(burst_date, order, state):
 
 Flower(x,o):
   day_age = (current_date - x).days
-  flower_max_age = 120
+  flower_max_age = 60
   if day_age > flower_max_age and not EXPORT_MTG:
     produce *
 
 interpretation:
 maximum depth: 10
 
-B_UC(o):
-  do = o/10.
-  lradius = radius_base03(do)
+B_UC(order_k):
+  week_age =( current_date-first_date).days/7
+  lradius1 = radius(min(1.,1.-(week_age/ float(total_weeks))))  
+  
   color = 1
-  nproduce ,(color) _(0.15) @Gc nF(0.2, 0.15 ) @Ge
-  for i in xrange(3):
-    nproduce @Gc nF(0.2, 0.1 ) @Ge
-  produce @Gc nF(0.2, 0.1 ) @Ge
+  lradius =  radius_base03( order_k/float(order_max) )
+  scale = 1.5
+  ds = scale/10
+  nproduce ,(color) _(lradius+lradius1) @Gc nF(scale,ds,lradius+lradius1) @Ge
+
 
 UC(x,o,n):
   day_age = (current_date - x).days
@@ -275,15 +286,11 @@ def __initialiseContext__(context):
 	Color_1.name = "Color_1"
 	context.turtle.setMaterial(1,Color_1)
 	context.options.setSelection('Early return when no matching',0)
-	scalars = [('TREE', 4, 0, 4), ('GAUSSIEN', False), ('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2), ('EXPORT_MTG', False), ('MIXTURE', True)]
+	scalars = [('TREE', 4, 0, 4), ('GAUSSIEN', False), ('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2), ('EXPORT_MTG', True), ('MIXTURE', False), ('IDENTITY_LINK', True)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] is None : context[s[0]] = s[1]
 	import openalea.plantgl.all as pgl
-	radius = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(0, 0.107326, 1),(0.192635, 0.0975655, 1),(0.457142, 0.000244746, 1),(1, 0.026087, 1)]) , 
-	    )
-	radius.name = "radius"
 	leafsize = pgl.NurbsCurve2D(	
 	    ctrlPointList = pgl.Point3Array([(0, 0.431282, 1),(0.324129, 0.436757, 1),(0.408886, 0.416427, 1),(0.412274, 0.708684, 1),(0.844357, 0.703533, 1),(1, 0.246499, 1)]) , 
 	    )
@@ -309,20 +316,24 @@ def __initialiseContext__(context):
 	    ctrlPointList = pgl.Point3Array([(0, 0.0278664, 1),(0.341991, 0.034632, 1),(0.675325, 0.04329, 1),(1, 0.252183, 1)]) , 
 	    )
 	inflo_elasticity.name = "inflo_elasticity"
+	radius = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.107326, 1),(0.192635, 0.0975655, 1),(0.457142, 0.000244746, 1),(1, 0.026087, 1)]) , 
+	    )
+	radius.name = "radius"
 	radius_base03 = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(0, 0.402109, 1),(0, 0.254588, 1),(0.596888, 0.160351, 1),(1, 0.100423, 1)]) , 
+	    ctrlPointList = pgl.Point3Array([(0, 0.131507, 1),(0.00454138, 0.0251277, 1),(0.578848, 0.00694723, 1),(1, 0.00524218, 1)]) , 
 	    )
 	radius_base03.name = "radius_base03"
-	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel 1'},[('Function',radius),('Function',leafsize),('Curve2D',leafpath),('Curve2D',leafsection),('Function',leafdiam),('Function',inflo_radius),('Function',inflo_elasticity),('Function',radius_base03)])
+	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel 1'},[('Function',leafsize),('Curve2D',leafpath),('Curve2D',leafsection),('Function',leafdiam),('Function',inflo_radius),('Function',inflo_elasticity),('Function',radius),('Function',radius_base03)])
 	parameterset = [panel_0,]
-	context["__functions__"] = [('radius',radius),('leafsize',leafsize),('leafdiam',leafdiam),('inflo_radius',inflo_radius),('inflo_elasticity',inflo_elasticity),('radius_base03',radius_base03),]
+	context["__functions__"] = [('leafsize',leafsize),('leafdiam',leafdiam),('inflo_radius',inflo_radius),('inflo_elasticity',inflo_elasticity),('radius',radius),('radius_base03',radius_base03),]
 	context["__curves__"] = [('leafpath',leafpath),('leafsection',leafsection),]
 	context["__parameterset__"] = parameterset
-	context["radius"] = pgl.QuantisedFunction(radius)
 	context["leafsize"] = pgl.QuantisedFunction(leafsize)
 	context["leafpath"] = leafpath
 	context["leafsection"] = leafsection
 	context["leafdiam"] = pgl.QuantisedFunction(leafdiam)
 	context["inflo_radius"] = pgl.QuantisedFunction(inflo_radius)
 	context["inflo_elasticity"] = pgl.QuantisedFunction(inflo_elasticity)
+	context["radius"] = pgl.QuantisedFunction(radius)
 	context["radius_base03"] = pgl.QuantisedFunction(radius_base03)

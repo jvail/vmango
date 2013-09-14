@@ -8,7 +8,7 @@ from mango_asynchrony_simulation import *
 is_loaded = "yes" if LOADED else "no"
 
 first_date = date(2003,9,1)
-last_date = date(2005,11,1)
+last_date = date(2005,12,1)
 
 total_weeks = ceil((last_date -first_date).days/7.)
 daystep = 7
@@ -37,7 +37,7 @@ module FlowerRepr(day_age,s)
 
 Axiom: G A(1, first_date, "A", "L", "V" , "V")
 
-derivation length: 100
+derivation length: total_weeks
 production:
 
 
@@ -46,11 +46,11 @@ A(order, burst_date, position, position_ancestor, nature_ancestor, nature ):
     burst_date = current_date
     nproduce /(144) UC(order, burst_date, nature)
     Burst = get_value_simulation_glm_distribution("Burst_0"+str(cycle),is_loaded, burst_date.month, position,position_ancestor,nature_ancestor,nature)
-    if Burst=="yes" :
+    if Burst :
       Delta_burst_child = get_value_simulation_glm_distribution("Delta_burst_date_child_0"+str(cycle),is_loaded,burst_date.month, position,position_ancestor,nature_ancestor,nature)
       date_burst_children = burst_date + timedelta(weeks = 4*int(Delta_burst_child))
       Lateral = get_value_simulation_glm_distribution("Lateral_GU_daughter_0"+str(cycle),is_loaded,burst_date.month, position,position_ancestor,nature_ancestor,nature)
-      if Lateral=="yes":
+      if Lateral:
         No_lateral = get_value_simulation_glm_distribution("No_lateral_GU_0"+str(cycle),is_loaded,burst_date.month, position,position_ancestor,nature_ancestor,nature)
         anglebetweensons = 360./(No_lateral)
         for child_lateral in xrange(No_lateral):
@@ -59,7 +59,7 @@ A(order, burst_date, position, position_ancestor, nature_ancestor, nature ):
       produce A(order+1, date_burst_children, "A", position_ancestor,nature_ancestor,"V")
     else : 
       Flowering = get_value_simulation_glm_distribution("Flowering_0"+str(cycle),is_loaded,burst_date.month, position,position_ancestor,nature_ancestor,nature)
-      if Flowering=="yes":
+      if Flowering:
         new_nature_ancestor, new_nature_mother = "F", "F"
         No_inflo = get_value_simulation_glm_distribution("No_inflo_0"+str(cycle),is_loaded, burst_date.month, position,position_ancestor,nature_ancestor,nature)
         week_inflo = get_value_simulation_glm_distribution("Date_inflo_05",is_loaded,burst_date.month,position,position_ancestor,nature_ancestor,nature)
@@ -68,12 +68,12 @@ A(order, burst_date, position, position_ancestor, nature_ancestor, nature ):
         new_nature_ancestor, new_nature_mother = "V", "V"
         No_inflo = 0
       Burst_next_cycle = get_value_simulation_glm_distribution("Burst_04_05",is_loaded, str(burst_date.month), position,position_ancestor,new_nature_ancestor,new_nature_mother)
-      if Burst_next_cycle=="yes":
+      if Burst_next_cycle:
         Delta_burst_child_next_cycle = get_value_simulation_glm_distribution("Delta_burst_date_04_05",is_loaded,burst_date.month, position,position_ancestor,new_nature_ancestor,new_nature_mother)
         date_burst_child = burst_date + timedelta(weeks = 4*int(Delta_burst_child_next_cycle))
         
         Lateral_next_cycle = get_value_simulation_glm_distribution("Lateral_GU_daughter_04_05",is_loaded, str(burst_date.month), position,position_ancestor,new_nature_ancestor,new_nature_mother)
-        if Lateral_next_cycle=="yes":
+        if Lateral_next_cycle:
           No_lateral_next_cycle = get_value_simulation_glm_distribution("No_lateral_GU_04_05",is_loaded, str(burst_date.month), position,position_ancestor,new_nature_ancestor,new_nature_mother)
           if No_inflo > 1:
             anglebetweensons = 360./(No_lateral_next_cycle+No_inflo-1)     

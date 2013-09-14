@@ -5,8 +5,9 @@ import numpy as np
 from vplants.statistic import *
 from vplants import mangostat
 from openalea.deploy.shared_data import shared_data
-distpath = shared_data(mangostat,share_path='share/mtbp')
-states = load(distpath/"states.pkl")
+path = shared_data(mangostat, share_path='share')
+states = load(path/'mtbp'/'dag'/'not_thinned'/'no_mixture'/'cogshall.lst')
+
 
 def get_dict_burst_period(list_name_states):
   """ 
@@ -127,7 +128,7 @@ def set_order_appearance(list_name_states):
   Parameter : 
     list_name_states : a list of strings, 
   """
-  tuple_order_case = itertools.product("DI","LIE","VLT")
+  tuple_order_case = itertools.product("DI","LIE","VTL")
   order_case = ["".join(case) for case in list(tuple_order_case)]
   order_appearance = [o_case for o_case in order_case if o_case in list_name_states]
   return order_appearance
@@ -139,8 +140,8 @@ early2late = list(reversed(late2early))
 
 def get_apical_state(sons):
   """It gives the state which will be place in apical position and gives liste of states in lateral position """
-  if sum(sons) == 0 : return (None, [])
-  else :
+  apical_state, lateral_position_states = (None, [])
+  if sum(sons) != 0 : 
     dict_sons = dict(zip(states,sons))
     for a_state in early2late:
       if dict_sons[a_state] > 0:
