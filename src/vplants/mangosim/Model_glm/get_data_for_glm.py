@@ -201,9 +201,9 @@ def get_nature_position_ancestor(uc):
       parent_uc = g.parent(parent_uc)
     ancestor = parent_uc
     flo_children = [flo for flo in g.children(ancestor) if g.label(flo)=='F' and g.property('year')[flo]==cycle_uc-1]
-    if len(flo_children) > 0: is_nature_ancestor_flo = "F"
-    else : is_nature_ancestor_flo = "V"
-    is_position_ancestor_l = "A" if g.property('edge_type')[ancestor]=="<" else "L"
+    if len(flo_children) > 0: is_nature_ancestor_flo = 1
+    else : is_nature_ancestor_flo = 0
+    is_position_ancestor_l = 0 if g.property('edge_type')[ancestor]=="<" else 1
   return (is_nature_ancestor_flo, is_position_ancestor_l)
 
 #def order_flo_date(string):
@@ -298,34 +298,34 @@ def get_table_INSIDE_for_glm(dict_uc_cycle_variety,extremity_variety, cycle=4, l
     dict_uc["uc"] = uc
     # get Burst variable
     veg_children = [child for child in g.children(uc) if g.label(child)!='F' and get_cycle_uc(child)==cycle]
-    if veg_children==[]: dict_uc["Burst"] = "no"
-    else : dict_uc["Burst"] = "yes"
+    if veg_children==[]: dict_uc["Burst"] = 0
+    else : dict_uc["Burst"] = 1
     #### get Dead variable
     #if is_dead_in_cycle(uc,cycle)==True : dict_uc["Dead"] = yes
     #else : dict_uc["Dead"] = no
     # get Lateral GU variable
-    if len(veg_children)==0 : dict_uc["Lateral_GU_daughter"] = unknow
-    elif len(veg_children)==1 : dict_uc["Lateral_GU_daughter"] = "no"
-    else: dict_uc["Lateral_GU_daughter"] = "yes"
+    if len(veg_children)==0 : dict_uc["Lateral_GU_daughter"] = None
+    elif len(veg_children)==1 : dict_uc["Lateral_GU_daughter"] = 0
+    else: dict_uc["Lateral_GU_daughter"] = 1
     # get Number of lateral GU variable
     lateral_veg_children = [c for c in veg_children if g.property('edge_type')[c]=='+']
-    if dict_uc["Lateral_GU_daughter"] == "yes" : dict_uc["No_Lateral_GU"] = len(lateral_veg_children)
+    if dict_uc["Lateral_GU_daughter"] == 1 : dict_uc["No_Lateral_GU"] = len(lateral_veg_children)
     else : dict_uc["No_Lateral_GU"] = unknow
     # get nature ancestor
-    dict_uc["nature_ancestor"] = get_nature_position_ancestor(uc)[0]
+    dict_uc["nature_ancestor_V"] = get_nature_position_ancestor(uc)[0]
     # get position ancestor
-    dict_uc["position_ancestor"] = get_nature_position_ancestor(uc)[1]
+    dict_uc["position_ancestor_L"] = get_nature_position_ancestor(uc)[1]
     # get mother position feature 
-    if g.property('edge_type')[uc] ==  '+' : dict_uc["position_mother"] = "L"
-    else : dict_uc["position_mother"] = "A"
+    if g.property('edge_type')[uc] ==  '+' : dict_uc["position_mother_L"] = 1
+    else : dict_uc["position_mother_L"] = 0
     # get burst date feature (of mother)
     dateM = order_uc_date( g.property('date_burst')[uc] )
-    dict_uc["burst_date_mother"] = int(dateM.split("-")[1])
+    dict_uc["burst_date_mother"] = dateM
     # get loaded feature
-    if loaded==True : dict_uc["is_loaded"] = "yes"
-    else : dict_uc["is_loaded"] = "no"
+    if loaded==True : dict_uc["is_loaded"] = 1
+    else : dict_uc["is_loaded"] = 0
     # get Delta burst date variable (beetween mother and daughters)
-    if dict_uc["Burst"] == "no": 
+    if dict_uc["Burst"] == 0: 
       dict_uc["Delta_Burst_date_child"] = unknow
       dict_uc["Date_burst_daughter"] = unknow
     else : 
@@ -335,10 +335,10 @@ def get_table_INSIDE_for_glm(dict_uc_cycle_variety,extremity_variety, cycle=4, l
       diff_date = get_delta_date(dateM,dateD)
       dict_uc["Delta_Burst_date_child"] = diff_date
     # get extremity feature
-    if uc in ucs_extremity : dict_uc["is_in_extremity"]= "yes"
-    else : dict_uc["is_in_extremity"]= "no"
+    if uc in ucs_extremity : dict_uc["is_in_extremity"]= 1
+    else : dict_uc["is_in_extremity"]= 0
     # get varaibles in extremity for flowering
-    if dict_uc["is_in_extremity"]=="no" : 
+    if dict_uc["is_in_extremity"]==0 : 
       dict_uc["Flowering"] = unknow
       dict_uc["No_inflo"] = unknow
       dict_uc["Flowering_Date"] = "NA"
@@ -346,11 +346,11 @@ def get_table_INSIDE_for_glm(dict_uc_cycle_variety,extremity_variety, cycle=4, l
       flo_child = [flo for flo in g.children(uc) if g.label(flo)=='F' and g.property('year')[flo]==cycle]
       # get Flowering variable and get Number of inflorescences variable and get Flowering Date variable
       if len(flo_child)==0 : 
-        dict_uc["Flowering"] = "no"
+        dict_uc["Flowering"] = 0
         dict_uc["No_inflo"] = 0
         dict_uc["Flowering_Date"] = "NA"
       else : 
-        dict_uc["Flowering"] = "yes"
+        dict_uc["Flowering"] = 1
         flo = flo_child[0]
         if g.property('nb_inflo_l')[flo] !='':
           dict_uc["No_inflo"] = int( g.property('nb_inflo_t')[flo] ) + int( g.property('nb_inflo_l')[flo] )
@@ -361,6 +361,9 @@ def get_table_INSIDE_for_glm(dict_uc_cycle_variety,extremity_variety, cycle=4, l
           for j in xrange(len(date_weeks[cycle])):
             if date_weeks[cycle][j][0] <= date_flo[0] <= date_weeks[cycle][j][1]:
               dict_uc["Flowering_Date"] = j
+    # get name tree
+    code = g.property('code')[uc]
+    dict_uc["tree"] = code.split("/")[0]
     # put the dictionnary on the list
     table_INSIDE_for_glm.append(dict_uc)
   return table_INSIDE_for_glm
@@ -394,31 +397,31 @@ def get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=True, variety
     dict_uc["uc"] = uc
     veg_children = [veg for veg in g.children(uc) if g.label(veg)=='U' and g.property('year')[veg]==cycle+1]
     # get Burst variable
-    if veg_children==[]: dict_uc["Burst"] = "no"
-    else : dict_uc["Burst"] = "yes"
+    if veg_children==[]: dict_uc["Burst"] = 0
+    else : dict_uc["Burst"] = 1
     # get Lateral GU variable
     lateral_veg_children = [c for c in veg_children if g.property('edge_type')[c]=='+']
-    if dict_uc["Burst"] == "no": dict_uc["Lateral_GU_daughter"] = unknow
-    elif len(lateral_veg_children)==0 : dict_uc["Lateral_GU_daughter"] = "no"
-    else: dict_uc["Lateral_GU_daughter"] = "yes"
+    if dict_uc["Burst"] == 0: dict_uc["Lateral_GU_daughter"] = None
+    elif len(lateral_veg_children)==0 : dict_uc["Lateral_GU_daughter"] = 0
+    else: dict_uc["Lateral_GU_daughter"] = 1
     # get Number of lateral GU variable
-    if dict_uc["Lateral_GU_daughter"] == "yes" : dict_uc["No_Lateral_GU"] = len(lateral_veg_children)
+    if dict_uc["Lateral_GU_daughter"] == 1 : dict_uc["No_Lateral_GU"] = len(lateral_veg_children)
     else : dict_uc["No_Lateral_GU"] = unknow
     # get burst date feature (of mother)
-    if get_cycle_uc(uc) == 3: dict_uc["burst_date_mother"]= "unknow"
+    if get_cycle_uc(uc) == 3: dict_uc["burst_date_mother"]= unknow
     else:
       dateM = order_uc_date( g.property('date_burst')[uc] )
       dict_uc["burst_date_mother"] = int(dateM.split("-")[1])
     if cycle ==3 :
       # get Burst Date of daughters
-      if dict_uc["Burst"] == "yes" :
+      if dict_uc["Burst"] == 1 :
         dates_daugther = dict(collections.Counter([order_uc_date(d) for childs,d in g.property('date_burst').items() if childs in veg_children]))
         dateD = dates_daugther.items()[0][0]
         dict_uc["Burst_date_child"] = int(dateD.split("-")[1])
       else : dict_uc["Burst_date_child"] = unknow
     else :
       # get Delta burst date variable (beetween mother and daughters)
-      if dict_uc["Burst"] == "no" : dict_uc["Delta_Burst_date"] = unknow
+      if dict_uc["Burst"] == 0 : dict_uc["Delta_Burst_date"] = unknow
       elif get_cycle_uc(uc) ==3 : dict_uc["Delta_Burst_date"] = unknow
       else : 
         dates_daugther = dict(collections.Counter([order_uc_date(d) for childs,d in g.property('date_burst').items() if childs in veg_children]))
@@ -426,15 +429,18 @@ def get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=True, variety
         diff_date = get_delta_date(dateM,dateD)
         dict_uc["Delta_Burst_date"] = str(int(diff_date))
     # get mother position feature 
-    if g.property('edge_type')[uc] ==  '+' : dict_uc["position_mother"] = "L"
-    else : dict_uc["position_mother"] = "A"
+    if g.property('edge_type')[uc] ==  '+' : dict_uc["position_mother_L"] = 1
+    else : dict_uc["position_mother_L"] = 0
     # get mother's nature 
     flo_children = [flo for flo in g.children(uc) if g.label(flo)=='F' and get_cycle_uc(flo)==cycle]
-    if len(flo_children) > 0 : dict_uc["nature_mother"] = "F"
-    else : dict_uc["nature_mother"] = "V"
+    if len(flo_children) > 0 : dict_uc["nature_mother_V"] = 0
+    else : dict_uc["nature_mother_V"] = 1
     # get loaded feature
-    if loaded==True : dict_uc["is_loaded"] = "yes"
-    else : dict_uc["is_loaded"] = "no"
+    if loaded==True : dict_uc["is_loaded"] = 1
+    else : dict_uc["is_loaded"] = 0
+    # get name tree
+    code = g.property('code')[uc]
+    dict_uc["tree"] = code.split("/")[0]
     # put the dictionnary on the list
     table_TRANSITION_for_glm.append(dict_uc)
   return table_TRANSITION_for_glm
