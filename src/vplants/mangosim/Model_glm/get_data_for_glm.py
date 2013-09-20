@@ -420,14 +420,18 @@ def get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=True, variety
         dict_uc["Burst_date_child"] = int(dateD.split("-")[1])
       else : dict_uc["Burst_date_child"] = unknow
     else :
-      # get Delta burst date variable (beetween mother and daughters)
-      if dict_uc["Burst"] == 0 : dict_uc["Delta_Burst_date"] = unknow
-      elif get_cycle_uc(uc) ==3 : dict_uc["Delta_Burst_date"] = unknow
+      # get Delta burst date variable (beetween mother and daughters), get Burst date child
+      if dict_uc["Burst"] == 0 : 
+        dict_uc["Delta_Burst_date"] = unknow
+        dict_uc["Burst_date_child"] = unknow
       else : 
         dates_daugther = dict(collections.Counter([order_uc_date(d) for childs,d in g.property('date_burst').items() if childs in veg_children]))
         dateD = dates_daugther.items()[0][0]
-        diff_date = get_delta_date(dateM,dateD)
-        dict_uc["Delta_Burst_date"] = str(int(diff_date))
+        dict_uc["Burst_date_child"] = int(dateD.split("-")[1])
+        if get_cycle_uc(uc) ==3 : dict_uc["Delta_Burst_date"] = unknow
+        else :
+            diff_date = get_delta_date(dateM,dateD)
+            dict_uc["Delta_Burst_date"] = str(int(diff_date))
     # get mother position feature 
     if g.property('edge_type')[uc] ==  '+' : dict_uc["position_mother_L"] = 1
     else : dict_uc["position_mother_L"] = 0

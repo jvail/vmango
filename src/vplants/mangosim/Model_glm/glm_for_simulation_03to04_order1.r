@@ -391,6 +391,7 @@ get_table_prob_variable_glm = function(myglm){
             variables = slot(myglm@terms[[1]],"term.labels")
         }else{
             variables = NULL
+            level_burst_date_mother = level_all_burst_date_mother
         }
     }else{
         if(!is.null(myglm$xlevels)){
@@ -401,6 +402,7 @@ get_table_prob_variable_glm = function(myglm){
             variables = colnames(myglm$model)[2:length(colnames(myglm$model))]
         }else{
             variables = NULL
+            level_burst_date_mother = level_all_burst_date_mother
         }
     }
     produit_cartesien = expand.grid(level_is_loaded,level_burst_date_mother,level_position_mother_L,level_position_ancestor_L,level_nature_ancestor_V,level_nature_mother_V)
@@ -430,13 +432,12 @@ get_table_prob_variable_glm = function(myglm){
             probs = predict(myglm,type="response")[1]
             data_probs = data.frame(probs)
         }
-        
     }
     if("burst_date_mother" %in% variables){
         other_level_burst_date_mother = level_all_burst_date_mother[!level_all_burst_date_mother %in% level_burst_date_mother]
         if(length(other_level_burst_date_mother)>0){
-            other_produit_cartesien = expand.grid(level_is_loaded, other_level_burst_date_mother,level_position_mother,level_position_ancestor,level_nature_ancestor,level_nature_mother)
-            names(other_produit_cartesien) = c("is_loaded","burst_date_mother","position_mother","position_ancestor","nature_ancestor","nature_mother")
+            other_produit_cartesien = expand.grid(level_is_loaded, other_level_burst_date_mother,level_position_mother_L,level_position_ancestor_L,level_nature_ancestor_V,level_nature_mother_V)
+            names(other_produit_cartesien) = c("is_loaded","burst_date_mother","position_mother_L","position_ancestor_L","nature_ancestor_V","nature_mother_V")
             other_data_probs = unique(other_produit_cartesien[variables])
             probs_null = rep(0,length(other_data_probs[,1]))
             if( class(myglm)[1]=="vglm"){
@@ -529,7 +530,41 @@ for(tree in 1:length(trees)){
     write.csv(table_prob_vglm.Burst_date_child.03_04_complet_tree,file=path_final, row.names = FALSE)
 }
 
+################ Selected
+####################################
+# loaded as factor
+#___________________________________
+table_prob_glm.burst.03_04_selected = get_table_prob_variable_glm(step.glm.burst.03_04)
+write.csv(table_prob_glm.burst.03_04_selected,file=paste(share_dir,"model_glm/glm_selected/loaded_as_factor/table_prob_glm_burst_03_04.csv",sep=""), row.names = FALSE)
+table_prob_glm.Lateral_GU_daughter.03_04_selected = get_table_prob_variable_glm(step.glm.Lateral_GU_daughter.03_04)
+write.csv(table_prob_glm.Lateral_GU_daughter.03_04_selected,file=paste(share_dir,"model_glm/glm_selected/loaded_as_factor/table_prob_glm_Lateral_GU_daughter_03_04.csv",sep=""), row.names = FALSE)
+table_prob_glm.no_lateral_GU.03_04_selected = get_table_prob_variable_glm(step.glm.no_lateral_GU.03_04)
+write.csv(table_prob_glm.no_lateral_GU.03_04_selected,file=paste(share_dir,"model_glm/glm_selected/loaded_as_factor/table_prob_glm_no_lateral_GU_03_04.csv",sep=""), row.names = FALSE)
+#table_prob_vglm.Burst_date_child.03_04_selected = get_table_prob_variable_glm(step.vglm.Burst_date_child.03_04)
+#write.csv(table_prob_vglm.Burst_date_child.03_04_selected,file=paste(share_dir,"model_glm/glm_selected/loaded_as_factor/table_prob_vglm_Burst_date_child_03_04.csv",sep=""), row.names = FALSE)
 
 
+# by_tree
+#___________________________________
+for(tree in 1:length(trees)){
+    name_tree = trees[tree]
+    path_file = paste(share_dir,"model_glm/glm_selected/by_tree/",sep="")
+    path_file_tree = paste(path_file,name_tree,sep="")
+    
+    table_prob_glm.burst.03_04_selected_tree = get_table_prob_variable_glm(list_step.glm.burst.03_04_tree[[name_tree]])
+    path_final = paste(path_file_tree,"/table_prob_glm_burst_03_04.csv",sep="")
+    write.csv(table_prob_glm.burst.03_04_selected_tree,file=path_final, row.names = FALSE)
+    
+    table_prob_glm.Lateral_GU_daughter.03_04_selected_tree = get_table_prob_variable_glm(list_step.glm.Lateral_GU_daughter.03_04_tree[[name_tree]])
+    path_final = paste(path_file_tree,"/table_prob_glm_Lateral_GU_daughter_03_04.csv",sep="")
+    write.csv(table_prob_glm.Lateral_GU_daughter.03_04_selected_tree,file=path_final, row.names = FALSE)
 
+    table_prob_glm.no_lateral_GU.03_04_selected_tree = get_table_prob_variable_glm(list_step.glm.no_lateral_GU.03_04_tree[[name_tree]])
+    path_final = paste(path_file_tree,"/table_prob_glm_no_lateral_GU_03_04.csv",sep="")
+    write.csv(table_prob_glm.no_lateral_GU.03_04_selected_tree,file=path_final, row.names = FALSE)
+
+    #table_prob_vglm.Burst_date_child.03_04_selected_tree = get_table_prob_variable_glm(list_step.vglm.Burst_date_child.03_04_tree[[name_tree]])
+    #path_final = paste(path_file_tree,"/table_prob_vglm_Burst_date_child_03_04.csv",sep="")
+    #write.csv(table_prob_vglm.Burst_date_child.03_04_selected_tree,file=path_final, row.names = FALSE)
+}
 
