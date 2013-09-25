@@ -4,21 +4,20 @@ setwd("D:/openalea/mangosim/src/vplants/mangosim/Model_glm")
 ### Importation of data :
 
 share_dir = '../../../../share/'
-table_INSIDE_for_glm_04_loaded_cogshall = read.csv(paste(share_dir,"model_glm/table_INSIDE_04_cogshall.csv",sep=""),header = TRUE)
+table_INSIDE_for_glm_04_cogshall = read.csv(paste(share_dir,"model_glm/table_INSIDE_04_cogshall.csv",sep=""),header = TRUE)
 
 #################################################
 #################################################
-data.04 = table_INSIDE_for_glm_04_loaded_cogshall
+data.04 = table_INSIDE_for_glm_04_cogshall
 # Removing of GU born in a month of less than 4 GUs born in this month
-months = levels(data.04$burst_date_mother)
-for( month in 1:length(months)){
-    nb_month = which(data.04$burst_date_mother==months[month])
+for( month in 1:12){
+    nb_month = which(data.04$burst_date_mother==month)
     if(0 < length(nb_month) & length(nb_month) <= 4){
         data.04 = data.04[-nb_month,]
     }
 }
 # Assign covariables as factors
-data.04$burst_date_mother=as.factor(as.character(data.04$burst_date_mother))
+data.04$burst_date_mother=as.factor(data.04$burst_date_mother)
 data.04$is_loaded = as.factor(data.04$is_loaded)
 data.04$position_ancestor_L = as.factor(data.04$position_ancestor_L)
 data.04$position_mother_L = as.factor(data.04$position_mother_L)
@@ -61,7 +60,7 @@ for(tree in 1:length(trees)){
     # For all trees
 glm.burst.04_null = glm( Burst ~ 1,
     family = binomial, data=data.04)
-summary(glm.burst.04_null)  # AIC: 
+summary(glm.burst.04_null)  # AIC: 3128.9
     
 
     # For each tree, loaded trees and not loaded trees
@@ -86,7 +85,7 @@ for(tree in 1:length(trees)){
     # For all trees
 glm.burst.04_complet = glm( Burst ~ is_loaded + burst_date_mother + position_mother_L + position_ancestor_L + nature_ancestor_V,
     family = binomial, data=data.04)
-summary(glm.burst.04_complet) # AIC : 
+summary(glm.burst.04_complet) # AIC : 1711
     
     # For each tree, loaded trees and not loaded trees
 list_glm.burst.04_complet_tree = list()
@@ -539,7 +538,7 @@ summary(glm.No_inflorescences.04_null) # AIC:
 list_glm.No_inflorescences.04_null_tree = list()
 for(tree in 1:length(trees)){
     name_tree = trees[tree]
-    list_glm.No_inflorescences.04_null_tree[[paste("glm.No_inflorescences.04_null_",name_tree, sep="")]] = glm( No_inflo ~ 1,
+    list_glm.No_inflorescences.04_null_tree[[name_tree]] = glm( No_inflo ~ 1,
         family = poisson, data=data.04, subset=index_trees_flowering.04[[name_tree]])
 }
 # B10 :     AIC: 
@@ -615,7 +614,7 @@ level_position_mother_L = as.factor(0:1)
 level_position_ancestor_L = as.factor(0:1)
 level_nature_ancestor_V = as.factor(0:1)
 level_nature_mother_V = as.factor(0:1)
-level_all_burst_date_mother = c("03-05","03-06","03-07","03-08","03-09","03-10","03-11","03-12","04-01","04-02","04-03","04-04","04-05","04-06","04-07")
+level_all_burst_date_mother = as.factor(1:12)
 get_table_prob_variable_glm = function(myglm){
     if( class(myglm)[1]=="vglm" ){
         if(length(myglm@xlevels)>0){
@@ -677,7 +676,7 @@ get_table_prob_variable_glm = function(myglm){
             probs_null = rep(0,length(other_data_probs[,1]))
             if( class(myglm)[1]=="vglm"){
                 for(i in 1:length(colnames(probs)) ){
-                    other_data_probs[colnames(probs)[i] ] = probs_null
+                    other_data_probs[colnames(probs)[i] ] = 1./length(colnames(probs))
                 }
             }else{
                 other_data_probs$probas = probs_null
@@ -688,73 +687,75 @@ get_table_prob_variable_glm = function(myglm){
 return(data_probs)
 }
 
-################ Null
-####################################
-# loaded as factor
-#___________________________________
-table_prob_glm.burst.04_null = get_table_prob_variable_glm(glm.burst.04_null)
-write.csv(table_prob_glm.burst.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_burst_04.csv",sep=""), row.names = FALSE)
-table_prob_glm.Lateral_GU_daughter.04_null = get_table_prob_variable_glm(glm.Lateral_GU_daughter.04_null)
-write.csv(table_prob_glm.Lateral_GU_daughter.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_Lateral_GU_daughter_04.csv",sep=""), row.names = FALSE)
-table_prob_glm.no_lateral_GU.04_null = get_table_prob_variable_glm(glm.no_lateral_GU.04_null)
-write.csv(table_prob_glm.no_lateral_GU.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_no_lateral_GU_04.csv",sep=""), row.names = FALSE)
-table_prob_vglm.Date_burst_daughter.04_null = get_table_prob_variable_glm(vglm.Date_burst_daughter.04_null)
-write.csv(table_prob_vglm.Date_burst_daughter.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_vglm_Date_burst_daughter_04.csv",sep=""), row.names = FALSE)
-table_prob_glm.Flowering.04_null = get_table_prob_variable_glm(glm.Flowering.04_null)
-write.csv(table_prob_glm.Flowering.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_Flowering_04.csv",sep=""), row.names = FALSE)
-table_prob_glm.No_inflorescences.04_null = get_table_prob_variable_glm(glm.No_inflorescences.04_null)
-write.csv(table_prob_glm.No_inflorescences.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_No_inflorescences_04.csv",sep=""), row.names = FALSE)
+# ################ Null
+# ####################################
+# # loaded as factor
+# #___________________________________
+# table_prob_glm.burst.04_null = get_table_prob_variable_glm(glm.burst.04_null)
+# write.csv(table_prob_glm.burst.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_burst_04.csv",sep=""), row.names = FALSE)
+# table_prob_glm.Lateral_GU_daughter.04_null = get_table_prob_variable_glm(glm.Lateral_GU_daughter.04_null)
+# write.csv(table_prob_glm.Lateral_GU_daughter.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_Lateral_GU_daughter_04.csv",sep=""), row.names = FALSE)
+# table_prob_glm.no_lateral_GU.04_null = get_table_prob_variable_glm(glm.no_lateral_GU.04_null)
+# write.csv(table_prob_glm.no_lateral_GU.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_no_lateral_GU_04.csv",sep=""), row.names = FALSE)
+# table_prob_vglm.Date_burst_daughter.04_null = get_table_prob_variable_glm(vglm.Date_burst_daughter.04_null)
+# write.csv(table_prob_vglm.Date_burst_daughter.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_vglm_Date_burst_daughter_04.csv",sep=""), row.names = FALSE)
+# table_prob_glm.Flowering.04_null = get_table_prob_variable_glm(glm.Flowering.04_null)
+# write.csv(table_prob_glm.Flowering.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_Flowering_04.csv",sep=""), row.names = FALSE)
+# table_prob_glm.No_inflorescences.04_null = get_table_prob_variable_glm(glm.No_inflorescences.04_null)
+# write.csv(table_prob_glm.No_inflorescences.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_No_inflorescences_04.csv",sep=""), row.names = FALSE)
 
 
-# by_tree
-#___________________________________
-for(tree in 1:length(trees)){
-    name_tree = trees[tree]
-    path_file = paste(share_dir,"model_glm/glm_null/by_tree/",sep="")
-    path_file_tree = paste(path_file,name_tree,sep="")
+# # by_tree
+# #___________________________________
+# for(tree in 1:length(trees)){
+    # name_tree = trees[tree]
+    # path_file = paste(share_dir,"model_glm/glm_null/by_tree/",sep="")
+    # path_file_tree = paste(path_file,name_tree,sep="")
     
-    table_prob_glm.burst.04_null_tree = get_table_prob_variable_glm(list_glm.burst.04_null_tree[[name_tree]])
-    path_final = paste(path_file_tree,"/table_prob_glm_burst_04.csv",sep="")
-    write.csv(table_prob_glm.burst.04_null_tree,file=path_final, row.names = FALSE)
+    # table_prob_glm.burst.04_null_tree = get_table_prob_variable_glm(list_glm.burst.04_null_tree[[name_tree]])
+    # path_final = paste(path_file_tree,"/table_prob_glm_burst_04.csv",sep="")
+    # write.csv(table_prob_glm.burst.04_null_tree,file=path_final, row.names = FALSE)
     
-    table_prob_glm.Lateral_GU_daughter.04_null_tree = get_table_prob_variable_glm(list_glm.Lateral_GU_daughter.04_null_tree[[name_tree]])
-    path_final = paste(path_file_tree,"/table_prob_glm_Lateral_GU_daughter_04.csv",sep="")
-    write.csv(table_prob_glm.Lateral_GU_daughter.04_null_tree,file=path_final, row.names = FALSE)
+    # table_prob_glm.Lateral_GU_daughter.04_null_tree = get_table_prob_variable_glm(list_glm.Lateral_GU_daughter.04_null_tree[[name_tree]])
+    # path_final = paste(path_file_tree,"/table_prob_glm_Lateral_GU_daughter_04.csv",sep="")
+    # write.csv(table_prob_glm.Lateral_GU_daughter.04_null_tree,file=path_final, row.names = FALSE)
 
-    table_prob_glm.no_lateral_GU.04_null_tree = get_table_prob_variable_glm(list_glm.no_lateral_GU.04_null_tree[[name_tree]])
-    path_final = paste(path_file_tree,"/table_prob_glm_no_lateral_GU_04.csv",sep="")
-    write.csv(table_prob_glm.no_lateral_GU.04_null_tree,file=path_final, row.names = FALSE)
+    # table_prob_glm.no_lateral_GU.04_null_tree = get_table_prob_variable_glm(list_glm.no_lateral_GU.04_null_tree[[name_tree]])
+    # path_final = paste(path_file_tree,"/table_prob_glm_no_lateral_GU_04.csv",sep="")
+    # write.csv(table_prob_glm.no_lateral_GU.04_null_tree,file=path_final, row.names = FALSE)
 
-    table_prob_vglm.Date_burst_daughter.04_null_tree = get_table_prob_variable_glm(list_vglm.Date_burst_daughter.04_null_tree[[name_tree]])
-    path_final = paste(path_file_tree,"/table_prob_vglm_Date_burst_daughter_04.csv",sep="")
-    write.csv(table_prob_vglm.Date_burst_daughter.04_null_tree,file=path_final, row.names = FALSE)
+    # table_prob_vglm.Date_burst_daughter.04_null_tree = get_table_prob_variable_glm(list_vglm.Date_burst_daughter.04_null_tree[[name_tree]])
+    # path_final = paste(path_file_tree,"/table_prob_vglm_Date_burst_daughter_04.csv",sep="")
+    # write.csv(table_prob_vglm.Date_burst_daughter.04_null_tree,file=path_final, row.names = FALSE)
     
-    table_prob_glm.Flowering.04_null = get_table_prob_variable_glm(glm.Flowering.04_null)
-    path_final = paste(path_file_tree,"/table_prob_glm_Flowering_04.csv",sep="")
-    write.csv(table_prob_glm.Flowering.04_null,file=path_final, row.names = FALSE)
+    # table_prob_glm.Flowering.04_null = get_table_prob_variable_glm(glm.Flowering.04_null_tree[[name_tree]])
+    # path_final = paste(path_file_tree,"/table_prob_glm_Flowering_04.csv",sep="")
+    # write.csv(table_prob_glm.Flowering.04_null,file=path_final, row.names = FALSE)
     
-    table_prob_glm.No_inflorescences.04_null = get_table_prob_variable_glm(glm.No_inflorescences.04_null)
-    path_final = paste(path_file_tree,"/table_prob_glm_No_inflorescences_04.csv",sep="")
-    write.csv(table_prob_glm.No_inflorescences.04_null,file=path_final, row.names = FALSE)
-}
+    # table_prob_glm.No_inflorescences.04_null = get_table_prob_variable_glm(glm.No_inflorescences.04_null_tree[[name_tree]])
+    # path_final = paste(path_file_tree,"/table_prob_glm_No_inflorescences_04.csv",sep="")
+    # write.csv(table_prob_glm.No_inflorescences.04_null,file=path_final, row.names = FALSE)
+# }
 
 
 ################ Complet
 ####################################
 # loaded as factor
 #___________________________________
+path_file_complet = paste(share_dir,"model_glm/glm_complet/loaded_as_factor/table_prob_",sep="")
+
 table_prob_glm.burst.04_complet = get_table_prob_variable_glm(glm.burst.04_complet)
-write.csv(table_prob_glm.burst.04_complet,file=paste(share_dir,"model_glm/glm_complet/loaded_as_factor/table_prob_glm_burst_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.burst.04_complet,file=paste(path_file_complet,"glm_burst_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.Lateral_GU_daughter.04_complet = get_table_prob_variable_glm(glm.Lateral_GU_daughter.04_complet)
-write.csv(table_prob_glm.Lateral_GU_daughter.04_complet,file=paste(share_dir,"model_glm/glm_complet/loaded_as_factor/table_prob_glm_Lateral_GU_daughter_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.Lateral_GU_daughter.04_complet,file=paste(path_file_complet,"glm_Lateral_GU_daughter_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.no_lateral_GU.04_complet = get_table_prob_variable_glm(glm.no_lateral_GU.04_complet)
-write.csv(table_prob_glm.no_lateral_GU.04_complet,file=paste(share_dir,"model_glm/glm_complet/loaded_as_factor/table_prob_glm_no_lateral_GU_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.no_lateral_GU.04_complet,file=paste(path_file_complet,"glm_no_lateral_GU_04.csv",sep=""), row.names = FALSE)
 table_prob_vglm.Date_burst_daughter.04_complet = get_table_prob_variable_glm(vglm.Date_burst_daughter.04_complet)
-write.csv(table_prob_vglm.Date_burst_daughter.04_complet,file=paste(share_dir,"model_glm/glm_complet/loaded_as_factor/table_prob_vglm_Date_burst_daughter_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_vglm.Date_burst_daughter.04_complet,file=paste(path_file_complet,"vglm_Date_burst_daughter_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.Flowering.04_complet = get_table_prob_variable_glm(glm.Flowering.04_complet)
-write.csv(table_prob_glm.Flowering.04_complet,file=paste(share_dir,"model_glm/glm_complet/loaded_as_factor/table_prob_glm_Flowering_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.Flowering.04_complet,file=paste(path_file_complet,"glm_Flowering_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.No_inflorescences.04_complet = get_table_prob_variable_glm(glm.No_inflorescences.04_complet)
-write.csv(table_prob_glm.No_inflorescences.04_complet,file=paste(share_dir,"model_glm/glm_complet/loaded_as_factor/table_prob_glm_No_inflorescences_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.No_inflorescences.04_complet,file=paste(path_file_complet,"glm_No_inflorescences_04.csv",sep=""), row.names = FALSE)
 
 
 # by_tree
@@ -782,11 +783,11 @@ for(tree in 1:length(trees)){
         write.csv(table_prob_vglm.Date_burst_daughter.04_complet_tree,file=path_final, row.names = FALSE)
     }
     
-    table_prob_glm.Flowering.04_complet = get_table_prob_variable_glm(glm.Flowering.04_complet)
+    table_prob_glm.Flowering.04_complet = get_table_prob_variable_glm(list_glm.Flowering.04_complet_tree[[name_tree]])
     path_final = paste(path_file_tree,"/table_prob_glm_Flowering_04.csv",sep="")
     write.csv(table_prob_glm.Flowering.04_complet,file=path_final, row.names = FALSE)
     
-    table_prob_glm.No_inflorescences.04_complet = get_table_prob_variable_glm(glm.No_inflorescences.04_complet)
+    table_prob_glm.No_inflorescences.04_complet = get_table_prob_variable_glm(list_glm.No_inflorescences.04_complet_tree[[name_tree]])
     path_final = paste(path_file_tree,"/table_prob_glm_No_inflorescences_04.csv",sep="")
     write.csv(table_prob_glm.No_inflorescences.04_complet,file=path_final, row.names = FALSE)
 }
@@ -795,18 +796,24 @@ for(tree in 1:length(trees)){
 ####################################
 # loaded as factor
 #___________________________________
+path_file_select = paste(share_dir,"model_glm/glm_selected/loaded_as_factor/table_prob_", sep="")
+
 table_prob_glm.burst.04_selected = get_table_prob_variable_glm(step.glm.burst.04)
-write.csv(table_prob_glm.burst.04_selected,file=paste(share_dir,"model_glm/glm_selected/loaded_as_factor/table_prob_glm_burst_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.burst.04_selected,file=paste(path_file_select,"glm_burst_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.Lateral_GU_daughter.04_selected = get_table_prob_variable_glm(step.glm.Lateral_GU_daughter.04)
-write.csv(table_prob_glm.Lateral_GU_daughter.04_selected,file=paste(share_dir,"model_glm/glm_selected/loaded_as_factor/table_prob_glm_Lateral_GU_daughter_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.Lateral_GU_daughter.04_selected,file=paste(path_file_select,"glm_Lateral_GU_daughter_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.no_lateral_GU.04_selected = get_table_prob_variable_glm(step.glm.no_lateral_GU.04)
-write.csv(table_prob_glm.no_lateral_GU.04_selected,file=paste(share_dir,"model_glm/glm_selected/loaded_as_factor/table_prob_glm_no_lateral_GU_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.no_lateral_GU.04_selected,file=paste(path_file_select,"glm_no_lateral_GU_04.csv",sep=""), row.names = FALSE)
+
 #table_prob_vglm.Date_burst_daughter.04_selected = get_table_prob_variable_glm(step.vglm.Date_burst_daughter.04)
-#write.csv(table_prob_vglm.Date_burst_daughter.04_selected,file=paste(share_dir,"model_glm/glm_selected/loaded_as_factor/table_prob_vglm_Date_burst_daughter_04.csv",sep=""), row.names = FALSE)
+#write.csv(table_prob_vglm.Date_burst_daughter.04_selected,file=paste(path_file_select,"vglm_Date_burst_daughter_04.csv",sep=""), row.names = FALSE)
+table_prob_vglm.Date_burst_daughter.04_complet = get_table_prob_variable_glm(vglm.Date_burst_daughter.04_complet)
+write.csv(table_prob_vglm.Date_burst_daughter.04_complet,file=paste(path_file_select,"vglm_Date_burst_daughter_04.csv",sep=""), row.names = FALSE)
+
 table_prob_glm.Flowering.04_selected = get_table_prob_variable_glm(step.glm.Flowering.04)
-write.csv(table_prob_glm.Flowering.04_selected,file=paste(share_dir,"model_glm/glm_selected/loaded_as_factor/table_prob_glm_Flowering_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.Flowering.04_selected,file=paste(path_file_select,"glm_Flowering_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.No_inflorescences.04_selected = get_table_prob_variable_glm(step.glm.No_inflorescences.04)
-write.csv(table_prob_glm.No_inflorescences.04_selected,file=paste(share_dir,"model_glm/glm_selected/loaded_as_factor/table_prob_glm_No_inflorescences_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.No_inflorescences.04_selected,file=paste(path_file_select,"No_inflorescences_04.csv",sep=""), row.names = FALSE)
 
 
 # by_tree
@@ -833,12 +840,17 @@ for(tree in 1:length(trees)){
         # path_final = paste(path_file_tree,"/table_prob_vglm_Date_burst_daughter_04.csv",sep="")
         # write.csv(table_prob_vglm.Date_burst_daughter.04_selected_tree,file=path_final, row.names = FALSE)
     # }
+    if( !is.null(list_vglm.Date_burst_daughter.04_complet_tree[[name_tree]]) ){
+        table_prob_vglm.Date_burst_daughter.04_complet_tree = get_table_prob_variable_glm(list_vglm.Date_burst_daughter.04_complet_tree[[name_tree]])
+        path_final = paste(path_file_tree,"/table_prob_vglm_Date_burst_daughter_04.csv",sep="")
+        write.csv(table_prob_vglm.Date_burst_daughter.04_complet_tree,file=path_final, row.names = FALSE)
+    }
     
-    table_prob_glm.Flowering.04_selected = get_table_prob_variable_glm(step.glm.Flowering.04)
+    table_prob_glm.Flowering.04_selected = get_table_prob_variable_glm(list_step.glm.Flowering.04_tree[[name_tree]])
     path_final = paste(path_file_tree,"/table_prob_glm_Flowering_04.csv",sep="")
     write.csv(table_prob_glm.Flowering.04_selected,file=path_final, row.names = FALSE)
     
-    table_prob_glm.No_inflorescences.04_selected = get_table_prob_variable_glm(step.glm.No_inflorescences.04)
+    table_prob_glm.No_inflorescences.04_selected = get_table_prob_variable_glm(list_step.glm.No_inflorescences.04_tree[[name_tree]])
     path_final = paste(path_file_tree,"/table_prob_glm_No_inflorescences_04.csv",sep="")
     write.csv(table_prob_glm.No_inflorescences.04_selected,file=path_final, row.names = FALSE)
 }

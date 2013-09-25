@@ -442,7 +442,7 @@ get_table_prob_variable_glm = function(myglm){
             probs_null = rep(0,length(other_data_probs[,1]))
             if( class(myglm)[1]=="vglm"){
                 for(i in 1:length(colnames(probs)) ){
-                    other_data_probs[colnames(probs)[i] ] = probs_null
+                    other_data_probs[colnames(probs)[i] ] = 1./length(colnames(probs))
                 }
             }else{
                 other_data_probs$probas = probs_null
@@ -458,20 +458,20 @@ return(data_probs)
 # loaded as factor
 #___________________________________
 table_prob_glm.burst.03_04_null = get_table_prob_variable_glm(glm.burst.03_04_null)
-write.csv(table_prob_glm.burst.03_04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_burst_03_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.burst.03_04_null,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_burst_03_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.Lateral_GU_daughter.03_04_null = get_table_prob_variable_glm(glm.Lateral_GU_daughter.03_04_null)
-write.csv(table_prob_glm.Lateral_GU_daughter.03_04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_Lateral_GU_daughter_03_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.Lateral_GU_daughter.03_04_null,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_Lateral_GU_daughter_03_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.no_lateral_GU.03_04_null = get_table_prob_variable_glm(glm.no_lateral_GU.03_04_null)
-write.csv(table_prob_glm.no_lateral_GU.03_04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_no_lateral_GU_03_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.no_lateral_GU.03_04_null,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_no_lateral_GU_03_04.csv",sep=""), row.names = FALSE)
 table_prob_vglm.Burst_date_child.03_04_null = get_table_prob_variable_glm(vglm.Burst_date_child.03_04_null)
-write.csv(table_prob_vglm.Burst_date_child.03_04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_vglm_Burst_date_child_03_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_vglm.Burst_date_child.03_04_null,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_vglm_Burst_date_child_03_04.csv",sep=""), row.names = FALSE)
 
 
 # by_tree
 #___________________________________
 for(tree in 1:length(trees)){
     name_tree = trees[tree]
-    path_file = paste(share_dir,"model_glm/glm_null/by_tree/",sep="")
+    path_file = paste(share_dir,"model_glm/model_nul/by_tree/",sep="")
     path_file_tree = paste(path_file,name_tree,sep="")
     
     table_prob_glm.burst.03_04_null_tree = get_table_prob_variable_glm(list_glm.burst.03_04_null_tree[[name_tree]])
@@ -567,4 +567,3 @@ for(tree in 1:length(trees)){
     #path_final = paste(path_file_tree,"/table_prob_vglm_Burst_date_child_03_04.csv",sep="")
     #write.csv(table_prob_vglm.Burst_date_child.03_04_selected_tree,file=path_final, row.names = FALSE)
 }
-

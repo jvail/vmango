@@ -9,6 +9,9 @@ path = shared_data(mangostat, share_path='share')
 states = load(path/'mtbp'/'dag'/'not_thinned'/'no_mixture'/'cogshall.lst')
 
 
+
+
+
 def get_dict_burst_period(list_name_states):
   """ 
   Return a dictionnary of burst period : keys are the name of the state and value is a tuple of start and end of period in this format : (add_year,month,day)
@@ -28,15 +31,15 @@ def get_dict_burst_period(list_name_states):
       raise ValueError("No 'D' or 'I' in the name")
     if name_state[1]=="E":
       start_month, end_month = 7, 10
-      end_day = 31
+      end_day = 30
       start_year, end_year = start_add_year, start_add_year
     elif name_state[1]=="I":
       start_month, end_month = 11, 2
       end_day = 28
       start_year, end_year = start_add_year, start_add_year+1
     elif name_state[1]=="L":
-      start_month, end_month = 3, 5
-      end_day = 31
+      start_month, end_month = 3, 6
+      end_day = 30
       start_year, end_year = start_add_year+1, start_add_year+1
     else : raise ValueError("No flush 'E','I' or 'L' ")
     dict_burst_period[name_state] = ((start_year,start_month,start_day) , (end_year,end_month,end_day))
@@ -87,7 +90,22 @@ def get_gaussien_way(begin_flush_date,end_flush_date,current_date):
       weeks_father_sons = (date_sons - current_date).days/7
   return date_sons
 
-def get_date(state, current_date, GAUSSIEN):
+from distribution_uc_date_per_month import simulate_month_in_period
+
+def get_empiric_distribution_way(begin_flush_date,current_date,SELECT_TREE,name,LOADED):
+  """ 
+  """
+  if current_date > begin_flush_date : 
+    begin_flush_date = current_date
+  month_sons = simulate_month_in_period(begin_flush_date,SELECT_TREE,name,LOADED)
+  if month_sons >=7 : 
+    year_sons = begin_flush_date.year
+  else : 
+    year_sons = begin_flush_date.year +1
+  date_sons = date(year_sons, month_sons, 15)
+  return date_sons
+
+def get_date(state, current_date, LAW_DATE, SELECT_TREE,name,LOADED):
   """ Return date of burst of sons for a given son's state 
   Parameters : 
     state : a string, state of the son
@@ -104,10 +122,12 @@ def get_date(state, current_date, GAUSSIEN):
     begin_flush_date = date(current_date.year+beg_date[0]-1,beg_date[1],beg_date[2]) # = begin_flush_date - timedelta(days=366)
     end_flush_date = date(current_date.year+end_date[0]-1,end_date[1],end_date[2])
   #
-  if not GAUSSIEN :
+  if LAW_DATE==0 :
     date_sons = get_uniform_way(begin_flush_date,end_flush_date,current_date)
-  else: # else we have a normal distribution
+  elif LAW_DATE==1: # else we have a normal distribution
     date_sons = get_gaussien_way(begin_flush_date,end_flush_date,current_date)
+  else : 
+    date_sons = get_empiric_distribution_way(begin_flush_date,current_date,SELECT_TREE,name,LOADED)
   return date_sons
 
 vegetative , inflorescence = range(2)

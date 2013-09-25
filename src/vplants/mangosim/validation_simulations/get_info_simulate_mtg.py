@@ -13,8 +13,8 @@ def load_obj(filename, dirname = '.'):
 #from openalea.deploy.shared_data import shared_data
 #import vplants.mangosim
 #share_dir = shared_data(vplants.mangosim, share_path = "share")
-#g = load_obj("mango_B12_asynchrony_pierre_002.bmtg", share_dir+"simulations_mangotree_model_pierre/Cogshall_B12/")
-#g = load_obj("mango_asynchrony_pierre.bmtg", "..")
+#g = load_obj("mango_B12_asynchrony_002.bmtg", share_dir+"simulations_mangotree_model_pierre/Cogshall_B12/")
+#g = load_obj("mango_asynchrony_glm.bmtg", "..")
 #features_names = g.property_names()
 
 from datetime import date
@@ -126,8 +126,8 @@ def get_nb_children_per_uc_cycle(g,cycle,ucs, ucs_in_extremity, nb_axe):
     children = g.children(i2)
     children_in_cycle = [j for j in children if get_uc_cycle(g,j)==cycle and g.label(j)!='Flower']
     nb_children_per_ucs.append(len(children_in_cycle))
-    import collections
-    nb_children_per_uc = dict( collections.Counter(nb_children_per_ucs) )
+  import collections
+  nb_children_per_uc = dict( collections.Counter(nb_children_per_ucs) )
   return nb_children_per_uc
 
 
@@ -147,6 +147,20 @@ def get_nb_descendant_per_axe_cycle(g,cycle, ucs_in_extremity):
   return nb_ucs_per_axe
 
 
+def get_nb_inflo_per_uc_cycle(g,cycle, ucs_in_extremity):
+  """ Return the number of inflorescences per Growth Unit
+  """
+  nb_inflo_per_uc = {}
+  nb_inflo_per_ucs = []
+  ucs_extremity_cycle = ucs_in_extremity[cycle]
+  for i in ucs_extremity_cycle:
+    children = g.children(i)
+    children_flo = [flo for flo in children if g.label(flo)=="Flower" and get_uc_cycle(g,flo)==cycle]
+    nb_inflo_per_ucs.append( len(children_flo) )
+  import collections
+  nb_inflo_per_uc = dict( collections.Counter(nb_inflo_per_ucs) )
+  return nb_inflo_per_uc
+
 
 def get_nb_uc_giving_inflorescence_cycle(g,cycle, ucs, ucs_in_extremity):
   """Return the number of unit growth at the end of the canopy (for a cycle) and giving inflorescences.
@@ -161,23 +175,6 @@ def get_nb_uc_giving_inflorescence_cycle(g,cycle, ucs, ucs_in_extremity):
       date_children_inflo = [g.property('burst_date')[j].year == 2000+cycle for j in children_inflo]
       if True in date_children_inflo : ucs_giving_inflo_cycle.append(i)
   return len(ucs_giving_inflo_cycle)
-
-
-#ucs_given_inflo_04 = [i for i in ucs_04 if g.property('nature')[i]==1]
-#extremity = []
-#for i in ucs_given_inflo_04:
-#    if not is_given_reiteration(i):
-#        children = g.children(i)
-#        children_veg = [j for j in children if g.label(j)!='Flower']
-#        if children_veg==[] : extremity.append(i)
-#        else :
-#            for k in children:
-#                if g.label(k)=='F' : extremity.append(i)
-#                cycles_children = [get_uc_cycle(i) for i in children if g.label(i)!='Flower']
-#                if 4+1 in cycles_children :
-#                    extremity.append(i)
-#                    break
-#extremity = list(set(extremity))
 
 
 def get_flowering_rate_cycle(g,cycle, ucs_in_extremity , nb_uc_giving_inflorescence):
@@ -241,41 +238,44 @@ def get_monthly_date_ucs_cycle(g,cycle, ucs):
 def extract_info_from_mtg(mtg):
     """
     """
-    ucs_03 = get_ucs_cycle(g,3)
-    ucs_04 = get_ucs_cycle(g,4)
-    ucs_05 = get_ucs_cycle(g,5)
+    ucs_03 = get_ucs_cycle(mtg,3)
+    ucs_04 = get_ucs_cycle(mtg,4)
+    ucs_05 = get_ucs_cycle(mtg,5)
     ucs = { 3 : ucs_03, 4 : ucs_04, 5 : ucs_05 }
-    ucs_03_in_extremity = get_ucs_cycle_in_extremity(g,3,ucs)
-    ucs_04_in_extremity = get_ucs_cycle_in_extremity(g,4,ucs)
-    ucs_05_in_extremity = get_ucs_cycle_in_extremity(g,5,ucs)
+    ucs_03_in_extremity = get_ucs_cycle_in_extremity(mtg,3,ucs)
+    ucs_04_in_extremity = get_ucs_cycle_in_extremity(mtg,4,ucs)
+    ucs_05_in_extremity = get_ucs_cycle_in_extremity(mtg,5,ucs)
     ucs_in_extremity = {3: ucs_03_in_extremity , 4: ucs_04_in_extremity ,5: ucs_05_in_extremity }
-    nb_ucs_04_in_extremity_apical_position = get_nb_ucs_cycle_in_extremity_apical_position(g,4,ucs_in_extremity )
-    nb_ucs_05_in_extremity_apical_position = get_nb_ucs_cycle_in_extremity_apical_position(g,5,ucs_in_extremity)
+    nb_ucs_04_in_extremity_apical_position = get_nb_ucs_cycle_in_extremity_apical_position(mtg,4,ucs_in_extremity )
+    nb_ucs_05_in_extremity_apical_position = get_nb_ucs_cycle_in_extremity_apical_position(mtg,5,ucs_in_extremity)
     nb_ucs_in_extremity_apical_position = { 4 : nb_ucs_04_in_extremity_apical_position, 5 : nb_ucs_05_in_extremity_apical_position }
-    terminal_apical_rate_04 = get_terminal_apical_rate_cycle(g,4,ucs_in_extremity,nb_ucs_in_extremity_apical_position)
-    terminal_apical_rate_05 = get_terminal_apical_rate_cycle(g,5,ucs_in_extremity,nb_ucs_in_extremity_apical_position)
+    terminal_apical_rate_04 = get_terminal_apical_rate_cycle(mtg,4,ucs_in_extremity,nb_ucs_in_extremity_apical_position)
+    terminal_apical_rate_05 = get_terminal_apical_rate_cycle(mtg,5,ucs_in_extremity,nb_ucs_in_extremity_apical_position)
     terminal_apical_rate = {4: terminal_apical_rate_04, 5:terminal_apical_rate_05}
-    nb_uc_giving_inflorescence_04 = get_nb_uc_giving_inflorescence_cycle(g,4,ucs,ucs_in_extremity)
-    nb_uc_giving_inflorescence_05 = get_nb_uc_giving_inflorescence_cycle(g,5,ucs,ucs_in_extremity)
+    nb_uc_giving_inflorescence_04 = get_nb_uc_giving_inflorescence_cycle(mtg,4,ucs,ucs_in_extremity)
+    nb_uc_giving_inflorescence_05 = get_nb_uc_giving_inflorescence_cycle(mtg,5,ucs,ucs_in_extremity)
     nb_uc_giving_inflorescence = { 4 : nb_uc_giving_inflorescence_04, 5 : nb_uc_giving_inflorescence_05 }
-    flowering_rate_04 = get_flowering_rate_cycle(g,4,ucs_in_extremity,nb_uc_giving_inflorescence)
-    flowering_rate_05 = get_flowering_rate_cycle(g,5,ucs_in_extremity,nb_uc_giving_inflorescence)
+    flowering_rate_04 = get_flowering_rate_cycle(mtg,4,ucs_in_extremity,nb_uc_giving_inflorescence)
+    flowering_rate_05 = get_flowering_rate_cycle(mtg,5,ucs_in_extremity,nb_uc_giving_inflorescence)
     flowering_rate = {4:flowering_rate_04, 5:flowering_rate_05}
-    nb_axe_04 = sum(get_nb_axe_cycle(g,4,ucs_in_extremity))
-    nb_axe_05 = sum(get_nb_axe_cycle(g,5,ucs_in_extremity))
-    nb_axe = { 4: get_nb_axe_cycle(g,4,ucs_in_extremity), 5: get_nb_axe_cycle(g,5,ucs_in_extremity) }
-    nb_children_per_uc_04 = get_nb_children_per_uc_cycle(g,4,ucs,ucs_in_extremity,nb_axe)
-    nb_children_per_uc_05 = get_nb_children_per_uc_cycle(g,5,ucs,ucs_in_extremity,nb_axe)
+    nb_inflo_per_uc_04 = get_nb_inflo_per_uc_cycle(mtg, 4, ucs_in_extremity)
+    nb_inflo_per_uc_05 = get_nb_inflo_per_uc_cycle(mtg, 5, ucs_in_extremity)
+    nb_inflo_per_uc = {4 : nb_inflo_per_uc_04, 5 : nb_inflo_per_uc_05 }
+    nb_axe_04 = sum(get_nb_axe_cycle(mtg,4,ucs_in_extremity))
+    nb_axe_05 = sum(get_nb_axe_cycle(mtg,5,ucs_in_extremity))
+    nb_axe = { 4: get_nb_axe_cycle(mtg,4,ucs_in_extremity), 5: get_nb_axe_cycle(mtg,5,ucs_in_extremity) }
+    nb_children_per_uc_04 = get_nb_children_per_uc_cycle(mtg,4,ucs,ucs_in_extremity,nb_axe)
+    nb_children_per_uc_05 = get_nb_children_per_uc_cycle(mtg,5,ucs,ucs_in_extremity,nb_axe)
     nb_children_per_uc = {4 : nb_children_per_uc_04, 5 : nb_children_per_uc_05}
-    nb_descendant_per_axe_04 = get_nb_descendant_per_axe_cycle(g,4,ucs_in_extremity)
-    nb_descendant_per_axe_05 = get_nb_descendant_per_axe_cycle(g,5,ucs_in_extremity)
+    nb_descendant_per_axe_04 = get_nb_descendant_per_axe_cycle(mtg,4,ucs_in_extremity)
+    nb_descendant_per_axe_05 = get_nb_descendant_per_axe_cycle(mtg,5,ucs_in_extremity)
     nb_descendant_per_axe = {4 : nb_descendant_per_axe_05, 5 : nb_descendant_per_axe_05 }
-    monthly_date_ucs_04 = get_monthly_date_ucs_cycle(g,4,ucs)
-    monthly_date_ucs_05 = get_monthly_date_ucs_cycle(g,5,ucs)
+    monthly_date_ucs_04 = get_monthly_date_ucs_cycle(mtg,4,ucs)
+    monthly_date_ucs_05 = get_monthly_date_ucs_cycle(mtg,5,ucs)
     monthly_date_ucs = {4: monthly_date_ucs_04, 5:monthly_date_ucs_05}
-    return g, ucs, ucs_in_extremity, nb_ucs_in_extremity_apical_position, terminal_apical_rate, nb_uc_giving_inflorescence, flowering_rate, nb_axe_04, nb_axe_05, nb_children_per_uc, nb_descendant_per_axe, monthly_date_ucs
+    return mtg, ucs, ucs_in_extremity, nb_ucs_in_extremity_apical_position, terminal_apical_rate, nb_uc_giving_inflorescence, flowering_rate, nb_inflo_per_uc, nb_axe_04, nb_axe_05, nb_children_per_uc, nb_descendant_per_axe, monthly_date_ucs
 	
-#(g, ucs, ucs_in_extremity, nb_ucs_in_extremity_apical_position, terminal_apical_rate, 
+#(mtg, ucs, ucs_in_extremity, nb_ucs_in_extremity_apical_position, terminal_apical_rate, 
 #  nb_uc_giving_inflorescence, flowering_rate, nb_axe_04, nb_axe_05, nb_children_per_uc, 
 #  nb_descendant_per_axe, monthly_date_ucs ) = extract_info_from_mtg(mtg)
 

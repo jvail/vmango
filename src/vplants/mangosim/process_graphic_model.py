@@ -9,18 +9,21 @@ def run():
    param = { 'EXPORT_MTG' : False, 'TREE' : 2}
    l = Lsystem('mango-asynchrony-model-pierre2.lpy')#l.EXPORT_MTG = True    #l.updateNamespace(param)
    l.derive()
+   return l.name
+
+
 
 
 def looprun(nb=1000):
    """ """
    for i in xrange(nb): 
       try :
-         run()	
+         name = run()	
          import shutil
-         shutil.copyfile( "mango_asynchrony_graphic_model.bmtg" , share_dir+"/simulation_mangotree/simulations_mangotree_graphic_model/nothinned_nomixture_identity/Cogshall_B12/mango_B12_asynchrony_{0:03d}.bmtg".format(i) )		 
+         shutil.copyfile( "mango_asynchrony_graphic_model.bmtg" , share_dir+"/simulation_mangotree/simulations_mangotree_graphic_model/nothinned_nomixture/"+name+"/mango_B12_asynchrony_{0:03d}.bmtg".format(i) )		 
       except :
          import traceback
          traceback.print_exc()
          pass
 #
-
+looprun()

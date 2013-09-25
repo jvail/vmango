@@ -13,7 +13,7 @@ def load_mtg(name='mango_mtg.pkl'):
 g = load_mtg()
 
 features_names = g.property_names()
-cogshall_trees = [(i,g.property('fr_load')[i]) for i, v in g.property('var').items() if v == 'cogshall']
+cogshall_trees = [(i,g.property('fr_load')[i],g.property('code')[i]) for i, v in g.property('var').items() if v == 'cogshall']
 
 
 def get_children_P_M(vertice):
@@ -49,8 +49,8 @@ def get_nature(vertice):
   """Return the nature of the vertice.
   """
   children = [g.label(c) for c in g.children(vertice)]
-  if 'F' in children : nature = 'F'
-  else : nature = 'V'
+  if 'F' in children : nature = 0
+  else : nature = 1
   return nature
 
 

@@ -64,10 +64,10 @@ def convert_listoflist_2_list(listoflist):
   return list
 
 ##### To verify if year means civil's year or cycle
-def get_date_for_year(year,tree=1):
-  tree_year = cogshall_trees_by_year(year,tree)[tree]
-  date_year = [date for i,date in g.property('date_burst').items() if i in tree_year]
-  return date_year
+#def get_date_for_year(year,tree=1):
+#  tree_year = cogshall_trees_by_year(year,tree)[tree]
+#  date_year = [date for i,date in g.property('date_burst').items() if i in tree_year]
+#  return date_year
 #date_04 = get_date_for_year(4)
 ##### return year of 2003 and 2004
 #####=====>> year means cycle
@@ -127,9 +127,9 @@ def get_histo_nb_inflo_lateral(data):
 ##### then >>> 
 #import matplotlib.pyplot as plt
 #plt.figure()
-#plt.hist(data_inflo_l_2cycles,normed=False)
-#plt.title("Distribution of number of lateral inflorescences, Cogshall variety")
-#plt.xlabel("Number of lateral inflorescences minus 1")
+#plt.hist(data_inflo_l_2cycles,normed=True)
+#plt.title("Distribution of number of lateral inflorescences, tree B12")
+#plt.xlabel("Number of lateral inflorescences in cycle 4 (minus 1)")
 #plt.ylabel("Count")
 #plt.show()
 #plt.axvline(lambda_2cycles , color = 'r', linestyle = "dashed", linewidth=2, label = "The parameter's value \n estimated")
@@ -138,4 +138,4 @@ def get_histo_nb_inflo_lateral(data):
 
 #dump_obj(lambda_2cycles,"estimation_lambda_nb_lateral_flowers.pkl")
 
-lambda_2cycles = load_obj("estimation_lambda_nb_lateral_flowers.pkl")
+lambda_2cycles = load_obj("estimation_lambda_nb_lateral_flowers.pkl", share_dir+"//parameters_data_for_graphic_model//Cogshall//")

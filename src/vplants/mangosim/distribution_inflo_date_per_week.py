@@ -129,7 +129,7 @@ def get_freq_date_inflo_per_week(trees = cogshall_trees):
 
 #dump_obj((freq_weeks_inflo_cogshall_loaded,freq_weeks_inflo_cogshall_notloaded),'freq_weeks_inflo.pkl')
 
-freq_weeks_inflo_cogshall_loaded,freq_weeks_inflo_cogshall_notloaded = load_obj('freq_weeks_inflo.pkl')
+freq_weeks_inflo_cogshall_loaded,freq_weeks_inflo_cogshall_notloaded = load_obj('freq_weeks_inflo.pkl', share_dir+"//parameters_data_for_graphic_model//Cogshall//")
 
 def simulation_week_inflo(LOADED = True):
   """Return an int which is the week after first august """
