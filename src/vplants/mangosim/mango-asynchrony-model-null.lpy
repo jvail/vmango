@@ -2,9 +2,9 @@ from openalea.plantgl.all import Text
 from transfert_mtg_to_lpy_for_glm import *
 from datetime import date, timedelta, datetime
 from math import floor, ceil
-import mango_asynchrony_simulation
-reload(mango_asynchrony_simulation)
-from mango_asynchrony_simulation import *
+import mango_asynchrony_simulation_model_null
+reload(mango_asynchrony_simulation_model_null)
+from mango_asynchrony_simulation_model_null import *
 
 
 tree, charge, name = cogshall_trees[TREE]
@@ -12,12 +12,15 @@ tree, charge, name = cogshall_trees[TREE]
 is_loaded = 1 if charge=='C' else 0
 vertice_trunk = tree + 3
 
-if SELECT_TREE :feature_tree = name 
-else : 
-  if is_loaded==1 : feature_tree = "loaded"
-  else : feature_tree = "notloaded"
+if SELECT_TREE :
+  if FEATURE_TREES : 
+    if is_loaded==1 : feature_tree = "loaded"
+    else : feature_tree = "notloaded"
+  else : 
+    feature_tree = name 
+else : feature_tree = None
 
-init_glm_table(dicts_files_glm, GLM_CHOICE , LOADED_FACTOR , feature_tree  )
+init_model_nul_table(dicts_files_glm,SELECT_TREE, feature_tree  )
 
 first_date = date(2003,6,1)
 last_date = date(2005,11,1)
@@ -33,13 +36,13 @@ def Start():
   global current_date
   global cycle
   current_date = first_date
-  cycle = get_cycle(current_date)
+  cycle = get_table_cycle(current_date)
 
 def EndEach():
   global current_date
   global cycle
   current_date += timedelta(days = 7)
-  cycle = get_cycle(current_date)
+  cycle = get_table_cycle(current_date)
 
 def End(lstring):
   if EXPORT_MTG:
@@ -60,13 +63,13 @@ def export_to_mtg(lstring):
   # Convert lstring into mtg
   mtg = axialtree2mtg(lstring,scales,None,parameters)
   # write it in the file
-  dump(mtg,open('mango_asynchrony_glm.bmtg','wb'),HIGHEST_PROTOCOL)
+  dump(mtg,open('mango_asynchrony_model_null.bmtg','wb'),HIGHEST_PROTOCOL)
 
 
 
 module B(vertice)
 module B_UC(order_k)
-module A(order, flushdate, position, position_ancestor, nature_ancestor, nature ) # represent bud of the plant
+module A(order, flushdate ) # represent bud of the plant
 module UC(order, burst_date, nature)
 module LeafSets(lradius, age, scale)
 module Flower(burst_date,order) # represent flower
@@ -107,47 +110,42 @@ B_A(order_k+1, position, nature):
   date_growth = first_date
   if date_growth <= current_date:
     nproduce /(144) B_UC(order_k)
-    No_lateral_next_cycle, date_child = set_values_variables_2003(is_loaded, position,nature)
+    No_lateral_next_cycle, date_child = set_values_variables_2003()
     if date_child!=None:
       if No_lateral_next_cycle>0:
         anglebetweensons = 360./(No_lateral_next_cycle)
         for child_lateral in xrange(No_lateral_next_cycle):
-          nproduce /(anglebetweensons) [&(60) A(0, date_child, 1, position,nature,nature)]
+          nproduce /(anglebetweensons) [&(60) A(0, date_child, nature)]
       if nature == 0:
         produce Flower(date(2003,9,1),0)
       else : 
-        produce A(0, date_child, 0, position,nature,nature)
+        produce A(0, date_child, nature)
     else :
       if nature ==0:
         produce Flower(date(2003,9,1),0)
 
-A(order, burst_date, position, position_ancestor, nature_ancestor, nature ):
+A(order, burst_date, nature ):
   if  burst_date <= current_date :
     burst_date = current_date
     nproduce /(144) UC(order, burst_date, nature)
-    Nb_child_cycle, date_burst_children, No_inflo, date_inflo, No_lateral_next_cycle, date_burst_child_next, new_position_ancestor,new_nature_ancestor, new_nature_mother = set_values_variables(cycle,is_loaded, burst_date, position, position_ancestor, nature_ancestor, nature)
-    if Nb_child_cycle >0:
-      if Nb_child_cycle >1:
-        anglebetweensons = 360./(Nb_child_cycle-1)
-        for child_lateral in xrange(Nb_child_cycle-1):
-          nproduce /(anglebetweensons) [&(60) A(order+1, date_burst_children, 1, new_position_ancestor,new_nature_ancestor,new_nature_mother)]
-      nproduce A(order+1, date_burst_children, 0, new_position_ancestor,new_nature_ancestor,new_nature_mother)
-    else : 
-      if No_inflo >0:
-        if No_inflo > 1:
-          anglebetweensons = 360./(No_lateral_next_cycle+No_inflo-1)            
-          for child_lateral in xrange(No_lateral_next_cycle):
-            nproduce /(anglebetweensons) [&(60) A(order+1, date_burst_child_next, 1, new_position_ancestor,new_nature_ancestor,new_nature_mother)]
-          for flowers in xrange(No_inflo-1):
-            nproduce /(anglebetweensons) [&(60) Flower(date_inflo,order+1)]
-        nproduce Flower(date_inflo,order+1)
-      else :
-        if date_burst_child_next!=None:
-          if No_lateral_next_cycle>0:
-            anglebetweensons = 360./(No_lateral_next_cycle)   
-            for child_lateral in xrange(No_lateral_next_cycle):
-              nproduce /(anglebetweensons) [&(60) A(order+1, date_burst_child_next, 1, new_position_ancestor,new_nature_ancestor,new_nature_mother)]
-          nproduce A(order+1, date_burst_child_next, 0, new_position_ancestor,new_nature_ancestor,new_nature_mother)
+    Nb_child, date_burst_children, No_inflo, date_inflo = set_values_variables(burst_date)
+    if No_inflo >0:
+      nature_child = 0
+      if No_inflo > 1:
+        anglebetweensons = 360./(Nb_child+No_inflo-1)            
+        for child_lateral in xrange(Nb_child):
+          nproduce /(anglebetweensons) [&(60) A(order+1, date_burst_children, nature_child)]
+        for flowers in xrange(No_inflo-1):
+          nproduce /(anglebetweensons) [&(60) Flower(date_inflo,order+1)]
+      nproduce Flower(date_inflo,order+1)
+    else :
+      if Nb_child > 0:
+        nature_child = 1
+        if Nb_child > 1:
+          anglebetweensons = 360./(Nb_child-1)   
+          for child_lateral in xrange(Nb_child-1):
+              nproduce /(anglebetweensons) [&(60) A(order+1, date_burst_children,nature_child)]
+        nproduce A(order+1, date_burst_children,nature_child)
 
 
 
@@ -237,7 +235,7 @@ __lpy_code_version__ = 1.1
 
 def __initialiseContext__(context):
 	context.options.setSelection('Early return when no matching',0)
-	scalars = [('TREE', 3, 0, 4), ('EXPORT_MTG', True), ('Geometry', None), ('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2), ('GLM', None), ('SELECT_TREE', False), ('GLM_CHOICE', 0, 0, 1), ('LOADED_FACTOR', False)]
+	scalars = [('TREE', 1, 0, 4), ('EXPORT_MTG', True), ('Geometry', None), ('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2), ('GLM', None), ('SELECT_TREE', False), ('FEATURE_TREES', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] is None : context[s[0]] = s[1]

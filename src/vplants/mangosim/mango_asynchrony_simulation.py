@@ -37,14 +37,14 @@ def get_dict_from_table(table_prob, family):
 #dict_table_prob_vglm_Burst_date_child_03_04 = get_dict_from_table(table_prob_vglm_Burst_date_child_03_04, "vglm")
 
 
-is_loaded = 1
-burst_date_mother = 10
-position_mother_L = 0
-position_ancestor_L = 0
-nature_ancestor_V = 0
-nature_mother_V = 1
-name_table_prob_glm = "glm_burst_04"
-name_table_prob_glm = "vglm_Date_burst_daughter_04"
+# is_loaded = 1
+# burst_date_mother = 10
+# position_mother_L = 0
+# position_ancestor_L = 0
+# nature_ancestor_V = 0
+# nature_mother_V = 1
+# name_table_prob_glm = "glm_burst_04"
+# name_table_prob_glm = "vglm_Date_burst_daughter_04"
 
 
 

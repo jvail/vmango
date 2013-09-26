@@ -1,5 +1,6 @@
 from transfert_mtg_to_lpy import *
 tree,charge, name = cogshall_trees[TREE]
+# 0 : "B14", 1 : "F2", 2 : "F6" , 3 : "B10", 4 : "B12"
 loaded = True if charge=='C' else False
 line_trunk = tree + 3
 
@@ -286,7 +287,7 @@ def __initialiseContext__(context):
 	Color_1.name = "Color_1"
 	context.turtle.setMaterial(1,Color_1)
 	context.options.setSelection('Early return when no matching',0)
-	scalars = [('TREE', 4, 0, 4), ('EXPORT_MTG', True), ('IDENTITY_LINK', False), ('MIXTURE', False), ('Distribution burst date GU', None), ('LAW_DATE', 2, 0, 2), ('SELECT_TREE', True), ('Geometry', None), ('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2)]
+	scalars = [('TREE', 3, 0, 4), ('EXPORT_MTG', True), ('Choice of graph', None), ('IDENTITY_LINK', False), ('MIXTURE', False), ('Distribution burst date GU', None), ('LAW_DATE', 2, 0, 2), ('SELECT_TREE', True), ('Geometry', None), ('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] is None : context[s[0]] = s[1]

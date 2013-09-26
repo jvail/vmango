@@ -103,6 +103,7 @@ def get_empiric_distribution_way(begin_flush_date,current_date,SELECT_TREE,name,
   else : 
     year_sons = begin_flush_date.year +1
   date_sons = date(year_sons, month_sons, 15)
+  if date_sons <= current_date : print "error children before mother..."
   return date_sons
 
 def get_date(state, current_date, LAW_DATE, SELECT_TREE,name,LOADED):
@@ -126,7 +127,7 @@ def get_date(state, current_date, LAW_DATE, SELECT_TREE,name,LOADED):
     date_sons = get_uniform_way(begin_flush_date,end_flush_date,current_date)
   elif LAW_DATE==1: # else we have a normal distribution
     date_sons = get_gaussien_way(begin_flush_date,end_flush_date,current_date)
-  else : 
+  else : # else we have an empiric distribution
     date_sons = get_empiric_distribution_way(begin_flush_date,current_date,SELECT_TREE,name,LOADED)
   return date_sons
 
