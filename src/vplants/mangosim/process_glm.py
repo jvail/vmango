@@ -9,18 +9,23 @@ def run():
    l.derive()
    return l.name
 
-path_file = "\\simulation_mangotree\\simulations_mangotree_glm\\glm_complet\\by_feature_loaded_tree\\"
+from os.path import join
+path_file = join(share_dir,"simulation_mangotree","simulations_mangotree_glm","glm_complet","by_feature_loaded_tree")
 
 def looprun(nb=1000):
    """ """
    for i in xrange(nb): 
       try :
-         name = run()	
-         import shutil
-         shutil.copyfile( "mango_asynchrony_glm.bmtg" , share_dir+ path_file +name+"\\mango_"+name+"_asynchrony_{0:03d}.bmtg".format(i) )		 
+         name = run()
+         outdir = join(path_file,name)
+         import shutil, os
+         if not os.path.exists(outdir):
+            os.makedirs(outdir)
+         shutil.copyfile( "mango_asynchrony_glm.bmtg" , join(outdir,"mango_"+name+"_asynchrony_{0:03d}.bmtg".format(i)) )		 
       except :
          import traceback
          traceback.print_exc()
          pass      
 #
-looprun()
+if __name__ == '__main__' :
+   looprun()

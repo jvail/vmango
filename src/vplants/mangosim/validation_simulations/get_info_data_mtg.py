@@ -508,7 +508,7 @@ def get_monthly_date_ucs_tree_cycle(tree,cycle):
     tree: integer in g.property('var')
     cycle: integer 4 or 5  
   Return : 
-    a dictionary, busrt date is 'year-month' but month is an integer"""
+    a dictionary, burst date is 'year-month' but month is an integer"""
   total_ucs_tree_cycle = get_total_ucs_tree_cycle(tree,cycle)
   monthly_date_ucs_tree_cycle = [order_uc_date(d) for i,d in g.property('date_burst').items() if i in total_ucs_tree_cycle]
   import collections
