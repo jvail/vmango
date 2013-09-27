@@ -1,0 +1,31 @@
+A la base de ce répertoire, on trouve des fichiers contenant des données extraites du MTG pour construire 
+les analyses qui génèrent les GLMs.
+
+Dans les fichiers csv du type "table_..._cogshall.csv" :
+    Les variables réponses commencent par une majuscule, les variables explicatives commencent par une minuscule.
+    Il y a une séparation des données par cycle et entre les cylces.
+        Au sein d'un cycle ("INSIDE"), les UCs mères choisies sont les UCs apparues au cycle concerné. 
+        Les UCs mères qui débourrent au cycle suivant sont considérées comme n'ayant pas débouré au cours du cycle.
+        Entre les cycles ("TRANSITION"), les UCs choisies sont les UCs terminales du cycle précédent
+        
+Dans le fichier "table_for_nul_model_cogshall.csv" :
+    Les variables réponses commencent par une majuscule, les variables explicatives commencent par une minuscule.
+    On ne considère plus le non débourrement des UCs qui produisent au cycle suivant.
+
+Dans les repertoires, glm_selected, glm_complet, model_nul, on retrouve les probas extraites des analyses GLM 
+pour chacune des variables réponses.
+    Les variables réponses sont données dans les noms des fichiers.  
+    Plusieurs jeu de probabilités ont été générés et stockés dans différents sous répertoires.
+        Pour les GLMs (glm_complet et glm_selected), on a effectué les GLMs sur différentes données réparties de la manière suivante :
+            - "by_all_trees" : avec les données de tous les arbres de la variété Cogshall
+            - "loaded" : avec les données des arbres chargés (B12, B10, F2)
+            - "notloaded" : avec les données des arbres non chargés (B14, F6)
+            - "B10" : avec les données de l'arbre B10 (chargé)
+            - "B12" : avec les données de l'arbre B12 (chargé)
+            - "B14" : avec les données de l'arbre B14 (non chargé)
+            - "F2" : avec les données de l'arbre F2 (chargé)
+            - "F6" : avec les données de l'arbre F6 (non chargé)
+        Pour le modèle nul, il y a la même configuration.
+
+TODO : lors de la simulation, pour chaque variable déterminer quel modèle améliore la simulation (nul, complet ou selected) 
+    ==> construire un modèle "best" pour chaque arbre, les arbres chargés et pour les arbres non chargés
