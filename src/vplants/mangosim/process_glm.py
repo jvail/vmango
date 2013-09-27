@@ -10,7 +10,7 @@ def run():
    return l.name
 
 from os.path import join
-path_file = join(share_dir,"simulation_mangotree","simulations_mangotree_glm","glm_complet","by_feature_loaded_tree")
+path_file = join(share_dir,"simulation_mangotree","simulations_mangotree_glm","glm_complet","is_loaded_as_factor")
 
 def looprun(nb=1000):
    """ """

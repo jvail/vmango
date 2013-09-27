@@ -63,10 +63,10 @@ def get_total_ucs_tree_cycle(tree, cycle):
 #  nb_ucs_veget_F2_04,nb_ucs_veget_F2_05,
 #  nb_ucs_veget_B14_04,nb_ucs_veget_B14_05,
 #  nb_ucs_veget_F6_04,nb_ucs_veget_F6_05), "total_number_ucs_tree_cycle.pkl")
-
+from os.path import join
 (nb_ucs_veget_B12_04,nb_ucs_veget_B12_05,nb_ucs_veget_B10_04,nb_ucs_veget_B10_05,
   nb_ucs_veget_F2_04,nb_ucs_veget_F2_05,nb_ucs_veget_B14_04,nb_ucs_veget_B14_05,
-  nb_ucs_veget_F6_04,nb_ucs_veget_F6_05) = load_obj("total_number_ucs_tree_cycle.pkl",share_dir+"info_mtg_doralice/")
+  nb_ucs_veget_F6_04,nb_ucs_veget_F6_05) = load_obj("total_number_ucs_tree_cycle.pkl",join(share_dir,"info_mtg_doralice"))
 
 #def is_given_type_of_reiteration(uc):
 #  """Check if a unit growth uc is a type of reiteration or not. It takes only the case when reiteration is between cycle (mother in cycle 4 and daugther in cycle 5)
@@ -156,7 +156,7 @@ def get_ucs_tree_cycle_in_extremity(tree, cycle):
 (nb_ucs_B12_04_in_extremity,nb_ucs_B12_05_in_extremity,nb_ucs_B10_04_in_extremity,
   nb_ucs_B10_05_in_extremity,nb_ucs_F2_04_in_extremity,nb_ucs_F2_05_in_extremity,
   nb_ucs_B14_04_in_extremity,nb_ucs_B14_05_in_extremity,nb_ucs_F6_04_in_extremity,
-  nb_ucs_F6_05_in_extremity) = load_obj("nb_ucs_tree_cycle_in_extremity.pkl",share_dir+"info_mtg_doralice/")
+  nb_ucs_F6_05_in_extremity) = load_obj( "nb_ucs_tree_cycle_in_extremity.pkl", join( share_dir, "info_mtg_doralice")
 
 nb_ucs_tree_cycle_in_extremity = {
   (71,4) : nb_ucs_B12_04_in_extremity,
@@ -352,6 +352,49 @@ def get_nb_descendant_per_axe_tree_cycle(tree,cycle):
 (nb_ucs_per_axe_B12_04,nb_ucs_per_axe_B12_05,nb_ucs_per_axe_B10_04,nb_ucs_per_axe_B10_05,
   nb_ucs_per_axe_F2_04,nb_ucs_per_axe_F2_05,nb_ucs_per_axe_B14_04,nb_ucs_per_axe_B14_05,
   nb_ucs_per_axe_F6_04,nb_ucs_per_axe_F6_05 )= load_obj("nb_ucs_per_axe_tree_cycle.pkl",share_dir+"info_mtg_doralice/")
+  
+
+#### Function not ready :   
+# def get_nb_inflo_per_uc_cycle(tree, cycle):
+  # """ Return the number of inflorescences per Growth Unit
+  # """
+  # nb_inflo_per_ucs = []
+  # uc_florifere = []
+  # ucs_extremity_cycle = get_ucs_tree_cycle_in_extremity(tree, cycle)
+  # for i in ucs_extremity_cycle:
+    # children = g.children(i)
+    # children_flo = [flo for flo in children if g.label(flo)=="F" and get_cycle_uc(flo)==cycle]
+    # nb_inflo = 0
+    # if len(children_flo) >0 :
+      # uc_florifere.append(children_flo[0])
+      # nb_inflo_t = g.property('nb_inflo_t')[children_flo]
+      # nb_inflo_l = g.property('nb_inflo_l')[children_flo]
+      # nb_inflo = int(nb_inflo_t) + int(nb_inflo_l)
+    # nb_inflo_per_ucs.append( nb_inflo )
+  # import collections
+  # nb_inflo_per_uc = dict( collections.Counter(nb_inflo_per_ucs) )
+  # return nb_inflo_per_uc
+  
+###### Loaded Cogshall trees :
+#nb_inflo_per_uc_B12_04 = get_nb_inflo_per_uc_cycle(71,4)
+#nb_inflo_per_uc_B12_05 = get_nb_inflo_per_uc_cycle(71,5)
+#nb_inflo_per_uc_B10_04 = get_nb_inflo_per_uc_cycle(173,4)
+#nb_inflo_per_uc_B10_05 = get_nb_inflo_per_uc_cycle(173,5)
+#nb_inflo_per_uc_F2_04 = get_nb_inflo_per_uc_cycle(772,4)
+#nb_inflo_per_uc_F2_05 = get_nb_inflo_per_uc_cycle(772,5)
+###### Not loaded Cogshall trees :
+#nb_inflo_per_uc_B14_04 = get_nb_inflo_per_uc_cycle(1,4)
+#nb_inflo_per_uc_B14_05 = get_nb_inflo_per_uc_cycle(1,5)
+#nb_inflo_per_uc_F6_04 = get_nb_inflo_per_uc_cycle(1191,4)
+#nb_inflo_per_uc_F6_05 = get_nb_inflo_per_uc_cycle(1191,5)
+
+#dump_obj( (nb_inflo_per_uc_B12_04,nb_inflo_per_uc_B12_05,
+#  nb_inflo_per_uc_B10_04,nb_inflo_per_uc_B10_05,
+#  nb_inflo_per_uc_F2_04,nb_inflo_per_uc_F2_05,
+#  nb_inflo_per_uc_B14_04,nb_inflo_per_uc_B14_05,
+#  nb_inflo_per_uc_F6_04,nb_inflo_per_uc_F6_04), "nb_inflo_per_uc_tree_cycle.pkl")
+
+  
 
 def get_nb_uc_giving_inflorescence_tree_cycle(tree,cycle):
   """Return the number of unit growth at the end of the canopy and giving inflorescences for a tree and for a cycle.

@@ -483,32 +483,34 @@ return(data_probs)
 
 # For all trees
 #___________________________________
+path_file = paste(share_dir,"model_glm/model_nul/by_all_trees", sep="")
+
 table_prob_glm.burst.04_nul = get_table_prob_variable_glm(glm.burst.04_nul)
-write.csv(table_prob_glm.burst.04_nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_burst_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.burst.04_nul,file=paste(path_file,"/table_prob_glm_burst_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.Lateral_GU_daughter.04_nul = get_table_prob_variable_glm(glm.Lateral_GU_daughter.04_nul)
-write.csv(table_prob_glm.Lateral_GU_daughter.04_nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_Lateral_GU_daughter_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.Lateral_GU_daughter.04_nul,file=paste(path_file,"/table_prob_glm_Lateral_GU_daughter_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.no_lateral_GU.04_nul = get_table_prob_variable_glm(glm.no_lateral_GU.04_nul)
-write.csv(table_prob_glm.no_lateral_GU.04_nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_no_lateral_GU_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.no_lateral_GU.04_nul,file=paste(path_file,"/table_prob_glm_no_lateral_GU_04.csv",sep=""), row.names = FALSE)
 table_prob_vglm.Delta_burst_date_child.04_nul = get_table_prob_variable_glm(vglm.Delta_burst_date_child.04_nul)
-write.csv(table_prob_vglm.Delta_burst_date_child.04_nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_vglm_Delta_burst_date_child_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_vglm.Delta_burst_date_child.04_nul,file=paste(path_file,"/table_prob_vglm_Delta_burst_date_child_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.Flowering.04_nul = get_table_prob_variable_glm(glm.Flowering.04_nul)
-write.csv(table_prob_glm.Flowering.04_nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_Flowering_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.Flowering.04_nul,file=paste(path_file,"/table_prob_glm_Flowering_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.No_inflorescences.04_nul = get_table_prob_variable_glm(glm.No_inflorescences.04_nul)
-write.csv(table_prob_glm.No_inflorescences.04_nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_No_inflorescences_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.No_inflorescences.04_nul,file=paste(path_file,"/table_prob_glm_No_inflorescences_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.burst.05_nul = get_table_prob_variable_glm(glm.burst.05_nul)
-write.csv(table_prob_glm.burst.05_nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_burst_05.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.burst.05_nul,file=paste(path_file,"/table_prob_glm_burst_05.csv",sep=""), row.names = FALSE)
 table_prob_glm.Lateral_GU_daughter.05_nul = get_table_prob_variable_glm(glm.Lateral_GU_daughter.05_nul)
-write.csv(table_prob_glm.Lateral_GU_daughter.05_nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_Lateral_GU_daughter_05.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.Lateral_GU_daughter.05_nul,file=paste(path_file,"/table_prob_glm_Lateral_GU_daughter_05.csv",sep=""), row.names = FALSE)
 table_prob_glm.no_lateral_GU.05_nul = get_table_prob_variable_glm(glm.no_lateral_GU.05_nul)
-write.csv(table_prob_glm.no_lateral_GU.05_nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_no_lateral_GU_05.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.no_lateral_GU.05_nul,file=paste(path_file,"/table_prob_glm_no_lateral_GU_05.csv",sep=""), row.names = FALSE)
 table_prob_vglm.Delta_burst_date_child.05_nul = get_table_prob_variable_glm(vglm.Delta_burst_date_child.05_nul)
-write.csv(table_prob_vglm.Delta_burst_date_child.05_nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_vglm_Delta_burst_date_child_05.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_vglm.Delta_burst_date_child.05_nul,file=paste(path_file,"/table_prob_vglm_Delta_burst_date_child_05.csv",sep=""), row.names = FALSE)
 table_prob_glm.Flowering.05_nul = get_table_prob_variable_glm(glm.Flowering.05_nul)
-write.csv(table_prob_glm.Flowering.05_nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_Flowering_05.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.Flowering.05_nul,file=paste(path_file,"/table_prob_glm_Flowering_05.csv",sep=""), row.names = FALSE)
 table_prob_glm.No_inflorescences.05_nul = get_table_prob_variable_glm(glm.No_inflorescences.05_nul)
-write.csv(table_prob_glm.No_inflorescences.05_nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_glm_No_inflorescences_05.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.No_inflorescences.05_nul,file=paste(path_file,"/table_prob_glm_No_inflorescences_05.csv",sep=""), row.names = FALSE)
 table_prob_vglm.Flowering_Date.nul = get_table_prob_variable_glm(vglm.Flowering_Date.nul)
-write.csv(table_prob_vglm.Flowering_Date.nul,file=paste(share_dir,"model_glm/model_nul/by_all_trees/table_prob_vglm_Flowering_Date.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_vglm.Flowering_Date.nul,file=paste(path_file,"/table_prob_vglm_Flowering_Date.csv",sep=""), row.names = FALSE)
 
 
 
@@ -516,7 +518,7 @@ write.csv(table_prob_vglm.Flowering_Date.nul,file=paste(share_dir,"model_glm/mod
 #___________________________________
 for(tree in 1:length(trees)){
     name_tree = trees[tree]
-    path_file = paste(share_dir,"model_glm/model_nul/by_tree/",sep="")
+    path_file = paste(share_dir,"model_glm/model_nul/",sep="")
     path_file_tree = paste(path_file,name_tree,sep="")
     
     table_prob_glm.burst.04_nul_tree = get_table_prob_variable_glm(list_glm.burst.04_nul_tree[[name_tree]])

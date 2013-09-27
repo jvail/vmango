@@ -31,18 +31,18 @@ g = load_mtg()
 features_names = g.property_names()
 cogshall_trees = [i for i, v in g.property('var').items() if v == 'cogshall']
 
-#####first fonction test
-def cogshall_trees_by_year(year,trees = cogshall_trees):
-  """It's a list of list """
-  if type(trees) == int: trees = [trees]
-  cogshall_trees_year = {}
-  for tree in trees:
-    ucs = g.components_at_scale(tree,scale=4)
-    cogshall_trees_year[tree] = [i for i,y in g.property('year').items() if (y==year) and (i in ucs)]
-  return cogshall_trees_year
-##### return empty list for year == 3
-#cycle03 = [i for i,year in g.property('year').items() if year==3]
-#cogshall03 = [i for index,i in enumerate(g.components_at_scale(1,scale=4)) if i in cycle03]
+# #####first fonction test
+# def cogshall_trees_by_year(year,trees = cogshall_trees):
+  # """It's a list of list """
+  # if type(trees) == int: trees = [trees]
+  # cogshall_trees_year = {}
+  # for tree in trees:
+    # ucs = g.components_at_scale(tree,scale=4)
+    # cogshall_trees_year[tree] = [i for i,y in g.property('year').items() if (y==year) and (i in ucs)]
+  # return cogshall_trees_year
+# ##### return empty list for year == 3
+# #cycle03 = [i for i,year in g.property('year').items() if year==3]
+# #cogshall03 = [i for index,i in enumerate(g.components_at_scale(1,scale=4)) if i in cycle03]
 
 ##### second fonction : the good one because it return no empty list for cycle 03
 def get_trees_by_year(year,trees = cogshall_trees):

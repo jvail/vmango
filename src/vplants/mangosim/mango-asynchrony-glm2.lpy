@@ -237,7 +237,7 @@ __lpy_code_version__ = 1.1
 
 def __initialiseContext__(context):
 	context.options.setSelection('Early return when no matching',0)
-	scalars = [('TREE', 3, 0, 4), ('EXPORT_MTG', True), ('Geometry', None), ('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2), ('GLM', None), ('SELECT_TREE', False), ('GLM_CHOICE', 0, 0, 1), ('LOADED_FACTOR', False)]
+	scalars = [('TREE', 1, 0, 4), ('EXPORT_MTG', True), ('Geometry', None), ('LEAFY', True), ('Elasticity', 0.03, 0.0, 1.0, 2), ('GLM', None), ('SELECT_TREE', False), ('GLM_CHOICE', 0, 0, 1), ('LOADED_FACTOR', True)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] is None : context[s[0]] = s[1]

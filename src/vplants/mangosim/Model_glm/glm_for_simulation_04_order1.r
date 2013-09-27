@@ -742,7 +742,7 @@ return(data_probs)
 ####################################
 # loaded as factor
 #___________________________________
-path_file_complet = paste(share_dir,"model_glm/glm_complet/loaded_as_factor/table_prob_",sep="")
+path_file_complet = paste(share_dir,"model_glm/glm_complet/by_all_trees/table_prob_",sep="")
 
 table_prob_glm.burst.04_complet = get_table_prob_variable_glm(glm.burst.04_complet)
 write.csv(table_prob_glm.burst.04_complet,file=paste(path_file_complet,"glm_burst_04.csv",sep=""), row.names = FALSE)
@@ -762,7 +762,7 @@ write.csv(table_prob_glm.No_inflorescences.04_complet,file=paste(path_file_compl
 #___________________________________
 for(tree in 1:length(trees)){
     name_tree = trees[tree]
-    path_file = paste(share_dir,"model_glm/glm_complet/by_tree/",sep="")
+    path_file = paste(share_dir,"model_glm/glm_complet/",sep="")
     path_file_tree = paste(path_file,name_tree,sep="")
     
     table_prob_glm.burst.04_complet_tree = get_table_prob_variable_glm(list_glm.burst.04_complet_tree[[name_tree]])
@@ -796,7 +796,7 @@ for(tree in 1:length(trees)){
 ####################################
 # loaded as factor
 #___________________________________
-path_file_select = paste(share_dir,"model_glm/glm_selected/loaded_as_factor/table_prob_", sep="")
+path_file_select = paste(share_dir,"model_glm/glm_selected/by_all_trees/table_prob_", sep="")
 
 table_prob_glm.burst.04_selected = get_table_prob_variable_glm(step.glm.burst.04)
 write.csv(table_prob_glm.burst.04_selected,file=paste(path_file_select,"glm_burst_04.csv",sep=""), row.names = FALSE)
@@ -820,7 +820,7 @@ write.csv(table_prob_glm.No_inflorescences.04_selected,file=paste(path_file_sele
 #___________________________________
 for(tree in 1:length(trees)){
     name_tree = trees[tree]
-    path_file = paste(share_dir,"model_glm/glm_selected/by_tree/",sep="")
+    path_file = paste(share_dir,"model_glm/glm_selected/",sep="")
     path_file_tree = paste(path_file,name_tree,sep="")
     
     table_prob_glm.burst.04_selected_tree = get_table_prob_variable_glm(list_step.glm.burst.04_tree[[name_tree]])

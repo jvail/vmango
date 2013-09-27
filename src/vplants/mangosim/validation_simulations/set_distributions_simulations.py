@@ -15,12 +15,13 @@ def load_obj(filename, dirname = '.'):
   else:
     raise ValueError(filename)
 
-path_graphic_model = "/simulation_mangotree/simulations_mangotree_graphic_model\\"
-path_glm = "\\simulation_mangotree\\simulations_mangotree_glm\\"
-path_model_null = "\\simulation_mangotree\\simulations_mangotree_model_null\\"
+from os.path import join
+path_graphic_model = join("simulation_mangotree","simulations_mangotree_graphic_model")
+path_glm = join("simulation_mangotree","simulations_mangotree_glm")
+path_model_null = join("simulation_mangotree","simulations_mangotree_model_null")
 
-path_choice_file = "\\glm_complet\\by_feature_loaded_tree\\"
-final_path = path_glm + path_choice_file
+path_choice_file = join("glm_complet","is_loaded_as_factor")
+final_path = join( path_glm , path_choice_file)
 name_tree = "F2"
 
 def loop_get_from_simulation(nb=1000):
@@ -49,7 +50,7 @@ def loop_get_from_simulation(nb=1000):
    monthly_date_ucs_05 = []
    for i in xrange(nb): 
       try :
-         sim_g = load_obj( name_tree+"\\mango_"+ name_tree +"_asynchrony_{0:03d}.bmtg".format(i), share_dir + final_path )		 
+         sim_g = load_obj( "mango_"+ name_tree +"_asynchrony_{0:03d}.bmtg".format(i), join(share_dir , final_path, name_tree) )		 
       except :
          import traceback
          traceback.print_exc()
@@ -139,7 +140,7 @@ dump_obj( (nb_ucs_04 , nb_ucs_05 ,
      nb_axe_04 , nb_axe_05 , 
      nb_children_per_uc_04 , nb_children_per_uc_05 , 
      nb_descendant_per_axe_04,nb_descendant_per_axe_05,
-     monthly_date_ucs_04 , monthly_date_ucs_05 ), "info_simulate_" + name_tree + "_mtg.pkl", share_dir + final_path)
+     monthly_date_ucs_04 , monthly_date_ucs_05 ), "info_simulate_" + name_tree + "_mtg.pkl", join(share_dir , final_path) ) 
 
 
 

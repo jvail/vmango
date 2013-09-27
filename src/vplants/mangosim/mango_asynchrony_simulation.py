@@ -83,7 +83,7 @@ response_variables = {"glm_burst_03_04" : "binomial", "glm_Lateral_GU_daughter_0
     "glm_burst_04_05" : "binomial", "glm_Lateral_GU_daughter_04_05" : "binomial", "glm_no_lateral_GU_04_05" : "poisson", "vglm_Burst_date_child_04_05" : "vglm", 
     "glm_burst_05" : "binomial", "glm_Lateral_GU_daughter_05" : "binomial", "glm_no_lateral_GU_05" : "poisson", "vglm_Date_burst_daughter_05" : "vglm", 
     "glm_Flowering_05" : "binomial", "glm_No_inflorescences_05" : "poisson" }
-
+from os.path import join
 def get_dict_files_glm(GLM_CHOICE=0, is_loaded_factor=False, feature_tree="B12", key_dict=response_variables):
   """
   The aim is to get all tables of probability of variables
@@ -95,19 +95,19 @@ def get_dict_files_glm(GLM_CHOICE=0, is_loaded_factor=False, feature_tree="B12",
       if False, is_loaded is not as factor in glm ==> glm for each tree, for loaded trees or for not loaded trees
   """
   if GLM_CHOICE==0 : # glm complet
-    path_file = share_dir+"/model_glm/glm_complet/"
+    path_file = join(share_dir, "model_glm", "glm_complet")
   #elif GLM_CHOICE==1: # glm null
     #path_file = share_dir+"/model_glm/glm_null/"
   else : # glm selected
-    path_file = share_dir+"/model_glm/glm_selected/"
+    path_file = join(share_dir,"model_glm","glm_selected")
   if is_loaded_factor: # glm with factor is_loaded
-    sub_file = "loaded_as_factor/"
+    sub_file = "by_all_trees"
   else : # glm for each tree and for loaded and not loaded trees
-    sub_file = "by_tree/"+feature_tree+"/"
+    sub_file = feature_tree
   key_dict_files = key_dict.keys()
   dict_files = {}
   for key in key_dict_files:
-    final_path = path_file + sub_file+ "table_prob_"+key+".csv"
+    final_path = join(path_file , sub_file, "table_prob_"+key+".csv")
     dict_files[key]= (pd.read_csv(final_path),key_dict[key])
   return dict_files
 
@@ -176,13 +176,13 @@ def set_values_variables(cycle,is_loaded, burst_date_mother, position_mother, po
     if 6<= burst_date_mother.month <=12 : 
       if 6<= Month_burst_child <=12 :
         date_burst_children = date(burst_date_mother.year,Month_burst_child,15)
-        if date_burst_children < burst_date_mother : print "error children before mother..."
+        #if date_burst_children < burst_date_mother : print "error children before mother..."
       else : 
         date_burst_children = date(burst_date_mother.year+1,Month_burst_child,15)
-        if date_burst_children < burst_date_mother : print "error children before mother..."
+        #if date_burst_children < burst_date_mother : print "error children before mother..."
     else :
       date_burst_children = date(burst_date_mother.year,Month_burst_child,15)
-      if date_burst_children < burst_date_mother : print "error children before mother..."
+      #if date_burst_children < burst_date_mother : print "error children before mother..."
     Lateral = get_value_simulation_glm_distribution("glm_Lateral_GU_daughter_0"+str(cycle),is_loaded,burst_date_mother.month, position_mother,position_ancestor,nature_ancestor,nature_mother)
     if Lateral:
       No_lateral = get_value_simulation_glm_distribution("glm_no_lateral_GU_0"+str(cycle),is_loaded,burst_date_mother.month, position_mother,position_ancestor,nature_ancestor,nature_mother)
@@ -203,17 +203,17 @@ def set_values_variables(cycle,is_loaded, burst_date_mother, position_mother, po
         if 6<= burst_date_mother.month <=12:
           if 6<= Month_burst_child_next_cycle <=12:
             date_burst_child_next = date(burst_date_mother.year+1, Month_burst_child_next_cycle,15)
-            if date_burst_child_next < burst_date_mother : print "error children before mother..."
+            #if date_burst_child_next < burst_date_mother : print "error children before mother..."
           else : 
             date_burst_child_next = date(burst_date_mother.year+2, Month_burst_child_next_cycle,15)
-            if date_burst_child_next < burst_date_mother : print "error children before mother..."
+            #if date_burst_child_next < burst_date_mother : print "error children before mother..."
         else : 
           if 6<= Month_burst_child_next_cycle <=12:
             date_burst_child_next = date(burst_date_mother.year, Month_burst_child_next_cycle,15)
-            if date_burst_child_next < burst_date_mother : print "error children before mother..."
+            #if date_burst_child_next < burst_date_mother : print "error children before mother..."
           else : 
             date_burst_child_next = date(burst_date_mother.year+1, Month_burst_child_next_cycle,15)
-            if date_burst_child_next < burst_date_mother : print "error children before mother..."
+            #if date_burst_child_next < burst_date_mother : print "error children before mother..."
         Lateral_next_cycle = get_value_simulation_glm_distribution("glm_Lateral_GU_daughter_04_05",is_loaded, burst_date_mother.month, position_mother,position_ancestor,new_nature_ancestor,new_nature_mother)
         if Lateral_next_cycle:
           No_lateral_next_cycle = get_value_simulation_glm_distribution("glm_no_lateral_GU_04_05",is_loaded, burst_date_mother.month, position_mother,position_ancestor,new_nature_ancestor,new_nature_mother)
