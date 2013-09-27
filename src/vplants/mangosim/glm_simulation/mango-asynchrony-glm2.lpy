@@ -17,7 +17,7 @@ else :
   if is_loaded==1 : feature_tree = "loaded"
   else : feature_tree = "notloaded"
 
-init_glm_table(dicts_files_glm, GLM_CHOICE , LOADED_FACTOR , feature_tree  )
+init_glm_table( GLM_CHOICE , LOADED_FACTOR , feature_tree  )
 
 first_date = date(2003,6,1)
 last_date = date(2005,11,1)

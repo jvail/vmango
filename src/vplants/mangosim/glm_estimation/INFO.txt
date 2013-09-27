@@ -1,0 +1,2 @@
+mettre le principe des fichiers
+et les fonction principale utilisé pour un non utilsateur de R

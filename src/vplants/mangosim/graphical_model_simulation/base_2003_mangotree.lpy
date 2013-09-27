@@ -4,7 +4,7 @@ from transfert_mtg_to_lpy import *
 from datetime import date
 
 
-tree = cogshall_trees[TREE]
+tree, charge, name = cogshall_trees[TREE]
 line_trunk = tree + 3
 
 order_max = 11

@@ -1,0 +1,35 @@
+
+
+
+    - get_info_data_mtg.py :
+        A partir du mtg Doralice, on récupère les critères de validation : 
+            - "total_number_ucs_tree_cycle" : le nombre d'UCs produites au cours d'un cycle et par arbre.
+    
+            - "nb_ucs_tree_cycle_in_extremity" : le nombre d'UCs terminales produites à la fin du cycle et par arbre
+            
+            - "nb_ucs_tree_cycle_in_extremity_apical_position" : le nombre d'UCs terminales en position apicale produites à la fin du cycle et par arbre
+            
+            - "nb_axe_tree_cycle" : le nombre total des premières UCs du cycle et par arbre
+            
+            - "nb_children_per_uc_tree_cycle" : le nombre d'UCs produites par UC mère au cours d'un cycle et par arbre
+            
+            - "nb_ucs_per_axe_tree_cycle" : le nombre d'enfants produits par UC ancêtre pour un cycle et un arbre
+            
+            - "nb_uc_giving_inflorescence_tree_cycle" : le nombre d'UCs florifères par cycle et par arbre
+            
+            - "flowering_rate_tree_cycle" : le taux de floraison par cycle et par arbre
+            
+            - "terminal_apical_rate_tree_cycle" : le taux d'UCs terminales en position apicale par cycle et par arbre
+            
+            - "monthly_date_ucs_tree_cycle" : le nombre d'UCs produites par mois pour un cycle et pour un arbre
+            
+    - get_info_simulate_mtg.py :
+        A partir d'un mtg simulé, il contient les fonctions qui permettent de récupérer les critères de validations.
+        (même liste)
+        
+    - process_distributions_simulations.py : 
+        Pour les 1 000 mtg simulés, on récupère les critères de validation et on les sauve.
+        
+    - plot_distributions_simulations.py:
+        en cours d'élaboratrion
+        

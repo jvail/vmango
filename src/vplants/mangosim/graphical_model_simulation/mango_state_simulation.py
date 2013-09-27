@@ -3,13 +3,30 @@ from random import randint
 import numpy as np
 
 from vplants.statistic import *
-from vplants import mangostat
-from openalea.deploy.shared_data import shared_data
-path = shared_data(mangostat, share_path='share')
-states = load(path/'mtbp'/'dag'/'not_thinned'/'no_mixture'/'cogshall.lst')
 
 
-
+def get_distribution_states(MIXTURE=False , loaded=True, IDENTITY_LINK =False) : 
+    from vplants import mangostat
+    from openalea.deploy.shared_data import shared_data
+    path = shared_data(mangostat, share_path='share')
+    if MIXTURE :
+      if loaded :
+        dist = load(path/'mtbp'/'dag'/'not_thinned'/'mixture'/'cogshall.dst')
+        states = load(path/'mtbp'/'dag'/'not_thinned'/'mixture'/'cogshall.lst')
+      else : 
+        dist = load(path/'mtbp'/'dag'/'thinned'/'mixture'/'cogshall.dst')
+        states = load(path/'mtbp'/'dag'/'thinned'/'mixture'/'cogshall.lst')
+    else:
+      if loaded:
+        if IDENTITY_LINK :
+          dist = load(path/'mtbp'/'dag'/'not_thinned'/'no_mixture'/'cogshall-bis.dst')
+        else :
+          dist = load(path/'mtbp'/'dag'/'not_thinned'/'no_mixture'/'cogshall.dst')
+        states = load(path/'mtbp'/'dag'/'not_thinned'/'no_mixture'/'cogshall.lst')
+      else:
+        dist = load(path/'mtbp'/'dag'/'thinned'/'no_mixture'/'cogshall.dst')
+        states = load(path/'mtbp'/'dag'/'thinned'/'no_mixture'/'cogshall.lst')
+    return dist, states
 
 
 def get_dict_burst_period(list_name_states):
@@ -45,7 +62,7 @@ def get_dict_burst_period(list_name_states):
     dict_burst_period[name_state] = ((start_year,start_month,start_day) , (end_year,end_month,end_day))
   return dict_burst_period
 
-burst_period = get_dict_burst_period(states)
+#
 
 def get_uniform_way(begin_flush_date,end_flush_date,current_date):
   """
@@ -90,7 +107,7 @@ def get_gaussien_way(begin_flush_date,end_flush_date,current_date):
       weeks_father_sons = (date_sons - current_date).days/7
   return date_sons
 
-from distribution_uc_date_per_month import simulate_month_in_period
+from simulate_distribution_uc_date_per_month import simulate_month_in_period
 
 def get_empiric_distribution_way(begin_flush_date,current_date,SELECT_TREE,name,LOADED):
   """ 
@@ -106,7 +123,7 @@ def get_empiric_distribution_way(begin_flush_date,current_date,SELECT_TREE,name,
   if date_sons <= current_date : print "error children before mother..."
   return date_sons
 
-def get_date(state, current_date, LAW_DATE, SELECT_TREE,name,LOADED):
+def get_date(state, current_date, burst_period,LAW_DATE, SELECT_TREE,name,LOADED):
   """ Return date of burst of sons for a given son's state 
   Parameters : 
     state : a string, state of the son
@@ -156,40 +173,24 @@ def set_order_appearance(list_name_states):
 
 
 
-late2early = set_order_appearance(states)
-early2late = list(reversed(late2early))
 
-def get_apical_state(sons):
+
+
+def get_apical_state(sons, states, late2earlystates):
   """It gives the state which will be place in apical position and gives liste of states in lateral position """
   apical_state, lateral_position_states = (None, [])
   if sum(sons) != 0 : 
     dict_sons = dict(zip(states,sons))
-    for a_state in early2late:
-      if dict_sons[a_state] > 0:
-        apical_state = a_state
-        break
-    lateral_position_states = [state for state in late2early if (state != apical_state and dict_sons[state] > 0)]
+    lateral_position_states = [state for state in late2earlystates if dict_sons[state] > 0]
+    apical_state = lateral_position_states.pop(-1)
   return (apical_state, lateral_position_states)
 
 
 
-# import numpy as np
-
-def get_nb_lateral_flowers(state):
-  """For an inflorescence state, it gives the number of lateral flowers. 
-  """
-  if state[0]=="V" or state[0]=="F":
-    nb_lateral_flowers = 0
-  elif state[2]=="T": # only one flower in apical position
-    nb_lateral_flowers = 0
-  elif state[2]=="L": # flowers in lateral position
-    nb_lateral_flowers = np.random.poisson(1.02,1)[0] + 1 # parameter lambda=1.02 where estimated by the mtg
-  else: # there are no flowers
-    nb_lateral_flowers = 0
-  return nb_lateral_flowers
+from simulation_nb_lateral_flowers import get_nb_lateral_flowers
 
 
-from distribution_inflo_date_per_week import simulation_week_inflo
+from simulate_distribution_date_inflo import simulation_week_inflo
 
 def get_date_flowers(current_date,LOADED):
   """it gives a date of burst flowers """

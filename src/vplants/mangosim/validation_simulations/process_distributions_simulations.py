@@ -20,9 +20,9 @@ path_graphic_model = join("simulation_mangotree","simulations_mangotree_graphic_
 path_glm = join("simulation_mangotree","simulations_mangotree_glm")
 path_model_null = join("simulation_mangotree","simulations_mangotree_model_null")
 
-path_choice_file = join("glm_complet","is_loaded_as_factor")
+path_choice_file = join("glm_complet","by_all_trees")
 final_path = join( path_glm , path_choice_file)
-name_tree = "F2"
+name_tree = "B10"
 
 def loop_get_from_simulation(nb=1000):
    """ """

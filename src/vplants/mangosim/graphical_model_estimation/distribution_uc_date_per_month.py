@@ -1,53 +1,14 @@
-from openalea.deploy.shared_data import shared_data
-import vplants.mangosim
-share_dir = shared_data(vplants.mangosim, share_path = "share")
+from vplants.mangosim.tools import *
+from vplants.mangosim.repository import *
 
 from datetime import date
-import numpy as np
 
-def load_obj(filename, dirname = '.'):
-  import cPickle as pickle
-  import os
-  gfname =os.path.join(dirname,filename)
-  if os.path.exists(gfname ):
-    pkl_file = open(gfname,'rb')
-    obj = pickle.load(pkl_file)
-    pkl_file.close()
-    return obj
-  else:
-    raise ValueError(gfname)
-
-def dump_obj(obj,filename, dirname = '.'):
-  import cPickle as pickle
-  import os
-  gfname =os.path.join(dirname,filename)
-  pkl_file = open(gfname,'wb')
-  pickle.dump(obj,pkl_file)
-  pkl_file.close()
-
-
-def load_mtg(name = 'mango_mtg.pkl'):
-  g = load_obj(name,share_dir)
-  return g
-
-g = load_mtg()
-
-features_names = g.property_names()
-
-cogshall_trees = [i for i, v in g.property('var').items() if v == 'cogshall']
-fruit_loaded_prop = g.property('fr_load') 
-cogshall_notloaded_trees = [i for i in cogshall_trees if fruit_loaded_prop[i] == 'NC']
-cogshall_loaded_trees = [i for i in cogshall_trees if fruit_loaded_prop[i] == 'C']
 
 #ucs_B12 = [i for i in g.components_at_scale(71,scale=4)]
 #ucs_B12_04 = [i for i,y in g.property('year').items() if y==4 and i in ucs_B12]
 ##### to check if inflorescences are counting
 #[(i,c) for i,c in g.property('code').items() if i in ucs_B12_04] # ==> yes they are counting
 
-Month = {'janv' : 1, 'fev' : 2, 'mars' : 3,
-         'avril' : 4, 'mai' : 5, 'juin' : 6,
-         'juil' : 7, 'aout' : 8, 'sept' : 9,
-         'oct' : 10, 'nov' : 11, 'dec' : 12 }
 
 def set_datetime_type(string):
   """From string = 'month-year', it return a date from datetime : datetime.date(year,month,day) """
@@ -55,7 +16,6 @@ def set_datetime_type(string):
   order_ucs_date = date(2000+int(y),Month[m],15)
   return order_ucs_date
 
-beg_end_period = {'E' : (7,8,9,10), 'I' : (11,12,1,2), 'L' : (3,4,5,6)}
 
 def get_ucs_burst_period_trees(trees = cogshall_loaded_trees, period = 'E') :
   """
@@ -94,22 +54,6 @@ def set_proba_monthly_in_period_trees(ucs_burst_period_trees = None, trees = cog
       dict_proba_monthly_in_period[month]=0
   return dict_proba_monthly_in_period
   
-########## Cogshall loaded trees
-## count UCs
-ucs_burst_E_loaded_trees = get_ucs_burst_period_trees(cogshall_loaded_trees,'E')
-ucs_burst_I_loaded_trees = get_ucs_burst_period_trees(cogshall_loaded_trees,'I')
-ucs_burst_L_loaded_trees = get_ucs_burst_period_trees(cogshall_loaded_trees,'L')
-dict_ucs_burst_period_loaded_trees = { 'E' : ucs_burst_E_loaded_trees, 'I' : ucs_burst_I_loaded_trees, 'L' : ucs_burst_L_loaded_trees}
-## probability of monthy occurence
-probas_monthly_E_loaded_trees = set_proba_monthly_in_period_trees(dict_ucs_burst_period_loaded_trees)
-
-
-periods = ['E','I','L']
-from copy import deepcopy
-trees_Cogshall_variety = deepcopy(cogshall_trees)
-trees_Cogshall_variety.append( deepcopy( cogshall_loaded_trees))
-trees_Cogshall_variety.append( deepcopy( cogshall_notloaded_trees))
-dict_trees_variety = {"cog" : trees_Cogshall_variety}
 
 def loop_dump_proba_monthly_variety(dict_trees_variety = dict_trees_variety, variety = "cog"):
   """
@@ -124,44 +68,38 @@ def loop_dump_proba_monthly_variety(dict_trees_variety = dict_trees_variety, var
     if type(trees)==int : dict_probas_monthly_variety[g.property('code')[trees]] = dict_probas_monthly
     elif len(trees)==3 : dict_probas_monthly_variety["C"] = dict_probas_monthly
     else : dict_probas_monthly_variety["NC"] = dict_probas_monthly
-  dump_obj(dict_probas_monthly_variety, "dict_probas_monthly_for_period_"+variety+".pkl", share_dir +"//parameters_data_for_graphic_model//Cogshall//")
-
-
-#loop_dump_proba_monthly_variety(dict_trees_variety = dict_trees_variety, variety = "cog")
-dict_proba_monthly_for_period = load_obj("dict_probas_monthly_for_period_cog.pkl", share_dir +"//parameters_data_for_graphic_model//Cogshall//")
+  dump_obj(dict_probas_monthly_variety, "dict_probas_monthly_for_period_"+variety+".pkl", join( share_dir, "parameters_data_for_graphic_model","Cogshall" ) )
 
 
 
-def simulate_month_in_period(begin_flush_date,SELECT_TREE,name,LOADED):
-  """
-  """
-  month = None
-  period = [key for key, value in beg_end_period.items() if begin_flush_date.month in beg_end_period[key] ][0]
-  if SELECT_TREE:
-    probas_monthly = dict_proba_monthly_for_period[name][period]
-  else :
-    if LOADED :
-      probas_monthly = dict_proba_monthly_for_period['C'][period]
-    else:
-      probas_monthly = dict_proba_monthly_for_period['NC'][period]
-  proba_cumsum = list(np.cumsum(probas_monthly.values()))
-  uniform =  np.random.rand() #print str(uniform)
-  for ind in xrange(len(probas_monthly.keys())):
-    if uniform < proba_cumsum[ind]: 
-      month = probas_monthly.keys()[ind]
-      break
-  return month
+def estimate() :
+    """
+    """
+    ########## Cogshall loaded trees
+    ## count UCs
+    ucs_burst_E_loaded_trees = get_ucs_burst_period_trees(cogshall_loaded_trees,'E')
+    ucs_burst_I_loaded_trees = get_ucs_burst_period_trees(cogshall_loaded_trees,'I')
+    ucs_burst_L_loaded_trees = get_ucs_burst_period_trees(cogshall_loaded_trees,'L')
+    dict_ucs_burst_period_loaded_trees = { 'E' : ucs_burst_E_loaded_trees, 'I' : ucs_burst_I_loaded_trees, 'L' : ucs_burst_L_loaded_trees}
+    ## probability of monthy occurence
+    probas_monthly_E_loaded_trees = set_proba_monthly_in_period_trees(dict_ucs_burst_period_loaded_trees)
+    #
+    periods = ['E','I','L']
+    from copy import deepcopy
+    trees_Cogshall_variety = deepcopy(cogshall_trees)
+    trees_Cogshall_variety.append( deepcopy( cogshall_loaded_trees))
+    trees_Cogshall_variety.append( deepcopy( cogshall_notloaded_trees))
+    dict_trees_variety = {"cog" : trees_Cogshall_variety}
+    loop_dump_proba_monthly_variety(dict_trees_variety = dict_trees_variety, variety = "cog")
+    
 
+if __name__=="__main__" : 
+    print "estimation de la distribution des UCs par mois et par periode"
+    estimate()
 
-
-
-
-
-
-
-
-
-
+    
+    
+dict_proba_monthly_for_period = load_obj( dict_probas_monthly_for_period_cog_file )
 
 
 

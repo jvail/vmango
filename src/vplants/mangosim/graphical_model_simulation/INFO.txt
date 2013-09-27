@@ -1,0 +1,15 @@
+Ce dossier contient différent fichiers servant à la simulation d'un manguier à partir des modèles graphiques.
+    
+    Fichier L-Py :
+
+        - "mango-asynchrony-model-graphic.lpy" : Simulation d'une branche à partir d'un bourgeons d'un certain état
+    
+        - "base_2003_mangotree.lpy" : Regénération de la structure d'un manguier choisi de la base jusqu'à la fin du cycle 3
+    
+        - "mango-asynchrony-model-graphic2.lpy" : Assemblage des deux modèles de croissance précédentes
+    
+    Fichier Python : 
+    
+        - "transfert_mtg_to_lpy.py" : 
+        Contient ...
+    

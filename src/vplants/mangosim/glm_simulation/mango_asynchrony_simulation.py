@@ -130,7 +130,7 @@ def set_dicts_files_glm():
 dicts_files_glm = set_dicts_files_glm()
 
 dict_table_glm = {}
-def init_glm_table(dicts_files_glm , GLM_CHOICE=1, is_loaded_factor=True, feature_tree=None):
+def init_glm_table( GLM_CHOICE=1, is_loaded_factor=True, feature_tree=None):
    """
    Parameters : 
     GLM_CHOICE : integer (0, 1 or 2), 

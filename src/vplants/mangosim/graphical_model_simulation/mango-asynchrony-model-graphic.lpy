@@ -1,0 +1,234 @@
+labels = {
+        0: "V", # Vegetative, unknown flush
+        1: "IIV", # Vegetative, immediate flush 1 (very rare) or 2
+        2: "ILV", # Vegetative, immediate flush 3
+        3: "DEV", # Vegetative, one-year delayed flush 1
+        4: "DIV", # Vegetative, one-year delayed flush 2
+        5: "DLV", # Vegetative, one-year delayed flush 3
+        6: "F",  # Flowering with unknown position of flower, unknown flush (only possibility for flushes)
+        7: "IIT", # Terminal flower and no lateral flower, immediate flush 2 
+        8: "ILT", # Terminal flower and no lateral flower, immediate flush 3 
+        9: "DIT", # Terminal flower and no lateral flower, one-year delayed flush 1 (very rare) or 2
+        10: "DLT", # Terminal flower and no lateral flower, one-year delayed flush 3
+        11: "IIL", # "Lateral flower", immediate flush 2 or 3 (rare)
+        12: "DIL"  # "Lateral flower", one-year delayed (mostly flush 2)
+}
+
+from vplants.statistic import *
+
+
+from openalea.plantgl.all import Text
+from datetime import date, timedelta
+from math import floor, ceil
+from mango_state_simulation import *
+
+dist, states = get_distribution_states(  )
+late2early = set_order_appearance(states)
+
+first_date = date(2003,5,1)
+last_date = date(2005,4,1)
+
+total_weeks = ceil((last_date -first_date).days/7.)
+daystep = 7
+nbsteps = ceil((last_date -first_date).days/float(daystep))
+current_date = first_date
+
+
+nature = None
+vegetative , inflorescence = range(2)
+no_sons = None
+
+def Start():
+  global current_date
+  current_date = first_date
+
+def EndEach():
+  global current_date
+  current_date += timedelta(days = 7)
+
+
+module A(flushdate, order, state) # represent Apex of the plant
+module Flower(date_flowers) # represente flower
+
+
+Axiom: 
+  produce G  A(first_date, 0, "F")
+
+derivation length: total_weeks
+production:
+
+A(burst_date, order, state):
+  if  burst_date <= current_date :
+    burst_date = current_date
+    nature_father = get_nature(state) # gives the nature self (vegetative or inflorescence)
+    nproduce /(144) UC(burst_date, order, nature_father )
+    sons = dist[state].simulate() # calculates sons' number for a state
+    dict_sons = dict(zip(states,sons))
+    nb_lateral_flowers = get_nb_lateral_flowers(state)
+    total_sons = sum(sons) + nb_lateral_flowers # gives total numbers of sons & possible nb of lateral flower
+    
+    if total_sons > 1:
+      if nature_father == inflorescence:
+        anglebetweensons = 360./(total_sons)
+      else:
+        anglebetweensons = 360./(total_sons-1)
+    else:
+      anglebetweensons = 0
+    
+    if nature_father == inflorescence:
+      for sons_state in late2early:
+        if dict_sons[sons_state] > 0:
+          date_sons = get_date(sons_state,current_date,GAUSSIEN)
+          if dict_sons[sons_state] > 1:
+            for i in range(1,dict_sons[sons_state]+1):
+              nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
+          elif dict_sons[sons_state] == 1:
+            nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
+      date_flowers = get_date_flowers(current_date,LOADED) 
+      if nb_lateral_flowers > 0:
+        for i in range(1, nb_lateral_flowers+1):
+          nproduce /(anglebetweensons) [&(60) Flower(date_flowers)]
+      produce Flower(date_flowers)
+    
+    elif nature_father == vegetative:
+      apical_state, lateral_states = get_apical_state(sons,late2early)
+      if len(lateral_states) > 0:
+        for sons_state in lateral_states: # for each state in lateral position do
+          date_sons = get_date(sons_state,current_date,GAUSSIEN) # calculate the burst date of the son 
+          if dict_sons[sons_state] > 1:
+            for i in range(1,dict_sons[sons_state]+1):
+              nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
+          elif dict_sons[sons_state] == 1:
+            nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, sons_state)]
+      if not apical_state is None :
+        date_sons = get_date(apical_state,current_date,GAUSSIEN) # calculate the burst date of the apical son
+        if dict_sons[apical_state] > 1:
+          for i in range(1,dict_sons[apical_state]):
+             nproduce /(anglebetweensons) [&(60) A(date_sons,order+1, apical_state)]
+        produce A(date_sons,order+1, apical_state)
+
+Flower(x):
+  day_age = (current_date - x).days
+  flower_max_age = 120
+  if day_age > flower_max_age:
+    produce *
+
+interpretation:
+maximum depth: 10
+
+UC(x,o,n):
+  day_age = (current_date - x).days
+  week_age = day_age/7
+  
+  lradius = radius(min(1.,1.-(week_age/ float(total_weeks))))
+  scale = 1
+  produce ,(2 if n == vegetative else 3) _(lradius) LeafSets(lradius, week_age, scale)
+
+LeafSets(lradius, age, scale):
+  ds = scale / 10.
+  if LEAFY and age < 56 :
+    phy = 137.5
+    nproduce @Gc  F(ds) Leaf(0,lradius, leafsize(0.1), scale ) 
+    nbleaf, dl = (ceil((scale-ds)*5),2*ds)
+    for i in xrange(1,int(nbleaf)):
+      nproduce nF(dl,ds) Leaf(phy*i,lradius, leafsize(0.1+0.1*i ), scale )
+    nproduce F(ds) @Ge
+    for i in xrange(1,4):
+      nproduce Leaf(phy*i,lradius, leafsize(1),scale )
+  else:
+    produce  @Gc nF(1,0.1) @Ge
+
+Flower(x) :
+  day_age = (current_date - x).days
+  produce FlowerRepr(day_age, x.year+x.month+x.day)
+
+FlowerRepr(day_age,s) :
+  growth_duration = 21.
+  flower_growth_duration = 21.
+  scale = min(1,day_age/growth_duration)
+  if LEAFY:
+    import random as rd
+    rdstate = rd.getstate()
+    rd.seed(s)
+    flower_radius = 0 if day_age < growth_duration else 0.04*min(1,(day_age-flower_growth_duration)/flower_growth_duration)
+    nproduce [
+    if day_age > growth_duration :  nproduce @Tp(0,0,-1) @Ts(inflo_elasticity(min(1,(day_age-growth_duration)/40.))) 
+    nproduce ,(4) _(0.01) F(0.1)
+    nbflower = 4
+    nbelem = int(floor(10 * scale))
+    for i in xrange(10-nbelem,10):
+       nproduce    F(0.1) [ /(randint(0,180))
+       for j in xrange(nbflower):
+           nproduce [ /(j*90)  &(randint(70,110)) F(inflo_radius(i*0.1)) 
+           if flower_radius > 0: nproduce ,(4) @O(flower_radius) 
+           nproduce ]
+       nproduce ]
+    nproduce F(0.1)
+    if flower_radius > 0: nproduce ,(4) @O(0.04) 
+    nproduce ]
+    rd.setstate(rdstate)
+  else:
+    scale = 0.3
+    produce ,(4) _(inflo_radius(0))F(scale,inflo_radius(1))
+
+# Setup  tropism and legend
+# Note that the 2D legend cause a crash of lpy when recording the animation
+G --> @Tp(0,0,1) @Ts(Elasticity) [ -(90),(3) f(2) @g(Text('date: '+str(current_date),(5,5,0.9),True))] 
+
+Leaf(angle, radius, length, scale ) --> [ /(angle) &(90)  f(radius) @Ge @Gc @v &(10) Sweep(leafpath,leafsection,length*scale,length*scale/10,scale,leafdiam)]
+
+
+endlsystem
+###### INITIALISATION ######
+
+__lpy_code_version__ = 1.1
+
+def __initialiseContext__(context):
+	context.animation_timestep = 0.137
+	context.options.setSelection('Early return when no matching',0)
+	scalars = [('LEAFY', True), ('GAUSSIEN', True), ('Elasticity', 0.05, 0.0, 0.1, 2), ('LOADED', True)]
+	context["__scalars__"] = scalars
+	for s in scalars:
+		if not s[1] is None : context[s[0]] = s[1]
+	import openalea.plantgl.all as pgl
+	leafsize = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.431282, 1),(0.324129, 0.436757, 1),(0.408886, 0.416427, 1),(0.412274, 0.708684, 1),(0.844357, 0.703533, 1),(1, 0.246499, 1)]) , 
+	    )
+	leafsize.name = "leafsize"
+	import openalea.plantgl.all as pgl
+	leafpath = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.5, 0, 1),(-0.145022, -0.0735931, 1),(0.0844156, -0.212121, 1),(0.123377, -0.497835, 1)]) , 
+	    )
+	leafpath.name = "leafpath"
+	leafsection = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.201299, 0.231602, 1),(-0.253247, 0.181818, 1),(-0.166667, 0, 1),(-0.0196652, -0.0165724, 1),(0.00408221, 0.0220172, 1),(0.0454545, -0.0151515, 1),(0.214286, -0.012987, 1),(0.383117, 0.164502, 1),(0.344156, 0.24026, 1)]) , 
+	    )
+	leafsection.name = "leafsection"
+	leafdiam = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.017316, 1),(0.167909, 0.309417, 1),(0.666667, 0.217373, 1),(1, 0, 1)]) , 
+	    )
+	leafdiam.name = "leafdiam"
+	inflo_radius = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.160173, 1),(0.393939, 0.151515, 1),(0.735931, 0.0649351, 1),(1, 0.025974, 1)]) , 
+	    )
+	inflo_radius.name = "inflo_radius"
+	inflo_elasticity = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.0278664, 1),(0.341991, 0.034632, 1),(0.675325, 0.04329, 1),(1, 0.252183, 1)]) , 
+	    )
+	inflo_elasticity.name = "inflo_elasticity"
+	radius = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.107326, 1),(0.192635, 0.0975655, 1),(0.457142, 0.000244746, 1),(1, 0.026087, 1)]) , 
+	    )
+	radius.name = "radius"
+	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel1'},[('Function',leafsize),('Curve2D',leafpath),('Curve2D',leafsection),('Function',leafdiam),('Function',inflo_radius),('Function',inflo_elasticity),('Function',radius)])
+	parameterset = [panel_0,]
+	context["__functions__"] = [('leafsize',leafsize),('leafdiam',leafdiam),('inflo_radius',inflo_radius),('inflo_elasticity',inflo_elasticity),('radius',radius),]
+	context["__curves__"] = [('leafpath',leafpath),('leafsection',leafsection),]
+	context["__parameterset__"] = parameterset
+	context["leafsize"] = pgl.QuantisedFunction(leafsize)
+	context["leafpath"] = leafpath
+	context["leafsection"] = leafsection
+	context["leafdiam"] = pgl.QuantisedFunction(leafdiam)
+	context["inflo_radius"] = pgl.QuantisedFunction(inflo_radius)
+	context["inflo_elasticity"] = pgl.QuantisedFunction(inflo_elasticity)
+	context["radius"] = pgl.QuantisedFunction(radius)

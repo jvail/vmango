@@ -1,35 +1,7 @@
-from openalea.deploy.shared_data import shared_data
-import vplants.mangosim
-share_dir = shared_data(vplants.mangosim, share_path = "share")
+from vplants.mangosim.tools import *
+from vplants.mangosim.repository import *
 
-def load_obj(filename, dirname = '.'):
-  import cPickle as pickle
-  import os
-  gfname =os.path.join(dirname,filename)
-  if os.path.exists(gfname ):
-    pkl_file = open(gfname,'rb')
-    obj = pickle.load(pkl_file)
-    pkl_file.close()
-    return obj
-  else:
-    raise ValueError(filename)
 
-def dump_obj(obj,filename, dirname = '.'):
-  import cPickle as pickle
-  import os
-  gfname =os.path.join(dirname,filename)
-  pkl_file = open(gfname,'wb')
-  pickle.dump(obj,pkl_file)
-  pkl_file.close()
-
-def load_mtg(name = 'mango_mtg.pkl'):
-  g = load_obj(name,share_dir)
-  return g
-
-g = load_mtg()
-
-features_names = g.property_names()
-cogshall_trees = [i for i, v in g.property('var').items() if v == 'cogshall']
 
 # #####first fonction test
 # def cogshall_trees_by_year(year,trees = cogshall_trees):
@@ -92,12 +64,39 @@ def get_nb_inflo_lateral_by_year(year,variety='cogshall'):
 ##### but gives empty list
 ##### that normal because there are no informations for cycle 03
 
-#nb_inflo_l_04 =  get_nb_inflo_lateral_by_year(4)
-## len_no_number = len([i for i,nb in enumerate(nb_inflo_l_04) if nb==''])
-## index04 = [i for i,nb in enumerate(nb_inflo_l_04) if nb=='']
-## codes_no_number04 = [code for i,code in g.property('code').items() if i in index04]
-#nb_inflo_l_05 = get_nb_inflo_lateral_by_year(5)
 
+
+def estimate():
+    """
+    """
+    g = load_mtg()
+    features_names = g.property_names()
+    cogshall_trees = [i for i, v in g.property('var').items() if v == 'cogshall']
+    nb_inflo_l_04 =  get_nb_inflo_lateral_by_year(4)
+    nb_inflo_l_05 = get_nb_inflo_lateral_by_year(5)
+    ## len_no_number = len([i for i,nb in enumerate(nb_inflo_l_04) if nb==''])
+    ## index04 = [i for i,nb in enumerate(nb_inflo_l_04) if nb=='']
+    ## codes_no_number04 = [code for i,code in g.property('code').items() if i in index04]
+    ##### To estimate the parameter lambda, we have to modifie the data :
+    data_inflo_l_04 = [x-1 for x in nb_inflo_l_04]
+    data_inflo_l_05 = [x-1 for x in nb_inflo_l_05]
+    from numpy import average,var
+    lambda04 = average(data_inflo_l_04)
+    lambda05 = average(data_inflo_l_05)
+    ##### To verify if mean is closed to variance:
+    #var04 = var(data_inflo_l_04)
+    #var05 = var(data_inflo_l_05)
+    ##### It is not really, ==> in R, fit lambda with a glm and family="quasipoisson"
+    ##### The cycle 04, il less fitting than the cycle 05. And the parameters are close, so we take the two cycles.
+    data_inflo_l_2cycles = data_inflo_l_04 + data_inflo_l_05
+    lambda_2cycles = average(data_inflo_l_2cycles)
+    dump_obj(lambda_2cycles, estimation_lambda_nb_lateral_flowers_file )
+
+if __name__=="__main__":
+    print "estimation du parammètre de poisson pour le nombre d'inflorescences latérale"
+    estimate()
+
+lambda_2cycles = load_obj( estimation_lambda_nb_lateral_flowers_file )
 
 def get_histo_nb_inflo_lateral(data):
   """To have the frequency of each number of lateral inflorescence """
@@ -107,22 +106,6 @@ def get_histo_nb_inflo_lateral(data):
 #keys = get_histo_nb_inflo_lateral(nb_inflo_l_04).keys()
 #values = get_histo_nb_inflo_lateral(nb_inflo_l_04).values()  
 
-
-##### To estimate the parameter lambda, we have to modifie the data :
-#data_inflo_l_04 = [x-1 for x in nb_inflo_l_04]
-#data_inflo_l_05 = [x-1 for x in nb_inflo_l_05]
-
-#from numpy import average,var
-#lambda04 = average(data_inflo_l_04)
-#lambda05 = average(data_inflo_l_05)
-##### To verify if mean is closed to variance:
-#var04 = var(data_inflo_l_04)
-#var05 = var(data_inflo_l_05)
-##### It is not really, ==> in R, fit lambda with a glm and family="quasipoisson"
-##### The cycle 04, il less fitting than the cycle 05. And the parameters are close, so we take the two cycles.
-
-#data_inflo_l_2cycles = data_inflo_l_04 + data_inflo_l_05
-#lambda_2cycles = average(data_inflo_l_2cycles)
 ##### to see a histogram of these data, cmd : ipython --pylab
 ##### then >>> 
 #import matplotlib.pyplot as plt
@@ -136,6 +119,3 @@ def get_histo_nb_inflo_lateral(data):
 #plt.legend()
 
 
-#dump_obj(lambda_2cycles,"estimation_lambda_nb_lateral_flowers.pkl")
-
-lambda_2cycles = load_obj("estimation_lambda_nb_lateral_flowers.pkl", share_dir+"//parameters_data_for_graphic_model//Cogshall//")

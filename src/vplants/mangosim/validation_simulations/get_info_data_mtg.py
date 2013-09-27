@@ -1,26 +1,5 @@
-from openalea.deploy.shared_data import shared_data
-import vplants.mangosim
-share_dir = shared_data(vplants.mangosim, share_path = "share")
-
-def load_obj(filename, dirname = '.'):
-  import cPickle as pickle
-  import os
-  gfname =os.path.join(dirname,filename)
-  if os.path.exists(gfname ):
-    pkl_file = open(gfname,'rb')
-    obj = pickle.load(pkl_file)
-    pkl_file.close()
-    return obj
-  else:
-    raise ValueError(filename)
-
-def dump_obj(obj,filename, dirname = '.'):
-  import cPickle as pickle
-  import os
-  gfname =os.path.join(dirname,filename)
-  pkl_file = open(gfname,'wb')
-  pickle.dump(obj,pkl_file)
-  pkl_file.close()
+from vplants.mangosim.tools import *
+from vplants.mangosim.repository import *
 
 def load_mtg(name = 'mango_mtg.pkl'):
   g = load_obj(name,share_dir)
