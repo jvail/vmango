@@ -1,0 +1,3 @@
+Ce répertoire contient les résultats des simulations 
+les répertoires donnent le types de model utilisés
+on génère 1000 mtg avec le model et critère de validation dans un fichier plus haut
