@@ -12,7 +12,7 @@ Dans le fichier "table_for_nul_model_cogshall.csv" :
     Les variables réponses commencent par une majuscule, les variables explicatives commencent par une minuscule.
     On ne considère plus le non débourrement des UCs qui produisent au cycle suivant.
 
-Dans les repertoires, glm_selected, glm_complet, model_nul, on retrouve les probas extraites des analyses GLM 
+Dans les repertoires, glm_selected, glm_complet, model_null, on retrouve les probas extraites des analyses GLM 
 pour chacune des variables réponses.
     Les variables réponses sont données dans les noms des fichiers.  
     Plusieurs jeu de probabilités ont été générés et stockés dans différents sous répertoires.

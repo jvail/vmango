@@ -1,0 +1,14 @@
+Ce dossier contient un certain nombre de données concernant l'extraction et la simulation de données.
+
+    - Le fichier "mango_mtg.pkl" correspond à la base de données sous format MTG de la base de données Doralice.
+    
+    - Le dossier "info_mtg_doralice" contient des informations extraites du MTG Doralice pour valider les simulations. 
+    Les informations extraites sont décrites dans le dossier.
+    
+    - Le dossier "model_glm contient" des fichiers contenant des données extraites du MTG Doralice pour construire les analyses qui génèrent les GLMs. 
+    Les sous_dossiers contiennent les probas extraites des analyses GLM, pour chacune des variables réponses.
+
+    - Le dossier "parameters_data_for_graphic_model" contient des fichiers contenant des données extraites du MTG Doralice pour fournir les analyses 
+    complémentaire à la simulation sous L-Py pour le modèle graphique.
+    
+    - Le dossier simulation_mangotree contient toutes les simulations effectuées et les résultats selon des critères de validation.
