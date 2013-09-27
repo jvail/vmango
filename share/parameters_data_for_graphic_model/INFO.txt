@@ -1,0 +1,55 @@
+Ce dossier est utilisé pour la simulation sous lpy du modèle graphique.
+Pour ce modèle, il manquait des informations telles que :
+    - le nombre d'inflorescences latérales que produit une UC florifère. --> loi de Poisson
+    - la date d'apparition des inflorescences --> distribution empirique
+    - la date d'apparition des UCs à l'échelle du mois --> distribution empirique
+Dans ce dossier, il y a les probabilités de ces données.
+    
+    - estimation_lambda_nb_lateral_flowers.pkl :
+        une valeur : estimée sur les deux cycles et sur tous les arbres de la variété Cogshall
+    
+    - freq_weeks_inflo.pkl :
+        list de tuple de dictionnaire :
+            [freq_weeks_inflo_cogshall_loaded , freq_weeks_inflo_cogshall_notloaded]
+                (N, freq_weeks) = freq_weeks_inflo_cogshall_loaded  
+                    où N est le nombre total d'inflorescences
+                       freq_weeks est un dictionnaire contenant la fréquence d'inflorescences dans une semaine comprise entre aout et octobre (13 semaines)
+                       date_weeks = {
+                            0 : ('05-07-01','05-08-07'),
+                            1 : ('05-08-08','05-08-14'),
+                            2 : ('05-08-15','05-08-21'),
+                            3 : ('05-08-22','05-08-28'),
+                            4 : ('05-08-29','05-09-04'),
+                            5 : ('05-09-05','05-09-11'),
+                            6 : ('05-09-12','05-09-18'),
+                            7 : ('05-09-19','05-09-25'),
+                            8 : ('05-09-26','05-10-02'),
+                            9 : ('05-10-03','05-10-09'),
+                            10 : ('05-10-10','05-10-16'),
+                            11 : ('05-10-17','05-10-23'),
+                            12 : ('05-10-24','05-10-30')
+                       }
+    
+    - dict_probas_monthly_for_period_cog.pkl :
+        Renvoi la probabilité d'apparition des UCs pour un mois lorsque l'UC est prévue dans une periode donnée
+        un dictionnaire de dictionnaires de dictionnaires ( type d'arbre , periode, mois) 
+            où type d'arbre : "B10", "B12", "B14", "C", "F2", "F6, "NC"
+               periode : "E", "I", "L"
+               mois : les mois de la periode
+               
+            exemple : {'B10': 
+                        {'E': 
+                            {7: 0,
+                             8: 0.7696629213483146,
+                             9: 0.1797752808988764,
+                             10: 0.05056179775280899},
+                         'I': 
+                            {1: 0.00263852242744063
+                             2: 0.7229551451187335,
+                             11: 0.08047493403693931,
+                             12: 0.19393139841688653},
+                         'L': 
+                            {3: 0.9926470588235294,
+                             4: 0,
+                             5: 0.003676470588235294,
+                             6: 0.003676470588235294}},
