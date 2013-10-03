@@ -1,4 +1,4 @@
-setwd("D:/openalea/mangosim/src/vplants/mangosim/Model_glm")
+setwd("D:/openalea/mangosim/src/vplants/mangosim/glm_estimation")
 #
 #
 ### Importation of data :

@@ -1,4 +1,4 @@
-setwd("D:/openalea/mangosim/src/vplants/mangosim/Model_glm")
+setwd("D:/openalea/mangosim/src/vplants/mangosim/glm_estimation")
 #
 #
 ### Importation of data :
@@ -27,8 +27,10 @@ data.04$nature_ancestor_V = as.factor(data.04$nature_ancestor_V)
 # Delta_burst_date_child = ordered(Delta_Burst_date_child)
 
 # Assign date as ordered factor
-Date_Burst_daughter = as.factor(data.04$Date_burst_daughter)
-Date_Burst_daughter = ordered(Date_Burst_daughter)
+level_order = c("7","8","9","10","11","12","1","2","3","4","5","6")
+Date_Burst_daughter = ordered(data.04$Date_burst_daughter, levels = level_order)
+Date_Burst_daughter = factor(Date_Burst_daughter)
+
 
 attach(data.04)
 summary(data.04)

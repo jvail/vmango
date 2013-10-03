@@ -11,5 +11,20 @@ Ce dossier contient différent fichiers servant à la simulation d'un manguier �
     Fichier Python : 
     
         - "transfert_mtg_to_lpy.py" : 
-        Contient ...
+            Contient des fonctions qui indiquent comment regénérer la structure d'un manguier de la base de données.
+        
+        - "mango_state_simulation" :
+            Contient des fonctions qui donnent une date de débourrement, le placement des états fils sur l'UC mère, 
+            le nombre d'inflorescences généré et la date d'apparition de ces inflorescences. 
+        
+        - "simulate_distribution_date_inflo.py" 
+        - "simulate_nb_lateral_flowers.py"
+        - "simulate_distribution_uc_date_per_month.py"
+            Contiennent des fonctions qui fournit des informations supplémentaires pour la simulation du manguier.
+            
+        - "process_graphic_model.py" :
+            Simule 1 000 fois "mango-asynchrony-model-graphic2.lpy" et récuppère les MTG des arbres simulés.
+            Il faut choisir le répertoire dans lequel les MTG seront enregistrés. 
+            TODO : ajouter la possibilité de modifier les paramètres de simulation dans ce fichier et non dans le fichier lpy.
+        
     

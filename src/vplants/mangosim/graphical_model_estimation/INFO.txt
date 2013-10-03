@@ -1,0 +1,14 @@
+Ce dossier contient des fichier python qui récupère les données du MTG Doralice et estime des paramètres nécessaire.
+    
+    - distribution_inflo_date_per_week.py :
+    Estime la fréquence d'UCs florifère par mois.
+    
+    - distribution_uc_date_per_month.py :
+    Estime la probabilité d'apparition des UCs pour un mois lorsque l'UC est prévue dans une periode donnée
+        Renvoi un dictionnaire de dictionnaires de dictionnaires ( type d'arbre , periode, mois) 
+            où type d'arbre : "B10", "B12", "B14", "C", "F2", "F6, "NC"
+               periode : "E", "I", "L"
+               mois : les mois de la periode
+    
+    - estimation_lambda_nb_lateral_flowers.py :
+    Estime le paramètre d'une loi de Poisson : la variable est le nombre d'inflorescences latérales pour une UC.

@@ -1,4 +1,4 @@
-setwd("D:/openalea/mangosim/src/vplants/mangosim/Model_glm")
+setwd("D:/openalea/mangosim/src/vplants/mangosim/glm_estimation")
 #
 #
 ### Importation of data :
@@ -541,11 +541,13 @@ path_file = paste(share_dir,"model_glm/glm_selected/by_all_trees",sep="")
 table_prob_glm.burst.03_04_selected = get_table_prob_variable_glm(step.glm.burst.03_04)
 write.csv(table_prob_glm.burst.03_04_selected,file=paste(path_file,"/table_prob_glm_burst_03_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.Lateral_GU_daughter.03_04_selected = get_table_prob_variable_glm(step.glm.Lateral_GU_daughter.03_04)
-write.csv(table_prob_glm.Lateral_GU_daughter.03_04_selected,file=paste(path_file,"table_prob_glm_Lateral_GU_daughter_03_04.csv",sep=""), row.names = FALSE)
+write.csv(table_prob_glm.Lateral_GU_daughter.03_04_selected,file=paste(path_file,"/table_prob_glm_Lateral_GU_daughter_03_04.csv",sep=""), row.names = FALSE)
 table_prob_glm.no_lateral_GU.03_04_selected = get_table_prob_variable_glm(step.glm.no_lateral_GU.03_04)
 write.csv(table_prob_glm.no_lateral_GU.03_04_selected,file=paste(path_file,"/table_prob_glm_no_lateral_GU_03_04.csv",sep=""), row.names = FALSE)
 #table_prob_vglm.Burst_date_child.03_04_selected = get_table_prob_variable_glm(step.vglm.Burst_date_child.03_04)
 #write.csv(table_prob_vglm.Burst_date_child.03_04_selected,file=paste(path_file,"/table_prob_vglm_Burst_date_child_03_04.csv",sep=""), row.names = FALSE)
+table_prob_vglm.Burst_date_child.03_04_complet = get_table_prob_variable_glm(vglm.Burst_date_child.03_04_complet)
+write.csv(table_prob_vglm.Burst_date_child.03_04_complet,file=paste(path_file,"/table_prob_vglm_Burst_date_child_03_04.csv",sep=""), row.names = FALSE)
 
 
 # by_tree
@@ -570,4 +572,7 @@ for(tree in 1:length(trees)){
     #table_prob_vglm.Burst_date_child.03_04_selected_tree = get_table_prob_variable_glm(list_step.vglm.Burst_date_child.03_04_tree[[name_tree]])
     #path_final = paste(path_file_tree,"/table_prob_vglm_Burst_date_child_03_04.csv",sep="")
     #write.csv(table_prob_vglm.Burst_date_child.03_04_selected_tree,file=path_final, row.names = FALSE)
+    table_prob_vglm.Burst_date_child.03_04_complet_tree = get_table_prob_variable_glm(list_vglm.Burst_date_child.03_04_complet_tree[[name_tree]])
+    path_final = paste(path_file_tree,"/table_prob_vglm_Burst_date_child_03_04.csv",sep="")
+    write.csv(table_prob_vglm.Burst_date_child.03_04_complet_tree,file=path_final, row.names = FALSE)
 }

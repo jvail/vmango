@@ -1,0 +1,38 @@
+Ce dossier contient différent fichiers servant à la simulation d'un manguier à partir des modèles nuls et des GLMs.
+
+    - Fichier L-Py :
+    
+            - "base_2003_glm_mangotree.lpy" : Regénération de la structure d'un manguier choisi de la base jusqu'à la fin du cycle 3
+        
+        Modèle GLM : 
+            - "mango-asynchrony-glm.lpy" : Simulation d'une branche à partir d'un bourgeons
+            - "mango-asynchrony-glm2.lpy" : Assemblage des deux modèles de croissance précédentes
+        Modèle nul : 
+            - "mango-asynchrony-model-null.lpy" : Modèle de croissance à partir des distributions empiriques des données Doralice. 
+            L'influence des UCs mère et ancêtre n'est pas prise en compte. La simulation commence avec la base 2003 de l'arbre.
+        
+    - Fichier Python : 
+    
+            - "transfert_mtg_to_lpy_for_glm.py" :
+            Contient des fonctions qui indiquent comment regénérer la structure d'un manguier de la base de données.
+            Ce fichier est utilisé par "base_2003_glm_mangotree.lpy", "mango-asynchrony-glm2.lpy" et "mango-asynchrony-model-null.lpy".
+        
+        Modèle GLM : 
+            - "mango_asynchrony_simulation.py" : 
+            Contient des fonctions qui fournit des informations pour la simulation du manguier.
+            (notament, une fonction, qui à partir des processus de questions élémentaires et des facteurs d'une UC, renvoie le nombre d'enfants, la date de débourrement,
+                le nombre d'inflo et la date s'il y a, le nombre d'enfants et la date pour le prochain cycle si c'est le cas)
+            - "process_glm.py" :
+            Simule 1 000 fois "mango-asynchrony-glm2.lpy" et récuppère les MTG des arbres simulés.
+            Il faut choisir le répertoire dans lequel les MTG seront enregistrés. 
+            TODO : ajouter la possibilité de modifier les paramètres de simulation dans ce fichier et non dans le fichier lpy.
+        
+        Modèle nul :
+            - "mango_asynchrony_simulation_model_null.py" :
+            Contient des fonctions qui fournit des informations pour la simulation du manguier.
+            ()
+            - "process_model_null.py" :
+            Simule 1 000 fois "mango-asynchrony-model-null.lpy" et récuppère les MTG des arbres simulés.
+            Il faut choisir le répertoire dans lequel les MTG seront enregistrés. 
+            TODO : ajouter la possibilité de modifier les paramètres de simulation dans ce fichier et non dans le fichier lpy.
+        
