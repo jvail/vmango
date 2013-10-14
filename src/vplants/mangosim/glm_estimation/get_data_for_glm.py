@@ -1,35 +1,15 @@
 from openalea.deploy.shared_data import shared_data
 import vplants.mangosim
 share_dir = shared_data(vplants.mangosim, share_path = "share")
+from vplants.mangosim.tools import *
 
-def load_obj(filename, dirname = '.'):
-  import cPickle as pickle
-  import os
-  gfname =os.path.join(dirname,filename)
-  if os.path.exists(gfname ):
-    pkl_file = open(gfname,'rb')
-    obj = pickle.load(pkl_file)
-    pkl_file.close()
-    return obj
-  else:
-    raise ValueError(filename)
-
-def dump_obj(obj,filename, dirname = '.'):
-  import cPickle as pickle
-  import os
-  gfname =os.path.join(dirname,filename)
-  pkl_file = open(gfname,'wb')
-  pickle.dump(obj,pkl_file)
-  pkl_file.close()
-
-def load_mtg(name = 'mango_mtg.pkl'):
-  g = load_obj(name,share_dir)
-  return g
 
 g = load_mtg()
 
 from datetime import date, datetime, timedelta
 def set_flowering():
+  """ Fonction from Pierre Fernique, see him to understand
+  """
   if "flowering" in g.property_names():
     raise IOError('`flowering` property has already been computed !')
   #warnings.warn('`flowering` property will be added to the mangotree but `date_flo` property will be removed !')
@@ -95,10 +75,6 @@ def get_trees_loaded_or_not(loaded=True, variety = "cogshall"):
   else: trees_loaded_or_not = [i for i,v in g.property('var').items() if v== variety and g.property('fr_load')[i]==loaded_prop]
   return trees_loaded_or_not
 
-Month = {'janv' : 1, 'fev' : 2, 'mars' : 3,
-         'avril' : 4, 'mai' : 5, 'juin' : 6,
-         'juil' : 7, 'aout' : 8, 'sept' : 9,
-         'oct' : 10, 'nov' : 11, 'dec' : 12 }
 
 def set_date_from_string(string):
   """From string = 'month.year', it return a
@@ -133,12 +109,13 @@ def get_ucs_cycle(cycle = 4,loaded = True, variety = "cogshall"):
     ucs_Cycle += get_total_ucs_tree_cycle(tree, cycle)
   return ucs_Cycle
 
-ucs_04_loaded_cogshall = get_ucs_cycle(4,True,"cogshall")
-ucs_05_loaded_cogshall = get_ucs_cycle(5,True,"cogshall")
-ucs_04_notloaded_cogshall = get_ucs_cycle(4,False,"cogshall")
-ucs_05_notloaded_cogshall = get_ucs_cycle(5,False,"cogshall")
-uc_cycle_variety = {(4,True,"cogshall") : ucs_04_loaded_cogshall ,(5,True,"cogshall") : ucs_05_loaded_cogshall, 
-  (4,False,"cogshall"): ucs_04_notloaded_cogshall, (5,False,"cogshall"): ucs_05_notloaded_cogshall}
+if __name__ == '__main__' :
+    ucs_04_loaded_cogshall = get_ucs_cycle(4,True,"cogshall")
+    ucs_05_loaded_cogshall = get_ucs_cycle(5,True,"cogshall")
+    ucs_04_notloaded_cogshall = get_ucs_cycle(4,False,"cogshall")
+    ucs_05_notloaded_cogshall = get_ucs_cycle(5,False,"cogshall")
+    uc_cycle_variety = {(4,True,"cogshall") : ucs_04_loaded_cogshall ,(5,True,"cogshall") : ucs_05_loaded_cogshall, 
+      (4,False,"cogshall"): ucs_04_notloaded_cogshall, (5,False,"cogshall"): ucs_05_notloaded_cogshall}
 
 
 
@@ -199,36 +176,6 @@ def get_nature_position_ancestor(uc):
 
 
 
-date_weeks_04 = {
-0 : (datetime(2004,7,1),datetime(2004,8,7)),
-1 : (datetime(2004,8,8),datetime(2004,8,14)),
-2 : (datetime(2004,8,15),datetime(2004,8,21)),
-3 : (datetime(2004,8,22),datetime(2004,8,28)),
-4 : (datetime(2004,8,29),datetime(2004,9,4)),
-5 : (datetime(2004,9,5),datetime(2004,9,11)),
-6 : (datetime(2004,9,12),datetime(2004,9,18)),
-7 : (datetime(2004,9,19),datetime(2004,9,25)),
-8 : (datetime(2004,9,26),datetime(2004,10,2)),
-9 : (datetime(2004,10,3),datetime(2004,10,9)),
-10 : (datetime(2004,10,10),datetime(2004,10,16)),
-11 : (datetime(2004,10,17),datetime(2004,10,23)),
-12 : (datetime(2004,10,24),datetime(2004,10,30))  }
-
-date_weeks_05 = {
-0 : (datetime(2005,7,1),datetime(2005,8,7)),
-1 : (datetime(2005,8,8),datetime(2005,8,14)),
-2 : (datetime(2005,8,15),datetime(2005,8,21)),
-3 : (datetime(2005,8,22),datetime(2005,8,28)),
-4 : (datetime(2005,8,29),datetime(2005,9,4)),
-5 : (datetime(2005,9,5),datetime(2005,9,11)),
-6 : (datetime(2005,9,12),datetime(2005,9,18)),
-7 : (datetime(2005,9,19),datetime(2005,9,25)),
-8 : (datetime(2005,9,26),datetime(2005,10,2)),
-9 : (datetime(2005,10,3),datetime(2005,10,9)),
-10 : (datetime(2005,10,10),datetime(2005,10,16)),
-11 : (datetime(2005,10,17),datetime(2005,10,23)),
-12 : (datetime(2005,10,24),datetime(2005,10,30))  }
-date_weeks = {4 : date_weeks_04, 5 : date_weeks_05}
 
 def get_extremity_ucs_variety(cycle=4, loaded=True, variety="cogshall"):
   """Return the list of terminal growth unit in the cycle and for the given variety.
@@ -244,14 +191,15 @@ def get_extremity_ucs_variety(cycle=4, loaded=True, variety="cogshall"):
     extremity_ucs += get_ucs_tree_cycle_in_extremity(tree, cycle)
   return extremity_ucs
 
-extremity_03_loaded_cogshall= get_extremity_ucs_variety(3,True,"cogshall")
-extremity_04_loaded_cogshall= get_extremity_ucs_variety(4,True,"cogshall")
-extremity_05_loaded_cogshall= get_extremity_ucs_variety(5,True,"cogshall")
-extremity_03_notloaded_cogshall= get_extremity_ucs_variety(3,False,"cogshall")
-extremity_04_notloaded_cogshall= get_extremity_ucs_variety(4,False,"cogshall")
-extremity_05_notloaded_cogshall= get_extremity_ucs_variety(5,False,"cogshall")
-extremity_variety = {(3,True,"cogshall"): extremity_03_loaded_cogshall,(4,True,"cogshall"):extremity_04_loaded_cogshall, (5,True,"cogshall"): extremity_05_loaded_cogshall, 
-  (3,False,"cogshall"): extremity_03_notloaded_cogshall,(4,False,"cogshall"): extremity_04_notloaded_cogshall, (5,False,"cogshall"):extremity_05_notloaded_cogshall}
+if __name__ == '__main__' :
+    extremity_03_loaded_cogshall= get_extremity_ucs_variety(3,True,"cogshall")
+    extremity_04_loaded_cogshall= get_extremity_ucs_variety(4,True,"cogshall")
+    extremity_05_loaded_cogshall= get_extremity_ucs_variety(5,True,"cogshall")
+    extremity_03_notloaded_cogshall= get_extremity_ucs_variety(3,False,"cogshall")
+    extremity_04_notloaded_cogshall= get_extremity_ucs_variety(4,False,"cogshall")
+    extremity_05_notloaded_cogshall= get_extremity_ucs_variety(5,False,"cogshall")
+    extremity_variety = {(3,True,"cogshall"): extremity_03_loaded_cogshall,(4,True,"cogshall"):extremity_04_loaded_cogshall, (5,True,"cogshall"): extremity_05_loaded_cogshall, 
+      (3,False,"cogshall"): extremity_03_notloaded_cogshall,(4,False,"cogshall"): extremity_04_notloaded_cogshall, (5,False,"cogshall"):extremity_05_notloaded_cogshall}
 
 
 yes = 1
@@ -349,18 +297,20 @@ def get_table_INSIDE_for_glm(dict_uc_cycle_variety,extremity_variety, cycle=4, l
   return table_INSIDE_for_glm
 
 
-# table_INSIDE_for_glm_04_loaded_cogshall = DataFrame( get_table_INSIDE_for_glm(uc_cycle_variety,extremity_variety,cycle=4, loaded=True, variety="cogshall") )
-# table_INSIDE_for_glm_05_loaded_cogshall = DataFrame( get_table_INSIDE_for_glm(uc_cycle_variety,extremity_variety,cycle=5, loaded=True, variety="cogshall") )
-# table_INSIDE_for_glm_04_notloaded_cogshall = DataFrame( get_table_INSIDE_for_glm(uc_cycle_variety,extremity_variety,cycle=4, loaded=False, variety="cogshall") )
-# table_INSIDE_for_glm_05_notloaded_cogshall = DataFrame( get_table_INSIDE_for_glm(uc_cycle_variety,extremity_variety,cycle=5, loaded=False, variety="cogshall") )
-
-# table_INSIDE_for_glm_04_cogshall = concat([table_INSIDE_for_glm_04_loaded_cogshall,table_INSIDE_for_glm_04_notloaded_cogshall],ignore_index=True)
-# table_INSIDE_for_glm_05_cogshall = concat([table_INSIDE_for_glm_05_loaded_cogshall,table_INSIDE_for_glm_05_notloaded_cogshall],ignore_index=True)
-
-# column_names = list( table_INSIDE_for_glm_04_cogshall.columns )
-
-# table_INSIDE_for_glm_04_cogshall.to_csv(share_dir + "/model_glm/table_INSIDE_04_cogshall.csv",header=column_names, index=False)
-# table_INSIDE_for_glm_05_cogshall.to_csv(share_dir + "/model_glm/table_INSIDE_05_cogshall.csv",header=column_names, index=False)
+if __name__ == '__main__' :
+    table_INSIDE_for_glm_04_loaded_cogshall = DataFrame( get_table_INSIDE_for_glm(uc_cycle_variety,extremity_variety,cycle=4, loaded=True, variety="cogshall") )
+    table_INSIDE_for_glm_05_loaded_cogshall = DataFrame( get_table_INSIDE_for_glm(uc_cycle_variety,extremity_variety,cycle=5, loaded=True, variety="cogshall") )
+    table_INSIDE_for_glm_04_notloaded_cogshall = DataFrame( get_table_INSIDE_for_glm(uc_cycle_variety,extremity_variety,cycle=4, loaded=False, variety="cogshall") )
+    table_INSIDE_for_glm_05_notloaded_cogshall = DataFrame( get_table_INSIDE_for_glm(uc_cycle_variety,extremity_variety,cycle=5, loaded=False, variety="cogshall") )
+    #
+    table_INSIDE_for_glm_04_cogshall = concat([table_INSIDE_for_glm_04_loaded_cogshall,table_INSIDE_for_glm_04_notloaded_cogshall],ignore_index=True)
+    table_INSIDE_for_glm_05_cogshall = concat([table_INSIDE_for_glm_05_loaded_cogshall,table_INSIDE_for_glm_05_notloaded_cogshall],ignore_index=True)
+    #
+    column_names = list( table_INSIDE_for_glm_04_cogshall.columns )
+    #
+    from os.path import join
+    table_INSIDE_for_glm_04_cogshall.to_csv(join(share_dir, "model_glm","table_INSIDE_04_cogshall.csv"),header=column_names, index=False)
+    table_INSIDE_for_glm_05_cogshall.to_csv(jion(share_dir, "model_glm","table_INSIDE_05_cogshall.csv"),header=column_names, index=False)
 
 def get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=True, variety="cogshall"):
   """
@@ -429,27 +379,28 @@ def get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=True, variety
     table_TRANSITION_for_glm.append(dict_uc)
   return table_TRANSITION_for_glm
 
-# table_TRANSITION_for_glm_03to04_loaded_cogshall = DataFrame( get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=True, variety="cogshall") )
-# table_TRANSITION_for_glm_04to05_loaded_cogshall = DataFrame( get_table_TRANSITION_for_glm(extremity_variety,cycle=4, loaded=True, variety="cogshall") )
-# table_TRANSITION_for_glm_03to04_notloaded_cogshall = DataFrame( get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=False, variety="cogshall") )
-# table_TRANSITION_for_glm_04to05_notloaded_cogshall = DataFrame( get_table_TRANSITION_for_glm(extremity_variety,cycle=4, loaded=False, variety="cogshall"))
+if __name__ == '__main__' :
+    table_TRANSITION_for_glm_03to04_loaded_cogshall = DataFrame( get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=True, variety="cogshall") )
+    table_TRANSITION_for_glm_04to05_loaded_cogshall = DataFrame( get_table_TRANSITION_for_glm(extremity_variety,cycle=4, loaded=True, variety="cogshall") )
+    table_TRANSITION_for_glm_03to04_notloaded_cogshall = DataFrame( get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=False, variety="cogshall") )
+    table_TRANSITION_for_glm_04to05_notloaded_cogshall = DataFrame( get_table_TRANSITION_for_glm(extremity_variety,cycle=4, loaded=False, variety="cogshall"))
+    # concat loaded and not loaded data
+    table_TRANSITION_for_glm_03to04_cogshall = concat([table_TRANSITION_for_glm_03to04_loaded_cogshall,table_TRANSITION_for_glm_03to04_notloaded_cogshall],ignore_index=True)
+    table_TRANSITION_for_glm_04to05_cogshall = concat([table_TRANSITION_for_glm_04to05_loaded_cogshall,table_TRANSITION_for_glm_04to05_notloaded_cogshall],ignore_index=True)
+    # convert data frame in csv table
+    column_names = list( table_TRANSITION_for_glm_03to04_cogshall.columns )
+    table_TRANSITION_for_glm_03to04_cogshall.to_csv(join( share_dir, "model_glm","table_TRANSITION_03to04_cogshall.csv"),header=column_names, index=False)
+    table_TRANSITION_for_glm_04to05_cogshall.to_csv(join( share_dir, "/model_glm","table_TRANSITION_04to05_cogshall.csv"),header=column_names, index=False)
 
-# table_TRANSITION_for_glm_03to04_cogshall = concat([table_TRANSITION_for_glm_03to04_loaded_cogshall,table_TRANSITION_for_glm_03to04_notloaded_cogshall],ignore_index=True)
-# table_TRANSITION_for_glm_04to05_cogshall = concat([table_TRANSITION_for_glm_04to05_loaded_cogshall,table_TRANSITION_for_glm_04to05_notloaded_cogshall],ignore_index=True)
 
-# column_names = list( table_TRANSITION_for_glm_03to04_cogshall.columns )
-# table_TRANSITION_for_glm_03to04_cogshall.to_csv(share_dir + "/model_glm/table_TRANSITION_03to04_cogshall.csv",header=column_names, index=False)
-# table_TRANSITION_for_glm_04to05_cogshall.to_csv(share_dir + "/model_glm/table_TRANSITION_04to05_cogshall.csv",header=column_names, index=False)
-
-
-def get_table_for_nul_model(dict_uc_cycle_variety,extremity_variety , loaded=True, variety="cogshall"):
+def get_table_for_null_model(dict_uc_cycle_variety,extremity_variety , loaded=True, variety="cogshall"):
   """
   Parameters :
     cycle : an integer 4 or 5
     loaded : a booleen, if True ucs are from loaded trees, else they are from not loaded trees
     variety : a string, the choice of variety is : 
              'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety. """
-  table_for_nul_model = []
+  table_for_null_model = []
   ucs_cycle_variety_04 = dict_uc_cycle_variety[(4, loaded, variety)]
   ucs_cycle_variety_05 = dict_uc_cycle_variety[(5, loaded, variety)]
   ucs_extremity_04 = extremity_variety[(4, loaded, variety)]
@@ -521,15 +472,16 @@ def get_table_for_nul_model(dict_uc_cycle_variety,extremity_variety , loaded=Tru
     code = g.property('code')[uc]
     dict_uc["tree"] = code.split("/")[0]
     # put the dictionnary on the list
-    table_for_nul_model.append(dict_uc)
-  return table_for_nul_model
+    table_for_null_model.append(dict_uc)
+  return table_for_null_model
 
-table_for_nul_model_loaded_cogshall = DataFrame( get_table_for_nul_model(uc_cycle_variety,extremity_variety, loaded=True, variety="cogshall") )
-table_for_nul_model_notloaded_cogshall = DataFrame( get_table_for_nul_model(uc_cycle_variety,extremity_variety, loaded=False, variety="cogshall") )
-
-table_for_nul_model_cogshall = concat([table_for_nul_model_loaded_cogshall,table_for_nul_model_notloaded_cogshall],ignore_index=True)
-
-column_names = list( table_for_nul_model_cogshall.columns )
-
-table_for_nul_model_cogshall.to_csv(share_dir + "/model_glm/table_for_nul_model_cogshall.csv",header=column_names, index=False)
+if __name__ == '__main__' :
+    table_for_null_model_loaded_cogshall = DataFrame( get_table_for_null_model(uc_cycle_variety,extremity_variety, loaded=True, variety="cogshall") )
+    table_for_null_model_notloaded_cogshall = DataFrame( get_table_for_null_model(uc_cycle_variety,extremity_variety, loaded=False, variety="cogshall") )
+    #
+    table_for_null_model_cogshall = concat([table_for_null_model_loaded_cogshall,table_for_null_model_notloaded_cogshall],ignore_index=True)
+    #
+    column_names = list( table_for_nul_model_cogshall.columns )
+    #
+    table_for_null_model_cogshall.to_csv(join( share_dir, "model_glm","table_for_nul_model_cogshall.csv"),header=column_names, index=False)
 

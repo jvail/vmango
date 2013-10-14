@@ -56,29 +56,6 @@ for(tree in 1:length(trees)){
     }
 }
 
-#__________________________________________
-## GLM null : 
-#__________________________________________
-    # For all trees
-glm.burst.04_null = glm( Burst ~ 1,
-    family = binomial, data=data.04)
-summary(glm.burst.04_null)  # AIC: 3128.9
-    
-
-    # For each tree, loaded trees and not loaded trees
-list_glm.burst.04_null_tree = list()
-for(tree in 1:length(trees)){
-    name_tree = trees[tree]
-    list_glm.burst.04_null_tree[[name_tree]] = glm(Burst ~ 1,
-        family = binomial, data=data.04, subset=index_trees.04[[name_tree]])
-}
-# B10 :     AIC: 
-# B12 :     AIC: 
-# B14 :     AIC: 
-# F2 :      AIC:  
-# F6 :      AIC: 
-# loaded :  AIC: 
-#notloaded: AIC: 
 
 
 #__________________________________________
@@ -144,28 +121,6 @@ for(tree in 1:length(trees)){
     }
 }
 
-#__________________________________________
-## GLM null :
-#__________________________________________ 
-    # For all trees
-glm.Lateral_GU_daughter.04_null = glm( Lateral_GU_daughter ~ 1,
-    family = binomial, data=data.04)
-summary(glm.Lateral_GU_daughter.04_null) # AIC: 
-
-    # For each tree, loaded trees and not loaded trees
-list_glm.Lateral_GU_daughter.04_null_tree = list()
-for(tree in 1:length(trees)){
-    name_tree = trees[tree]
-    list_glm.Lateral_GU_daughter.04_null_tree[[name_tree]] = glm(Lateral_GU_daughter ~ 1,
-        family = binomial, data=data.04, subset=index_trees_bursted.04[[name_tree]])
-}
-# B10 :     AIC:  
-# B12 :     AIC: 
-# B14 :     AIC:  
-# F2 :      AIC: 
-# F6 :      AIC: 
-# loaded :  AIC:  
-#notloaded: AIC:   
 
 #__________________________________________
 ## GLM complet : 
@@ -234,29 +189,6 @@ for(tree in 1:length(trees)){
         index_trees_bursted_lateral.04[[name_tree]] = which(data.04$tree == name_tree & data.04$Burst == 1 & data.04$Lateral_GU_daughter == 1)
     }
 }
-
-#__________________________________________
-## GLM null : 
-#__________________________________________
-    # For all trees
-glm.no_lateral_GU.04_null = glm( No_lateral_gu ~ 1,
-    family = poisson, data=data.04, subset = index_lateral.04)
-summary(glm.no_lateral_GU.04_null) # AIC: 
-    
-    # For each tree, loaded trees and not loaded trees
-list_glm.no_lateral_GU.04_null_tree = list()
-for(tree in 1:length(trees)){
-    name_tree = trees[tree]
-    list_glm.no_lateral_GU.04_null_tree[[name_tree]] = glm( No_lateral_gu ~ 1,
-        family = poisson, data=data.04, subset=index_trees_bursted_lateral.04[[name_tree]])
-}
-# B10 :     AIC: 
-# B12 :     AIC: 
-# B14 :     AIC: 
-# F2 :      AIC: 
-# F6 :      AIC:  
-# loaded :  AIC:  
-#notloaded: AIC:  
 
 
 #__________________________________________
@@ -343,32 +275,6 @@ get_AIC = function(myglm){
 return(AIC)
 }
 
-#__________________________________________
-## GLM null : 
-#__________________________________________
-    # For all trees
-vglm.Date_burst_daughter.04_null = vglm( Date_Burst_daughter ~ 1,
-    family = cumulative(parallel=T) ,data=data.04, subset = index_bursted.04)
-summary(vglm.Date_burst_daughter.04_null)  # Log-likelihood: 
-get_AIC(vglm.Date_burst_daughter.04_null)   # AIC : 
-
-    # For each tree, loaded trees and not loaded trees
-list_vglm.Date_burst_daughter.04_null_tree = list()
-list_AIC_vglm.Date_burst_daughter.04_null_tree = list()
-for(tree in 1:length(trees)){
-    name_tree = trees[tree]
-    list_vglm.Date_burst_daughter.04_null_tree[[name_tree]] = vglm( Date_Burst_daughter ~ 1,
-        family = cumulative(parallel=T), data=data.04, subset=index_trees_bursted.04[[name_tree]])
-    list_AIC_vglm.Date_burst_daughter.04_null_tree[[name_tree]] = get_AIC(list_vglm.Date_burst_daughter.04_null_tree[[name_tree]])
-}
-# B10 :     AIC: 
-# B12 :     AIC: 
-# B14 :     AIC: 
-# F2 :      AIC: 
-# F6 :      AIC: 
-# loaded :  AIC: 
-#notloaded: AIC: 
-
     
 #__________________________________________
 ## GLM complet : 
@@ -438,30 +344,6 @@ for(tree in 1:length(trees)){
         index_trees_extremity.04[[name_tree]] = which(data.04$tree == name_tree & data.04$is_in_extremity == 1)
     }
 }
-
-#__________________________________________
-## GLM null :
-#__________________________________________ 
-    # For all trees
-glm.Flowering.04_null = glm( Flowering ~ 1,
-    family = binomial, data=data.04, subset = index_extremity.04)
-summary(glm.Flowering.04_null) # AIC: 
-
-    # For each tree, loaded trees and not loaded trees
-list_glm.Flowering.04_null_tree = list()
-for(tree in 1:length(trees)){
-    name_tree = trees[tree]
-    list_glm.Flowering.04_null_tree[[name_tree]] = glm( Flowering ~ 1,
-        family = binomial, data=data.04, subset=index_trees_extremity.04[[name_tree]])
-}
-# B10 :     AIC: 
-# B12 :     AIC: 
-# B14 :     AIC: 
-# F2 :      AIC: 
-# F6 :      AIC: 
-# loaded :  AIC: 
-#notloaded: AIC: 
-    
     
 #__________________________________________
 ## GLM complet : 
@@ -527,29 +409,6 @@ for(tree in 1:length(trees)){
         index_trees_flowering.04[[name_tree]] = which(data.04$tree == name_tree & data.04$Flowering == 1)
     }
 }
-
-#__________________________________________
-## GLM null : 
-#__________________________________________
-    # For all trees
-glm.No_inflorescences.04_null = glm( No_inflo ~ 1,
-    family = poisson, data=data.04, subset = index_flowering.04)
-summary(glm.No_inflorescences.04_null) # AIC: 
-    
-    # For each tree, loaded trees and not loaded trees
-list_glm.No_inflorescences.04_null_tree = list()
-for(tree in 1:length(trees)){
-    name_tree = trees[tree]
-    list_glm.No_inflorescences.04_null_tree[[name_tree]] = glm( No_inflo ~ 1,
-        family = poisson, data=data.04, subset=index_trees_flowering.04[[name_tree]])
-}
-# B10 :     AIC: 
-# B12 :     AIC: 
-# B14 :     AIC: 
-# F2 :      AIC: 
-# F6 :      AIC:  
-# loaded :  AIC:  
-#notloaded: AIC:  
 
 
 #__________________________________________
@@ -688,56 +547,6 @@ get_table_prob_variable_glm = function(myglm){
     }
 return(data_probs)
 }
-
-# ################ Null
-# ####################################
-# # loaded as factor
-# #___________________________________
-# table_prob_glm.burst.04_null = get_table_prob_variable_glm(glm.burst.04_null)
-# write.csv(table_prob_glm.burst.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_burst_04.csv",sep=""), row.names = FALSE)
-# table_prob_glm.Lateral_GU_daughter.04_null = get_table_prob_variable_glm(glm.Lateral_GU_daughter.04_null)
-# write.csv(table_prob_glm.Lateral_GU_daughter.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_Lateral_GU_daughter_04.csv",sep=""), row.names = FALSE)
-# table_prob_glm.no_lateral_GU.04_null = get_table_prob_variable_glm(glm.no_lateral_GU.04_null)
-# write.csv(table_prob_glm.no_lateral_GU.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_no_lateral_GU_04.csv",sep=""), row.names = FALSE)
-# table_prob_vglm.Date_burst_daughter.04_null = get_table_prob_variable_glm(vglm.Date_burst_daughter.04_null)
-# write.csv(table_prob_vglm.Date_burst_daughter.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_vglm_Date_burst_daughter_04.csv",sep=""), row.names = FALSE)
-# table_prob_glm.Flowering.04_null = get_table_prob_variable_glm(glm.Flowering.04_null)
-# write.csv(table_prob_glm.Flowering.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_Flowering_04.csv",sep=""), row.names = FALSE)
-# table_prob_glm.No_inflorescences.04_null = get_table_prob_variable_glm(glm.No_inflorescences.04_null)
-# write.csv(table_prob_glm.No_inflorescences.04_null,file=paste(share_dir,"model_glm/glm_null/loaded_as_factor/table_prob_glm_No_inflorescences_04.csv",sep=""), row.names = FALSE)
-
-
-# # by_tree
-# #___________________________________
-# for(tree in 1:length(trees)){
-    # name_tree = trees[tree]
-    # path_file = paste(share_dir,"model_glm/glm_null/by_tree/",sep="")
-    # path_file_tree = paste(path_file,name_tree,sep="")
-    
-    # table_prob_glm.burst.04_null_tree = get_table_prob_variable_glm(list_glm.burst.04_null_tree[[name_tree]])
-    # path_final = paste(path_file_tree,"/table_prob_glm_burst_04.csv",sep="")
-    # write.csv(table_prob_glm.burst.04_null_tree,file=path_final, row.names = FALSE)
-    
-    # table_prob_glm.Lateral_GU_daughter.04_null_tree = get_table_prob_variable_glm(list_glm.Lateral_GU_daughter.04_null_tree[[name_tree]])
-    # path_final = paste(path_file_tree,"/table_prob_glm_Lateral_GU_daughter_04.csv",sep="")
-    # write.csv(table_prob_glm.Lateral_GU_daughter.04_null_tree,file=path_final, row.names = FALSE)
-
-    # table_prob_glm.no_lateral_GU.04_null_tree = get_table_prob_variable_glm(list_glm.no_lateral_GU.04_null_tree[[name_tree]])
-    # path_final = paste(path_file_tree,"/table_prob_glm_no_lateral_GU_04.csv",sep="")
-    # write.csv(table_prob_glm.no_lateral_GU.04_null_tree,file=path_final, row.names = FALSE)
-
-    # table_prob_vglm.Date_burst_daughter.04_null_tree = get_table_prob_variable_glm(list_vglm.Date_burst_daughter.04_null_tree[[name_tree]])
-    # path_final = paste(path_file_tree,"/table_prob_vglm_Date_burst_daughter_04.csv",sep="")
-    # write.csv(table_prob_vglm.Date_burst_daughter.04_null_tree,file=path_final, row.names = FALSE)
-    
-    # table_prob_glm.Flowering.04_null = get_table_prob_variable_glm(glm.Flowering.04_null_tree[[name_tree]])
-    # path_final = paste(path_file_tree,"/table_prob_glm_Flowering_04.csv",sep="")
-    # write.csv(table_prob_glm.Flowering.04_null,file=path_final, row.names = FALSE)
-    
-    # table_prob_glm.No_inflorescences.04_null = get_table_prob_variable_glm(glm.No_inflorescences.04_null_tree[[name_tree]])
-    # path_final = paste(path_file_tree,"/table_prob_glm_No_inflorescences_04.csv",sep="")
-    # write.csv(table_prob_glm.No_inflorescences.04_null,file=path_final, row.names = FALSE)
-# }
 
 
 ################ Complet

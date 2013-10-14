@@ -84,20 +84,19 @@ response_variables = {"glm_burst_03_04" : "binomial", "glm_Lateral_GU_daughter_0
     "glm_burst_05" : "binomial", "glm_Lateral_GU_daughter_05" : "binomial", "glm_no_lateral_GU_05" : "poisson", "vglm_Date_burst_daughter_05" : "vglm", 
     "glm_Flowering_05" : "binomial", "glm_No_inflorescences_05" : "poisson" }
 from os.path import join
-def get_dict_files_glm(GLM_CHOICE=0, is_loaded_factor=False, feature_tree="B12", key_dict=response_variables):
+def get_dict_files_glm(GLM_SELECTED=False, is_loaded_factor=False, feature_tree="B12", key_dict=response_variables):
   """
   The aim is to get all tables of probability of variables
   Parameters : 
-    GLM_CHOICE : integer (0, 1 or 2), if the value is 0, we choose a complet glm
-      if the value is 1, we choose a selected glm
+    GLM_SELECTED : boolean ,  
+      if False, we choose a complet glm
+      if True, we choose a selected glm
     is_loaded_factor : boolean , 
       if True, is_loaded is taken to a factor in glm
       if False, is_loaded is not as factor in glm ==> glm for each tree, for loaded trees or for not loaded trees
   """
-  if GLM_CHOICE==0 : # glm complet
+  if not GLM_SELECTED : # glm complet
     path_file = join(share_dir, "model_glm", "glm_complet")
-  #elif GLM_CHOICE==1: # glm null
-    #path_file = share_dir+"/model_glm/glm_null/"
   else : # glm selected
     path_file = join(share_dir,"model_glm","glm_selected")
   if is_loaded_factor: # glm with factor is_loaded
@@ -111,14 +110,14 @@ def get_dict_files_glm(GLM_CHOICE=0, is_loaded_factor=False, feature_tree="B12",
     dict_files[key]= (pd.read_csv(final_path),key_dict[key])
   return dict_files
 
-list_glm_choice = xrange(3)
+list_glm_selected = [True, False]
 list_is_loaded_factor = [True, False]
 
 def set_dicts_files_glm():
   """
   """
   list_feature_tree = ["B10","B12","B14","F2","F6"]+["loaded","notloaded"]
-  tuple_keys_dict_files_glm_0 = [(glm_choice,is_loaded_factor) for glm_choice in list_glm_choice for is_loaded_factor in list_is_loaded_factor]
+  tuple_keys_dict_files_glm_0 = [(glm_selected,is_loaded_factor) for glm_selected in list_glm_selected for is_loaded_factor in list_is_loaded_factor]
   tuple_keys_dict_files_glm1 = [ (tuple1,feature_tree) for tuple1 in tuple_keys_dict_files_glm_0 for feature_tree in list_feature_tree if  not tuple1[1] ]
   tuple_keys_dict_files_glm2 = [ (tuple1,None) for tuple1 in tuple_keys_dict_files_glm_0 if tuple1[1] ]
   tuple_keys_dict_files_glm = tuple_keys_dict_files_glm1 + tuple_keys_dict_files_glm2
@@ -130,12 +129,12 @@ def set_dicts_files_glm():
 dicts_files_glm = set_dicts_files_glm()
 
 dict_table_glm = {}
-def init_glm_table( GLM_CHOICE=1, is_loaded_factor=True, feature_tree=None):
+def init_glm_table( GLM_SELECTED=True, is_loaded_factor=True, feature_tree=None):
    """
    Parameters : 
-    GLM_CHOICE : integer (0, 1 or 2), 
-      if the value is 0, we choose a complet glm
-      if the value is 1, we choose a selected glm
+    GLM_SELECTED : boolean , 
+      if False, we choose a complet glm
+      if True, we choose a selected glm
     is_loaded_factor : boolean , 
       if True, is_loaded is taken to a factor in glm
       if False, is_loaded is not as factor in glm ==> glm for each tree, for loaded trees or for not loaded trees
@@ -143,13 +142,13 @@ def init_glm_table( GLM_CHOICE=1, is_loaded_factor=True, feature_tree=None):
       it could be the name of a tree ( for example "B12", "F2"), "loaded" or "notloaded"
    """
    if is_loaded_factor : feature_tree = None
-   key_dicts_files_glm = ((GLM_CHOICE, is_loaded_factor),feature_tree)
+   key_dicts_files_glm = ((GLM_SELECTED, is_loaded_factor),feature_tree)
    dict_file_glm = dicts_files_glm[key_dicts_files_glm]
    global dict_table_glm
    for name, info in dict_file_glm.iteritems():
       dict_table_glm[name] = get_dict_from_table(*info)
   
-#init_glm_table(dicts_files_glm, GLM_CHOICE = 0, is_loaded_factor =False , feature_tree ="B12" )
+#init_glm_table(dicts_files_glm, GLM_SELECTED = False, is_loaded_factor =False , feature_tree ="B12" )
 
 def set_values_variables_2003(is_loaded=None, position_mother=None, nature_mother=None):
   """
@@ -176,13 +175,13 @@ def set_values_variables(cycle,is_loaded, burst_date_mother, position_mother, po
     if 6<= burst_date_mother.month <=12 : 
       if 6<= Month_burst_child <=12 :
         date_burst_children = date(burst_date_mother.year,Month_burst_child,15)
-        #if date_burst_children < burst_date_mother : print "error children before mother..."
+        if date_burst_children < burst_date_mother : print "error children before mother in cycle "+str(cycle)+"..."
       else : 
         date_burst_children = date(burst_date_mother.year+1,Month_burst_child,15)
-        #if date_burst_children < burst_date_mother : print "error children before mother..."
+        if date_burst_children < burst_date_mother : print "error children before mother in cycle "+str(cycle)+"..."
     else :
       date_burst_children = date(burst_date_mother.year,Month_burst_child,15)
-      #if date_burst_children < burst_date_mother : print "error children before mother..."
+      if date_burst_children < burst_date_mother : print "error children before mother in cycle "+str(cycle)+"..."
     Lateral = get_value_simulation_glm_distribution("glm_Lateral_GU_daughter_0"+str(cycle),is_loaded,burst_date_mother.month, position_mother,position_ancestor,nature_ancestor,nature_mother)
     if Lateral:
       No_lateral = get_value_simulation_glm_distribution("glm_no_lateral_GU_0"+str(cycle),is_loaded,burst_date_mother.month, position_mother,position_ancestor,nature_ancestor,nature_mother)
@@ -203,17 +202,17 @@ def set_values_variables(cycle,is_loaded, burst_date_mother, position_mother, po
         if 6<= burst_date_mother.month <=12:
           if 6<= Month_burst_child_next_cycle <=12:
             date_burst_child_next = date(burst_date_mother.year+1, Month_burst_child_next_cycle,15)
-            #if date_burst_child_next < burst_date_mother : print "error children before mother..."
+            if date_burst_child_next < burst_date_mother : print "error children before mother between cycle 4 and 5 ..."
           else : 
             date_burst_child_next = date(burst_date_mother.year+2, Month_burst_child_next_cycle,15)
-            #if date_burst_child_next < burst_date_mother : print "error children before mother..."
+            if date_burst_child_next < burst_date_mother : print "error children before mother between cycle 4 and 5 ..."
         else : 
           if 6<= Month_burst_child_next_cycle <=12:
             date_burst_child_next = date(burst_date_mother.year, Month_burst_child_next_cycle,15)
-            #if date_burst_child_next < burst_date_mother : print "error children before mother..."
+            if date_burst_child_next < burst_date_mother : print "error children before mother between cycle 4 and 5 ..."
           else : 
             date_burst_child_next = date(burst_date_mother.year+1, Month_burst_child_next_cycle,15)
-            #if date_burst_child_next < burst_date_mother : print "error children before mother..."
+            if date_burst_child_next < burst_date_mother : print "error children before mother between cycle 4 and 5 ..."
         Lateral_next_cycle = get_value_simulation_glm_distribution("glm_Lateral_GU_daughter_04_05",is_loaded, burst_date_mother.month, position_mother,position_ancestor,new_nature_ancestor,new_nature_mother)
         if Lateral_next_cycle:
           No_lateral_next_cycle = get_value_simulation_glm_distribution("glm_no_lateral_GU_04_05",is_loaded, burst_date_mother.month, position_mother,position_ancestor,new_nature_ancestor,new_nature_mother)

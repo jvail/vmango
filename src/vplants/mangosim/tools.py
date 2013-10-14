@@ -12,7 +12,7 @@ def load_obj(filename, dirname = '.'):
     pkl_file.close()
     return obj
   else:
-    raise ValueError(filename)
+    raise ValueError(gfname)
 
 def dump_obj(obj,filename, dirname = '.'):
   import cPickle as pickle
@@ -51,6 +51,39 @@ date_weeks = {
 
 
 beg_end_period = {'E' : (7,8,9,10), 'I' : (11,12,1,2), 'L' : (3,4,5,6)}
+
+# for "get_data_for_glm"
+
+date_weeks_04 = {
+0 : (datetime(2004,7,1),datetime(2004,8,7)),
+1 : (datetime(2004,8,8),datetime(2004,8,14)),
+2 : (datetime(2004,8,15),datetime(2004,8,21)),
+3 : (datetime(2004,8,22),datetime(2004,8,28)),
+4 : (datetime(2004,8,29),datetime(2004,9,4)),
+5 : (datetime(2004,9,5),datetime(2004,9,11)),
+6 : (datetime(2004,9,12),datetime(2004,9,18)),
+7 : (datetime(2004,9,19),datetime(2004,9,25)),
+8 : (datetime(2004,9,26),datetime(2004,10,2)),
+9 : (datetime(2004,10,3),datetime(2004,10,9)),
+10 : (datetime(2004,10,10),datetime(2004,10,16)),
+11 : (datetime(2004,10,17),datetime(2004,10,23)),
+12 : (datetime(2004,10,24),datetime(2004,10,30))  }
+
+date_weeks_05 = {
+0 : (datetime(2005,7,1),datetime(2005,8,7)),
+1 : (datetime(2005,8,8),datetime(2005,8,14)),
+2 : (datetime(2005,8,15),datetime(2005,8,21)),
+3 : (datetime(2005,8,22),datetime(2005,8,28)),
+4 : (datetime(2005,8,29),datetime(2005,9,4)),
+5 : (datetime(2005,9,5),datetime(2005,9,11)),
+6 : (datetime(2005,9,12),datetime(2005,9,18)),
+7 : (datetime(2005,9,19),datetime(2005,9,25)),
+8 : (datetime(2005,9,26),datetime(2005,10,2)),
+9 : (datetime(2005,10,3),datetime(2005,10,9)),
+10 : (datetime(2005,10,10),datetime(2005,10,16)),
+11 : (datetime(2005,10,17),datetime(2005,10,23)),
+12 : (datetime(2005,10,24),datetime(2005,10,30))  }
+date_weeks = {4 : date_weeks_04, 5 : date_weeks_05}
 
 
 
