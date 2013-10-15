@@ -125,8 +125,12 @@ def plot_data_list(simulate_data, dict_empirical_data, xlab = "", ylab = "", tit
 # plot_data_list(data_sim, data_emp, xlab = "Number of GU for a cycle", ylab = "Count", title="Distribution of GU's number in cycle 4")
 
 
-def plot_data_rate(simulate_data, dict_empirical, emp_tree_name="", xlab="", ylab="Count", title="", xlim=[], ylim=[]):
+def plot_data_rate(simulate_data, dict_empirical, emp_tree_name="", xlab="", ylab="Count", title=""):
     """
+    Parameters : 
+        simulate_data : list of values 
+        dict_empirical_data : list of values of trees loaded or not loaded
+        emp_tree_name : string
     """
     hs = Histogram(Scalar.Real)
     for i in simulate_data:
@@ -164,6 +168,11 @@ def plot_data_rate(simulate_data, dict_empirical, emp_tree_name="", xlab="", yla
 
 def plot_data_dict(simulate_data, dict_empirical_data, emp_tree_name="", xlab = "", ylab = "", title = ""):
     """
+    Parameters : 
+        simulate_data : list of dict
+        dict_empirical_data : list of dict of trees loaded or not loaded
+        emp_tree_name : string
+            if data are estimated from just a tree, you could show only these empiric data of the tree
     """
     # plot simulate_data
     keys = set()
@@ -218,6 +227,13 @@ def plot_data_dict(simulate_data, dict_empirical_data, emp_tree_name="", xlab = 
 
 def plot_data_monthly(simulate_data, dict_empirical_data, cycle, name_tree= "", title = ""):
     """
+    Parameters : 
+        simulate_data : list of dict 
+        dict_empirical_data : list of dict of trees loaded or not loaded
+        cycle : integer
+        name_tree : string
+            if data are estimated from just a tree, you could show only these empiric data of the tree
+        title : string
     """
     # plot simulate_data
     axes = plt.subplot(1,1,1)

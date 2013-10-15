@@ -2,27 +2,16 @@ from openalea.lpy import *
 from openalea.deploy.shared_data import shared_data
 import vplants.mangosim
 share_dir = shared_data(vplants.mangosim, share_path = "share")
+from vplants.mangosim.tools import *
 
-def load_obj(filename, dirname = '.'):
-  import cPickle as pickle
-  import os
-  gfname =os.path.join(dirname,filename)
-  if os.path.exists(gfname ):
-    pkl_file = open(gfname,'rb')
-    obj = pickle.load(pkl_file)
-    pkl_file.close()
-    return obj
-  else:
-    raise ValueError(filename)
 
-from os.path import join
 path_graphic_model = join("simulation_mangotree","simulations_mangotree_graphic_model")
 path_glm = join("simulation_mangotree","simulations_mangotree_glm")
 path_model_null = join("simulation_mangotree","simulations_mangotree_model_null")
 
-path_choice_file = join("glm_complet","by_all_trees")
+path_choice_file = join("glm_complet","by_tree")
 final_path = join( path_glm , path_choice_file)
-name_tree = "B10"
+name_tree = "B12"
 
 def loop_get_from_simulation(nb=1000):
    """ """
@@ -120,16 +109,6 @@ if __name__ == '__main__':
 
 
 
-
-def dump_obj(obj,filename, dirname = '.'):
-  import cPickle as pickle
-  import os
-  gfname =os.path.join(dirname,filename)
-  pkl_file = open(gfname,'wb')
-  pickle.dump(obj,pkl_file)
-  pkl_file.close()
-
-
 dump_obj( (nb_ucs_04 , nb_ucs_05 , 
      nb_ucs_04_in_extremity , nb_ucs_05_in_extremity , 
      nb_ucs_04_in_extremity_apical_position, nb_ucs_05_in_extremity_apical_position ,
@@ -141,6 +120,4 @@ dump_obj( (nb_ucs_04 , nb_ucs_05 ,
      nb_children_per_uc_04 , nb_children_per_uc_05 , 
      nb_descendant_per_axe_04,nb_descendant_per_axe_05,
      monthly_date_ucs_04 , monthly_date_ucs_05 ), "info_simulate_" + name_tree + "_mtg.pkl", join(share_dir , final_path) ) 
-
-
 

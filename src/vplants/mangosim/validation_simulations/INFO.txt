@@ -1,4 +1,5 @@
-
+Ce dossier contient des fichiers qui permettent de récuppérer des informations des simulations et des données empiriques et 
+qui affichent les résultats des simulations (et des données empiriques pour pouvoir comparrer).
 
 
     - get_info_data_mtg.py :
@@ -30,6 +31,23 @@
     - process_distributions_simulations.py : 
         Pour les 1 000 mtg simulés, on récupère les critères de validation et on les sauve.
         
-    - plot_distributions_simulations.py:
-        en cours d'élaboratrion
+    - plots_distributions_simulations.py:
+        - choice_data_for_ploting(model, name_tree, path_choice, nb_distribution, cycle) 
+        fournie les données voulues (simulées et empiriques)
+        voir l'aide de la fonction
+        
+        Les fonctions suivantes renvoient les graphes des résultats selon la nature des données simulées :
+        
+        - total_number_ucs_tree_cycle : 
+            list de valeurs
+            --> plot_data_list(simulate_data, dict_empirical_data, xlab = "", ylab = "", title="")
+        - terminal_apical_rate_tree_cycle et flowering_rate_tree_cycle : 
+            liste de valeurs comprise entre 0 et 1
+            --> plot_data_rate(simulate_data, dict_empirical, emp_tree_name="", xlab="", ylab="Count", title="")
+        - nb_children_per_uc_tree_cycle et nb_ucs_per_axe_tree_cycle : 
+            list de dictionnaires dont les clefs sont des entiers
+            --> plot_data_dict(simulate_data, dict_empirical_data, emp_tree_name="", xlab = "", ylab = "", title = "")
+        - monthly_date_ucs_tree_cycle : 
+            liste de dictionnaires dont les clefs sont des dates
+            --> plot_data_monthly(simulate_data, dict_empirical_data, cycle, name_tree= "", title = "")
         
