@@ -54,6 +54,7 @@ beg_end_period = {'E' : (7,8,9,10), 'I' : (11,12,1,2), 'L' : (3,4,5,6)}
 
 # for "get_data_for_glm"
 
+from datetime import datetime
 date_weeks_04 = {
 0 : (datetime(2004,7,1),datetime(2004,8,7)),
 1 : (datetime(2004,8,8),datetime(2004,8,14)),

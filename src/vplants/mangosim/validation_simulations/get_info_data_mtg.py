@@ -64,10 +64,6 @@ from os.path import join
 #    if uc_cycle in children_cycle and uc_cycle+1 in children_cycle : is_reiteration = True
 #  return is_reiteration
 
-Month = {'janv' : 1, 'fev' : 2, 'mars' : 3,
-         'avril' : 4, 'mai' : 5, 'juin' : 6,
-         'juil' : 7, 'aout' : 8, 'sept' : 9,
-         'oct' : 10, 'nov' : 11, 'dec' : 12 }
 
 def order_uc_date(string):
   """From string = 'month-year', it return a string : 'year-month' but month is an integer. The aim is to order dates. """
@@ -135,7 +131,7 @@ def get_ucs_tree_cycle_in_extremity(tree, cycle):
 (nb_ucs_B12_04_in_extremity,nb_ucs_B12_05_in_extremity,nb_ucs_B10_04_in_extremity,
   nb_ucs_B10_05_in_extremity,nb_ucs_F2_04_in_extremity,nb_ucs_F2_05_in_extremity,
   nb_ucs_B14_04_in_extremity,nb_ucs_B14_05_in_extremity,nb_ucs_F6_04_in_extremity,
-  nb_ucs_F6_05_in_extremity) = load_obj( "nb_ucs_tree_cycle_in_extremity.pkl", join( share_dir, "info_mtg_doralice")
+  nb_ucs_F6_05_in_extremity) = load_obj( "nb_ucs_tree_cycle_in_extremity.pkl", join( share_dir, "info_mtg_doralice") )
 
 nb_ucs_tree_cycle_in_extremity = {
   (71,4) : nb_ucs_B12_04_in_extremity,
@@ -217,7 +213,7 @@ def get_nb_ucs_tree_cycle_in_extremity_apical_position(tree,cycle):
 (nb_ucs_B12_04_in_extremity_apical_position,nb_ucs_B12_05_in_extremity_apical_position,nb_ucs_B10_04_in_extremity_apical_position,
   nb_ucs_B10_05_in_extremity_apical_position,nb_ucs_F2_04_in_extremity_apical_position,nb_ucs_F2_05_in_extremity_apical_position,
   nb_ucs_B14_04_in_extremity_apical_position,nb_ucs_B14_05_in_extremity_apical_position,nb_ucs_F6_04_in_extremity_apical_position,
-  nb_ucs_F6_05_in_extremity_apical_position) = load_obj("nb_ucs_tree_cycle_in_extremity_apical_position.pkl",share_dir+"info_mtg_doralice/")
+  nb_ucs_F6_05_in_extremity_apical_position) = load_obj("nb_ucs_tree_cycle_in_extremity_apical_position.pkl", join( share_dir,"info_mtg_doralice") )
 
 def get_nb_axe_tree_cycle(tree,cycle):
   """Return a list of axes per ancestor for a tree and for a cycle.
@@ -254,7 +250,7 @@ def get_nb_axe_tree_cycle(tree,cycle):
 #  nb_axe_F6_04,nb_axe_F6_05), "nb_axe_tree_cycle.pkl")
 
 (nb_axe_B12_04,nb_axe_B12_05,nb_axe_B10_04,nb_axe_B10_05,nb_axe_F2_04,nb_axe_F2_05,nb_axe_B14_04,
-  nb_axe_B14_05,nb_axe_F6_04,nb_axe_F6_05) = load_obj("nb_axe_tree_cycle.pkl",share_dir+"info_mtg_doralice/")
+  nb_axe_B14_05,nb_axe_F6_04,nb_axe_F6_05) = load_obj("nb_axe_tree_cycle.pkl", join( share_dir,"info_mtg_doralice") )
 
 def get_nb_children_per_uc_tree_cycle(tree,cycle):
   """Return the list of number of children per unit growth.
@@ -294,7 +290,7 @@ def get_nb_children_per_uc_tree_cycle(tree,cycle):
 
 (nb_children_per_uc_B12_04,nb_children_per_uc_B12_05,nb_children_per_uc_B10_04,nb_children_per_uc_B10_05,
   nb_children_per_uc_F2_04,nb_children_per_uc_F2_05,nb_children_per_uc_B14_04,nb_children_per_uc_B14_05,
-  nb_children_per_uc_F6_04,nb_children_per_uc_F6_05) = load_obj("nb_children_per_uc_tree_cycle.pkl",share_dir+"info_mtg_doralice/")
+  nb_children_per_uc_F6_04,nb_children_per_uc_F6_05) = load_obj("nb_children_per_uc_tree_cycle.pkl", join(share_dir,"info_mtg_doralice") )
 
 def get_nb_descendant_per_axe_tree_cycle(tree,cycle):
   """Return a list of number of descendants per axes for a tree and for a cycle. 
@@ -330,48 +326,56 @@ def get_nb_descendant_per_axe_tree_cycle(tree,cycle):
 
 (nb_ucs_per_axe_B12_04,nb_ucs_per_axe_B12_05,nb_ucs_per_axe_B10_04,nb_ucs_per_axe_B10_05,
   nb_ucs_per_axe_F2_04,nb_ucs_per_axe_F2_05,nb_ucs_per_axe_B14_04,nb_ucs_per_axe_B14_05,
-  nb_ucs_per_axe_F6_04,nb_ucs_per_axe_F6_05 )= load_obj("nb_ucs_per_axe_tree_cycle.pkl",share_dir+"info_mtg_doralice/")
+  nb_ucs_per_axe_F6_04,nb_ucs_per_axe_F6_05 )= load_obj("nb_ucs_per_axe_tree_cycle.pkl",join(share_dir,"info_mtg_doralice") )
   
 
 #### Function not ready :   
-# def get_nb_inflo_per_uc_cycle(tree, cycle):
-  # """ Return the number of inflorescences per Growth Unit
-  # """
-  # nb_inflo_per_ucs = []
-  # uc_florifere = []
-  # ucs_extremity_cycle = get_ucs_tree_cycle_in_extremity(tree, cycle)
-  # for i in ucs_extremity_cycle:
-    # children = g.children(i)
-    # children_flo = [flo for flo in children if g.label(flo)=="F" and get_cycle_uc(flo)==cycle]
-    # nb_inflo = 0
-    # if len(children_flo) >0 :
-      # uc_florifere.append(children_flo[0])
-      # nb_inflo_t = g.property('nb_inflo_t')[children_flo]
-      # nb_inflo_l = g.property('nb_inflo_l')[children_flo]
-      # nb_inflo = int(nb_inflo_t) + int(nb_inflo_l)
-    # nb_inflo_per_ucs.append( nb_inflo )
-  # import collections
-  # nb_inflo_per_uc = dict( collections.Counter(nb_inflo_per_ucs) )
-  # return nb_inflo_per_uc
+def get_nb_inflo_per_uc_cycle(tree, cycle):
+  """ Return the number of inflorescences per Growth Unit
+  """
+  nb_inflo_per_ucs = []
+  uc_florifere = []
+  ucs_extremity_cycle = get_ucs_tree_cycle_in_extremity(tree, cycle)
+  for i in ucs_extremity_cycle:
+    children = g.children(i)
+    children_flo = [flo for flo in children if g.label(flo)=="F" and get_cycle_uc(flo)==cycle]
+    nb_inflo = 0
+    if len(children_flo) >0 :
+      uc_florifere.append(children_flo[0])
+      nb_inflo_t = g.property('nb_inflo_t')[children_flo[0]]
+      if nb_inflo_t=='':
+        nb_inflo_t = '0'
+      nb_inflo_l = g.property('nb_inflo_l')[children_flo[0]]
+      if nb_inflo_l=='':
+        nb_inflo_l = '0'
+      nb_inflo = int(nb_inflo_t) + int(nb_inflo_l)
+    nb_inflo_per_ucs.append( nb_inflo )
+  import collections
+  nb_inflo_per_uc = dict( collections.Counter(nb_inflo_per_ucs) )
+  return nb_inflo_per_uc
   
-###### Loaded Cogshall trees :
-#nb_inflo_per_uc_B12_04 = get_nb_inflo_per_uc_cycle(71,4)
-#nb_inflo_per_uc_B12_05 = get_nb_inflo_per_uc_cycle(71,5)
-#nb_inflo_per_uc_B10_04 = get_nb_inflo_per_uc_cycle(173,4)
-#nb_inflo_per_uc_B10_05 = get_nb_inflo_per_uc_cycle(173,5)
-#nb_inflo_per_uc_F2_04 = get_nb_inflo_per_uc_cycle(772,4)
-#nb_inflo_per_uc_F2_05 = get_nb_inflo_per_uc_cycle(772,5)
-###### Not loaded Cogshall trees :
-#nb_inflo_per_uc_B14_04 = get_nb_inflo_per_uc_cycle(1,4)
-#nb_inflo_per_uc_B14_05 = get_nb_inflo_per_uc_cycle(1,5)
-#nb_inflo_per_uc_F6_04 = get_nb_inflo_per_uc_cycle(1191,4)
-#nb_inflo_per_uc_F6_05 = get_nb_inflo_per_uc_cycle(1191,5)
+#### Loaded Cogshall trees :
+# nb_inflo_per_uc_B12_04 = get_nb_inflo_per_uc_cycle(71,4)
+# nb_inflo_per_uc_B12_05 = get_nb_inflo_per_uc_cycle(71,5)
+# nb_inflo_per_uc_B10_04 = get_nb_inflo_per_uc_cycle(173,4)
+# nb_inflo_per_uc_B10_05 = get_nb_inflo_per_uc_cycle(173,5)
+# nb_inflo_per_uc_F2_04 = get_nb_inflo_per_uc_cycle(772,4)
+# nb_inflo_per_uc_F2_05 = get_nb_inflo_per_uc_cycle(772,5)
+#### Not loaded Cogshall trees :
+# nb_inflo_per_uc_B14_04 = get_nb_inflo_per_uc_cycle(1,4)
+# nb_inflo_per_uc_B14_05 = get_nb_inflo_per_uc_cycle(1,5)
+# nb_inflo_per_uc_F6_04 = get_nb_inflo_per_uc_cycle(1191,4)
+# nb_inflo_per_uc_F6_05 = get_nb_inflo_per_uc_cycle(1191,5)
 
-#dump_obj( (nb_inflo_per_uc_B12_04,nb_inflo_per_uc_B12_05,
-#  nb_inflo_per_uc_B10_04,nb_inflo_per_uc_B10_05,
-#  nb_inflo_per_uc_F2_04,nb_inflo_per_uc_F2_05,
-#  nb_inflo_per_uc_B14_04,nb_inflo_per_uc_B14_05,
-#  nb_inflo_per_uc_F6_04,nb_inflo_per_uc_F6_04), "nb_inflo_per_uc_tree_cycle.pkl")
+# dump_obj( (nb_inflo_per_uc_B12_04,nb_inflo_per_uc_B12_05,
+# nb_inflo_per_uc_B10_04,nb_inflo_per_uc_B10_05,
+# nb_inflo_per_uc_F2_04,nb_inflo_per_uc_F2_05,
+# nb_inflo_per_uc_B14_04,nb_inflo_per_uc_B14_05,
+# nb_inflo_per_uc_F6_04,nb_inflo_per_uc_F6_04), "nb_inflo_per_uc_tree_cycle.pkl")
+
+(nb_inflo_per_uc_B12_04,nb_inflo_per_uc_B12_05,nb_inflo_per_uc_B10_04,nb_inflo_per_uc_B10_05,
+ nb_inflo_per_uc_F2_04,nb_inflo_per_uc_F2_05,nb_inflo_per_uc_B14_04,nb_inflo_per_uc_B14_05,
+ nb_inflo_per_uc_F6_04,nb_inflo_per_uc_F6_04)= load_obj("nb_inflo_per_uc_tree_cycle.pkl",join(share_dir,"info_mtg_doralice") )
 
   
 
@@ -410,7 +414,7 @@ def get_nb_uc_giving_inflorescence_tree_cycle(tree,cycle):
 (nb_uc_giving_inflorescence_B12_04,nb_uc_giving_inflorescence_B12_05,nb_uc_giving_inflorescence_B10_04,
   nb_uc_giving_inflorescence_B10_05,nb_uc_giving_inflorescence_F2_04,nb_uc_giving_inflorescence_F2_05,
   nb_uc_giving_inflorescence_B14_04,nb_uc_giving_inflorescence_B14_05,nb_uc_giving_inflorescence_F6_04,
-  nb_uc_giving_inflorescence_F6_05) = load_obj("nb_uc_giving_inflorescence_tree_cycle.pkl",share_dir+"info_mtg_doralice/")
+  nb_uc_giving_inflorescence_F6_05) = load_obj("nb_uc_giving_inflorescence_tree_cycle.pkl",join(share_dir,"info_mtg_doralice") )
 
 ###### To check if inflorescences are at the extremity of the canopy
 #ucs_B12 = [i for i in g.components_at_scale(71,scale=4)]
@@ -480,7 +484,7 @@ def get_flowering_rate_tree_cycle(tree,cycle):
 
 (flowering_rate_B12_04,flowering_rate_B12_05,flowering_rate_B10_04,flowering_rate_B10_05,
   flowering_rate_F2_04,flowering_rate_F2_05,flowering_rate_B14_04,flowering_rate_B14_05,
-  flowering_rate_F6_04,flowering_rate_F6_05) = load_obj("flowering_rate_tree_cycle.pkl",share_dir+"info_mtg_doralice/")
+  flowering_rate_F6_04,flowering_rate_F6_05) = load_obj("flowering_rate_tree_cycle.pkl",join( share_dir,"info_mtg_doralice") )
 
   
 
@@ -516,7 +520,7 @@ def get_terminal_apical_rate_tree_cycle(tree,cycle):
 (terminal_apical_rate_B12_04,terminal_apical_rate_B12_05,terminal_apical_rate_B10_04,
   terminal_apical_rate_B10_05,terminal_apical_rate_F2_04,terminal_apical_rate_F2_05,
   terminal_apical_rate_B14_04,terminal_apical_rate_B14_05,terminal_apical_rate_F6_04,
-  terminal_apical_rate_F6_05) = load_obj("terminal_apical_rate_tree_cycle.pkl",share_dir+"info_mtg_doralice/")
+  terminal_apical_rate_F6_05) = load_obj("terminal_apical_rate_tree_cycle.pkl", join( share_dir,"info_mtg_doralice") )
 
 
 
@@ -561,4 +565,4 @@ def get_monthly_date_ucs_tree_cycle(tree,cycle):
 (freq_monthly_date_ucs_B12_04,freq_monthly_date_ucs_B12_05,freq_monthly_date_ucs_B10_04,
   freq_monthly_date_ucs_B10_05,freq_monthly_date_ucs_F2_04,freq_monthly_date_ucs_F2_05,
   freq_monthly_date_ucs_B14_04,freq_monthly_date_ucs_B14_05,freq_monthly_date_ucs_F6_04,
-  freq_monthly_date_ucs_F6_05) = load_obj("monthly_date_ucs_tree_cycle.pkl",share_dir+"info_mtg_doralice/")
+  freq_monthly_date_ucs_F6_05) = load_obj("monthly_date_ucs_tree_cycle.pkl",join( share_dir,"info_mtg_doralice") )

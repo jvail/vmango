@@ -18,6 +18,8 @@ qui affichent les résultats des simulations (et des données empiriques pour po
             
             - "nb_uc_giving_inflorescence_tree_cycle" : le nombre d'UCs florifères par cycle et par arbre
             
+            - "nb_inflo_per_uc_tree_cycle" : le nombre d'inflorescences par UC pour un cycle et un arbre
+            
             - "flowering_rate_tree_cycle" : le taux de floraison par cycle et par arbre
             
             - "terminal_apical_rate_tree_cycle" : le taux d'UCs terminales en position apicale par cycle et par arbre

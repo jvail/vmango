@@ -39,8 +39,8 @@ def choice_data_for_ploting(model, name_tree, path_choice, nb_distribution, cycl
             - if 6 : "terminal_apical_rate_tree_cycle"
             - if 8 : "nb_uc_giving_inflorescence_tree_cycle"
             - if 10 : "flowering_rate_tree_cycle"
-            - if 12 : "" TODO nb inflo per uc
             - if 14 : "nb_axe_tree_cycle"
+            - if -10 : "nb_inflo_per_uc_tree_cycle" 
             - if -6 : "nb_children_per_uc_tree_cycle"
             - if -4 : "nb_ucs_per_axe_tree_cycle"
             - if -2 : "monthly_date_ucs_tree_cycle"
@@ -74,8 +74,8 @@ def choice_data_for_ploting(model, name_tree, path_choice, nb_distribution, cycl
         name_file_empirical = "flowering_rate_tree_cycle"
     elif nb_distribution == 12:
         name_file_empirical = "nb_axe_tree_cycle"
-    #elif nb_distribution == -8:
-    #    name_file_empirical = "nb_inflo_per_ucs_tree_cycle"
+    elif nb_distribution == -10:
+        name_file_empirical = "nb_inflo_per_uc_tree_cycle"
     elif nb_distribution == -6:
         name_file_empirical = "nb_children_per_uc_tree_cycle"
     elif nb_distribution == -4:
@@ -123,6 +123,13 @@ def plot_data_list(simulate_data, dict_empirical_data, xlab = "", ylab = "", tit
 # # total_number_ucs_tree_cycle : 
 # data_sim, data_emp = choice_data_for_ploting(2,"B12","nothinned_nomixture",0,0)
 # plot_data_list(data_sim, data_emp, xlab = "Number of GU for a cycle", ylab = "Count", title="Distribution of GU's number in cycle 4")
+# # nb_inflo_tree_cycle :
+# data_sim_per_GU, data_emp_per_GU = choice_data_for_ploting(0,"B12","by_all_tree",-10,0)
+# d = {key : [nb for nb in data_emp_per_GU[key].keys() for j in range( data_emp_per_GU[key][nb]) ] for key in data_emp_per_GU.keys()}
+# data_sim = sum(data_sim_per_GU)
+# data_emp = { key : sum(data_emp_per_GU[key]) for key in data_emp_per_GU.keys()}
+# plot_data_list(data_sim, data_emp, xlab = "Number of inflorescences for a cycle", ylab = "Count", title="Distribution of inflorescences's number in cycle 4")
+
 
 
 def plot_data_rate(simulate_data, dict_empirical, emp_tree_name="", xlab="", ylab="Count", title=""):
@@ -223,6 +230,10 @@ def plot_data_dict(simulate_data, dict_empirical_data, emp_tree_name="", xlab = 
 # # nb_ucs_per_axe_tree_cycle :
 # data_sim, data_emp = choice_data_for_ploting(1,"F2","by_all_trees",-4,0)
 # plot_data_dict(data_sim, data_emp, emp_tree_name="", xlab = "Number of children per ancestor GU", ylab = "Probability", title="Distribution of children's number per anceestor GU in cycle 4")
+# nb_inflo_per_uc_tree_cycle :
+data_sim, data_emp = choice_data_for_ploting(2,"B12","",-10,0)
+d = {key : [nb for nb in data_emp[key].keys() for j in range( data_emp[key][nb]) ] for key in data_emp.keys()}
+plot_data_dict(data_sim, d, emp_tree_name="", xlab = "Number of inflorescences per GU", ylab = "Probability", title="Distribution of inflorescences's number per GU in cycle 4")
 
 
 def plot_data_monthly(simulate_data, dict_empirical_data, cycle, name_tree= "", title = ""):
