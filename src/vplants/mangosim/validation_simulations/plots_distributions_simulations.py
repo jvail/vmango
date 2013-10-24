@@ -230,10 +230,10 @@ def plot_data_dict(simulate_data, dict_empirical_data, emp_tree_name="", xlab = 
 # # nb_ucs_per_axe_tree_cycle :
 # data_sim, data_emp = choice_data_for_ploting(1,"F2","by_all_trees",-4,0)
 # plot_data_dict(data_sim, data_emp, emp_tree_name="", xlab = "Number of children per ancestor GU", ylab = "Probability", title="Distribution of children's number per anceestor GU in cycle 4")
-# nb_inflo_per_uc_tree_cycle :
-data_sim, data_emp = choice_data_for_ploting(2,"B12","",-10,0)
-d = {key : [nb for nb in data_emp[key].keys() for j in range( data_emp[key][nb]) ] for key in data_emp.keys()}
-plot_data_dict(data_sim, d, emp_tree_name="", xlab = "Number of inflorescences per GU", ylab = "Probability", title="Distribution of inflorescences's number per GU in cycle 4")
+# # nb_inflo_per_uc_tree_cycle :
+# data_sim, data_emp = choice_data_for_ploting(2,"B12","",-10,0)
+# d = {key : [nb for nb in data_emp[key].keys() for j in range( data_emp[key][nb]) ] for key in data_emp.keys()}
+# plot_data_dict(data_sim, d, emp_tree_name="", xlab = "Number of inflorescences per GU", ylab = "Probability", title="Distribution of inflorescences's number per GU in cycle 4")
 
 
 def plot_data_monthly(simulate_data, dict_empirical_data, cycle, name_tree= "", title = ""):
