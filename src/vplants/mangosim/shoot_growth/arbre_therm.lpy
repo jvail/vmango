@@ -4,7 +4,7 @@ from math import *
 from random import *
 
 
-pdt=1/24. # une heure
+pdt=24/24. # une heure
 current_date = datetime(2003,7,1)
 delta_date = timedelta(hours=24*pdt)
 
@@ -82,19 +82,25 @@ module Env
 
 Axiom: Env Bud(current_date+timedelta(days=2))
 
-derivation length: ceil(20/pdt)
+derivation length: ceil(200/pdt)
 production:
 
 Bud(burst):
   if (burst == current_date) :
     Fsize=min(max(0.5,gauss(16.67,20.8381)),25)
-    FsizeL=min(34,max(0.5,gauss(15.23,37.82)))
+    FsizeL=max(0.5,gauss(47.16/2.,19.33/2.))
     NbInternode=int(max(ceil(0.6*Fsize)+randint(-1,1),1))
     nproduce C(0,Fsize)
     for i in xrange(NbInternode-1):
       nproduce Internode(0.01,0,Fsize/NbInternode) /(phyllotaxy) [ Leaf(i/float(NbInternode),0.1,0,FsizeL/10.) ]
     nproduce Internode(0.01,0,Fsize/NbInternode) /(phyllotaxy) [ Leaf(NbInternode/float(NbInternode),0.1,0,FsizeL/20.) ]
     nproduce C
+    nb_chil= randint(4,6)              
+    if nb_chil>1:
+          angle=360./(nb_chil-1) +randint(-20,20)
+          for i in xrange(0,nb_chil-1):
+            nproduce /(angle) [&(60) Bud(current_date+timedelta(days=30)) /(i*137.5) ]
+          produce Bud(current_date+timedelta(days=30))
 
 Internode(size,age,Fsize):
   age += pdt
@@ -130,12 +136,12 @@ Env --> Label(str(current_date)) #@g(ScreenProjected(Translated(-0.5,-0.7,0,Text
 
 endlsystem
 
+
 ###### INITIALISATION ######
 
 __lpy_code_version__ = 1.1
 
 def __initialiseContext__(context):
-	context.animation_timestep = 0.0
 	import openalea.plantgl.all as pgl
 	leafdiam = pgl.NurbsCurve2D(	
 	    ctrlPointList = pgl.Point3Array([(0, 0.0359806, 1),(0.146454, 0.203327, 1),(0.34022, 0.310394, 1),(1, 0.0239871, 1)]) , 
