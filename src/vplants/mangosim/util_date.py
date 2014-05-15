@@ -1,31 +1,4 @@
-from openalea.deploy.shared_data import shared_data
-import vplants.mangosim
-share_dir = shared_data(vplants.mangosim, share_path = "share")
-from os.path import join, exists
-
-def load_obj(filename, dirname = '.'):
-  import cPickle as pickle
-  gfname = join(dirname,filename)
-  if exists(gfname ):
-    pkl_file = open(gfname,'rb')
-    obj = pickle.load(pkl_file)
-    pkl_file.close()
-    return obj
-  else:
-    raise ValueError(gfname)
-
-def dump_obj(obj,filename, dirname = '.'):
-  import cPickle as pickle
-  gfname = join(dirname,filename)
-  pkl_file = open(gfname,'wb')
-  pickle.dump(obj,pkl_file)
-  pkl_file.close()
-
-def load_mtg(name = 'mango_mtg.pkl'):
-  g = load_obj(name,share_dir)
-  return g
-
-  
+from datetime import datetime, date
 
 
 Month = {'janv' : 1, 'fev' : 2, 'mars' : 3,
@@ -36,34 +9,41 @@ Month = {'janv' : 1, 'fev' : 2, 'mars' : 3,
 def date_from_string(string):
     """From string = 'month.year', it return a date
     """
-    from datetime import date
     m,y = string.split(".")
     date_ = date(2000+int(y), Month[m], 1)
     return date_
 
-# date_weeks = {
-#     0 : ('05-07-01','05-08-07'),
-#     1 : ('05-08-08','05-08-14'),
-#     2 : ('05-08-15','05-08-21'),
-#     3 : ('05-08-22','05-08-28'),
-#     4 : ('05-08-29','05-09-04'),
-#     5 : ('05-09-05','05-09-11'),
-#     6 : ('05-09-12','05-09-18'),
-#     7 : ('05-09-19','05-09-25'),
-#     8 : ('05-09-26','05-10-02'),
-#     9 : ('05-10-03','05-10-09'),
-#     10 : ('05-10-10','05-10-16'),
-#     11 : ('05-10-17','05-10-23'),
-#     12 : ('05-10-24','05-10-30')
-# }
+
+def month_difference(d1,d2):
+    return (d1.year-d2.year)*12 + (d1.month-d2.month)
+
+def week_difference(d1,d2):
+    from math import ceil
+    return ceil((d2 -d1).days/7.)
+
+# Fred note : The actual cycle seems to start at begining of June
+def cycle_begining(cycle):
+    return date(2000+cycle-1,6,1)
+    # return date(2000+cycle-1,7,1)
+
+def cycle_end(cycle):
+   return date(2000+cycle,5,31)
+   # return date(2000+cycle,6,30)
+
+def in_cycle(date, cycle):
+    return cycle_begining(cycle) <= date <= cycle_end(cycle)
 
 
-beg_end_period = {'E' : (7,8,9,10), 'I' : (11,12,1,2), 'L' : (3,4,5,6)}
+def get_cycle(date):
+    if date < cycle_begining(4) : return 3
+    elif date < cycle_begining(5) : return 4
+    else : return 5
 
-# for "get_data_for_glm"
 
-from datetime import datetime
-date_weeks_04 = {
+#beg_end_period = {'E' : (7,8,9,10), 'I' : (11,12,1,2), 'L' : (3,4,5,6)}
+
+
+bloom_weeks_04 = {
 0 : (datetime(2004,7,1),datetime(2004,8,7)),
 1 : (datetime(2004,8,8),datetime(2004,8,14)),
 2 : (datetime(2004,8,15),datetime(2004,8,21)),
@@ -78,7 +58,7 @@ date_weeks_04 = {
 11 : (datetime(2004,10,17),datetime(2004,10,23)),
 12 : (datetime(2004,10,24),datetime(2004,10,30))  }
 
-date_weeks_05 = {
+bloom_weeks_05 = {
 0 : (datetime(2005,7,1),datetime(2005,8,7)),
 1 : (datetime(2005,8,8),datetime(2005,8,14)),
 2 : (datetime(2005,8,15),datetime(2005,8,21)),
@@ -93,7 +73,7 @@ date_weeks_05 = {
 11 : (datetime(2005,10,17),datetime(2005,10,23)),
 12 : (datetime(2005,10,24),datetime(2005,10,30))  }
 
-date_weeks = {4 : date_weeks_04, 5 : date_weeks_05}
+bloom_weeks = {4 : bloom_weeks_04, 5 : bloom_weeks_05}
 
 
 

@@ -1,399 +1,234 @@
-from openalea.deploy.shared_data import shared_data
-import vplants.mangosim
-share_dir = shared_data(vplants.mangosim, share_path = "share")
 from vplants.mangosim.tools import *
+from vplants.mangosim.state import *
+from vplants.mangosim.util_date import *
+from vplants.mangosim.doralice_mtg.mtg_import import get_mtg
+from vplants.mangosim.doralice_mtg.mtg_manipulation import *
 
 
-g = load_mtg()
+# Fred Note:
+# Date format for Burst_Date_Children
+# the hundred unit represent delta of cycle
+# the two other number represent the month
 
-from datetime import date, datetime, timedelta
-def set_flowering():
-  """ Fonction from Pierre Fernique, see him to understand
-  """
-  if "flowering" in g.property_names():
-    raise IOError('`flowering` property has already been computed !')
-  #warnings.warn('`flowering` property will be added to the mangotree but `date_flo` property will be removed !')
-  old = g.property('date_flo')
-  g.add_property('flowering')
-  new = g.property('flowering')
-  for i in old:
-    dates = []
-    date = old[i].split("+")
-    if len(date) > 1:
-      for j in date:
-        d = j.split("/")
-        if int(d[2]) < 2000:
-          d[2] = 2000 + int(d[2])
-        else: d[2] = int(d[2])
-        dates.append(datetime(d[2], int(d[1]), int(d[0])))
+# Pb: most of the flowering date are NA in 2004
+
+# Data table creation
+
+NotRelevant = None
+NotAvailable = 'NA'
+
+
+def add_id_variables(dict_uc_prop, mtg, uc):
+    dict_uc_prop["uc"] = uc
+    # tree name
+    dict_uc_prop["tree"] = get_tree_name(mtg,get_tree_of_uc(mtg,uc))
+    dict_uc_prop["code"] = mtg.property('code')[uc]
+    dict_uc_prop["cycle"] = get_unit_cycle(mtg,uc)
+
+
+def vegetative_dev_variables(mtg, uc, cycle = None):
+    import collections
+    if cycle is None:
+        veg_children = vegetative_children(mtg,uc)
+        veg_children = [child for child in veg_children if get_unit_cycle(mtg,child) > 3]
     else:
-      date = old[i].split('/')
-      if len(date) == 3:
-        dates.append(datetime(int(date[2]), int(date[1]), int(date[0])))
-      else:
-        date = old[i].split("-")
-        if len(date) == 3:
-          d = int(date[0])
-          y = 2000+int(date[2])
-          if date[1] == "juin":
-            m = 6
-          elif date[1] == "oct":
-            m = 10
-          elif date[1] == "sept":
-            m = 9
-          elif date[1] == "dec":
-            m = 12
-          elif date[1] == "aout":
-            m = 8
-          elif date[1] == "juil":
-            m = 7
-          elif date[1] == "mai":
-            m = 5
-          elif date[1] == "nov":
-            m = 11
-          else:
-            raise ValueError('date_flo` property is no more valid for this function')
-          dates.append(datetime(y, m, d))
-    if len(dates) > 0:
-      new[i] = dates
-set_flowering()
-features_names = g.property_names()
+        veg_children = vegetative_children_at_cycle(mtg,uc,cycle)
+    Vegetative_Burst = int(len(veg_children) > 0)
+    if not Vegetative_Burst:
+        Lateral_GU_Children = NotRelevant
+        Nb_Lateral_GU_Children = NotRelevant
+        Burst_Date_Children = NotRelevant
+        Burst_Delta_Date_Children = NotRelevant
+    else:
+        lateral_veg_children = [c for c in veg_children if mtg.property('edge_type')[c]=='+']
+        Lateral_GU_Children = int(len(lateral_veg_children) > 0)
+        Nb_Lateral_GU_Children = len(lateral_veg_children)
+
+        date_burst = mtg.property('date_burst')
+        dates_daugther = dict(collections.Counter([date_burst[child] for child in veg_children if child in date_burst]))
+        mostFrequentDate = dates_daugther.items()[0][0]
+        #Burst_Date_Children = cycle*100+dateD.month
+        cycle_diff = get_cycle(mostFrequentDate)-get_unit_cycle(mtg,uc)
+        if not  cycle_diff in [0,1,2]:
+            raise ValueError("Cycle difference between a mother and its children is not in [0,1,2]", cycle_diff)
+        Burst_Date_Children = mostFrequentDate.month + 100*cycle_diff
+        if get_unit_cycle(mtg,uc) == 3:
+            Burst_Delta_Date_Children = month_difference(mostFrequentDate,cycle_begining(3))
+        else:
+            Burst_Delta_Date_Children = month_difference(mostFrequentDate, date_burst[uc])
+
+    return Vegetative_Burst, Lateral_GU_Children, Nb_Lateral_GU_Children, Burst_Date_Children, Burst_Delta_Date_Children
+
+def add_vegetative_dev_variables(dict_uc_prop, mtg, uc, cycle = None):
+    Vegetative_Burst, Lateral_GU_Children, Nb_Lateral_GU_Children, Burst_Date_Children, Burst_Delta_Date_Children = vegetative_dev_variables(mtg, uc, cycle)
+    dict_uc_prop["Vegetative_Burst"] = Vegetative_Burst
+    dict_uc_prop["Has_Lateral_GU_Children"] = Lateral_GU_Children
+    dict_uc_prop["Nb_Lateral_GU_Children"] = Nb_Lateral_GU_Children 
+    dict_uc_prop["Burst_Date_Children"] = Burst_Date_Children
+    dict_uc_prop["Burst_Delta_Date_Children"] = Burst_Delta_Date_Children
 
 
-
-
-def get_trees_loaded_or_not(loaded=True, variety = "cogshall"):
-  """ Return a list of trees from a given vairety and which are loaded or not.
-  Parameters : 
-    loaded : a booleen, if true, return trees which are loaded, if false, return trees which are not loaded.
-    variety : a string, the choice of variety is : 
-            'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
-  """
-  if loaded : loaded_prop = 'C'
-  else : loaded_prop = 'NC'
-  if variety == "all": trees_loaded_or_not = [i for i,v in g.property('var').items() if g.property('fr_load')[i]==loaded_prop]
-  else: trees_loaded_or_not = [i for i,v in g.property('var').items() if v== variety and g.property('fr_load')[i]==loaded_prop]
-  return trees_loaded_or_not
-
-
-def set_date_from_string(string):
-  """From string = 'month.year', it return a
-  """
-  m,y = string.split(".")
-  date_ = date(2000+int(y), Month[m], 1)
-  return date_
-
-def get_total_ucs_tree_cycle(tree, cycle):
-  """Return the number of entire unit growth for a tree and for a cycle 
-  Parameters : 
-    tree: integer in g.property('var')
-	cycle: integer 3, 4 or 5"""
-  ucs_tree = [i for i in g.components_at_scale(tree,scale=4)]
-  ucs_tree_cycle = [i for i,y in g.property('year').items() if y==cycle and i in ucs_tree]
-  ucs_veget_tree_cycle = [i for i in ucs_tree_cycle if g.label(i)!='F'] # keep vegetative unit growth (remove inflorescence)
-  ucs_veget_tree_in_cycle = [i for i,d in g.property('date_burst').items() if i in ucs_veget_tree_cycle and date(2000+cycle-1,7,1) <=set_date_from_string(d) <= date(2000+cycle,6,30)]
-  return ucs_veget_tree_cycle 
-
-
-def get_ucs_cycle(cycle = 4,loaded = True, variety = "cogshall"):
-  """ 
-  Parameters : 
-    cycle : an integer, cycle 4 or 5
-    loaded : a booleen, if true, return trees which are loaded, if false, return trees which are not loaded.
-    variety : a string, the choice of variety is : 
-            'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
-  """
-  ucs_Cycle = []
-  trees = get_trees_loaded_or_not(loaded,variety)
-  for tree in trees :
-    ucs_Cycle += get_total_ucs_tree_cycle(tree, cycle)
-  return ucs_Cycle
-
-if __name__ == '__main__' :
-    ucs_04_loaded_cogshall = get_ucs_cycle(4,True,"cogshall")
-    ucs_05_loaded_cogshall = get_ucs_cycle(5,True,"cogshall")
-    ucs_04_notloaded_cogshall = get_ucs_cycle(4,False,"cogshall")
-    ucs_05_notloaded_cogshall = get_ucs_cycle(5,False,"cogshall")
-    uc_cycle_variety = {(4,True,"cogshall") : ucs_04_loaded_cogshall ,(5,True,"cogshall") : ucs_05_loaded_cogshall, 
-      (4,False,"cogshall"): ucs_04_notloaded_cogshall, (5,False,"cogshall"): ucs_05_notloaded_cogshall}
-
-
-
-def get_cycle_uc(uc):
-  """Return the cycle of the uc.  """
-  if g.label(uc)=='M' or g.label(uc)=='P': cycle_uc = 3
-  else: cycle_uc = g.property('year')[uc]
-  return cycle_uc
-
-
-def is_dead_in_cycle(uc,cycle):
-  """Return a boolean that indicates if a unit growth is still dead at the end of a cycle. """
-  if uc not in g.property('dead') : is_dead_in_cycle = False
-  else : 
-    date_dead = g.property('dead')[uc]
-    date_end_cycle = date(2000+cycle, 7, 15)
-    if set_date_from_string(date_dead) < date_end_cycle : is_dead_in_cycle = True
-    else: is_dead_in_cycle = False
-  return is_dead_in_cycle
-
-
-def get_ucs_tree_cycle_in_extremity(tree, cycle):
-  """Return a list of unit growth which are in the extremity of the canopy (for a tree and for a cycle).
-  If a unit growth dead in the cycle, it is remove from the list of terminal unit growth.
-  Parameters : 
-    tree: integer in g.property('var')
-	cycle: integer 3, 4 or 5"""
-  extremity = []
-  if cycle == 4 or cycle == 5:
-    ucs_extremity_cycleMinus1 = get_ucs_tree_cycle_in_extremity(tree,cycle-1)
-    for i1 in ucs_extremity_cycleMinus1:
-      children_extremity = [i2 for i2 in g.children(i1) if g.label(i2)!='F' and get_cycle_uc(i2)==cycle]
-      if children_extremity == [] and not is_dead_in_cycle(i1,cycle): extremity.append(i1)
-  ucs_veget_tree_cycle = get_total_ucs_tree_cycle(tree, cycle)
-  for i in ucs_veget_tree_cycle :
-    childrens_in_cycle = [child for child in g.children(i) if g.label(child)!='F' and get_cycle_uc(child)==cycle ]
-    if childrens_in_cycle == [] : extremity.append(i)
-  return extremity
-
-import collections
-
-
-def get_nature_position_ancestor(uc):
-  """ """
-  nature_ancestor = None
-  position_ancestor = None
-  if g.property('year')[uc] > 3 : 
-    cycle_uc = g.property('year')[uc]
-    parent_uc = g.parent(uc)
-    while g.property('year')[parent_uc] > cycle_uc -1:
-      parent_uc = g.parent(parent_uc)
-    ancestor = parent_uc
-    flo_children = [flo for flo in g.children(ancestor) if g.label(flo)=='F' and g.property('year')[flo]==cycle_uc-1]
-    if len(flo_children) > 0: is_nature_ancestor_flo = 1
-    else : is_nature_ancestor_flo = 0
-    is_position_ancestor_l = 0 if g.property('edge_type')[ancestor]=="<" else 1
-  return (is_nature_ancestor_flo, is_position_ancestor_l)
-
-
-
-
-def get_extremity_ucs_variety(cycle=4, loaded=True, variety="cogshall"):
-  """Return the list of terminal growth unit in the cycle and for the given variety.
-  Parameters :
-    cycle : an integer 4 or 5
-    loaded : a booleen, if True ucs are from loaded trees, else they are from not loaded trees
-    variety : a string, the choice or variety is : 
-             'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
-  """
-  extremity_ucs = []
-  trees = get_trees_loaded_or_not(loaded,variety)
-  for tree in trees : 
-    extremity_ucs += get_ucs_tree_cycle_in_extremity(tree, cycle)
-  return extremity_ucs
-
-if __name__ == '__main__' :
-    extremity_03_loaded_cogshall= get_extremity_ucs_variety(3,True,"cogshall")
-    extremity_04_loaded_cogshall= get_extremity_ucs_variety(4,True,"cogshall")
-    extremity_05_loaded_cogshall= get_extremity_ucs_variety(5,True,"cogshall")
-    extremity_03_notloaded_cogshall= get_extremity_ucs_variety(3,False,"cogshall")
-    extremity_04_notloaded_cogshall= get_extremity_ucs_variety(4,False,"cogshall")
-    extremity_05_notloaded_cogshall= get_extremity_ucs_variety(5,False,"cogshall")
-    extremity_variety = {(3,True,"cogshall"): extremity_03_loaded_cogshall,(4,True,"cogshall"):extremity_04_loaded_cogshall, (5,True,"cogshall"): extremity_05_loaded_cogshall, 
-      (3,False,"cogshall"): extremity_03_notloaded_cogshall,(4,False,"cogshall"): extremity_04_notloaded_cogshall, (5,False,"cogshall"):extremity_05_notloaded_cogshall}
-
-
-yes = 1
-no = 0
-unknow = None
-
-
-from pandas import DataFrame, concat
-
-def get_table_INSIDE_for_glm(dict_uc_cycle_variety,extremity_variety, cycle=4, loaded=True, variety="cogshall"):
-  """ 
-  Parameters :
-    cycle : an integer 4 or 5
-    loaded : a booleen, if True ucs are from loaded trees, else they are from not loaded trees
-    variety : a string, the choice of variety is : 
-             'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
-  """
-  table_INSIDE_for_glm = []
-  ucs_cycle_variety = dict_uc_cycle_variety[(cycle, loaded, variety)]
-  ucs_extremity = extremity_variety[(cycle, loaded, variety)]
-  for i in xrange(len(ucs_cycle_variety)):
-    uc = ucs_cycle_variety[i]
-    dict_uc = {}
-    dict_uc["uc"] = uc
-    # get Burst variable
-    veg_children = [child for child in g.children(uc) if g.label(child)!='F' and get_cycle_uc(child)==cycle]
-    if veg_children==[]: dict_uc["Burst"] = 0
-    else : dict_uc["Burst"] = 1
-    #### get Dead variable
-    #if is_dead_in_cycle(uc,cycle)==True : dict_uc["Dead"] = yes
-    #else : dict_uc["Dead"] = no
-    # get Lateral GU variable
-    if len(veg_children)==0 : dict_uc["Lateral_GU_daughter"] = None
-    elif len(veg_children)==1 : dict_uc["Lateral_GU_daughter"] = 0
-    else: dict_uc["Lateral_GU_daughter"] = 1
-    # get Number of lateral GU variable
-    lateral_veg_children = [c for c in veg_children if g.property('edge_type')[c]=='+']
-    if dict_uc["Lateral_GU_daughter"] == 1 : dict_uc["No_Lateral_GU"] = len(lateral_veg_children)
-    else : dict_uc["No_Lateral_GU"] = unknow
-    # get nature ancestor
-    dict_uc["nature_ancestor_V"] = get_nature_position_ancestor(uc)[0]
-    # get position ancestor
-    dict_uc["position_ancestor_L"] = get_nature_position_ancestor(uc)[1]
-    # get mother position feature 
-    if g.property('edge_type')[uc] ==  '+' : dict_uc["position_mother_L"] = 1
-    else : dict_uc["position_mother_L"] = 0
-    # get burst date feature (of mother)
-    dateM = set_date_from_string( g.property('date_burst')[uc] )
-    dict_uc["burst_date_mother"] = dateM.month
-    # get loaded feature
-    if loaded==True : dict_uc["is_loaded"] = 1
-    else : dict_uc["is_loaded"] = 0
-    # get Delta burst date variable (beetween mother and daughters)
-    if dict_uc["Burst"] == 0: 
-      dict_uc["Delta_Burst_date_child"] = unknow
-      dict_uc["Date_burst_daughter"] = unknow
+def flowering_dev_variables(mtg, uc, cycle = None):
+    if cycle is None:
+        inflorescence_child = inflorescence_children(mtg,uc)
+        inflorescence_child = [inflo for inflo in inflorescence_child if get_unit_cycle(mtg,inflo) > 3]
+        is_terminal = len(inflorescence_child) > 0
+    else:
+        is_terminal = int(is_terminal_at_cycle(mtg, uc, cycle)  )      
+    if not is_terminal : # We consider only terminal uc can bloom
+      Flowering = NotRelevant
+      Nb_Inflorescence = NotRelevant
+      Flowering_Week = NotRelevant
     else : 
-      dates_daugther = dict(collections.Counter([set_date_from_string(d) for childs,d in g.property('date_burst').items() if childs in veg_children]))
-      dateD = dates_daugther.items()[0][0]
-      dict_uc["Date_burst_daughter"] = dateD.month
-      diff_date = (dateD-dateM).days/28 
-      dict_uc["Delta_Burst_date_child"] = diff_date
-    # get extremity feature
-    if uc in ucs_extremity : dict_uc["is_in_extremity"]= 1
-    else : dict_uc["is_in_extremity"]= 0
-    # get varaibles in extremity for flowering
-    if dict_uc["is_in_extremity"]==0 : 
-      dict_uc["Flowering"] = unknow
-      dict_uc["No_inflo"] = unknow
-      dict_uc["Flowering_Date"] = "NA"
-    else : 
-      flo_child = [flo for flo in g.children(uc) if g.label(flo)=='F' and g.property('year')[flo]==cycle]
-      # get Flowering variable and get Number of inflorescences variable and get Flowering Date variable
-      if len(flo_child)==0 : 
-        dict_uc["Flowering"] = 0
-        dict_uc["No_inflo"] = 0
-        dict_uc["Flowering_Date"] = "NA"
+      # The inflorescence children of the uc
+      if not cycle is None:
+          inflorescence_child = inflorescence_children_at_cycle(mtg,uc,cycle)
+
+      Flowering = int(len(inflorescence_child) > 0)
+
+      if not Flowering : 
+        Nb_Inflorescence = NotRelevant
+        Flowering_Week = NotRelevant
       else : 
-        dict_uc["Flowering"] = 1
-        flo = flo_child[0]
-        if g.property('nb_inflo_l')[flo] !='':
-          dict_uc["No_inflo"] = int( g.property('nb_inflo_t')[flo] ) + int( g.property('nb_inflo_l')[flo] )
-        else : dict_uc["No_inflo"] = unknow
-        date_flo = g.property('flowering')[flo] if flo in g.property('flowering') else ""
-        if date_flo == '' : dict_uc["Flowering_Date"] = unknow
+        # A unique entity in the MTG represent all the inflorescence children of a given uc
+        inflo = inflorescence_child[0]
+        icycle = cycle if not cycle is None else get_unit_cycle(mtg,inflo)
+        if mtg.property('nb_inflo_l').get(inflo,'') != '':
+            # The number of inflorescence apical and lateral are stored into the two properties
+            Nb_Inflorescence = int( mtg.property('nb_inflo_t')[inflo] ) + int( mtg.property('nb_inflo_l')[inflo] )
         else : 
-          for j in xrange(len(date_weeks[cycle])):
-            if date_weeks[cycle][j][0] <= date_flo[0] <= date_weeks[cycle][j][1]:
-              dict_uc["Flowering_Date"] = j
-    # get name tree
-    code = g.property('code')[uc]
-    dict_uc["tree"] = code.split("/")[0]
+            Nb_Inflorescence = NotAvailable
+
+        # date of full bloom is given by property 'flowering'
+        date_flo = mtg.property('flowering').get(inflo,'')
+        if date_flo == '' : 
+            Flowering_Week = NotAvailable
+        else : 
+            # We find the week of bloom using the predefined calendar
+            for j in xrange(len(date_weeks[icycle])):
+                if bloom_weeks[icycle][j][0] <= date_flo[0] <= bloom_weeks[icycle][j][1]:
+                    Flowering_Week = j
+                    break
+    return is_terminal, Flowering, Nb_Inflorescence, Flowering_Week
+
+def add_flowering_dev_variables(dict_uc_prop, mtg, uc, cycle):
+    is_terminal, Flowering, Nb_Inflorescence, Flowering_Week = flowering_dev_variables(mtg, uc, cycle)
+    dict_uc_prop["is_terminal"] = is_terminal
+    dict_uc_prop["Flowering"] = Flowering
+    dict_uc_prop["Nb_Inflorescence"] = Nb_Inflorescence 
+    dict_uc_prop["Flowering_Week"] = Flowering_Week
+
+def explicative_variables_inside(mtg, uc):
+    # get position feature (as mother)
+    Position_A   = get_position_uc(mtg,uc)
+    # get burst date feature (as mother)
+    Burst_Date = mtg.property('date_burst')[uc].month
+
+    # get nature and position of ancestor
+    ancestor = get_ancestor(mtg, uc)
+    if ancestor:
+        # Fred Note: Position value has been changed. 1 for position means Apical
+        Nature_Ancestor_V   = get_nature_uc(mtg,ancestor)
+        Position_Ancestor_A = get_position_uc(mtg,ancestor)
+    else:
+        Nature_Ancestor_V   = NotAvailable
+        Position_Ancestor_A = NotAvailable
+
+    # get loaded feature
+    Tree_Fruit_Load = load_state(mtg, get_tree_of_uc(mtg,uc))
+    return Position_A, Burst_Date, Nature_Ancestor_V, Position_Ancestor_A, Tree_Fruit_Load
+
+
+def add_explicative_variables_inside(dict_uc_prop, mtg, uc):
+    Position_A, Burst_Date, Nature_Ancestor_V, Position_Ancestor_A, Tree_Fruit_Load = explicative_variables_inside(mtg, uc)
+    dict_uc_prop["Position_A"] = Position_A
+    dict_uc_prop["Burst_Date"] = Burst_Date
+    dict_uc_prop["Nature_Ancestor_V"] = Nature_Ancestor_V 
+    dict_uc_prop["Position_Ancestor_A"] = Position_Ancestor_A
+    dict_uc_prop["Tree_Fruit_Load"] = Tree_Fruit_Load
+
+def explicative_variables_transition(mtg, uc):
+    # get position feature (as mother)
+    Position_A   = get_position_uc(mtg,uc)
+    Nature_V     = get_nature_uc(mtg,uc)
+
+    # get burst date feature (as mother)
+    if get_unit_cycle(mtg,uc) == 3:
+        Burst_Date = NotAvailable
+    else:
+        Burst_Date =  mtg.property('date_burst')[uc].month
+
+    # get loaded feature
+    Tree_Fruit_Load = load_state(mtg, get_tree_of_uc(mtg,uc))
+    return Position_A, Nature_V, Burst_Date, Tree_Fruit_Load
+
+
+def add_explicative_variables_transition(dict_uc_prop, mtg, uc):
+    Position_A, Nature_V, Burst_Date, Tree_Fruit_Load = explicative_variables_transition(mtg, uc)
+    dict_uc_prop["Position_A"] = Position_A
+    dict_uc_prop["Nature_V"] = Nature_V 
+    dict_uc_prop["Burst_Date"] = Burst_Date
+    dict_uc_prop["Tree_Fruit_Load"] = Tree_Fruit_Load
+
+def explicative_variables_null_model(mtg, uc):
+    # get loaded feature
+    Tree_Fruit_Load = load_state(mtg, get_tree_of_uc(mtg,uc))
+    return Tree_Fruit_Load
+
+
+def add_explicative_variables_null_model(dict_uc_prop, mtg, uc):
+    Tree_Fruit_Load = explicative_variables_null_model(mtg, uc)
+    dict_uc_prop["Tree_Fruit_Load"] = Tree_Fruit_Load
+
+def get_table_within_cycle_for_glm(mtg, cycle=4, loaded = None, variety="cogshall"):
+  """ 
+  Parameters :
+    cycle : an integer 4 or 5
+    loaded : a booleen, if True ucs are from loaded trees, else they are from not loaded trees
+    variety : a string, the choice of variety is : 
+             'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
+  """
+  table_within_cycle_for_glm = []
+
+  ucs_cycle_variety = get_all_ucs_of_cycle(mtg, cycle, loaded, variety)
+
+  for uc in ucs_cycle_variety:
+    dict_uc = {}
+
+    add_id_variables(dict_uc, mtg, uc)
+    add_vegetative_dev_variables(dict_uc, mtg, uc, cycle)
+    add_flowering_dev_variables(dict_uc, mtg, uc, cycle)
+    add_explicative_variables_inside(dict_uc, mtg, uc)
+
     # put the dictionnary on the list
-    table_INSIDE_for_glm.append(dict_uc)
-  return table_INSIDE_for_glm
+    table_within_cycle_for_glm.append(dict_uc)
+
+  return table_within_cycle_for_glm
 
 
-if __name__ == '__main__' :
-    table_INSIDE_for_glm_04_loaded_cogshall = DataFrame( get_table_INSIDE_for_glm(uc_cycle_variety,extremity_variety,cycle=4, loaded=True, variety="cogshall") )
-    table_INSIDE_for_glm_05_loaded_cogshall = DataFrame( get_table_INSIDE_for_glm(uc_cycle_variety,extremity_variety,cycle=5, loaded=True, variety="cogshall") )
-    table_INSIDE_for_glm_04_notloaded_cogshall = DataFrame( get_table_INSIDE_for_glm(uc_cycle_variety,extremity_variety,cycle=4, loaded=False, variety="cogshall") )
-    table_INSIDE_for_glm_05_notloaded_cogshall = DataFrame( get_table_INSIDE_for_glm(uc_cycle_variety,extremity_variety,cycle=5, loaded=False, variety="cogshall") )
-    #
-    table_INSIDE_for_glm_04_cogshall = concat([table_INSIDE_for_glm_04_loaded_cogshall,table_INSIDE_for_glm_04_notloaded_cogshall],ignore_index=True)
-    table_INSIDE_for_glm_05_cogshall = concat([table_INSIDE_for_glm_05_loaded_cogshall,table_INSIDE_for_glm_05_notloaded_cogshall],ignore_index=True)
-    #
-    column_names = list( table_INSIDE_for_glm_04_cogshall.columns )
-    #
-    from os.path import join
-    table_INSIDE_for_glm_04_cogshall.to_csv(join(share_dir, "model_glm","table_INSIDE_04_cogshall.csv"),header=column_names, index=False)
-    table_INSIDE_for_glm_05_cogshall.to_csv(jion(share_dir, "model_glm","table_INSIDE_05_cogshall.csv"),header=column_names, index=False)
-
-def get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=True, variety="cogshall"):
+def get_table_between_cycle_for_glm(mtg, cycle=3, loaded=None, variety="cogshall"):
   """
   Parameters :
     cycle : an integer 3 or 4
     loaded : a booleen, if True ucs are from loaded trees, else they are from not loaded trees
     variety : a string, the choice of variety is : 
              'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety. """
-  table_TRANSITION_for_glm = []
-  mother_ucs_extremity = extremity_variety[(cycle, loaded, variety)]
-  for i in xrange(len(mother_ucs_extremity)):
-    uc = mother_ucs_extremity[i]
+  table_between_cycle_for_glm = []
+  terminal_ucs = get_terminal_ucs_of_variety_at_cycle(mtg, cycle, loaded, variety)
+  for uc in terminal_ucs:
+
     dict_uc = {}
-    dict_uc["uc"] = uc
-    veg_children = [veg for veg in g.children(uc) if g.label(veg)=='U' and g.property('year')[veg]==cycle+1]
-    # get Burst variable
-    if veg_children==[]: dict_uc["Burst"] = 0
-    else : dict_uc["Burst"] = 1
-    # get Lateral GU variable
-    lateral_veg_children = [c for c in veg_children if g.property('edge_type')[c]=='+']
-    if dict_uc["Burst"] == 0: dict_uc["Lateral_GU_daughter"] = None
-    elif len(lateral_veg_children)==0 : dict_uc["Lateral_GU_daughter"] = 0
-    else: dict_uc["Lateral_GU_daughter"] = 1
-    # get Number of lateral GU variable
-    if dict_uc["Lateral_GU_daughter"] == 1 : dict_uc["No_Lateral_GU"] = len(lateral_veg_children)
-    else : dict_uc["No_Lateral_GU"] = unknow
-    # get burst date feature (of mother)
-    if get_cycle_uc(uc) == 3: dict_uc["burst_date_mother"]= unknow
-    else:
-      dateM = set_date_from_string( g.property('date_burst')[uc] )
-      dict_uc["burst_date_mother"] = dateM.month
-    if cycle ==3 :
-      # get Burst Date of daughters
-      if dict_uc["Burst"] == 1 :
-        dates_daugther = dict(collections.Counter([set_date_from_string(d) for childs,d in g.property('date_burst').items() if childs in veg_children]))
-        dateD = dates_daugther.items()[0][0]
-        dict_uc["Burst_date_child"] = dateD.month
-      else : dict_uc["Burst_date_child"] = unknow
-    else :
-      # get Delta burst date variable (beetween mother and daughters), get Burst date child
-      if dict_uc["Burst"] == 0 : 
-        dict_uc["Delta_Burst_date"] = unknow
-        dict_uc["Burst_date_child"] = unknow
-      else : 
-        dates_daugther = dict(collections.Counter([set_date_from_string(d) for childs,d in g.property('date_burst').items() if childs in veg_children]))
-        dateD = dates_daugther.items()[0][0]
-        dict_uc["Burst_date_child"] = dateD.month
-        if get_cycle_uc(uc) ==3 : dict_uc["Delta_Burst_date"] = unknow
-        else :
-            diff_date = (dateD-dateM).days/28
-            dict_uc["Delta_Burst_date"] = str(diff_date)
-    # get mother position feature 
-    if g.property('edge_type')[uc] ==  '+' : dict_uc["position_mother_L"] = 1
-    else : dict_uc["position_mother_L"] = 0
-    # get mother's nature 
-    flo_children = [flo for flo in g.children(uc) if g.label(flo)=='F' and get_cycle_uc(flo)==cycle]
-    if len(flo_children) > 0 : dict_uc["nature_mother_V"] = 0
-    else : dict_uc["nature_mother_V"] = 1
-    # get loaded feature
-    if loaded==True : dict_uc["is_loaded"] = 1
-    else : dict_uc["is_loaded"] = 0
-    # get name tree
-    code = g.property('code')[uc]
-    dict_uc["tree"] = code.split("/")[0]
+    add_id_variables(dict_uc, mtg, uc)
+    add_vegetative_dev_variables(dict_uc, mtg, uc, None)
+    add_explicative_variables_transition(dict_uc, mtg, uc)
     # put the dictionnary on the list
-    table_TRANSITION_for_glm.append(dict_uc)
-  return table_TRANSITION_for_glm
+    table_between_cycle_for_glm.append(dict_uc)
 
-if __name__ == '__main__' :
-    table_TRANSITION_for_glm_03to04_loaded_cogshall = DataFrame( get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=True, variety="cogshall") )
-    table_TRANSITION_for_glm_04to05_loaded_cogshall = DataFrame( get_table_TRANSITION_for_glm(extremity_variety,cycle=4, loaded=True, variety="cogshall") )
-    table_TRANSITION_for_glm_03to04_notloaded_cogshall = DataFrame( get_table_TRANSITION_for_glm(extremity_variety,cycle=3, loaded=False, variety="cogshall") )
-    table_TRANSITION_for_glm_04to05_notloaded_cogshall = DataFrame( get_table_TRANSITION_for_glm(extremity_variety,cycle=4, loaded=False, variety="cogshall"))
-    # concat loaded and not loaded data
-    table_TRANSITION_for_glm_03to04_cogshall = concat([table_TRANSITION_for_glm_03to04_loaded_cogshall,table_TRANSITION_for_glm_03to04_notloaded_cogshall],ignore_index=True)
-    table_TRANSITION_for_glm_04to05_cogshall = concat([table_TRANSITION_for_glm_04to05_loaded_cogshall,table_TRANSITION_for_glm_04to05_notloaded_cogshall],ignore_index=True)
-    # convert data frame in csv table
-    column_names = list( table_TRANSITION_for_glm_03to04_cogshall.columns )
-    table_TRANSITION_for_glm_03to04_cogshall.to_csv(join( share_dir, "model_glm","table_TRANSITION_03to04_cogshall.csv"),header=column_names, index=False)
-    table_TRANSITION_for_glm_04to05_cogshall.to_csv(join( share_dir, "/model_glm","table_TRANSITION_04to05_cogshall.csv"),header=column_names, index=False)
+  return table_between_cycle_for_glm
 
 
-def get_table_for_null_model(dict_uc_cycle_variety,extremity_variety , loaded=True, variety="cogshall"):
+
+def get_table_for_null_model(mtg, loaded=None, variety="cogshall"):
   """
   Parameters :
     cycle : an integer 4 or 5
@@ -401,87 +236,54 @@ def get_table_for_null_model(dict_uc_cycle_variety,extremity_variety , loaded=Tr
     variety : a string, the choice of variety is : 
              'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety. """
   table_for_null_model = []
-  ucs_cycle_variety_04 = dict_uc_cycle_variety[(4, loaded, variety)]
-  ucs_cycle_variety_05 = dict_uc_cycle_variety[(5, loaded, variety)]
-  ucs_extremity_04 = extremity_variety[(4, loaded, variety)]
-  ucs_extremity_05 = extremity_variety[(5, loaded, variety)]
-  ucs_variety = ucs_cycle_variety_04 + ucs_cycle_variety_05
-  for i in xrange(len(ucs_variety)):
-    uc = ucs_variety[i]
+  ucs_cycle_variety = get_all_ucs_of_variety(mtg, loaded, variety)
+
+  for uc in ucs_cycle_variety:
     dict_uc = {}
-    dict_uc["uc"] = uc
-    # get cycle
-    cycle = get_cycle_uc(uc)
-    dict_uc["cycle"] = cycle
-    # get Burst variable
-    veg_children = [child for child in g.children(uc) if g.label(child)!='F']
-    if veg_children==[]: dict_uc["Burst"] = 0
-    else : dict_uc["Burst"] = 1
-    # get Lateral GU variable
-    if len(veg_children)==0 : dict_uc["Lateral_GU_daughter"] = None
-    elif len(veg_children)==1 : dict_uc["Lateral_GU_daughter"] = 0
-    else: dict_uc["Lateral_GU_daughter"] = 1
-    # get Number of lateral GU variable
-    lateral_veg_children = [c for c in veg_children if g.property('edge_type')[c]=='+']
-    if dict_uc["Lateral_GU_daughter"] == 1 : dict_uc["No_Lateral_GU"] = len(lateral_veg_children)
-    else : dict_uc["No_Lateral_GU"] = unknow
-    # get burst date feature (of mother)
-    dateM = set_date_from_string( g.property('date_burst')[uc] )
-    dict_uc["burst_date_mother"] = dateM.month
-    # get loaded feature
-    if loaded==True : dict_uc["is_loaded"] = 1
-    else : dict_uc["is_loaded"] = 0
-    # get Delta burst date variable (beetween mother and daughters)
-    if dict_uc["Burst"] == 0: 
-      dict_uc["Delta_Burst_date_child"] = unknow
-      dict_uc["Date_burst_daughter"] = unknow
-    else : 
-      dates_daugther = dict(collections.Counter([set_date_from_string(d) for childs,d in g.property('date_burst').items() if childs in veg_children]))
-      dateD = dates_daugther.items()[0][0]
-      dict_uc["Date_burst_daughter"] = dateD.month
-      diff_date = (dateD-dateM).days/28 
-      dict_uc["Delta_Burst_date_child"] = diff_date
-    # get extremity feature
-    if uc in ucs_extremity_04 or uc in ucs_extremity_05 : dict_uc["is_in_extremity"]= 1
-    else : dict_uc["is_in_extremity"]= 0
-    # get varaibles in extremity for flowering
-    if dict_uc["is_in_extremity"]==0 : 
-      dict_uc["Flowering"] = unknow
-      dict_uc["No_inflo"] = unknow
-      dict_uc["Flowering_Date"] = "NA"
-    else : 
-      flo_child = [flo for flo in g.children(uc) if g.label(flo)=='F' and g.property('year')[flo]==cycle]
-      # get Flowering variable and get Number of inflorescences variable and get Flowering Date variable
-      if len(flo_child)==0 : 
-        dict_uc["Flowering"] = 0
-        dict_uc["No_inflo"] = 0
-        dict_uc["Flowering_Date"] = "NA"
-      else : 
-        dict_uc["Flowering"] = 1
-        flo = flo_child[0]
-        if g.property('nb_inflo_l')[flo] !='':
-          dict_uc["No_inflo"] = int( g.property('nb_inflo_t')[flo] ) + int( g.property('nb_inflo_l')[flo] )
-        else : dict_uc["No_inflo"] = unknow
-        date_flo = g.property('flowering')[flo] if flo in g.property('flowering') else ""
-        if date_flo == '' : dict_uc["Flowering_Date"] = unknow
-        else : 
-          for j in xrange(len(date_weeks[cycle])):
-            if date_weeks[cycle][j][0] <= date_flo[0] <= date_weeks[cycle][j][1]:
-              dict_uc["Flowering_Date"] = j
-    # get name tree
-    code = g.property('code')[uc]
-    dict_uc["tree"] = code.split("/")[0]
+
+    add_id_variables(dict_uc, mtg, uc)
+    add_vegetative_dev_variables(dict_uc, mtg, uc, None)
+    add_flowering_dev_variables(dict_uc, mtg, uc, None)
+    add_explicative_variables_null_model(dict_uc, mtg, uc)
+
     # put the dictionnary on the list
     table_for_null_model.append(dict_uc)
+
   return table_for_null_model
 
+
+def export_tables(mtg, variety, outputpath):
+    from os.path import join, exists 
+    if not exists(outputpath): 
+        from os import makedirs
+        makedirs(outputpath)
+
+    table_within_cycle_for_glm_04 = DataFrame( get_table_within_cycle_for_glm(mtg, cycle=4, loaded=None, variety=variety) )
+    table_within_cycle_for_glm_05 = DataFrame( get_table_within_cycle_for_glm(mtg, cycle=5, loaded=None, variety=variety) )
+    column_names = list( table_within_cycle_for_glm_04.columns )
+    #
+    table_within_cycle_for_glm_04.to_csv(join(outputpath,"table_within_cycle_04.csv"),header=column_names, index=False)
+    table_within_cycle_for_glm_05.to_csv(join(outputpath,"table_within_cycle_05.csv"),header=column_names, index=False)
+
+    table_between_cycle_for_glm_03to04 = DataFrame( get_table_between_cycle_for_glm(mtg, cycle=3, loaded=None, variety=variety) )
+    table_between_cycle_for_glm_04to05 = DataFrame( get_table_between_cycle_for_glm(mtg, cycle=4, loaded=None, variety=variety) )
+    # convert data frame in csv table
+    column_names = list( table_between_cycle_for_glm_03to04.columns )
+    table_between_cycle_for_glm_03to04.to_csv(join( outputpath, "table_between_cycle_03to0405.csv"),header=column_names, index=False)
+    table_between_cycle_for_glm_04to05.to_csv(join( outputpath, "table_between_cycle_04to05.csv"),header=column_names, index=False)
+
+
+    table_for_null_model = DataFrame( get_table_for_null_model(mtg, loaded=None, variety=variety) )
+    column_names = list( table_for_null_model.columns )
+    table_for_null_model.to_csv(join( outputpath, "table_for_null_model.csv"),header=column_names, index=False)
+
+
+from pandas import DataFrame, concat
 if __name__ == '__main__' :
-    table_for_null_model_loaded_cogshall = DataFrame( get_table_for_null_model(uc_cycle_variety,extremity_variety, loaded=True, variety="cogshall") )
-    table_for_null_model_notloaded_cogshall = DataFrame( get_table_for_null_model(uc_cycle_variety,extremity_variety, loaded=False, variety="cogshall") )
-    #
-    table_for_null_model_cogshall = concat([table_for_null_model_loaded_cogshall,table_for_null_model_notloaded_cogshall],ignore_index=True)
-    #
-    column_names = list( table_for_nul_model_cogshall.columns )
-    #
-    table_for_null_model_cogshall.to_csv(join( share_dir, "model_glm","table_for_nul_model_cogshall.csv"),header=column_names, index=False)
+    mtg = get_mtg()   
+    check_cycle_and_burst_date_coherence(mtg)
+    check_terminal3_producing_at_cycle5(mtg)
+
+    export_tables(mtg, 'cogshall', join(share_dir, 'glm_estimate_input','cogshall'))
+
 
