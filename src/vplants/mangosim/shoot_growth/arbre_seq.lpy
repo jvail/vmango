@@ -99,25 +99,64 @@ __lpy_code_version__ = 1.1
 
 def __initialiseContext__(context):
 	context.options.setSelection('String matching',2)
-	import openalea.plantgl.all as pgl
-	leafpath = pgl.BezierCurve2D(	
-	    pgl.Point3Array([(-0.416733, 0.0128104, 1),(0.2343, -0.076231, 1),(0.507411, -0.330906, 1),(0.662132, -0.814102, 1)]) , 
-	    )
-	leafpath.name = "leafpath"
-	leafsection = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(-0.432297, 0.393438, 1),(-0.496109, 0.253958, 1),(-0.198373, -0.0924227, 1),(-0.00298323, 0.188761, 1),(0.0897461, -0.106293, 1),(0.497908, 0.285806, 1),(0.424119, 0.385331, 1)]) , 
-	    )
-	leafsection.name = "leafsection"
+	scalars = [('DAILY', 'Bool', False)]
+	context["__scalars__"] = scalars
+	for s in scalars:
+		if not s[1] is "Category" : context[s[0]] = s[2]
 	import openalea.plantgl.all as pgl
 	leafdiam = pgl.NurbsCurve2D(	
 	    ctrlPointList = pgl.Point3Array([(0, 0.0359806, 1),(0.146454, 0.203327, 1),(0.34022, 0.310394, 1),(1, 0.0239871, 1)]) , 
 	    )
 	leafdiam.name = "leafdiam"
-	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel 1'},[('Curve2D',leafpath),('Curve2D',leafsection),('Function',leafdiam)])
+	leafwidth = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0, 1),(0.281668, -0.00351979, 1),(0.281668, 1.00209, 1),(1, 1, 1)]) , 
+	    )
+	leafwidth.name = "leafwidth"
+	import openalea.plantgl.all as pgl
+	leafsection = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.514174, 0.181521, 1),(-0.549088, 0.128734, 1),(-0.198373, -0.0924227, 1),(-0.00298323, 0.188761, 1),(0.0897461, -0.106293, 1),(0.46901, 0.0835214, 1),(0.481915, 0.154149, 1)]) , 
+	    )
+	leafsection.name = "leafsection"
+	leafpath = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.416733, 0.0128104, 1),(0.2343, -0.076231, 1),(0.507411, -0.330906, 1),(0.662132, -0.814102, 1)]) , 
+	    )
+	leafpath.name = "leafpath"
+	axis1 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.214286, 0.00865801, 1),(0.45671, 0.138528, 1)]) , 
+	    )
+	axis1.name = "axis1"
+	axis2 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.209957, -0.017316, 1),(0.491342, -0.0952381, 1)]) , 
+	    )
+	axis2.name = "axis2"
+	axis3 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.166667, 0, 1),(0.5, 0, 1)]) , 
+	    )
+	axis3.name = "axis3"
+	axis4 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.158009, -0.047619, 1),(0.166667, 0.004329, 1),(0.443723, -0.393939, 1)]) , 
+	    )
+	axis4.name = "axis4"
+	axis5 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.416733, 0.0128104, 1),(0.2343, -0.076231, 1),(0.507411, -0.330906, 1),(0.662132, -0.814102, 1)]) , 
+	    )
+	axis5.name = "axis5"
+	ang = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0, 1),(0.591832, 0.384354, 1),(0.591832, 1.58311, 1),(0.754034, 1.34795, 1),(1, 0.51116, 1)]) , 
+	    )
+	ang.name = "ang"
+	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel 1'},[('Function',leafdiam),('Function',leafwidth),('Curve2D',leafsection),('Curve2D',leafpath),('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5),('Function',ang)])
 	parameterset = [panel_0,]
-	context["__functions__"] = [('leafdiam',leafdiam),]
-	context["__curves__"] = [('leafpath',leafpath),('leafsection',leafsection),]
+	context["__functions__"] = [('leafdiam',leafdiam),('leafwidth',leafwidth),('ang',ang),]
+	context["__curves__"] = [('leafsection',leafsection),('leafpath',leafpath),('axis1',axis1),('axis2',axis2),('axis3',axis3),('axis4',axis4),('axis5',axis5),]
 	context["__parameterset__"] = parameterset
-	context["leafpath"] = leafpath
-	context["leafsection"] = leafsection
 	context["leafdiam"] = pgl.QuantisedFunction(leafdiam)
+	context["leafwidth"] = pgl.QuantisedFunction(leafwidth)
+	context["leafsection"] = leafsection
+	context["leafpath"] = leafpath
+	context["axis1"] = axis1
+	context["axis2"] = axis2
+	context["axis3"] = axis3
+	context["axis4"] = axis4
+	context["axis5"] = axis5
+	context["ang"] = pgl.QuantisedFunction(ang)
