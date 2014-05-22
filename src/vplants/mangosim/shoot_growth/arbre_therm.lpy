@@ -25,26 +25,34 @@ else:
 delta_date = timedelta(hours=24*pdt)
 
 # Definition stades phenologiques
-pheno_change_temp=[0,20,40,60,80,120,350]
-pheno_color=[7,8,9,10,11,12,13]
-Nb_stades_pheno=7
+pheno_change_temp=[0,20,40,60,80,100,120,200]
+pheno_color=[7,8,9,10,11,12,14,13]
+pheno_angle=[0,5,20,45,135,90,50,50,50]
+Nb_stades_pheno=8
 
+# Definition des probabilites
+GU_length_apic_mean=16.67
+GU_length_apic_sd=4.56
+GU_length_lat_mean=12.74
+GU_length_lat_sd=3.46
+Leaf_length_mean=15.23
+Leaf_length_sd=6.15
 
 # Fct qui renvoit le stade pheno et l'avancement (entre 0 et 1) dans ce stade
 def normalized_pheno_stage(cumtemp,pheno_stage = None):
   # Si le stade pheno n'est pas connu on le cherche
   if pheno_stage == None:
     if cumtemp > pheno_change_temp[-1]:
-      pheno_stage=Nb_stades_pheno
+      pheno_stage=Nb_stades_pheno-1
     else:
-      i=Nb_stades_pheno-1
+      i=Nb_stades_pheno-2
       while i!=0:
         if cumtemp > pheno_change_temp[i]:
-          pheno_stage=i+1
+          pheno_stage=i
           i=0
         else:
           i=i-1     
-      if pheno_stage==None: pheno_stage=1
+      if pheno_stage==None: pheno_stage=0
   # Sinon on verifie si on passe au stade suivant
   if pheno_stage == (Nb_stades_pheno-1):
     pheno_advancement =0
@@ -93,65 +101,26 @@ def Start():
   totlength = [(0,0)]
 
 def StartEach():
-  global temperature
+  global current_date
   # On verifie si on passe au jour suivant
   if ((current_date.month!=(current_date+delta_date).month) or (current_date.day!=(current_date+delta_date).day)):
     global temp_index
     temp_index+=1
-  global current_date
   current_date += delta_date
   global length_inter
   length_inter=0.0001   #initialisation a 0
   global age_inter
   age_inter=0.0001
+  global temperature
   global delta_temperature
   delta_temperature=max(0,temperature[temp_index]-base_temperature)
-  
+   
   
 def GrowthCurve(T,FinalSize):
   y=FinalSize/(1+exp(-(T-t_ip)/B))
   return(y)
   
 
-def plotCurve(data, xextend = None, yextend = None, pos = (0.1,-0.8), dim = (0.8,0.8), xtick = None, ytick = None ):
-  if len(data) > 1:
-    if xextend:
-      minx, maxx = xextend
-    else :
-      minx = floor(min([x for x,y in data]))
-      maxx = ceil(max([x for x,y in data]))
-    if yextend:
-      miny, maxy = yextend
-    else :
-      miny = floor(min([y for x,y in data]))
-      maxy = ceil(max([y for x,y in data]))
-    xext = maxx - minx
-    yext = maxy - miny
-    x2Dlength, y2Dlength = dim
-    projx = lambda x: (x2Dlength*(x-minx)/xext)
-    projy = lambda y: (y2Dlength*(y-miny)/yext)
-    if xtick is None:
-      xtick = yext*0.1
-    if ytick is None:
-      ytick = xext*0.1
-    
-    data = [(projx(x),projy(y)) for x,y in data]
-    ticklength = 0.02
-    
-    nproduce [ @2D ,(3) @M(pos[0],pos[1]) @R @g(Polyline2D(data,width=2))
-    if miny <= 0 <= maxy:
-      nproduce ,(5) @g(Polyline2D([(projx(minx),projy(0)),(projx(maxx),projy(0))]))
-      cxtick = minx + xtick
-      while cxtick < maxx:
-        nproduce ,(5) @g(Polyline2D([(projx(cxtick),projy(-ticklength)),(projx(cxtick),projy(ticklength))]))
-        cxtick += xtick
-    if minx <= 0 <= maxx:
-      nproduce ,(2) @g(Polyline2D([(projx(0),projy(miny)),(projx(0),projy(maxy))]))
-      cytick = miny + ytick
-      while cytick < maxy:
-        nproduce ,(2) @g(Polyline2D([(projx(-ticklength),projy(cytick)),(projx(ticklength),projy(cytick))]))
-        cytick += ytick
-    nproduce ]
 
 
 
@@ -160,27 +129,40 @@ module Bud(burstdate)
 module Internode(length, age, final_size, diam, pheno_stage), Leaf(position, length, age, final_size, pheno_stage)
 module Env
 
-Axiom: Env Bud(current_date+timedelta(days=2))
+Axiom: Env Bud(current_date+timedelta(days=2),"A")
 
 derivation length: ceil(NbOfDays/pdt)
 production:
 
-Bud(burst):
+Bud(burst,position):
   if (burst == current_date) :
-    final_size_internode=min(max(6,gauss(16.67,4.56)),25)
-    final_size_leaf=min(max(5,gauss(15.23,6.15)),34)
+    
+    if position=="A":
+      nb_chil= randint(2,5)
+      final_size_internode=gauss(GU_length_apic_mean,GU_length_apic_sd)
+      while (final_size_internode <5) or (final_size_internode >25):
+        final_size_internode=gauss(GU_length_apic_mean,GU_length_apic_sd)
+    else:
+      nb_chil= randint(1,4)
+      final_size_internode=gauss(GU_length_lat_mean,GU_length_lat_sd)
+      while (final_size_internode <5) or (final_size_internode >25):
+        final_size_internode=gauss(GU_length_lat_mean,GU_length_lat_sd) 
+        
+    final_size_leaf=gauss(Leaf_length_mean,Leaf_length_sd)
+    while (final_size_leaf <5) or (final_size_leaf >34):
+      final_size_leaf=gauss(Leaf_length_mean,Leaf_length_sd)
     NbInternode=int(max(ceil(0.6*final_size_internode)+randint(-1,1),1))
-    nproduce C(0,final_size_internode)
+    
     for i in xrange(NbInternode-1):
-      nproduce Internode(ParameterSet(length=0.01,age=0,final_size=final_size_internode/NbInternode,diam=0.01,pheno_stage=0,cumsum_temp=0,pheno_advct=0)) /(phyllotaxy) [ &(0) Leaf(ParameterSet(position=i/float(NbInternode),size=0.1,age=0,final_size=final_size_leaf)) ]
-    nproduce Internode(ParameterSet(length=0.01,age=0,final_size=final_size_internode/NbInternode,diam=0.01,pheno_stage=0,cumsum_temp=0,pheno_advct=0)) /(phyllotaxy) [ &(0) Leaf(ParameterSet(position=i/float(NbInternode),size=0.1,age=0,final_size=final_size_leaf/2.)) ]
-    nproduce C
-    nb_chil= randint(4,6)              
+      nproduce  Internode(ParameterSet(length=0.01,age=0,final_size=final_size_internode*2*(NbInternode-i)/(NbInternode*(NbInternode+1)),diam=0.01,pheno_stage=0,cumsum_temp=0,pheno_advct=0)) /(phyllotaxy) [ &(0) Leaf(ParameterSet(position=i/float(NbInternode),size=0.1,age=0,final_size=final_size_leaf)) ]
+    nproduce Internode(ParameterSet(length=0.01,age=0,final_size=final_size_internode/NbInternode,diam=0.01,pheno_stage=0,cumsum_temp=0,pheno_advct=0)) /(phyllotaxy) [ &(0) Leaf(ParameterSet(position=i/float(NbInternode),size=0.1,age=0,final_size=final_size_leaf/2.)) ]              
+    
     if nb_chil>1:
           angle=360./(nb_chil-1) +randint(-20,20)
           for i in xrange(0,nb_chil-1):
-            nproduce /(angle) [&(60) Bud(current_date+timedelta(days=30)) /(i*137.5) ]
-          produce Bud(current_date+timedelta(days=30))
+            nproduce /(angle) [&(60) Bud(current_date+timedelta(days=30),"L") /(i*137.5) ]
+          produce Bud(current_date+timedelta(days=30),"A")
+
 
 Internode(param):
   new_param=param.copy()
@@ -206,21 +188,17 @@ Leaf(param):
   produce Leaf(new_param)  
 
 interpretation:
-C:
-  global totlength
-  if age_inter <=10:
-    totlength.append((age_inter,length_inter))
-  plotCurve(totlength)
 
 Internode(param) --> F(param.length,param.diam) 
 
 consider: Internode
 
 Internode(paramI) < Leaf(paramL) :
-  
-  produce ,(2) [ /(137.5) &(90) f(paramI.diam) ^(90) &(ang( (paramI.pheno_stage+paramI.pheno_advct)/6. )*100) f(0.0) ,(pheno_color[paramI.pheno_stage])   @Gc _(leafdiam(paramI.diam)) @G Sweep(axisfunc.getAt((paramI.pheno_stage+paramI.pheno_advct)/6.),leafsection, paramL.size, paramL.size/10., paramL.size*leafwidth(min((paramL.age+1)/20.,1)), leafdiam) ]  
+  if paramL.position > 0.7 : petiole_length=1.5
+  else : petiole_length=3  
+  produce @G ,(2) [ /(137.5) &(90) ,(1)  f(0) F(0.001,leafdiam(0)*leafwidth(min((paramL.age+1)/20.,1)))  ^(90)  &((1-paramI.pheno_advct)*pheno_angle[paramI.pheno_stage]+paramI.pheno_advct*pheno_angle[paramI.pheno_stage+1]) F(petiole_length,leafdiam(0)*leafwidth(min((paramL.age+1)/20.,1)))  ,(pheno_color[paramI.pheno_stage])   @Gc _(leafdiam(paramI.diam))  Sweep(axisfunc.getAt((paramI.pheno_stage+paramI.pheno_advct)/6.),leafsection, paramL.size, paramL.size/10., (paramL.size*0.24+0.11)*leafwidth(min((paramL.age+1)/20.,1)), leafdiam) ]   
 
-Bud(burstdate) --> ,(3) @O(0.11)
+Bud(burstdate,position) --> ,(7) @O(0.1)
 
 Env --> @g(ScreenProjected(Translated(-0.5,-0.7,0,Text(str(current_date)))))
 
@@ -230,13 +208,38 @@ endlsystem
 __lpy_code_version__ = 1.1
 
 def __initialiseContext__(context):
-	scalars = [('DAILY', 'Bool', False), ('NbOfDays', 'Integer', 40, 0, 100)]
+	import openalea.plantgl.all as pgl
+	Color_7 = pgl.Material("Color_7" , ambient = (62,125,20) , diffuse = 2.04 , )
+	Color_7.name = "Color_7"
+	context.turtle.setMaterial(7,Color_7)
+	Color_8 = pgl.Material("Color_8" , ambient = (78,102,23) , diffuse = 1.50437 , )
+	Color_8.name = "Color_8"
+	context.turtle.setMaterial(8,Color_8)
+	Color_9 = pgl.Material("Color_9" , ambient = (70,113,21) , diffuse = 1.77218 , )
+	Color_9.name = "Color_9"
+	context.turtle.setMaterial(9,Color_9)
+	Color_10 = pgl.Material("Color_10" , ambient = (95,79,27) , diffuse = 0.968421 , )
+	Color_10.name = "Color_10"
+	context.turtle.setMaterial(10,Color_10)
+	Color_11 = pgl.Material("Color_11" , ambient = (121,46,33) , diffuse = 0.165289 , )
+	Color_11.name = "Color_11"
+	context.turtle.setMaterial(11,Color_11)
+	Color_12 = pgl.Material("Color_12" , ambient = (60,60,15) , diffuse = 3 , )
+	Color_12.name = "Color_12"
+	context.turtle.setMaterial(12,Color_12)
+	Color_13 = pgl.Material("Color_13" , ambient = (30,60,10) , diffuse = 1.68333 , )
+	Color_13.name = "Color_13"
+	context.turtle.setMaterial(13,Color_13)
+	Color_14 = pgl.Material("Color_14" , ambient = (55,60,14) , diffuse = 3 , )
+	Color_14.name = "Color_14"
+	context.turtle.setMaterial(14,Color_14)
+	scalars = [('DAILY', 'Bool', True), ('NbOfDays', 'Integer', 50, 0, 100)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] is "Category" : context[s[0]] = s[2]
 	import openalea.plantgl.all as pgl
 	leafdiam = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(0, 0.0359806, 1),(0.146454, 0.203327, 1),(0.34022, 0.310394, 1),(1, 0.0239871, 1)]) , 
+	    ctrlPointList = pgl.Point3Array([(0, 0.0846264, 1),(0.239002, 1.00091, 1),(0.485529, 0.991241, 1),(0.718616, 1.00718, 1),(0.877539, 0.231273, 1),(1, 0.00332359, 1)]) , 
 	    )
 	leafdiam.name = "leafdiam"
 	leafwidth = pgl.NurbsCurve2D(	
@@ -245,7 +248,7 @@ def __initialiseContext__(context):
 	leafwidth.name = "leafwidth"
 	import openalea.plantgl.all as pgl
 	leafsection = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(-0.432297, 0.393438, 1),(-0.496109, 0.253958, 1),(-0.198373, -0.0924227, 1),(-0.00298323, 0.188761, 1),(0.0897461, -0.106293, 1),(0.497908, 0.285806, 1),(0.424119, 0.385331, 1)]) , 
+	    ctrlPointList = pgl.Point3Array([(-0.538256, 0.215235, 1),(-0.544272, 0.123918, 1),(-0.198373, -0.0924227, 1),(-0.00298323, 0.188761, 1),(0.0897461, -0.106293, 1),(0.536438, 0.0979703, 1),(0.515629, 0.163781, 1)]) , 
 	    )
 	leafsection.name = "leafsection"
 	leafpath = pgl.BezierCurve2D(	
