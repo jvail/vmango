@@ -13,7 +13,7 @@ base_temperature=13
 
 # Initialisation des variables
 totlength = []                          # vecteur des longueurs de l'UC
-phyllotaxy = 137.5
+phyllotaxy = 144 +randint(-5,5)
 final_diamI = 0.1
 temp_index=0
 
@@ -31,12 +31,16 @@ pheno_angle=[0,5,20,45,135,90,50,50,50]
 Nb_stades_pheno=8
 
 # Definition des probabilites
-GU_length_apic_mean=16.67
-GU_length_apic_sd=4.56
-GU_length_lat_mean=12.74
-GU_length_lat_sd=3.46
-Leaf_length_mean=15.23
-Leaf_length_sd=6.15
+GU_length_apic_apic_mean=18.14
+GU_length_apic_apic_sd=4.14
+GU_length_apic_lat_mean=13.79
+GU_length_apic_lat_sd=4.03
+GU_length_lat_mean=12.59
+GU_length_lat_sd=3.38
+Leaf_length_apic_mean=17.06
+Leaf_length_apic_sd=2.7
+Leaf_length_lat_mean=14.87
+Leaf_length_lat_sd=2.7
 
 # Fct qui renvoit le stade pheno et l'avancement (entre 0 et 1) dans ce stade
 def normalized_pheno_stage(cumtemp,pheno_stage = None):
@@ -109,8 +113,6 @@ def StartEach():
   current_date += delta_date
   global length_inter
   length_inter=0.0001   #initialisation a 0
-  global age_inter
-  age_inter=0.0001
   global temperature
   global delta_temperature
   delta_temperature=max(0,temperature[temp_index]-base_temperature)
@@ -129,39 +131,52 @@ module Bud(burstdate)
 module Internode(length, age, final_size, diam, pheno_stage), Leaf(position, length, age, final_size, pheno_stage)
 module Env
 
-Axiom: Env Bud(current_date+timedelta(days=2),"A")
+Axiom: Env Bud(current_date+timedelta(days=2),"A","A")
 
-derivation length: ceil(NbOfDays/pdt)
+derivation length: int(NbOfDays/pdt)
 production:
 
-Bud(burst,position):
+Bud(burst,position,mother_position):
   if (burst == current_date) :
-    
     if position=="A":
-      nb_chil= randint(2,5)
-      final_size_internode=gauss(GU_length_apic_mean,GU_length_apic_sd)
-      while (final_size_internode <5) or (final_size_internode >25):
-        final_size_internode=gauss(GU_length_apic_mean,GU_length_apic_sd)
+      nb_chil=randint(2,5)
+      hypo=gauss(2.63,1.72)
+      if (mother_position=="A"):
+        final_size_internode=gauss(GU_length_apic_apic_mean,GU_length_apic_apic_sd)
+        while (final_size_internode <5) or (final_size_internode >25):
+          final_size_internode=gauss(GU_length_apic_apic_mean,GU_length_apic_apic_sd)
+      else:
+        final_size_internode=gauss(GU_length_apic_lat_mean,GU_length_apic_lat_sd)
+        while (final_size_internode <5) or (final_size_internode >25):
+          final_size_internode=gauss(GU_length_apic_lat_mean,GU_length_apic_lat_sd)
+      final_size_leaf=gauss(Leaf_length_apic_mean,Leaf_length_apic_sd)
+      while (final_size_leaf <5) or (final_size_leaf >34):
+        final_size_leaf=gauss(Leaf_length_apic_mean,Leaf_length_apic_sd)
+        
     else:
-      nb_chil= randint(1,4)
+      nb_chil=randint(1,4)
       final_size_internode=gauss(GU_length_lat_mean,GU_length_lat_sd)
       while (final_size_internode <5) or (final_size_internode >25):
         final_size_internode=gauss(GU_length_lat_mean,GU_length_lat_sd) 
-        
-    final_size_leaf=gauss(Leaf_length_mean,Leaf_length_sd)
-    while (final_size_leaf <5) or (final_size_leaf >34):
-      final_size_leaf=gauss(Leaf_length_mean,Leaf_length_sd)
+      hypo=final_size_internode*0.38+0.88+randint(-1,1)
+      final_size_leaf=gauss(Leaf_length_lat_mean,Leaf_length_lat_sd)
+      while (final_size_leaf <5) or (final_size_leaf >34):
+        final_size_leaf=gauss(Leaf_length_lat_mean,Leaf_length_lat_sd)
+       
+    final_size_internode=max(1,final_size_internode-hypo)
     NbInternode=int(max(ceil(0.6*final_size_internode)+randint(-1,1),1))
     
-    for i in xrange(NbInternode-1):
-      nproduce  Internode(ParameterSet(length=0.01,age=0,final_size=final_size_internode*2*(NbInternode-i)/(NbInternode*(NbInternode+1)),diam=0.01,pheno_stage=0,cumsum_temp=0,pheno_advct=0)) /(phyllotaxy) [ &(0) Leaf(ParameterSet(position=i/float(NbInternode),size=0.1,age=0,final_size=final_size_leaf)) ]
-    nproduce Internode(ParameterSet(length=0.01,age=0,final_size=final_size_internode/NbInternode,diam=0.01,pheno_stage=0,cumsum_temp=0,pheno_advct=0)) /(phyllotaxy) [ &(0) Leaf(ParameterSet(position=i/float(NbInternode),size=0.1,age=0,final_size=final_size_leaf/2.)) ]              
+    nproduce Internode(ParameterSet(length=0.01,age=0,final_size=hypo,diam=0.01,pheno_stage=0,cumsum_temp=0,pheno_advct=0)) /(phyllotaxy) [ &(0) Leaf(ParameterSet(position=0,size=0.1,age=0,final_size=final_size_leaf*leaflength(0))) ]
+    totintlength=0
+    for j in xrange(1,NbInternode-1): totintlength+=exp(-2.64*j/float(NbInternode-1))
+    for i in xrange(1,NbInternode-1):
+      nproduce  Internode(ParameterSet(length=0.01,age=0,final_size=final_size_internode*exp(-2.64*i/float(NbInternode-1))/totintlength,diam=0.01,pheno_stage=0,cumsum_temp=0,pheno_advct=0)) /(phyllotaxy) [ &(0) Leaf(ParameterSet(position=i/float(NbInternode-1),size=0.1,age=0,final_size=final_size_leaf*leaflength(i/float(NbInternode-1)))) ]
     
     if nb_chil>1:
           angle=360./(nb_chil-1) +randint(-20,20)
           for i in xrange(0,nb_chil-1):
-            nproduce /(angle) [&(60) Bud(current_date+timedelta(days=30),"L") /(i*137.5) ]
-          produce Bud(current_date+timedelta(days=30),"A")
+            nproduce /(angle) [&(60) Bud(current_date+timedelta(days=30),"L",position) /(i*137.5) ]
+          produce Bud(current_date+timedelta(days=30),"A",position)
 
 
 Internode(param):
@@ -177,8 +192,6 @@ Internode(param):
   new_param.diam=d
   global length_inter
   length_inter +=l
-  global age_inter
-  age_inter=new_param.age
   produce Internode(new_param)
 
 Leaf(param):
@@ -233,7 +246,7 @@ def __initialiseContext__(context):
 	Color_14 = pgl.Material("Color_14" , ambient = (55,60,14) , diffuse = 3 , )
 	Color_14.name = "Color_14"
 	context.turtle.setMaterial(14,Color_14)
-	scalars = [('DAILY', 'Bool', True), ('NbOfDays', 'Integer', 50, 0, 100)]
+	scalars = [('DAILY', 'Bool', True), ('NbOfDays', 'Integer', 297, 0, 1000)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] is "Category" : context[s[0]] = s[2]
@@ -242,6 +255,10 @@ def __initialiseContext__(context):
 	    ctrlPointList = pgl.Point3Array([(0, 0.0846264, 1),(0.239002, 1.00091, 1),(0.485529, 0.991241, 1),(0.718616, 1.00718, 1),(0.877539, 0.231273, 1),(1, 0.00332359, 1)]) , 
 	    )
 	leafdiam.name = "leafdiam"
+	leaflength = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 1, 1),(0.00149779, 1.00072, 1),(1, 0.995671, 1),(1, 0.400121, 1)]) , 
+	    )
+	leaflength.name = "leaflength"
 	leafwidth = pgl.NurbsCurve2D(	
 	    ctrlPointList = pgl.Point3Array([(0, 0, 1),(0.281668, -0.00351979, 1),(0.281668, 1.00209, 1),(1, 1, 1)]) , 
 	    )
@@ -279,12 +296,13 @@ def __initialiseContext__(context):
 	    ctrlPointList = pgl.Point3Array([(0, 0, 1),(0.286308, 0.522427, 1),(0.630023, 1.16301, 1),(0.7981, 1.52128, 1),(0.908345, 0.885562, 1),(1, 0.51116, 1)]) , 
 	    )
 	ang.name = "ang"
-	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel 1'},[('Function',leafdiam),('Function',leafwidth),('Curve2D',leafsection),('Curve2D',leafpath),('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5),('Function',ang)])
+	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel 1'},[('Function',leafdiam),('Function',leaflength),('Function',leafwidth),('Curve2D',leafsection),('Curve2D',leafpath),('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5),('Function',ang)])
 	parameterset = [panel_0,]
-	context["__functions__"] = [('leafdiam',leafdiam),('leafwidth',leafwidth),('ang',ang),]
+	context["__functions__"] = [('leafdiam',leafdiam),('leaflength',leaflength),('leafwidth',leafwidth),('ang',ang),]
 	context["__curves__"] = [('leafsection',leafsection),('leafpath',leafpath),('axis1',axis1),('axis2',axis2),('axis3',axis3),('axis4',axis4),('axis5',axis5),]
 	context["__parameterset__"] = parameterset
 	context["leafdiam"] = pgl.QuantisedFunction(leafdiam)
+	context["leaflength"] = pgl.QuantisedFunction(leaflength)
 	context["leafwidth"] = pgl.QuantisedFunction(leafwidth)
 	context["leafsection"] = leafsection
 	context["leafpath"] = leafpath
