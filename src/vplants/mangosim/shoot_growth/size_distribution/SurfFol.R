@@ -1,7 +1,7 @@
 # Etude taille des feuilles
 # 2004 et 2006.
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/données/distributions")
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
 
 #################################################################################################################################
 ##########################################     Récupération et mise en forme des données     ####################################

@@ -4,7 +4,7 @@
 
 
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/données/croissance")
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
 base=read.table("BaseDeCroissanceVeg.csv",header=TRUE,sep=";",dec=",")
 
 # Récupération de la dernière mesure uniquement (correspond au stade phéno H)
@@ -69,14 +69,14 @@ logInternode.lm=lm(log(internode_length)~ x)        ; summary(logInternode.lm)
 
 par(mfrow=c(1,3))
 # Données brutes
-plot(internode_length,ylab="Longueur entrenoeud",xlab="Rang feuille"); 
+plot(internode_length,ylab="Longueur entrenoeud",xlab="Rang noeud"); 
 
 # Log des données avec échelle renormalisée et droite de régression
-plot(x,log(internode_length),xlab="Rang feuille") ; abline(logInternode.lm$coeff,col=2) 
+plot(x,log(internode_length),xlab="Rang noeud") ; abline(logInternode.lm$coeff,col=2) 
 
 # Données brutes sur échelle renormalisée avec courbe ajustée
-plot(x,internode_length,ylab="Longueur entrenoeud",xlab="Rang feuille",xlim=c(0,1),ylim=c(0,3)); 
-points(x,exp(0.92)*exp(-2.64*x),col=4,type='l')
+plot(x,internode_length,ylab="Longueur entrenoeud",xlab="Rang noeud",xlim=c(0,1),ylim=c(0,3)); 
+points(x,exp(0.92)*exp(-2.64*x),col=2,type='l')
 
 
 

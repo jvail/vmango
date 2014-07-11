@@ -204,9 +204,9 @@ title("Nombre de feuilles issues d'une UC",outer=TRUE,line=-1)
 
 # Arbre B12
 par(mfrow=c(1,3))
-hist(apic_B12_port_lat$NbFeu,main="UC mère latérale",xlim=c(4,22),ylim=c(0,7),breaks=seq(3,19,1),xlab="Nombre de feuilles");
-hist(apic_B12_port_apic$NbFeu,main="UC mère apicale",xlim=c(4,22),ylim=c(0,7),breaks=seq(2,25,1),xlab="Nombre de feuilles");
-hist(apic_B12$NbFeu,main="Toutes UCs",xlim=c(4,22),ylim=c(0,7),breaks=seq(2,25,1),xlab="Nombre de feuilles");
+hist(apic_B12_port_lat$NbFeu,main="UC mère latérale",xlim=c(4,22),ylim=c(0,0.25),breaks=seq(3,19,1),xlab="Nombre de feuilles",freq=FALSE);
+hist(apic_B12_port_apic$NbFeu,main="UC mère apicale",xlim=c(4,22),ylim=c(0,0.25),breaks=seq(2,25,1),xlab="Nombre de feuilles",freq=FALSE);
+hist(apic_B12$NbFeu,main="Toutes UCs",xlim=c(4,22),ylim=c(0,0.25),breaks=seq(2,25,1),xlab="Nombre de feuilles",freq=FALSE);
 #title("Nombre de feuilles issues d'UCs en position apicale, Arbre B12",outer=TRUE,line=-1)
 
 mean(TA_apic_port_apic$NbFeu)       # 16.66667

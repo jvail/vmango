@@ -1,6 +1,6 @@
 # Distributions sur les longueurs d'inflorescences
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/données/croissance")
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
 
 
 ####################################################################
@@ -63,7 +63,7 @@ legend("bottomright",c("droite de régression", "IC moyenne","IC individu"),lty=c
 ####################################################################
 #########     Récupération et mise en forme des données     ########
 ####################################################################
-setwd("C:/Users/Anne-Sarah/Desktop/stage/données/distributions")
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
 diam0=read.csv("relévé diam inflos Soizick.csv",header=TRUE,sep=";",dec=",",
 								col.names=c("DateReleveUC","Traitement","Plant","UCdisparue","numeroUC",
 										"Position","DiamètreBasalUC","IA Type","IADiamStadeF","IL1Type",

@@ -1,6 +1,6 @@
 # Relations allométriques
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/données/allométries")
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
 base=read.table("base_allometriesR.csv",header=TRUE,sep=";",dec=",")
 
 # On ne garde que Cogshall
@@ -111,3 +111,30 @@ summary(MA[position=="L",]$diametre/2)
 #Analyse de covariance
 summary(lm(MA$diametre ~ position*MA$Long))
 summary(lm(MA$diametre ~ position*MA$Long-1))
+
+
+
+######## Diamètre fonction du nombre de feuilles 
+plot(MA$NbFeu,MA$diametre)
+lm.diam_nbfeu=lm(MA$diametre~MA$NbFeu)
+summary(lm.diam_nbfeu)
+
+# UCs en position apicale
+plot(MA[position=="A",]$NbFeu,MA[position=="A",]$diametre)
+lm.diam_nbfeu=lm(MA[position=="A",]$diametre~MA[position=="A",]$NbFeu)
+summary(lm.diam_nbfeu)
+
+
+# UCs en position latérale
+plot(MA[position=="L",]$NbFeu,MA[position=="L",]$diametre)
+lm.diam_nbfeu=lm(MA[position=="L",]$diametre~MA[position=="L",]$NbFeu)
+summary(lm.diam_nbfeu)
+
+
+
+
+
+
+
+
+
