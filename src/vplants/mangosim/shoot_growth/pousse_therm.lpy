@@ -50,7 +50,10 @@ else:
   
 pheno_base_temp_Inflo=[11.10,5.38,8.67,15.11,0]                # températures de base pour chaque stade phéno
 pheno_change_temp_Inflo=[70.56,172.35,133.32,230.42,999]       # temperatures auxquelles ont lieu les changements de stade Inflo
-pheno_color=[15,16,16,16,16,16]                                    # couleurs pour chaque stade
+
+if Vegetative==False:
+  pheno_color=[15,16,16,16,16,16]                                    # couleurs pour chaque stade (inflorescences)
+  pheno_color_flower=[13,2,7,12,4,4]
 
 Nb_stades_pheno=len(pheno_change_temp_GU)              # nombre de stades phenologiques
 
@@ -265,7 +268,12 @@ module Leaf(position, length, age, final_size,cumsum_temp)
 module Env
 module C  # module permettant la visualisation de la courbe de croissance
 
-Axiom: Env Bud(current_date+timedelta(days=1),"A","A","F")
+Axiom: 
+  nproduce Env 
+  if Vegetative==True:
+    nproduce Bud(current_date+timedelta(days=1),"A","A","V")
+  else :
+    nproduce Bud(current_date+timedelta(days=1),"A","A","F")
 
 derivation length: int(ceil(NbOfDays/pdt))
 production:
@@ -425,13 +433,21 @@ Inflo(param):
    if (param.cumsum_temp>=800):
      nproduce ,(1) @O(0.01)
    else:
-    for k in xrange(0,10):
+    for k in xrange(0,20):
       # On choisi la couleur en fonction du stade et de son avancement
       nproduce InterpolateColors(pheno_color[param.pheno_stage],pheno_color[param.pheno_stage+1],param.pheno_advct) 
-      nproduce F(param.length/10.,param.length/100.)  fleur(0,param.length,k) fleur(120,param.length,k) fleur(240,param.length,k) 
+      nproduce F(param.length/20.,param.length/100.)  \(144)
+      #for d in xrange (0,3):
+      nproduce [@Ts(0.05) @Tp(0,0,1)  +(75) fleur(param.length,max(param.length/10.,param.length*0.687-3.97)*(19-k)/19,param.pheno_stage,param.pheno_advct)] 
    produce ]
 
-fleur(angle,age,k) --> [ \(angle+k*2) +(90) F((9-k)*age/20.,0.02) ,(4) @O(0.01+age*0.02)] #+randint(-10,10)
+fleur(age,l,pheno,pheno_advct):
+  for k in xrange(0,10):
+      # On choisi la couleur en fonction du stade et de son avancement
+      nproduce F(l/10.,l/100.)  
+      if k>3:
+        for d in xrange (0,3):
+          nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/9,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],pheno_advct) @O(age/50.)]
 
 consider: Internode
 
@@ -495,7 +511,7 @@ def __initialiseContext__(context):
 	Color_16.name = "Color_16"
 	context.turtle.setMaterial(16,Color_16)
 	context.animation_timestep = 0.0
-	scalars = [('DAILY', 'Bool', False), ('mean_temperature', 'Float', 28.0, 20.0, 40.0, 2), ('D_EF_G', 'Bool', True)]
+	scalars = [('DAILY', 'Bool', False), ('mean_temperature', 'Float', 28.0, 20.0, 40.0, 2), ('D_EF_G', 'Bool', True), ('Vegetative', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
