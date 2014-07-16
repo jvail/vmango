@@ -9,4 +9,6 @@ eBinomial, ePoisson, eVglm = range(1,4)
 
 eWithinCycle, eLaterCycle = range(2)
 
-eTreeBased, eFamilyBased, eVarietyBased = range(3)
+eTreeBased, eManagementTypeBased, eVarietyBased = range(3)
+
+eMeasuredMtg, eSimulatedMtg = 1,2

@@ -1,4 +1,4 @@
-setwd("D:/openalea/mangosim/src/vplants/mangosim/glm_estimation")
+#setwd("D:/openalea/mangosim/src/vplants/mangosim/glm_estimation")
 #
 #
 ### Importation of data :
@@ -251,9 +251,9 @@ for(tree in 1:length(trees)){
 
 library(VGAM)
 
-vglm.Delta_burst_date_child.05_complet = vglm( Delta_burst_date_child ~ is_loaded + burst_date_mother + position_mother + position_ancestor + nature_ancestor,
-    family = cumulative(parallel=T) ,data=data.05, subset = index_bursted.05)   
-summary(vglm.Delta_burst_date_child.05_complet)   # Log-likelihood: 
+#vglm.Delta_burst_date_child.05_complet = vglm( Delta_burst_date_child ~ is_loaded + burst_date_mother + position_mother + position_ancestor + nature_ancestor,
+#    family = cumulative(parallel=T) ,data=data.05, subset = index_bursted.05)   
+#summary(vglm.Delta_burst_date_child.05_complet)   # Log-likelihood: 
 
 
 

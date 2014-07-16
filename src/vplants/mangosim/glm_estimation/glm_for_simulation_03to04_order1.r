@@ -1,4 +1,4 @@
-setwd("D:/openalea/mangosim/src/vplants/mangosim/glm_estimation")
+#setwd("D:/openalea/mangosim/src/vplants/mangosim/glm_estimation")
 #
 #
 ### Importation of data :
@@ -375,7 +375,7 @@ for(tree in 1:length(trees)){
 
 detach(data.03_04)
 
-level_is_loaded = as.factor(0:1)
+level_is_loaded = as.factor(0:1) # ??
 level_position_mother_L = as.factor(0:1)
 level_position_ancestor_L = as.factor(0:1)
 level_nature_ancestor_V = as.factor(0:1)
@@ -401,27 +401,28 @@ get_table_prob_variable_glm = function(myglm){
             }
             variables = colnames(myglm$model)[2:length(colnames(myglm$model))]
         }else{
-            variables = NULL
-            level_burst_date_mother = level_all_burst_date_mother
+            variables = NULL                                      # in case of selected glm, contains only influent variables
+            level_burst_date_mother = level_all_burst_date_mother # contains all the observed date mother and used by the glm
         }
-    }
-    produit_cartesien = expand.grid(level_is_loaded,level_burst_date_mother,level_position_mother_L,level_position_ancestor_L,level_nature_ancestor_V,level_nature_mother_V)
+    }  
+    produit_cartesien = expand.grid(level_is_loaded,level_burst_date_mother,level_position_mother_L,level_position_ancestor_L,level_nature_ancestor_V,level_nature_mother_V) # all the combination of explicative variable values
     names(produit_cartesien) = c("is_loaded","burst_date_mother","position_mother_L","position_ancestor_L","nature_ancestor_V","nature_mother_V")
-    data_probs = unique(produit_cartesien[variables])
+    data_probs = unique(produit_cartesien[variables]) # filtre les combinaision pour n'avoir que les cas utilisé par le glm
+
     if( class(myglm)[1]=="vglm" ){
         if(!is.null(variables)){
             probs = predictvglm(myglm,newdata=data_probs,type="response")
             for(i in 1:length(colnames(probs)) ){
                 data_probs[colnames(probs)[i] ] = probs[,i]
             }
-        }else{
-            probs = predictvglm(myglm,type="response")[1,]
-            months_p = colnames(myglm@y)
-            data_probs = data.frame(probs[1])
-            row.names(data_probs) = NULL
-            for(i in 2:length(months_p) ){
-                data_probs = cbind(data_probs,probs[i])
-            }
+        }
+        else
+        {
+            # cas du glm null
+            probs = predictvglm(myglm,type="response")[1,] # on predit sans valeur de x
+            months_p = colnames(myglm@y) # on recupere le nom des mois (valeur possible de la variable y du glm)
+            # on veut transformer probs en dataframe. Mais plutot en colonne qu'en ligne (du coup on fait une transposé)
+            data_probs = t(data.frame(probs))
             colnames(data_probs)= months_p
         }
     }else if(myglm$family[1]=="binomial" || myglm$family[1]=="poisson"){  
@@ -433,13 +434,14 @@ get_table_prob_variable_glm = function(myglm){
             data_probs = data.frame(probs)
         }
     }
+    # pour completer en fonction de la date de la mere. on rajoute des lignes
     if("burst_date_mother" %in% variables){
         other_level_burst_date_mother = level_all_burst_date_mother[!level_all_burst_date_mother %in% level_burst_date_mother]
         if(length(other_level_burst_date_mother)>0){
             other_produit_cartesien = expand.grid(level_is_loaded, other_level_burst_date_mother,level_position_mother_L,level_position_ancestor_L,level_nature_ancestor_V,level_nature_mother_V)
             names(other_produit_cartesien) = c("is_loaded","burst_date_mother","position_mother_L","position_ancestor_L","nature_ancestor_V","nature_mother_V")
             other_data_probs = unique(other_produit_cartesien[variables])
-            probs_null = rep(0,length(other_data_probs[,1]))
+            probs_null = rep(0,length(other_data_probs[,1])) # on calcule une colonne remplit de 0
             if( class(myglm)[1]=="vglm"){
                 for(i in 1:length(colnames(probs)) ){
                     other_data_probs[colnames(probs)[i] ] = 1./length(colnames(probs))

@@ -129,7 +129,7 @@ def set_dicts_files_glm():
 dicts_files_glm = set_dicts_files_glm()
 
 dict_table_glm = {}
-def init_glm_table( GLM_SELECTED=True, is_loaded_factor=True, feature_tree=None):
+def init_glm_table( GLM_SELECTED=False, is_loaded_factor=True, feature_tree=None):
    """
    Parameters : 
     GLM_SELECTED : boolean , 

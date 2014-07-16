@@ -1,4 +1,4 @@
-from datetime import datetime, date
+from datetime import date
 
 
 Month = {'janv' : 1, 'fev' : 2, 'mars' : 3,
@@ -44,39 +44,43 @@ def get_cycle(date):
 
 
 bloom_weeks_04 = {
-0 : (datetime(2004,7,1),datetime(2004,8,7)),
-1 : (datetime(2004,8,8),datetime(2004,8,14)),
-2 : (datetime(2004,8,15),datetime(2004,8,21)),
-3 : (datetime(2004,8,22),datetime(2004,8,28)),
-4 : (datetime(2004,8,29),datetime(2004,9,4)),
-5 : (datetime(2004,9,5),datetime(2004,9,11)),
-6 : (datetime(2004,9,12),datetime(2004,9,18)),
-7 : (datetime(2004,9,19),datetime(2004,9,25)),
-8 : (datetime(2004,9,26),datetime(2004,10,2)),
-9 : (datetime(2004,10,3),datetime(2004,10,9)),
-10 : (datetime(2004,10,10),datetime(2004,10,16)),
-11 : (datetime(2004,10,17),datetime(2004,10,23)),
-12 : (datetime(2004,10,24),datetime(2004,10,30))  }
+0 : (date(2004,7,1),date(2004,8,7)),
+1 : (date(2004,8,8),date(2004,8,14)),
+2 : (date(2004,8,15),date(2004,8,21)),
+3 : (date(2004,8,22),date(2004,8,28)),
+4 : (date(2004,8,29),date(2004,9,4)),
+5 : (date(2004,9,5),date(2004,9,11)),
+6 : (date(2004,9,12),date(2004,9,18)),
+7 : (date(2004,9,19),date(2004,9,25)),
+8 : (date(2004,9,26),date(2004,10,2)),
+9 : (date(2004,10,3),date(2004,10,9)),
+10 : (date(2004,10,10),date(2004,10,16)),
+11 : (date(2004,10,17),date(2004,10,23)),
+12 : (date(2004,10,24),date(2004,10,30))  }
 
 bloom_weeks_05 = {
-0 : (datetime(2005,7,1),datetime(2005,8,7)),
-1 : (datetime(2005,8,8),datetime(2005,8,14)),
-2 : (datetime(2005,8,15),datetime(2005,8,21)),
-3 : (datetime(2005,8,22),datetime(2005,8,28)),
-4 : (datetime(2005,8,29),datetime(2005,9,4)),
-5 : (datetime(2005,9,5),datetime(2005,9,11)),
-6 : (datetime(2005,9,12),datetime(2005,9,18)),
-7 : (datetime(2005,9,19),datetime(2005,9,25)),
-8 : (datetime(2005,9,26),datetime(2005,10,2)),
-9 : (datetime(2005,10,3),datetime(2005,10,9)),
-10 : (datetime(2005,10,10),datetime(2005,10,16)),
-11 : (datetime(2005,10,17),datetime(2005,10,23)),
-12 : (datetime(2005,10,24),datetime(2005,10,30))  }
+0 : (date(2005,7,1),date(2005,8,7)),
+1 : (date(2005,8,8),date(2005,8,14)),
+2 : (date(2005,8,15),date(2005,8,21)),
+3 : (date(2005,8,22),date(2005,8,28)),
+4 : (date(2005,8,29),date(2005,9,4)),
+5 : (date(2005,9,5),date(2005,9,11)),
+6 : (date(2005,9,12),date(2005,9,18)),
+7 : (date(2005,9,19),date(2005,9,25)),
+8 : (date(2005,9,26),date(2005,10,2)),
+9 : (date(2005,10,3),date(2005,10,9)),
+10 : (date(2005,10,10),date(2005,10,16)),
+11 : (date(2005,10,17),date(2005,10,23)),
+12 : (date(2005,10,24),date(2005,10,30))  }
 
 bloom_weeks = {4 : bloom_weeks_04, 5 : bloom_weeks_05}
 
 
-
-
-
+def get_bloom_week(date, icycle = None):
+    if icycle is None:
+        icycle = get_cycle(date)
+    bweeks = bloom_weeks[icycle]
+    for periodid, period_beg_end  in bweeks.items():
+        if period_beg_end[0] <= date <= period_beg_end[1]:
+            return periodid
 
