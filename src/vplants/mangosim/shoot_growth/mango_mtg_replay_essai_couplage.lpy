@@ -415,6 +415,7 @@ module Flower(burst_date,order) # represent flower
 module FlowerRepr(day_age,s)
 module fleur
 
+initial_view = 1
 
 Axiom: 
   nproduce  G B(first_uc) #
@@ -584,7 +585,7 @@ G :
   if TIMEBAR:
     ar = False
     envsize = 0.8
-    nproduce [ @2D ,(5) @M(-0.85,-0.85) 
+    nproduce [ @2D @R @Ts(0),(5) @M(-0.85,-0.85) 
     nproduce Label('Tree : '+treename+'. Date: '+str(current_date.year)+'-'+str(current_date.month).zfill(2)+'-'+str(current_date.day).zfill(2)+'. Cycle: '+str(get_cycle(current_date)),14)
     clength = (current_date - first_date).days/float((last_date - first_date).days)
     nproduce ,(4) @M(-0.91,-0.9) -(90) _(0.04) F(0.01)
@@ -832,7 +833,7 @@ def __initialiseContext__(context):
 	Color_20.name = "Color_20"
 	context.turtle.setMaterial(20,Color_20)
 	context.animation_timestep = 0.001
-	scalars = [('TREE', 'Integer', 0, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', False), ('daystep', 'Integer', 1, 1, 100)]
+	scalars = [('TREE', 'Integer', 0, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True), ('daystep', 'Integer', 1, 1, 100)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
