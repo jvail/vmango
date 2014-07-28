@@ -58,18 +58,18 @@ export_fname = 'simulated_mango_glm.bmtg'
 resultmtg = None
 
 def End(lstring,lscene):
+  from cPickle import dump,HIGHEST_PROTOCOL
   global resultmtg
   if EXPORT_TO_MTG:
     resultmtg = export_to_mtg(lstring, lscene)
     if SAVE_MTG:
       # write it in the file
       print 'Export result in',repr(export_fname)
-      dump(mtg,open(export_fname,'wb'),HIGHEST_PROTOCOL)
+      dump(resultmtg,open(export_fname,'wb'),HIGHEST_PROTOCOL)
 
 
 def export_to_mtg(lstring, lscene):
   from openalea.mtg.io import axialtree2mtg
-  from cPickle import dump,HIGHEST_PROTOCOL
   parameters = {}
   scales = {}
   # Name of the modules to export
@@ -161,14 +161,14 @@ A( p ):
       
     if nb_inflorescences > 0:
       for i in xrange(nb_lat_inflo):
-          nproduce /(anglebetweenchildren) [&(60) Inflorescence(ParameterSet(bloom_date=date_inflo_bloom)) ]
+          nproduce /(anglebetweenchildren) [&(60) Inflorescence(ParameterSet(bloom_date=date_inflo_bloom, cycle =  get_cycle(date_inflo_bloom))) ]
     
     if apical_child:
         p = baseparameter
         p.set(position = eApical)
         nproduce A(p)
     elif nb_inflorescences > 0:
-      nproduce Inflorescence(ParameterSet(bloom_date=date_inflo_bloom))
+      nproduce Inflorescence(ParameterSet(bloom_date=date_inflo_bloom, cycle =  get_cycle(date_inflo_bloom)))
     
 
 
@@ -275,7 +275,7 @@ def __initialiseContext__(context):
 	Color_7 = pgl.Material("Color_7" , ambient = (57,65,12) , diffuse = 1.66154 , )
 	Color_7.name = "Color_7"
 	context.turtle.setMaterial(7,Color_7)
-	scalars = [('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('TIMESTEP', 'Integer', 30, 1, 750), ('EXPORT_TO_MTG', 'Bool', True), ('SAVE_MTG', 'Bool', False), ('Geometry', 'Category'), ('TIMEBAR', 'Bool', True), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('GLM', 'Category'), ('COMPLETE_GLM', 'Bool', True), ('SEED', 'Integer', 2, 1, 100000)]
+	scalars = [('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('TIMESTEP', 'Integer', 30, 1, 750), ('EXPORT_TO_MTG', 'Bool', True), ('SAVE_MTG', 'Bool', True), ('Geometry', 'Category'), ('TIMEBAR', 'Bool', True), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('GLM', 'Category'), ('COMPLETE_GLM', 'Bool', True), ('SEED', 'Integer', 2, 1, 100000)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
