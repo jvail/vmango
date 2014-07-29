@@ -44,17 +44,17 @@ delta_date = timedelta(hours=24*pdt)
 # Choix d'un decoupage et definition des stades phenologiques
 if D_EF_G:
   pheno_base_temp_GU=[12.40516,13.57918,13.57918,9.784431,0] #stades D_EF_G_H
-  pheno_change_temp_GU=[41.84,46.78,46.56,316.376,999]       # temperatures auxquelles ont lieu les changements de stade UC
+  pheno_change_temp_GU=[41.84,46.78+41.84,46.56+46.78+41.84,316.376+46.56+46.78+41.84,999+316.376+46.56+46.78+41.84]       # temperatures auxquelles ont lieu les changements de stade UC
   pheno_color=[7,10,11,14,13,13]                          # couleurs pour chaque stade
   pheno_angle=[0,90,165,60,60,60]                         # angle entre la feuille et l'UC pour chaque stade
 else:
   pheno_base_temp_GU=[13.37766,13.37766,9.784431,0]    # stades DEF_G_H
-  pheno_change_temp_GU=[86.12,47.39,316.376,999]       # temperatures auxquelles ont lieu les changements de stade UC
+  pheno_change_temp_GU=[38.50,47.61+38.50,47.39+47.61+38.50,316.376+47.39+47.61+38.50,999+316.376+47.39+47.61+38.50]       # temperatures auxquelles ont lieu les changements de stade UC
   pheno_color=[7,11,14,13,13]                       # couleurs pour chaque stade
   pheno_angle=[0,165,60,60,60]                      # angle entre la feuille et l'UC pour chaque stade
   
 pheno_base_temp_Inflo=[11.10,5.38,8.67,15.11,0]                # températures de base pour chaque stade phéno
-pheno_change_temp_Inflo=[70.56,172.35,133.32,230.42,999]       # temperatures auxquelles ont lieu les changements de stade Inflo
+pheno_change_temp_Inflo=[70.56,133.32+70.56,230.42+133.32+70.56,999+230.42+133.32+70.56]       # temperatures auxquelles ont lieu les changements de stade Inflo
 
 if Vegetative==False:
   pheno_color=[15,16,16,16,16,16]                                    # couleurs pour chaque stade (inflorescences)
@@ -86,40 +86,35 @@ Inflo_length_sd=6.767254
 
 
 # Fct qui renvoit le stade pheno et l'avancement (entre 0 et 1) dans ce stade
-def normalized_pheno_stage(cumtemp,type,pheno_stage = None):
+def normalized_pheno_stage(cumtemp,type):
   if type=="GU":
     pheno_change_temp=pheno_change_temp_GU
   else:
     pheno_change_temp=pheno_change_temp_Inflo
-    
-  # Si le stade pheno n'est pas connu on le cherche
-  if pheno_stage == None:
-    if cumtemp > pheno_change_temp[-1]:     # on teste si la somme des temp cumulee est superieure a la derniere temp de chgt de stade
+#  print Nb_stades_pheno, pheno_change_temp, pheno_change_temp[-1],pheno_change_temp[-2],pheno_change_temp[Nb_stades_pheno-1],pheno_change_temp[Nb_stades_pheno-3]
+#  # On cherche le stade pheno
+  pheno_stage=None
+  if cumtemp > pheno_change_temp[-2]:     # on teste si la somme des temp cumulee est superieure a la derniere temp de chgt de stade
       pheno_stage=Nb_stades_pheno-1         # si oui on est dans le dernier stade
-    else:
-      i=Nb_stades_pheno-2                   # si non, on boucle jusqu'a etre inferieur a une temp de chgt de stade
-      while i!=0:
+  else:
+      i=Nb_stades_pheno-3                   # si non, on boucle jusqu'a etre inferieur a une temp de chgt de stade
+      while i!=-1:
         if cumtemp > pheno_change_temp[i]:
-          pheno_stage=i
-          i=0
+          pheno_stage=i+1
+          i=-1
         else:
           i=i-1     
-      if pheno_stage==None: pheno_stage=0
-  # Sinon on verifie si on passe au stade suivant
+  if pheno_stage==None: pheno_stage=0
   if pheno_stage == (Nb_stades_pheno-1):     # si on est au dernier stade on n'avance plus
     pheno_advancement =0                     
   else:                                      # si non, on calcul l'avancement dans le stade
-    #entry_pheno_temp=pheno_change_temp[pheno_stage]
-    #exit_pheno_temp=pheno_change_temp[pheno_stage+1]
-    entry_pheno_temp=0
-    exit_pheno_temp=pheno_change_temp[pheno_stage]
-    if cumtemp > exit_pheno_temp:            # si la temperature est superieure a celle de chgt de stadeon change de stade
-      pheno_stage+=1
-      cumtemp=cumtemp-exit_pheno_temp #+max(0,pheno_base_temp[pheno_stage-1]-pheno_base_temp[pheno_stage])*pdt
-      pheno_advancement =cumtemp/pheno_change_temp[pheno_stage]
+    if pheno_stage==0: entry_pheno_temp=0
     else:
-      pheno_advancement =cumtemp/exit_pheno_temp
-  return [pheno_advancement, pheno_stage,cumtemp]
+      entry_pheno_temp=pheno_change_temp[pheno_stage-1]
+    exit_pheno_temp=pheno_change_temp[pheno_stage]
+    cumtemp=cumtemp-entry_pheno_temp 
+    pheno_advancement =cumtemp/(exit_pheno_temp-entry_pheno_temp)
+  return [pheno_advancement, pheno_stage]
 
 
 def retrieveCurves():
@@ -154,8 +149,6 @@ axisfunc = ProfileInterpolation(curves,[0,0.1,0.5,0.6,0.7,0.8])
 def Start():
   global totlength
   totlength = [(0,0)]
-  global UC_length
-  UC_length=1000000
   global pheno_inter_prec
   pheno_inter_prec=0
   
@@ -166,6 +159,7 @@ def End():
   else :
     df = DataFrame(data = infoUC, columns=['CodeUC','Days', 'TTS', 'Length','Pheno_stage','Date']) 
     df.to_csv('croissInflo_test.csv',index=True,header=False)
+
 
 def StartEach():
   # On verifie si on passe au jour suivant et on avance d'un pas de temps
@@ -393,9 +387,7 @@ GU(p):
     new_param=p.copy()
     # Mise a jour des parametres pour la croissance
     new_param.age += pdt                                 # on incremente l'age du pas de temps
-    [pheno_advct_stage,new_param.pheno_stage,cumtemp]=normalized_pheno_stage(new_param.pheno_TTS,"GU",new_param.pheno_stage)  #calcul de l'avct ds le stade pheno  
-    if (new_param.pheno_stage != p.pheno_stage):     # si on change de stade on remet la somme en temps thermique a 0
-      new_param.pheno_TTS=cumtemp
+    [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"GU")  #calcul de l'avct ds le stade pheno  
       
     # Somme de temperatures pour la croissance
     new_param.cumsum_temp+=delta_temperature_GU*pdt     # on incremente la somme de temperatures cumulees
@@ -457,9 +449,7 @@ GU(p) < Leaf(param): # Mise a jour des parametres et production de la feuille
 Inflo(param): # Mise a jour des parametres et production de l'inflorescence
   new_param=param.copy()
   new_param.age += pdt
-  [pheno_advct_stage,new_param.pheno_stage,cumtemp]=normalized_pheno_stage(new_param.pheno_TTS,"Inflo",new_param.pheno_stage)  #calcul de l'avct ds le stade pheno  
-  if (new_param.pheno_stage != param.pheno_stage):     # si on change de stade on remet la somme en temps thermique a 0
-    new_param.pheno_TTS=cumtemp
+  [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"Inflo")  #calcul de l'avct ds le stade pheno  
     
   # Somme de temperatures pour la croissance
   new_param.cumsum_temp+= delta_temperature_Inflo*pdt
@@ -632,7 +622,7 @@ def __initialiseContext__(context):
 	Color_20.name = "Color_20"
 	context.turtle.setMaterial(20,Color_20)
 	context.animation_timestep = 0.0
-	scalars = [('DAILY', 'Bool', True), ('mean_temperature', 'Float', 32.27, 20.0, 40.0, 2), ('D_EF_G', 'Bool', True), ('SEED', 'Integer', 4, 0, 100), ('Vegetative', 'Bool', False)]
+	scalars = [('DAILY', 'Bool', False), ('mean_temperature', 'Float', 32.27, 20.0, 40.0, 2), ('D_EF_G', 'Bool', True), ('SEED', 'Integer', 4, 0, 100), ('Vegetative', 'Bool', True)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
