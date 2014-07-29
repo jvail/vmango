@@ -43,6 +43,9 @@ plot(inflo$B0,inflo$X00)
 plot(inflo$ER0,inflo$X00)
 plot(inflo$TMInflo,inflo$X00)
 plot(inflo$nInflo,inflo$X00)
+plot(inflo$diamInflo,inflo$X00)
+plot(inflo$diamUCM,inflo$X00)
+plot(inflo$haut,inflo$X00)
 
 
 
@@ -51,8 +54,55 @@ par(mfrow=c(1,2))
 hist(inflo$X00,col=8,main="inflorescences",freq=F,breaks=20)
 curve(dnorm(x,mean(inflo$X00),sd(inflo$X00)),add=T)
 hist(UC$X00,col="salmon",main="UCs",freq=F,breaks=20)
-curve(dnorm(x,mean(UC$X00),sd(UC$X00)),add=T)
+curve(dnorm(x,mean(UC$X00),sd(UC$X00)),add=T)                         # mu=79.40, sigma=10.75
 title("Répartition de la date du point d'inflexion estimé",outer=T,line=-1)
+
+# On ne reconnaît aucunes distributions connues our les inflorescences, on cherche donc à voir si on peut différencier des cas
+par(mfrow=c(1,3))
+hist(inflo$X00,col=8,main="inflorescences",breaks=10,ylim=c(0,8))
+hist(inflo$X00[inflo$pos=="A"],col=8,main="apicale",breaks=10,ylim=c(0,8))
+hist(inflo$X00[inflo$pos=="L"],col=8,main="latérale",breaks=10,ylim=c(0,8))
+title("Répartition de la date du point d'inflexion estimé pour les inflorescences",outer=T,line=-1)
+
+par(mfrow=c(2,3))
+hist(inflo$X00[inflo$pos=="A" & inflo$posUCm=="A"],col=8,main="apicale, mère apicale",breaks=10,ylim=c(0,8))
+hist(inflo$X00[inflo$pos=="L" & inflo$posUCm=="A"],col=8,main="latérale,mère apicale",breaks=10,ylim=c(0,8))
+hist(inflo$X00[inflo$pos=="A" & inflo$posUCm=="L"],col=8,main="apicale, mère latérale",breaks=10,ylim=c(0,8))
+
+hist(inflo$X00,col=8,main="inflorescences",breaks=10,ylim=c(0,8))
+title("Répartition de la date du point d'inflexion estimé pour les inflorescences",outer=T,line=-1)
+
+
+# Il n'y a pas d'influence visible de la position de l'UC, on cherche donc à voir si il existe une relation avec la date de débourrement
+paramInflo0=read.csv("bourgeons_F.csv",header=TRUE,sep=";",dec=".")
+paramInflo=paramInflo0[paramInflo0$stadeInflo=="B2" | paramInflo0$stadeInflo=="B2/C",]
+paramInflo$date=strptime(as.character(paramInflo$date),"%d/%m/%Y %H:%M")
+
+plot(paramInflo$date,paramInflo$T_ip,pch=15)
+points(paramInflo$date[paramInflo$Verger=="BP"],paramInflo$T_ip[paramInflo$Verger=="BP"],pch=15,col="salmon")
+points(paramInflo$date[paramInflo$Verger=="BM"],paramInflo$T_ip[paramInflo$Verger=="BM"],pch=15,col="cyan")
+points(paramInflo$date[paramInflo$Verger=="GF"],paramInflo$T_ip[paramInflo$Verger=="GF"],pch=15,col="pink")
+legend("topright",c("Bassin Plat","Bassin Martin","Grand Fond"),col=c("salmon","cyan","pink"),pch=15)
+
+# On regarde dans les inflos du mois de novembre
+parinflo=paramInflo[paramInflo$date$mon<10,]
+
+plot(parinflo$date,parinflo$T_ip,pch=15,xlab="date de débourrement de l'inflorescence",ylab="temps thermique au point d'inflexion (dj)")
+points(parinflo$date[parinflo$Verger=="BP"],parinflo$T_ip[parinflo$Verger=="BP"],pch=15,col="salmon")
+points(parinflo$date[parinflo$Verger=="BM"],parinflo$T_ip[parinflo$Verger=="BM"],pch=15,col="cyan")
+points(parinflo$date[parinflo$Verger=="GF"],parinflo$T_ip[parinflo$Verger=="GF"],pch=15,col="pink")
+legend("bottomright",c("Bassin Plat","Bassin Martin","Grand Fond"),col=c("salmon","cyan","pink"),pch=15)
+
+lm.inf_pt=lm(parinflo$T_ip~parinflo$date$yday)
+summary(lm.inf_pt)
+
+
+plot(parinflo$date$yday,parinflo$T_ip,pch=15,xlab="date de débourrement de l'inflorescence",ylab="temps thermique au point d'inflexion (dj)")
+abline(lm.inf_pt$coeff,col=2)
+points(parinflo$date[parinflo$Verger=="BP"]$yday,parinflo$T_ip[parinflo$Verger=="BP"],pch=15,col="salmon")
+points(parinflo$date[parinflo$Verger=="BM"]$yday,parinflo$T_ip[parinflo$Verger=="BM"],pch=15,col="cyan")
+points(parinflo$date[parinflo$Verger=="GF"]$yday,parinflo$T_ip[parinflo$Verger=="GF"],pch=15,col="pink")
+legend("bottomright",c("Bassin Plat","Bassin Martin","Grand Fond"),col=c("salmon","cyan","pink"),pch=15)
 
 
 #### Recherche de la vitesse maximale
@@ -97,15 +147,5 @@ for (i in 1:length(codeUCs)){
 
 
 
-
-###########################################################
-###### Longueur Axe II inflos
-############
-head(inflo)
-axe2.lm=lm(inflo$longAxeII~inflo$longF)
-summary(axe2.lm)                            # Long_axe_2=-3.97+0.687*LongI=_inflo
-
-plot(inflo$longF,inflo$longAxeII)
-abline(axe2.lm$coef,col="salmon")
 
 
