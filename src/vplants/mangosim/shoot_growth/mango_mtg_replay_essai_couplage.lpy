@@ -10,9 +10,9 @@ import vplants.mangosim.doralice_mtg.mtg_manipulation  as mm
 reload(mm)
 
 from vplants.mangosim.tools import load_obj
-#mtg = mm.get_mtg()
-mtg = load_obj("simulated_mango_glm.bmtg",'../glm_simulation')
-mm.setMtgStyle(mm.eSimulatedMtg)
+mtg = mm.get_mtg()
+#mtg = load_obj("simulated_mango_glm.bmtg",'../glm_simulation')
+#mm.setMtgStyle(mm.eSimulatedMtg)
 
 treenames = mm.get_treenames_of_variety(mtg)
 #['B10', 'B12', 'B14', 'F2', 'F6']
@@ -37,53 +37,40 @@ current_cycle = 3
 
 global NbOfDays
 NbOfDays=3000 #len(df['tempMoy'])                  
-temperature=[45 for i in xrange(NbOfDays+1)]
+temperature=[25 for i in xrange(NbOfDays+1)]
 
-# Initialisation des variables
+# Initializing variables
 mean_tip_GU=79.40
 sd_tip_GU=10.75
-t_ip_Leaf=182.04/2.                           # point d'inflexion de la courbe de croissance pour les feuilles
-t_ip_Inflo=346.03/2.                          # point d'inflexion de la courbe de croissance pour les inflorescences
+t_ip_Leaf=182.04/2.                           # Inflexion point of leaf growth curve
+t_ip_Inflo=346.03/2.                          # Inflexion point of inflorescence growth curve
 
-base_temperature_GU=9.2                     # Temperature de base des UCs
-base_temperature_Leaf=10.73                 # Temperature de base des feuilles
-base_temperature_Inflo=11.12                # Temperature de base des inflorescences
+base_temperature_GU=9.2                     # Base temperature of GUs
+base_temperature_Leaf=10.73                 # Base temperature of Leafs
+base_temperature_Inflo=11.12                # Base temperature of inflorescences
 
-totlength = []                              # vecteur des longueurs de l'UC
-infoUC= []                                  # vecteur permettantla recoltes d'informations lors de la croissance
-infoUC.append(('Days', 'TTS', 'Length','Pheno_stage'))
-phyllotaxy = 144+randint(-2,2)              # angle correspondant a la phyllotaxie du manguier
-final_diamI = 0.2                           # diametre final des UCs
-temp_index=0                                # index permettant de parcourir les temperatures jour par jour
+phyllotaxy = 144+randint(-2,2)              # mango phyllotaxie
+final_diamI = 0.2                           # diameter of GUs (at the end of growth)
+temp_index=0                                # index of temperatures
 point=[]
+                   
+delta_date = timedelta(hours=24*daystep)
 
+# Phenological stages definition
+pheno_base_temp_GU=[13.37766,13.37766,13.37766,9.784431,0]    # stages DEF_G_H
+pheno_change_temp_GU=[38.50,47.61+38.50,47.39+47.61+38.50,316.376+47.39+47.61+38.50,999+316.376+47.39+47.61+38.50]       # temperetures of GU's stage change
+pheno_color=[7,10,11,14,13,13]                         # color for each stage (GU)
+pheno_angle=[0,90,165,60,60,60]                        # angle between leaf and internode for each stage
+Nb_stades_pheno=len(pheno_change_temp_GU)              # number of phenological stages
 
-# Choix d'un pas de temps horaire ou journalier : 1/24 = une heure
-#if DAILY:
-#  pdt = 1
-#else:
-#  pdt=1/24.   
-pdt=daystep                       
-delta_date = timedelta(hours=24*pdt)
-
-# Définition des stades phenologiques
-pheno_base_temp_GU=[13.37766,13.37766,13.37766,9.784431,0]    # stades DEF_G_H
-pheno_change_temp_GU=[38.50,47.61+38.50,47.39+47.61+38.50,316.376+47.39+47.61+38.50,999+316.376+47.39+47.61+38.50]       # temperatures auxquelles ont lieu les changements de stade UC
-pheno_color=[7,10,11,14,13,13]                       # couleurs pour chaque stade
-pheno_angle=[0,90,165,60,60,60]                     # angle entre la feuille et l'UC pour chaque stade
-Nb_stades_pheno=len(pheno_change_temp_GU)              # nombre de stades phenologiques
-
-pheno_base_temp_Inflo=[11.10,5.38,8.67,15.11,0]                # températures de base pour chaque stade phéno
-pheno_change_temp_Inflo=[70.56,172.35+70.56,133.32+172.35+70.56,230.42+133.32+172.35+70.56,999+230.42+133.32+172.35+70.56]       # temperatures auxquelles ont lieu les changements de stade Inflo
-
-#if Vegetative==False:
-pheno_color_inflo=[15,16,16,16,16,16]                                    # couleurs pour chaque stade (inflorescences)
+pheno_base_temp_Inflo=[11.10,5.38,8.67,15.11,0]                # base temperature for each phenological stage of inflorescence
+pheno_change_temp_Inflo=[70.56,172.35+70.56,133.32+172.35+70.56,230.42+133.32+172.35+70.56,999+230.42+133.32+172.35+70.56]     # temperatures of inflorescence stage change
+pheno_color_inflo=[15,16,16,16,16,16]                  # color for each stage (inflorescence)
 pheno_color_flower=[13,2,7,12,4,4]
 
-Nb_stades_pheno=len(pheno_change_temp_GU)              # nombre de stades phenologiques
 
-# Parametres des distributions gaussiennes
-# Longueur des UCs (en position : apicale d'UC mere apicale, apicale d'UC mere laterale, laterale)
+# Gaussian distribution parameters
+# GUs length (position: apical with apical mother, apical with lateral mother, lateral)
 GU_length_apic_apic_mean=18.14
 GU_length_apic_apic_sd=4.14
 
@@ -93,14 +80,14 @@ GU_length_apic_lat_sd=4.03
 GU_length_lat_mean=12.59
 GU_length_lat_sd=3.38
 
-# Longueur des feuilles (en position apicale, laterale)
+# Leafs length (positions: apical, lateral)
 Leaf_length_apic_mean=17.06 
 Leaf_length_apic_sd=2.7
 
 Leaf_length_lat_mean=14.87
 Leaf_length_lat_sd=2.7
 
-# Longueur des inflorescences
+# Inflorescences length
 Inflo_length_mean=23.15833
 Inflo_length_sd=6.767254
 
@@ -114,52 +101,35 @@ def Start():
   backward()
 
 def StartEach():
-  # On verifie si on passe au jour suivant et on avance d'un pas de temps
+  global temp_index
   global current_date
-  if ((current_date.month!=(current_date+delta_date).month) or (current_date.day!=(current_date+delta_date).day)):
-    global temp_index
-    temp_index+=1
+  temp_index+=daystep
   current_date += delta_date
+  global current_cycle
+  current_cycle = get_cycle(current_date)
   
-  # longueur et age de l'UC pour tracer le graphique
-  global length_inter
-  length_inter=0.0001   #initialisation a 0
-  global age_inter
-  age_inter=0.0001
-  global cumsum_inter
-  cumsum_inter=0.0001
-  global pheno_inter
-  pheno_inter=0
-  
-  # Calcul de la temperature a ajouter a la somme en temps thermique (croissance)
+  # temperature calcul (to add to thermal time sum for growth)
   global temperature
   global delta_temperature_GU      
-  delta_temperature_GU=max(0,temperature[temp_index]-base_temperature_GU)        # pour les UCs
+  delta_temperature_GU=max(0,temperature[temp_index]-base_temperature_GU)        # GUs
   global delta_temperature_Leaf 
-  delta_temperature_Leaf=max(0,temperature[temp_index]-base_temperature_Leaf)    # pour les feuilles
+  delta_temperature_Leaf=max(0,temperature[temp_index]-base_temperature_Leaf)    # Leafs
   global delta_temperature_Inflo 
-  delta_temperature_Inflo=max(0,temperature[temp_index]-base_temperature_Inflo)    # pour les inflorescences
+  delta_temperature_Inflo=max(0,temperature[temp_index]-base_temperature_Inflo)    # Inflorescences
 
 
-
-def EndEach():
-  global current_date
-  global current_cycle
-  #current_date += timedelta(days = daystep)
-  current_cycle = get_cycle(current_date)
-
-# Fct qui renvoit le stade pheno et l'avancement (entre 0 et 1) dans ce stade
+# Function who return phenological stage and advancement in this stage (between 0 and 1)
 def normalized_pheno_stage(cumtemp,type):
   if type=="GU":
     pheno_change_temp=pheno_change_temp_GU
   else:
     pheno_change_temp=pheno_change_temp_Inflo
-  # On cherche le stade pheno
+  # We are lookinf for the right phenological stage
   pheno_stage=None
-  if cumtemp > pheno_change_temp[-2]:     # on teste si la somme des temp cumulee est superieure a la derniere temp de chgt de stade
-      pheno_stage=Nb_stades_pheno-1         # si oui on est dans le dernier stade
+  if cumtemp > pheno_change_temp[-2]:       # we control if the le thermal time sum is superior to last phenological change temperature
+      pheno_stage=Nb_stades_pheno-1         # if yes, it's last phenological stage
   else:
-      i=Nb_stades_pheno-3                   # si non, on boucle jusqu'a etre inferieur a une temp de chgt de stade
+      i=Nb_stades_pheno-3                   
       while i!=-1:
         if cumtemp > pheno_change_temp[i]:
           pheno_stage=i+1
@@ -167,9 +137,9 @@ def normalized_pheno_stage(cumtemp,type):
         else:
           i=i-1     
   if pheno_stage==None: pheno_stage=0
-  if pheno_stage == (Nb_stades_pheno-1):     # si on est au dernier stade on n'avance plus
+  if pheno_stage == (Nb_stades_pheno-1):     # if last stage : advancement is always 0 (the end of change)
     pheno_advancement =0                     
-  else:                                      # si non, on calcul l'avancement dans le stade
+  else:                                      
     if pheno_stage==0: entry_pheno_temp=0
     else:
       entry_pheno_temp=pheno_change_temp[pheno_stage-1]
@@ -181,20 +151,19 @@ def normalized_pheno_stage(cumtemp,type):
 
 
 
-# Fonction qui calcule la taille de l'organe (feuille ou UC) 
-# en fonction de sa taille finale et de ses tem cumulees 
+# Function who return an organ (Leaf, Internode or GU) length 
 def GrowthCurve(T,FinalSize_organ,type,FinalSize,t_ip):
-  if type=="GU":                               # Pour les UCs
-    maxER=0.0111513*FinalSize                  # relation entre taille finale et vitesse maximale de croissance pour les UCs
+  if type=="GU":                                  # GUs
+    maxER=0.0111513*FinalSize                     # relationship between final size and maximum growth rate for GUs
     B=FinalSize/(4*maxER)   
-    y=FinalSize_organ/(1+exp(-(T-t_ip)/B))  # equation de la sigmoide
+    y=FinalSize_organ/(1+exp(-(T-t_ip)/B))        # sigmoid equation
 
-  elif type == "Leaf":                                        # Pour les feuilles
+  elif type == "Leaf":                            # Leafs
     maxER=-0.0188725+0.0147985*FinalSize
     B=FinalSize/(4*maxER)
     y=FinalSize_organ/(1+exp(-(T-t_ip_Leaf)/B))
     
-  else:                                        # Pour les inflorescences
+  else:                                           # Inflorescences
     maxER=0.0049161*FinalSize 
     B=FinalSize/(4*maxER)
     y=FinalSize_organ/(1+exp(-(T-t_ip_Inflo)/B))
@@ -211,7 +180,7 @@ def retrieveCurves():
   curves.sort(lambda x,y : cmp(x.name,y.name))
   return curves
 
-# Fonction qui permet d'interpoler des courbes afin de faire evoluer une forme (ici cellede la feuille) au cours du temps
+
 def ProfileInterpolation(curves,knotlist = None,degree = 3):
     nbcurves = len(curves)
     if knotlist is None: knotlist = [i/float(nbcurves-1) for i in xrange(nbcurves)]
@@ -230,7 +199,7 @@ axisfunc = ProfileInterpolation(curves,[0,0.1,0.5,0.6,0.7,0.8])
 
 
 def estimate_radius(nbdescendants):
-  return 0.02*pow(nbdescendants, 0.35)
+  return 0.2*pow(nbdescendants, 0.35)
 
 # estimate nb of descendants for the pipe model
 @mm.use_global_mtg
@@ -245,105 +214,110 @@ def estimate_nb_descendants(mtg, first_uc):
 nbdescendants = estimate_nb_descendants(mtg,first_uc)
 
 
-module GU, Inflorescence, A, B, GUEnd, Internode, Leaf,Bourgeon_Inflo
+module GU, Inflorescence, A, B, GUEnd, Internode, Leaf,Inflorescence_bud
+
+def generate_parameters_GU(current,length,burst_date, nbdescendants):
+  # On effectue les tirages pour la simulation
+  if mm.get_nature_gu(mtg, current)==1: #we control if the GU is Vegetative or reproductive
+    cum=delta_temperature_GU*daystep
+    cumL=delta_temperature_Leaf*daystep
+    # if yes: check GU's position (if none position default is apical)
+    if mm.get_parent(mtg, current)==None: 
+      position_gu=1
+      racine=1
+    else :
+      position_gu=mm.get_position_gu(mtg, current)
+      racine=0
+    if position_gu==1:
+      hypo=gauss(2.63,1.72)  #length of space before the first leaf
+      # mother position
+      if racine==1 : position_gu_ancetre=1
+      else:
+        if mm.get_parent(mtg,mm.get_parent(mtg, current))==None: position_gu_ancetre=1
+        else: position_gu_ancetre=mm.get_position_gu(mtg,mm.get_parent(mtg, current))
+      if (position_gu_ancetre==1):
+        final_size=gauss(GU_length_apic_apic_mean,GU_length_apic_apic_sd)   # we take a length in the distribution
+        while (final_size <5) or (final_size >25):                # if to low or to high we take another one
+          final_size=gauss(GU_length_apic_apic_mean,GU_length_apic_apic_sd)
+      else:
+        final_size=gauss(GU_length_apic_lat_mean,GU_length_apic_lat_sd)
+        while (final_size <5) or (final_size >25):
+          final_size=gauss(GU_length_apic_lat_mean,GU_length_apic_lat_sd)
+      
+      # Leaf lengths   
+      final_size_leaf=gauss(Leaf_length_apic_mean,Leaf_length_apic_sd)
+      while (final_size_leaf <5) or (final_size_leaf >34):
+        final_size_leaf=gauss(Leaf_length_apic_mean,Leaf_length_apic_sd)
+    
+    # Lateral case   
+    else:
+      final_size=gauss(GU_length_lat_mean,GU_length_lat_sd)
+      while (final_size <5) or (final_size >25):
+        final_size=gauss(GU_length_lat_mean,GU_length_lat_sd) 
+      
+      final_size_leaf=gauss(Leaf_length_lat_mean,Leaf_length_lat_sd)
+      while (final_size_leaf <5) or (final_size_leaf >34):
+        final_size_leaf=gauss(Leaf_length_lat_mean,Leaf_length_lat_sd)
+
+      hypo=final_size*0.38+0.88+randint(-1,1)  #length of space before the first leaf depend of GU's length
+    
+    # Number of leafs depend of GU's length
+    NbInternode=int(max(ceil(0.6*final_size)+randint(-1,1) ,1))
+    t_ip=gauss(mean_tip_GU,sd_tip_GU)
+    
+  else: 
+    cum=delta_temperature_Inflo*daystep
+    cumL=0
+    final_size=gauss(Inflo_length_mean,Inflo_length_sd)
+    final_size_leaf=1
+    hypo=0
+    t_ip=0
+    NbInternode=0
+    while (final_size <5) or (final_size >44):
+        final_size=gauss(Inflo_length_mean,Inflo_length_sd)
+   
+  pheno_TTS=daystep*pheno_base_temp_GU[0]
+  [pheno_advct_stage,pheno_stage]=normalized_pheno_stage(pheno_TTS,"GU")  #advancement and pheno stage calculation
+  if length!=None : final_size_GU=length
+  param = ParameterSet(burst_date=burst_date,
+                       nature=mm.get_nature_gu(mtg, current),
+                       cycle =mm.get_unit_cycle(mtg, current), 
+                       length=length, 
+                       nbdescendants = nbdescendants,
+                       radius = estimate_radius(nbdescendants), 
+                       mtgid = current,
+                       
+                       final_size_GU=final_size,
+                       final_size_Leaf=final_size_leaf,
+                       LEPF=hypo,
+                       NbInternode=NbInternode,
+                       T_ip=t_ip,
+                       
+                       cumsum_temp=cum,
+                       cumsum_temp_Leaf=cumL,
+                       pheno_stage=pheno_stage,
+                       pheno_advct=pheno_advct_stage,
+                       pheno_TTS=pheno_TTS,
+                       age=daystep-1,
+                       diam=0)
+  return param
+
+
 
 def generate_elements(current, burst_date = None, length=None, nbdescendants = 1):
-    # On effectue les tirages pour la simulation
-    if mm.get_nature_gu(mtg, current)==1: #On teste si on est en presence d'une UC vegetative
-      cum=delta_temperature_GU*pdt
-      cumL=delta_temperature_Leaf*pdt
-      # si oui on teste si l'UC en croissance est apicale
-      if mm.get_parent(mtg, current)==None: 
-        position_gu=1
-        racine=1
-      else :
-        position_gu=mm.get_position_gu(mtg, current)
-        racine=0
-      if position_gu==1:
-        hypo=gauss(2.63,1.72)  #On tire une longueur d'espace pre-feuille
-        # On teste le position de l'UC mere
-        if racine==1 : position_gu_ancetre=1
-        else:
-          if mm.get_parent(mtg,mm.get_parent(mtg, current))==None: position_gu_ancetre=1
-          else: position_gu_ancetre=mm.get_position_gu(mtg,mm.get_parent(mtg, current))
-        if (position_gu_ancetre==1):
-          final_size=gauss(GU_length_apic_apic_mean,GU_length_apic_apic_sd)   # on tire une longueur dans la distribution associee
-          while (final_size <5) or (final_size >25):                # si on sort des bornes on tire a nouveau, jusqu'a etre dans les bornes
-            final_size=gauss(GU_length_apic_apic_mean,GU_length_apic_apic_sd)
-        else:
-          final_size=gauss(GU_length_apic_lat_mean,GU_length_apic_lat_sd)
-          while (final_size <5) or (final_size >25):
-            final_size=gauss(GU_length_apic_lat_mean,GU_length_apic_lat_sd)
-        
-        # On tire la taille finale des feuilles selon le meme principe    
-        final_size_leaf=gauss(Leaf_length_apic_mean,Leaf_length_apic_sd)
-        while (final_size_leaf <5) or (final_size_leaf >34):
-          final_size_leaf=gauss(Leaf_length_apic_mean,Leaf_length_apic_sd)
-      
-      # Sinon on est dans le cas lateral    
-      else:
-        final_size=gauss(GU_length_lat_mean,GU_length_lat_sd)
-        while (final_size <5) or (final_size >25):
-          final_size=gauss(GU_length_lat_mean,GU_length_lat_sd) 
-        
-        final_size_leaf=gauss(Leaf_length_lat_mean,Leaf_length_lat_sd)
-        while (final_size_leaf <5) or (final_size_leaf >34):
-          final_size_leaf=gauss(Leaf_length_lat_mean,Leaf_length_lat_sd)
-  
-        hypo=final_size*0.38+0.88+randint(-1,1)  #On calcul la longueur de l'espace pre-feuille en fonction de celle de l'UC
-      
-      # on calcule le nombre de feuilles en fonction de la longueur de l'UC
-      NbInternode=int(max(ceil(0.6*final_size)+randint(-1,1) ,1))
-      t_ip=gauss(mean_tip_GU,sd_tip_GU)
-      
-    else:
-      cum=delta_temperature_Inflo*pdt
-      cumL=0
-      final_size=gauss(Inflo_length_mean,Inflo_length_sd)
-      final_size_leaf=1
-      hypo=0
-      t_ip=0
-      NbInternode=0
-      while (final_size <5) or (final_size >44):
-          final_size=gauss(Inflo_length_mean,Inflo_length_sd)
-     
-    pheno_TTS=pdt*pheno_base_temp_GU[0]
-    [pheno_advct_stage,pheno_stage]=normalized_pheno_stage(pheno_TTS,"GU")  #calcul de l'avct ds le stade pheno  
-    if length!=None : final_size_GU=length
-    param = ParameterSet(burst_date=burst_date,
-                         nature=mm.get_nature_gu(mtg, current),
-                         cycle =mm.get_unit_cycle(mtg, current), 
-                         length=length, 
-                         nbdescendants = nbdescendants,
-                         radius = estimate_radius(nbdescendants), 
-                         mtgid = current,
-                         
-                         final_size_GU=final_size,
-                         final_size_Leaf=final_size_leaf,
-                         LEPF=hypo,
-                         NbInternode=NbInternode,
-                         T_ip=t_ip,
-                         
-                         cumsum_temp=cum,
-                         cumsum_temp_Leaf=cumL,
-                         pheno_stage=pheno_stage,
-                         pheno_advct=pheno_advct_stage,
-                         pheno_TTS=pheno_TTS,
-                         age=pdt-1,
-                         diam=0)
-                         
-    # On définit l'UC comme une alternance de feuilles et d'entrenoeuds
+    # GU is composed of leaves and internodes
+    param=generate_parameters_GU(current,length,burst_date, nbdescendants)
     nproduce /(60) GU( param )
     nproduce Internode(ParameterSet(length=0.01,final_size_organ=param.LEPF,diam=0.01)) /(phyllotaxy) 
-    nproduce [ &(0) Leaf(ParameterSet(position=0,size=0.1,final_size=param.final_size_Leaf*leaflength(0) )) ]
+    nproduce [@Ts(0) @V &(0) Leaf(ParameterSet(position=0,size=0.1,final_size=param.final_size_Leaf*leaflength(0) )) ]
     
-    # On trace les entrenoeuds restants en les espacant de moins en moins, chaque entenoeud suivi d'une feuille
+    # each internode is smaller than de previous
     totintlength=0
     for j in xrange(1,param.NbInternode-1): totintlength+=exp(-2.64*j/float(param.NbInternode-1))
     for i in xrange(1,param.NbInternode-1):        
       nproduce  Internode(ParameterSet(length=0.01,final_size_organ=(param.final_size_GU-param.LEPF)*exp(-2.64*i/float(param.NbInternode-1))/totintlength,diam=0.01)) /(phyllotaxy) 
-      nproduce [ &(0) Leaf(ParameterSet(position=i/float(param.NbInternode-1),size=0.1,final_size=param.final_size_Leaf*leaflength(i/float(param.NbInternode-1)) )) ]
-    # Fin de l'UC
+      nproduce [@Ts(0) @V &(0) Leaf(ParameterSet(position=i/float(param.NbInternode-1),size=0.1,final_size=param.final_size_Leaf*leaflength(i/float(param.NbInternode-1)) )) ]
+    # En of GU
     nproduce GUEnd
       
       
@@ -381,12 +355,12 @@ def generate_elements(current, burst_date = None, length=None, nbdescendants = 1
         final_size_inflo=gauss(Inflo_length_mean,Inflo_length_sd)
         while (final_size_inflo <5) or (final_size_inflo >44):
           final_size_inflo=gauss(Inflo_length_mean,Inflo_length_sd)
-        nproduce [Bourgeon_Inflo(ParameterSet(length=0.01,
+        nproduce [Inflorescence_bud(ParameterSet(length=0.01,
                                              age=0,
                                              final_size=final_size_inflo,
                                              diam=0.01,
                                              pheno_stage=0,
-                                             cumsum_temp=delta_temperature_Inflo*pdt,
+                                             cumsum_temp=delta_temperature_Inflo*daystep,
                                              pheno_advct=0,
                                              pheno_TTS=0,
                                              mtgid=inflo[0],
@@ -399,26 +373,23 @@ def generate_elements(current, burst_date = None, length=None, nbdescendants = 1
         final_size_inflo=gauss(Inflo_length_mean,Inflo_length_sd)
         while (final_size_inflo <5) or (final_size_inflo >44):
           final_size_inflo=gauss(Inflo_length_mean,Inflo_length_sd)
-        nproduce Bourgeon_Inflo(ParameterSet(length=0.01,
+        nproduce Inflorescence_bud(ParameterSet(length=0.01,
                                              age=0,
                                              final_size=final_size_inflo,
                                              diam=0.01,
                                              pheno_stage=0,
-                                             cumsum_temp=delta_temperature_Inflo*pdt,
+                                             cumsum_temp=delta_temperature_Inflo*daystep,
                                              pheno_advct=0,
                                              pheno_TTS=0,
                                              mtgid=inflo[0],
                                              bloom_dates=mm.get_bloom_dates(mtg,inflo[0])))
 module G
-module LeafSets(lradius, age, scale)
-module Flower(burst_date,order) # represent flower
-module FlowerRepr(day_age,s)
-module fleur
+module Flower
 
 initial_view = 1
 
 Axiom: 
-  nproduce  G B(first_uc) #
+  nproduce  G B(first_uc) 
 
 derivation length: int(nbsteps)
 ignore: / &
@@ -441,85 +412,57 @@ production:
 #group 0: # pipe model
 
 GU(p) >> x([ GU(pl) ]) GU(pa):
-  p.nbdescendants = sum([pli.nbdescendants for pli in pl])+pa.nbdescendants+1
-  #p.radius = estimate_radius(p.nbdescendants)
-  if p.pheno_stage==4:
+  p.nbdescendants += sum([pli.nbdescendants for pli in pl])+pa.nbdescendants+1
+  p.radius = estimate_radius(p.nbdescendants)
+  if p.pheno_stage==4:  # if pheno stage=4 we replace leaves and internodes by a fixed structure
     produce GU(p) [ %
   else:
     new_param=p.copy()
-    # Mise a jour des parametres pour la croissance
-    new_param.age += pdt                                 # on incremente l'age du pas de temps
-    [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"GU",new_param.pheno_stage)  #calcul de l'avct ds le stade pheno  
+    # Update of parameters
+    new_param.age += daystep                                 
+    [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"GU",new_param.pheno_stage)  
       
-    # Somme de temperatures pour la croissance
-    new_param.cumsum_temp+=delta_temperature_GU*pdt     # on incremente la somme de temperatures cumulees
+    # Thermal time sum dor growth
+    new_param.cumsum_temp+=delta_temperature_GU*daystep    
     
-    #Somme de temperature pour les stades pheno
+    #Thermal time sum for development
     global temperature      
     delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_GU[new_param.pheno_stage])
-    new_param.pheno_TTS+= delta_temperature_pheno*pdt     # on incremente la somme de temperatures cumulees
+    new_param.pheno_TTS+= delta_temperature_pheno*daystep    
     new_param.pheno_advct=pheno_advct_stage
     
-    l = GrowthCurve(new_param.cumsum_temp,new_param.final_size_GU,"GU",new_param.final_size_GU,new_param.T_ip)  # calcul de la taille de l'UC
-    d = GrowthCurve(new_param.cumsum_temp,final_diamI,"GU",final_diamI,new_param.T_ip)                             # calcul du diametre de l'UC
-    new_param.length=l
-    new_param.diam=d
+    if not (p.burst_date is None): new_param.length = GrowthCurve(new_param.cumsum_temp,new_param.final_size_GU,"GU",new_param.final_size_GU,new_param.T_ip)  # GU's length calculation
+    new_param.diam = GrowthCurve(new_param.cumsum_temp,final_diamI,"GU",final_diamI,new_param.T_ip)                            # GU's diameter calculation
     
-    # Mise a jour des parametres pour la courbe de croissance  
-    global length_inter
-    length_inter +=l
-    global age_inter
-    age_inter=new_param.age
-    
-    # Recolte des informations sur la croissance de l'UC
-    global cumsum_inter
-    cumsum_inter=new_param.cumsum_temp
-    global pheno_inter
-    pheno_inter=new_param.pheno_stage
   produce GU(new_param)
 
 
 GU(p) >> x([ GU(pl) ]) :
-  p.nbdescendants = sum([pli.nbdescendants for pli in pl])+1
-  #p.radius = estimate_radius(p.nbdescendants)
+  p.nbdescendants += sum([pli.nbdescendants for pli in pl])+1
+  p.radius = estimate_radius(p.nbdescendants)
   if p.pheno_stage==4:
     produce GU(p) [ %
   else:
     new_param=p.copy()
-    # Mise a jour des parametres pour la croissance
-    new_param.age += pdt                                 # on incremente l'age du pas de temps
-    [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"GU")  #calcul de l'avct ds le stade pheno  
+    # Update of parameters
+    new_param.age += daystep                                 
+    [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"GU")  
       
-    # Somme de temperatures pour la croissance
-    new_param.cumsum_temp+=delta_temperature_GU*pdt     # on incremente la somme de temperatures cumulees
-    new_param.cumsum_temp_Leaf+=delta_temperature_Leaf*pdt     # on incremente la somme de temperatures cumulees pour les feuilles  
+    # Thermal time sum for growth
+    new_param.cumsum_temp+=delta_temperature_GU*daystep    
     
-    #Somme de temperature pour les stades pheno
+    #Thermal time sum for development
     global temperature      
     delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_GU[new_param.pheno_stage])
-    new_param.pheno_TTS+= delta_temperature_pheno*pdt     # on incremente la somme de temperatures cumulees
+    new_param.pheno_TTS+= delta_temperature_pheno*daystep    
     new_param.pheno_advct=pheno_advct_stage
     
-    if not (p.burst_date is None): new_param.length = GrowthCurve(new_param.cumsum_temp,new_param.final_size_GU,"GU",new_param.final_size_GU,new_param.T_ip)  # calcul de la taille de l'UC
-    new_param.diam = GrowthCurve(new_param.cumsum_temp,final_diamI,"GU",final_diamI,new_param.T_ip)                             # calcul du diametre de l'UC
+    if not (p.burst_date is None): new_param.length = GrowthCurve(new_param.cumsum_temp,new_param.final_size_GU,"GU",new_param.final_size_GU,new_param.T_ip)  # GU's length calculation
+    new_param.diam = GrowthCurve(new_param.cumsum_temp,final_diamI,"GU",final_diamI,new_param.T_ip)                            # GU's diameter calculation
     
-    # Recolte des informations sur la croissance de l'UC
-    global cumsum_inter
-    cumsum_inter=new_param.cumsum_temp
-    global pheno_inter
-    pheno_inter=new_param.pheno_stage
   produce GU(new_param)
+
   
-#GU(p) >> x([ GU(pl) ]) GU(pa):
-#  p.nbdescendants = sum([pli.nbdescendants for pli in pl])+pa.nbdescendants+1
-#  p.radius = estimate_radius(p.nbdescendants)
-#  produce GU(p)
-
-#GU(p) >> x([ GU(pl) ]) :
-#  p.nbdescendants = sum([pli.nbdescendants for pli in pl])+1
-#  p.radius = estimate_radius(p.nbdescendants)
-#  produce GU(p)
-
 consider: GU 
 GU(p) < GUEnd:
   if p.pheno_stage ==4:
@@ -531,50 +474,36 @@ GU(p) < Internode(param):
   new_param=param.copy()
   new_param.length = GrowthCurve(p.cumsum_temp,new_param.final_size_organ,"GU",p.final_size_GU,p.T_ip)  # calcul de la taille de l'entrenoeud
   new_param.diam = GrowthCurve(p.cumsum_temp,final_diamI,"GU",final_diamI,p.T_ip)                             # calcul du diametre de l'entrenoeud
-  
-  # production de l'entrenoeud
   produce Internode(new_param) 
 
-GU(p) < Leaf(param): # Mise a jour des parametres et production de la feuille
+GU(p) < Leaf(param): 
   new_param=param.copy()
   new_param.size = GrowthCurve(p.cumsum_temp_Leaf,new_param.final_size,"Leaf",new_param.final_size,0)
   produce Leaf(new_param) 
   
-#Bourgeon_Inflo(p):
-#  bloom_date = p.bloom_dates[0] if p.bloom_dates else first_date
-#  day_age = (current_date - bloom_date).days
-#  if day_age < 60:
-#    produce Inflorescence(p)
-#
-#
-#  
-#Inflorescence(param): # Mise a jour des parametres et production de l'inflorescence
-#  new_param=param.copy()
-#  new_param.age += pdt
-#  [pheno_advct_stage,new_param.pheno_stage,cumtemp]=normalized_pheno_stage(new_param.pheno_TTS,"Inflo",new_param.pheno_stage)  #calcul de l'avct ds le stade pheno  
-#  if (new_param.pheno_stage != param.pheno_stage):     # si on change de stade on remet la somme en temps thermique a 0
-#    new_param.pheno_TTS=cumtemp
-#    
-#  # Somme de temperatures pour la croissance
-#  new_param.cumsum_temp+= delta_temperature_Inflo*pdt
-#    
-#  #Somme de temperature pour les stades pheno
-#  global temperature      
-#  delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_Inflo[new_param.pheno_stage])
-#  new_param.pheno_TTS+= delta_temperature_pheno*pdt     # on incremente la somme de temperatures cumulees
-#  new_param.pheno_advct=pheno_advct_stage
-#  
-#  new_param.length = GrowthCurve(new_param.cumsum_temp,new_param.final_size,"Inflo",new_param.final_size,0)
-#  
-#  # Mise a jour des parametres pour la courbe de croissance  
-#  global length_inter
-#  length_inter = new_param.length
-#  global age_inter
-#  age_inter=new_param.age
-#  global pheno_inter
-#  pheno_inter=new_param.pheno_stage
-#  produce Inflorescence(new_param) 
-#
+Inflorescence_bud(p):
+  bloom_date = p.bloom_dates[0] if p.bloom_dates else first_date
+  day_age = (current_date - bloom_date).days
+  if day_age < 60:
+    produce Inflorescence(p)
+
+  
+Inflorescence(param): 
+  new_param=param.copy()
+  new_param.age += daystep
+  [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"Inflo")   
+    
+  # Thermal time sum for growth
+  new_param.cumsum_temp+= delta_temperature_Inflo*daystep
+    
+  # Thermal time sum for development
+  global temperature      
+  delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_Inflo[new_param.pheno_stage])
+  new_param.pheno_TTS+= delta_temperature_pheno*daystep     
+  new_param.pheno_advct=pheno_advct_stage
+  
+  new_param.length = GrowthCurve(new_param.cumsum_temp,new_param.final_size,"Inflo",new_param.final_size,0)
+  produce Inflorescence(new_param) 
 
 interpretation:
 maximum depth:10
@@ -602,151 +531,55 @@ G :
 
 A(p) --> ,(3) f(0.1) @O(0.1)
 
-#GU(p):
-#  bdate = p.get('burst_date')
-#  is_base = (bdate is None)
-#  if not is_base:
-#    week_age = week_difference(current_date,bdate)
-#    produce ,(2) _(p.radius) LeafSets(p.radius, week_age, 1) 
-#  else:
-#    scale = 1.5
-#    produce ,(1) _(p.radius) nF(p.length, p.length/10.) 
+Inflorescence(param):
+   nproduce [   
+   if (param.cumsum_temp>=800):
+     nproduce ,(1) @O(0.01)
+   else:
+    nproduce _(param.length/100.) 
+    NbAxe2=int(1.19*param.final_size)
+    
+    #=====
+    XX=[187525232.]
+    YY=[XX[0]/(2.**32)]
+    
+    for k in xrange(0,NbAxe2):
+      XX.append( (69069.*XX[k]) % (2.**32))
+      YY.append( XX[k+1] / (2.**32))
+    #=====    
+    
+    for k in xrange(0,NbAxe2):
+      nproduce InterpolateColors(13,pheno_color_inflo[param.pheno_stage+1],(param.pheno_advct+param.pheno_stage)*(1-float(k)/NbAxe2) ) 
+      # Color depends of phenological stage and advancement
+      nproduce F(param.length/NbAxe2,param.length/(NbAxe2*5.))  
+      if (k<8 or k>19): nproduce \(60+(YY[k]*30))
+      else: nproduce \(220)
+      nproduce [@Ts(0.05) @Tp(0,0,1)  +(65) Flower(float(k)/NbAxe2,param.length,max(param.length/10.,param.length*0.687-3.97)*(NbAxe2-k)/NbAxe2,param.pheno_stage,param.pheno_advct)] 
+   produce ]
+   
+Flower(pos,age,l,pheno,pheno_advct):
+  for k in xrange(0,10):
+      if pos<0.7: nproduce InterpolateColors(13,pheno_color_inflo[pheno+1],(pheno_advct+pheno)*(1-float(k)/10)) 
+      # Color depends of phenological stage and advancement
+      nproduce F(l/10.,l/100.)  
+      if k>3:
+        for d in xrange (0,3):
+          nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],pheno_advct) @O(min(age/100.,0.3))]
 
 
-#LeafSets(lradius, age, scale):
-#  ds = scale / 10.
-#  if LEAFY and age < 56 :
-#    phy = 137.5
-#    nproduce @Gc  F(ds) Leaf(0,lradius, leafsize(0.1), scale ) 
-#    nbleaf, dl = (ceil((scale-ds)*5),2*ds)
-#    for i in xrange(1,int(nbleaf)):
-#      nproduce nF(dl,ds) Leaf(phy*i,lradius, leafsize(0.1+0.1*i ), scale )
-#    nproduce F(ds) @Ge
-#    for i in xrange(1,4):
-#      nproduce Leaf(phy*i,lradius, leafsize(1),scale )
-#  else:
-#    produce  @Gc nF(1,0.1) @Ge
 
-
-#Leaf(angle, radius, length, scale ):
-#  produce [ /(angle) &(90)  f(radius) @Ge @Gc @v &(10) Sweep(leafpath,leafsection,length*scale,length*scale/10,scale,leafdiam)]
-
-#Inflorescence(p) :
-#  bloom_date = p.bloom_dates[0] if p.bloom_dates else first_date
-#  print bloom_date
-#  day_age = (current_date - bloom_date).days
-#  if day_age < 60:
-#    produce FlowerRepr(day_age, bloom_date.year + bloom_date.month + bloom_date.day)
-
-#Inflorescence(param):
-#   nproduce [   
-#   if (param.cumsum_temp>=800):
-#     nproduce ,(1) @O(0.01)
-#   else:
-#    nproduce _(param.length/100.) 
-#    NbAxe2=int(1.19*param.final_size)
-#    
-#    #=====
-#    XX=[187525232.]
-#    YY=[XX[0]/(2.**32)]
-#    
-#    for k in xrange(0,NbAxe2):
-#      XX.append( (69069.*XX[k]) % (2.**32))
-#      YY.append( XX[k+1] / (2.**32))
-#    #=====    
-#    
-#    for k in xrange(0,NbAxe2):
-#      nproduce InterpolateColors(13,pheno_color_inflo[param.pheno_stage+1],(param.pheno_advct+param.pheno_stage)*(1-float(k)/NbAxe2) ) 
-#      # On choisi la couleur en fonction du stade et de son avancement
-#      nproduce F(param.length/NbAxe2,param.length/(NbAxe2*5.))  
-#      if (k<8 or k>19): nproduce \(60+(YY[k]*30))
-#      else: nproduce \(220)
-#      #for d in xrange (0,3):
-#      nproduce [@Ts(0.05) @Tp(0,0,1)  +(65) fleur(float(k)/NbAxe2,param.length,max(param.length/10.,param.length*0.687-3.97)*(NbAxe2-k)/NbAxe2,param.pheno_stage,param.pheno_advct)] 
-#      #if (i<8 or i>19): nproduce /(60+(YY[k]*30)) \(90)
-#   produce ]
-#   
-#fleur(pos,age,l,pheno,pheno_advct):
-#  for k in xrange(0,10):
-#      if pos<0.7: nproduce InterpolateColors(13,pheno_color_inflo[pheno+1],(pheno_advct+pheno)*(1-float(k)/10)) 
-#      # On choisi la couleur en fonction du stade et de son avancement
-#      nproduce F(l/10.,l/100.)  
-#      if k>3:
-#        for d in xrange (0,3):
-#          nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],pheno_advct) @O(min(age/100.,0.3))]
-
-
-#FlowerRepr(day_age,s) :
-#  growth_duration = 21.
-#  flower_growth_duration = 21.
-#  scale = min(1,day_age/growth_duration)
-#  if LEAFY:
-#    import random as rd
-#    rdstate = rd.getstate()
-#    rd.seed(s)
-#    flower_radius = 0 if day_age < growth_duration else 0.04*min(1,(day_age-flower_growth_duration)/flower_growth_duration)
-#    nproduce [
-#    if day_age > growth_duration :  nproduce @Tp(0,0,-1) @Ts(inflo_elasticity(min(1,(day_age-growth_duration)/40.))) 
-#    nproduce ,(3) _(0.01) F(0.1)
-#    nbflower = 4
-#    nbelem = int(floor(10 * scale))
-#    for i in xrange(10-nbelem,10):
-#       nproduce    F(0.1) [ /(rd.randint(0,180))
-#       for j in xrange(nbflower):
-#           nproduce [ /(j*90)  &(rd.randint(70,110)) F(inflo_radius(i*0.1)) 
-#           if flower_radius > 0: nproduce ,(4) @O(flower_radius) 
-#           nproduce ]
-#       nproduce ]
-#    nproduce ,(3) F(0.1)
-#    if flower_radius > 0: nproduce ,(4) @O(0.04) 
-#    nproduce ]
-#    rd.setstate(rdstate)
-#  else:
-#    scale = 0.3
-#    produce ,(4) _(inflo_radius(0))F(scale,inflo_radius(1))
-Bourgeon_Inflo(p):
+Inflorescence_bud(p):
   bloom_date = p.bloom_dates[0] if p.bloom_dates else first_date
   day_age = (current_date - bloom_date).days
   if day_age < 60:
     produce FlowerRepr(day_age, bloom_date.year + bloom_date.month + bloom_date.day)
-
-FlowerRepr(day_age,s) :
-  growth_duration = 21.
-  flower_growth_duration = 21.
-  scale = min(1,day_age/growth_duration)
-  if LEAFY:
-    import random as rd
-    rdstate = rd.getstate()
-    rd.seed(s)
-    flower_radius = 0 if day_age < growth_duration else 0.04*min(1,(day_age-flower_growth_duration)/flower_growth_duration)
-    nproduce [
-    if day_age > growth_duration :  nproduce @Tp(0,0,-1) @Ts(inflo_elasticity(min(1,(day_age-growth_duration)/40.))) 
-    nproduce ,(3) _(0.01) F(0.1)
-    nbflower = 4
-    nbelem = int(floor(10 * scale))
-    for i in xrange(10-nbelem,10):
-       nproduce    F(0.1) [ /(rd.randint(0,180))
-       for j in xrange(nbflower):
-           nproduce [ /(j*90)  &(rd.randint(70,110)) F(inflo_radius(i*0.1)) 
-           if flower_radius > 0: nproduce ,(4) @O(flower_radius) 
-           nproduce ]
-       nproduce ]
-    nproduce ,(3) F(0.1)
-    if flower_radius > 0: nproduce ,(4) @O(0.04) 
-    nproduce ]
-    rd.setstate(rdstate)
-  else:
-    scale = 0.3
-    produce ,(4) _(inflo_radius(0))F(scale,inflo_radius(1))
 
 
 GU(p):
   is_base = (p.burst_date is None)
   if not is_base:
     if p.pheno_stage==4:
-      # on trace l'espace pre_feuille et la premiere feuille
       nproduce _(0.2) F(p.LEPF,0.2) /(phyllotaxy) [ &(0) fLeaf(ParameterSet(position=0,size=p.final_size_Leaf*leaflength(0))) ]
-      # On trace les entrenoeuds restants en les espacant de moins en moins, chaque entenoeud suivi d'une feuille
       totintlength=0
       for j in xrange(1,p.NbInternode-1): totintlength+=exp(-2.64*j/float(p.NbInternode-1))
       for i in xrange(1,p.NbInternode-1):
@@ -754,7 +587,7 @@ GU(p):
         nproduce  F(length, 0.2) /(phyllotaxy) [ &(0) fLeaf(ParameterSet(position=i/float(p.NbInternode-1),size=p.final_size_Leaf*leaflength(i/float(p.NbInternode-1)) )) ]
   else:
     scale = 1.5
-    produce ,(1) _(p.radius*30) nF(p.length, p.radius*30) 
+    produce ,(1) _(p.radius) nF(p.length, p.radius) 
       
 GU(p) < Internode(param):
   is_base = (p.burst_date is None)
@@ -765,9 +598,8 @@ GU(p) < Internode(param):
       
 fLeaf(param):
   nproduce @G ,(2) [ /(137.5) &(90) ,(1)  f(0) F(0.001,leafdiam(0)*leafwidth(1))  ^(90) 
-  # On trace le petiole
-  nproduce &(pheno_angle[4]) SetGuide(petioleCurve,(1-param.position)* param.size/4.) @G  Petiole((1-param.position)* param.size/4.,leafdiam(0))  
-  # On choisi la couleur   
+  # petiole
+  nproduce &(pheno_angle[4]) SetGuide(petioleCurve,(1-param.position)* param.size/4.) @G  Petiole((1-param.position)* param.size/4.,leafdiam(0))     
   nproduce ,(13) @Gc _(leafdiam(0.5))  Sweep(axis5,leafsection, param.size, param.size/10., param.size*0.24, leafdiam) ]  
 
 GU(paramI) < Leaf(paramL) :
@@ -775,14 +607,14 @@ GU(paramI) < Leaf(paramL) :
  if not is_base:
   if(paramI.pheno_stage<4):
     nproduce @G ,(2) [ /(137.5) &(90) ,(1)  f(0) F(0.001,leafdiam(0)*leafwidth(min((paramI.cumsum_temp_Leaf+1)/378.,1)))  ^(90) 
-    # On va chercher les angles correspondants au debut du stade pheno et du stade pheno suivant et on interpole 
+    # Angle depends of phenological stage and advancement
     nproduce &((1-paramI.pheno_advct)*pheno_angle[paramI.pheno_stage]+paramI.pheno_advct*pheno_angle[paramI.pheno_stage+1]) 
-    # On trace le petiole
+    # petiole
     nproduce SetGuide(petioleCurve,(1-paramL.position)* paramL.size/4.) @G 
     nproduce  Petiole(max(0.01,(1-paramL.position)* paramL.size/4.),leafdiam(0)*leafwidth(min((paramI.cumsum_temp_Leaf+1)/378.,1)))  
-    # On choisi la couleur en fonction du stade et de son avancement
+    # Color depends of phenological stage and advancement
     nproduce InterpolateColors(pheno_color[paramI.pheno_stage],pheno_color[paramI.pheno_stage+1],paramI.pheno_advct)    
-    # On cherche la courbure de feuille correspondant a l'avancement et on trace la feuille
+    # Leaf curvature depends of phenological stage and advancement
     nproduce @Gc _(leafdiam(paramI.diam))  Sweep(axisfunc.getAt(min(1,(paramI.pheno_stage+paramI.pheno_advct)/(Nb_stades_pheno-2))),leafsection, paramL.size, paramL.size/10., (paramL.size*0.24)*leafwidth(min((paramI.age+1)/20.,1)), leafdiam) ]  
 
 Petiole(length,radius):
@@ -833,7 +665,7 @@ def __initialiseContext__(context):
 	Color_20.name = "Color_20"
 	context.turtle.setMaterial(20,Color_20)
 	context.animation_timestep = 0.001
-	scalars = [('TREE', 'Integer', 0, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True), ('daystep', 'Integer', 1, 1, 100)]
+	scalars = [('TREE', 'Integer', 0, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.01, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True), ('daystep', 'Integer', 100, 1, 100)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
