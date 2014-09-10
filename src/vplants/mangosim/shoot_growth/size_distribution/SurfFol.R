@@ -437,7 +437,30 @@ sd(Feu_lat)        # 15.78
 ks.test(Feu_apic,mean(Feu_apic),sd(Feu_apic))                 # 0.907
 ks.test(Feu_lat,mean(Feu_lat),sd(Feu_lat))                    # 0.8865
 
+# analyse de variance pour tester l'effet de la position sur les longueurs de feuille
+leaf.aov=aov(c(Feu_apic,Feu_lat)~c(rep(1,length(Feu_apic)),rep(2,length(Feu_lat))) )
+summary(leaf.aov)
+res.aov=leaf.aov$res
+aov.apic=leaf.aov$res[1:length(Feu_apic)]
+aov.lat=leaf.aov$res[(length(Feu_apic)+1):(length(Feu_apic)+length(Feu_lat))]
 
+# Test d'homoscédasticité
+g = factor(rep(1:2, c(length(Feu_apic),length(Feu_lat))), labels = c("apic","lat"))
+leveneTest(c(Feu_apic,Feu_lat),g)                                        #n=722  F=14.754   p-value=0.0001333
+
+par(mfrow=c(2,3))
+hist(aov.apic,freq=F,main="Histogramme",xlab="cas apical");curve(dnorm(x,0,sd(res.aov)),col=2,add=T)
+plot(ecdf(aov.apic),main="Fonction de répartition empirique");curve(pnorm(x,0,sd(res.aov)),col=2,add=T)
+qqnorm(aov.apic,main="Droite de Henry");qqline(aov.apic,col=2)
+hist(aov.lat,freq=F,main="Histogramme",xlab="cas latéral");curve(dnorm(x,0,sd(res.aov)),col=2,add=T)
+plot(ecdf(aov.lat),main="Fonction de répartition empirique");curve(pnorm(x,0,sd(res.aov)),col=2,add=T)
+qqnorm(aov.lat,main="Droite de Henry");qqline(aov.lat,col=2)
+
+ks.test(aov.apic,0,sd(res.aov));ks.test(aov.lat,0,sd(res.aov))
+shapiro.test(aov.apic);shapiro.test(aov.lat)
+
+# Test de kruskall-wallis
+kruskal.test(c(Feu_apic,Feu_lat)~rep(1:2, c(length(Feu_apic),length(Feu_lat)))  )
 
 
 #################################################################################################
@@ -459,21 +482,21 @@ sd(Longueur)      # 3.3
 ks.test(Longueur,16.49,3.3)                       # 0.9274
 
 par(mfrow=c(2,2))   # LongFeu
-hist(Long_apic,freq=FALSE,main="position apicale",xlim=c(8,28),breaks=seq(1,30,1),xlab="Longueur Feuille")     ;curve(dnorm(x,mean(Long_apic),sd(Long_apic)),add=TRUE,col=2)
+hist(Long_apic,freq=FALSE,main="Histogramme",xlim=c(8,28),breaks=seq(1,30,1),xlab="Longueur des Feuilles en position apicale")     ;curve(dnorm(x,mean(Long_apic),sd(Long_apic)),add=TRUE,col=2)
 legend("topright",lty=1,col=2,"N(17.37,3.26)",bty = "n")
 #plot(ecdf(Long_apic),xlim=c(8,28))
 #curve(pnorm(x,mean(Long_apic),sd(Long_apic)),add=TRUE,col=2)
 #qqnorm(Long_apic);qqline(Long_apic,col=2)
 
-hist(Long_lat,freq=FALSE,main="position latérale",xlim=c(8,28),breaks=seq(1,30,1),xlab="Longueur Feuille")     ;curve(dnorm(x,mean(Long_lat),sd(Long_lat)),add=TRUE,col=2)
+hist(Long_lat,freq=FALSE,main="Histogramme",xlim=c(8,28),breaks=seq(1,30,1),xlab="Longueur des Feuilles en position latérale")     ;curve(dnorm(x,mean(Long_lat),sd(Long_lat)),add=TRUE,col=2)
 legend("topright",lty=1,col=2,"N(14.87,2.72)",bty = "n")
 #plot(ecdf(Long_lat),xlim=c(8,28))
 #curve(pnorm(x,mean(Long_lat),sd(Long_lat)),add=TRUE,col=2)
 #qqnorm(Long_lat);qqline(Long_lat,col=2)
 
-plot(ecdf(Long_apic),xlim=c(8,28))     ;
+plot(ecdf(Long_apic),xlim=c(8,28),main="Fonction de répartition empirique")     ;
 	curve(pnorm(x,mean(Long_apic),sd(Long_apic)),add=TRUE,col=2)
-plot(ecdf(Long_apic),xlim=c(8,28))     ;
+plot(ecdf(Long_apic),xlim=c(8,28),main="Fonction de répartition empirique")     ;
 	curve(pnorm(x,mean(Long_apic),sd(Long_apic)),add=TRUE,col=2)
 
 
@@ -486,4 +509,6 @@ sd(Long_lat)      # 2.72
 # Tests de normalité
 ks.test(Long_apic,17.1,2.7)  # 0.9464
 ks.test(Long_lat,14.87,2.72)  # 0.9327
+shapiro.test(Long_apic)
+shapiro.test(Long_lat)
 

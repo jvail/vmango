@@ -1,7 +1,10 @@
 # Etude de la taille des organes
+# Ici on cherche à connaître :
+#       - les distributions suivies par le nombre de feuilles / la longueur des UCs
+#       - la relation entre le nombre de feuilles / la longueur des UCs
 # 2004 et 2006.
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/données/distributions")
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
 
 
 #################################################################################################################################
@@ -21,6 +24,7 @@ Tayllamin0$NumNdRam=as.numeric(Tayllamin0$NumNdRam)-1
 ##### Suppression des données aberrantes
 Tayllamin1=Tayllamin0[c(1:length(Tayllamin0$NbFeu))[!is.na(Tayllamin0$NbFeu)],]
 
+# On cherche les UCs ou il y a eu trop de feuilles chutées 
 par(mfrow=c(1,2))
 boxplot(Tayllamin1$NbFeuChut)
 plot(Tayllamin1$NbFeuChut)
@@ -28,6 +32,7 @@ title("Etude du nombre de feuilles chutées",outer=TRUE,line=-1)
 summary(Tayllamin1$NbFeuChut,na.rm=T)
 Tayllamin2=Tayllamin1[Tayllamin1$NbFeuChut < 7,]
 
+# On cherche les UCs avec des longueurs très éloignées des autres
 boxplot(Tayllamin2$Long)
 plot(Tayllamin2$Long)
 title("Etude de la longueur des Ucs",outer=TRUE,line=-1)
@@ -137,7 +142,7 @@ inf_apic=inf[inf$position=="A",];inf_lat=inf[inf$position=="L",];
 ####  Tayllamin ####
 ####################
 
-# UCs en position apicale pour chaque arbre et en global
+# Histogrammes des UCs en position apicale pour chaque arbre et en global
 par(mfrow=c(2,3))
 hist(apic_B10$NbFeu,main="arbre B10",freq=FALSE,xlim=c(5,25),ylim=c(0,0.22),breaks=seq(2,25,1),xlab="Nombre de feuilles") ; 
 hist(apic_B12$NbFeu,main="arbre B12",freq=FALSE,xlim=c(5,25),ylim=c(0,0.22),breaks=seq(2,25,1),xlab="Nombre de feuilles") ;
@@ -152,7 +157,7 @@ summary(apic_F6$NbFeu)  ; summary(apic_B14$NbFeu)
 summary(TA_apic$NbFeu,na.rm = TRUE)
 
 
-# UCs en position latérale pour chaque arbre et en global
+# Histogrammes des UCs en position latérale pour chaque arbre et en global
 par(mfrow=c(2,3))
 hist(lat_B10$NbFeu,main="arbre B10",freq=FALSE,xlim=c(3,19),ylim=c(0,0.45),breaks=seq(3,19,1),xlab="Nombre de feuilles") ; 
 hist(lat_B12$NbFeu,main="arbre B12",freq=FALSE,xlim=c(3,19),ylim=c(0,0.45),breaks=seq(3,19,1),xlab="Nombre de feuilles") ;
@@ -173,8 +178,7 @@ sd(TA_apic$NbFeu)         # 3.624376
 sd(TA_lat$NbFeu)          # 2.741064
 
 
-
-##### Lien entre position des UCs mères et nbr de feuilles
+##### Histogrammes pour voir le lien entre position des UCs mères et nbr de feuilles
 
 par(mfrow=c(4,3))
 hist(apic_B10_port_apic$NbFeu,main="arbre B10",freq=FALSE);hist(apic_B12_port_apic$NbFeu,main="arbre B12",freq=FALSE);hist(apic_F2_port_apic$NbFeu,main="arbre F2",freq=FALSE);hist(apic_F6_port_apic$NbFeu,main="arbre F6",freq=FALSE);hist(apic_B14_port_apic$NbFeu,main="arbre B14",freq=FALSE);
@@ -404,6 +408,14 @@ mean(TA_lat$Long)        # 12.59279
 sd(TA_apic$Long)         # 4.605895
 sd(TA_lat$Long)          # 3.391971
 
+
+
+# Tous les arbres réunis 
+par(mfrow=c(1,1))
+hist(TA_apic$Long,main="Longueurs UCs apicales",freq=FALSE,ylim=c(0,0.25),xlim=c(6,25),breaks=seq(0,30,1),xlab="Longueur UC")
+hist(TA_lat$Long,main="Longueurs UCs latérales",freq=FALSE,ylim=c(0,0.25),xlim=c(6,25),breaks=seq(0,30,1),xlab="Longueur UC")
+
+
 ##### Lien entre position de UC porteuse et nbr de feuilles
 par(mfrow=c(4,3))
 hist(apic_B10_port_apic$Long,main="arbre B10",freq=FALSE) ; hist(apic_B12_port_apic$Long,main="arbre B12",freq=FALSE) ;
@@ -459,14 +471,63 @@ sd(TA_lat_port_lat$Long)           # 5.798276
 hist(port_apic$Long,main="UCs porteuses en position apicale",freq=FALSE)
 hist(port_lat$Long,main="UCs porteuses en position latérale",freq=FALSE)
 
-# Analyse de variance
-Long_aov=aov(TA_aov$Long ~ TA_aov$NumNdRam*TA_aov$TypAxePo)
-summary(Long_aov)
+#############################
+####### Analyse de variance
+###########
 
-par(mfrow=c(1,1))
-interaction.plot(TA_aov$NumNdRam, TA_aov$TypAxePo, TA_aov$Long,main="", legend=F,xlab=c("Position UC") , ylab="Longueur UC",xaxt = "n")
-axis(1, at = seq(2), labels = c("A","L"), tick = TRUE)
-legend("topright",c("A","L"),lty=c(1,2),title="Position UC mère")
+################# Effet position UC apicale / latérale
+aov.posUC=aov(TA_aov$Long ~ TA_aov$NumNdRam)
+
+# Test d'homoscédasticité
+g = factor(rep(1:2, c(length(TA_aov_apic$Long),length(TA_aov_lat$Long))), labels = c("apic","lat"))
+leveneTest(c(TA_aov_apic$Long,TA_aov_lat$Long),g)                                        #n=414  F=26.424   p-value=4.244e-07
+
+
+# Test de normalité
+shapiro.test(aov.posUC$res[TA_aov$NumNdRam==0])   #W = 0.9624, p-value = 5.267e-05
+shapiro.test(aov.posUC$res[TA_aov$NumNdRam==1])   #W = 0.9793, p-value = 0.002377
+ks.test(aov.posUC$res[TA_aov$NumNdRam==0],"pnorm",0,sd(aov.posUC$res));        #D = 0.1131, p-value = 0.01471
+ks.test(aov.posUC$res[TA_aov$NumNdRam==1],"pnorm",0,sd(aov.posUC$res))         #D = 0.0592, p-value = 0.41
+# la normalité est rejetée
+
+
+# Kruskal-Wallis
+kruskal.test(TA_aov$Long ~ TA_aov$NumNdRam)           #Kruskal-Wallis chi-squared = 73.3158, df = 1, p-value < 2.2e-16
+
+
+################# Effet position UC mère apicale / latérale
+#install.packages('Rcmdr')
+library('Rcmdr')
+Long_aov_apic=aov(TA_aov_apic$Long ~ TA_aov_apic$TypAxePo-1)
+summary(Long_aov_apic)
+coef_aov_apic=Long_aov_apic$coef     #   TypAxePoR    TypAxePoT
+                       #   13.786111     18.13583  
+
+
+# homoscédasticité
+g_apic = factor(rep(1:2, c(length(TA_apic_port_apic$Long),length(TA_apic_port_lat$Long))), labels = c("apic_portapic","apic_portlat"))
+leveneTest(c(TA_apic_port_apic$Long,TA_apic_port_lat$Long),g_apic)       # n=192  F=0.0186  p-value=0.8916
+
+# normalité des résidus
+res_aov_apic=Long_aov_apic$res
+par(mfrow=c(2,3))
+hist(res_aov_apic[TA_aov_apic$TypAxePo=="T" ],main="Histogramme",freq=F,xlab="Résidus des longueurs d'UC mère apicale");curve(dnorm(x,0,sd(res_aov_apic)),col=2,add=T)
+plot(ecdf(res_aov_apic[TA_aov_apic$TypAxePo=="T" ]),main="Fonction de répartition");curve(pnorm(x,0,sd(res_aov_apic)),col=2,add=T)
+qqnorm(res_aov_apic[TA_aov_apic$TypAxePo=="T" ],main="Droite de Henry");qqline(res_aov_apic[TA_aov_apic$TypAxePo=="T" ],col=2)
+
+hist(res_aov_apic[TA_aov_apic$TypAxePo=="R" ],main="Histogramme",freq=F,xlab="Résidus des longueurs d'UC mère latérale");curve(dnorm(x,0,sd(res_aov_apic)),col=2,add=T)
+plot(ecdf(res_aov_apic[TA_aov_apic$TypAxePo=="R" ]),main="Fonction de répartition");curve(pnorm(x,0,sd(res_aov_apic)),col=2,add=T)
+qqnorm(res_aov_apic[TA_aov_apic$TypAxePo=="R" ],main="Droite de Henry");qqline(res_aov_apic[TA_aov_apic$TypAxePo=="R" ],col=2)
+
+ks.test(res_aov_apic[TA_aov_apic$TypAxePo=="T" ],"pnorm",0,sd(res_aov_apic));   #D = 0.116, p-value = 0.07918
+ks.test(res_aov_apic[TA_aov_apic$TypAxePo=="R" ],"pnorm",0,sd(res_aov_apic))    #D = 0.0931, p-value = 0.5601
+shapiro.test(res_aov_apic[TA_aov_apic$TypAxePo=="T" ]);                         #W = 0.9345, p-value = 1.848e-05
+shapiro.test(res_aov_apic[TA_aov_apic$TypAxePo=="R" ])                          #W = 0.9688, p-value = 0.07029               
+      
+# test d'égalité des variances (CN pour utilisation ANOVA)
+var.test(res_aov_apic[TA_aov_apic$TypAxePo=="T" ],res_aov_apic[TA_aov_apic$TypAxePo=="R" ])
+
+
 
 ##### Ajustement d'une distribution
 # Histogramme 3 cas
@@ -532,6 +593,12 @@ sd(MA_lat$Long)          # 3.99177
 # Analyse de variance
 LongMA_aov=aov(MA$Long ~ MA$position)
 summary(LongMA_aov)
+hist(LongMA_aov$res)
+
+# test d'égalité des variances (CN pour utilisation ANOVA)
+g_apic = factor(rep(1:2, c(length(MA_apic$Long),length(MA_lat$Long))), labels = c("apic","lat"))
+leveneTest(c(MA_apic$Long,MA_lat$Long),g_apic)
+
 
 par(mfrow=c(2,2))
 hist(MA_apic$Long,main="UCs en position apicale",freq=FALSE,xlab="Longueur UC",breaks=seq(0,30,1));curve(dnorm(x,mean(MA_apic$Long),sd(MA_apic$Long)),add=TRUE,col=2)
@@ -550,6 +617,8 @@ plot(ecdf(MA_lat$Long),main="UCs en position latérale");curve(pnorm(x,mean(MA_la
 
 ks.test(MA_apic$Long,"pnorm",mean(MA_apic$Long),sd(MA_apic$Long))
 ks.test(MA_lat$Long,"pnorm",mean(MA_lat$Long),sd(MA_lat$Long))
+shapiro.test(MA_apic$Long)
+shapiro.test(MA_lat$Long)
 
 
 ######################
@@ -572,7 +641,12 @@ sd(inf_lat$Long)          # 3.746298
 # Analyse de variance
 Long_aov_inf=aov(inf_aov$Long ~ inf_aov$position)
 summary(Long_aov_inf)
+hist(Long_aov_inf$res)
+qqnorm(Long_aov_inf$res)
 
+# test d'égalité des variances (CN pour utilisation ANOVA)
+g_apic = factor(rep(1:2, c(length(inf_apic$Long),length(inf_lat$Long))), labels = c("apic","lat"))
+leveneTest(c(inf_apic$Long,inf_lat$Long),g_apic)
 
 #################################################################################################################################
 ###########################     Correspondance des différents bases, Fusion, Estimation des lois    ##########################
@@ -603,6 +677,7 @@ legend("topright",c("Tayllamin","MA05","Inférence"),title="Base",lty=c(3,2,1))
 axis(1, at = seq(2), labels = c("A","L"), tick = TRUE)
 
 
+
 # Test d'égalité des moyennes
 TukeyHSD(anova_bases)
 plot(TukeyHSD(anova_bases))
@@ -614,8 +689,13 @@ wilcox.test(inf$NbFeu,MA$NbFeu,paired=F)
 
 
 ##### Longueur des UCs
-anova_bases_long=aov(Long ~ position*base,data=base)
+anova_bases_long=aov(Long ~ base,data=base)
 summary(anova_bases_long)
+
+# test d'égalité des variances (CN pour utilisation ANOVA)
+g = factor(rep(1:3, c(length(Tayllamin[,1]),length(MA[,1]),length(inf[,1]))), labels = c("TA","MA","inf"))
+leveneTest(c(Tayllamin$Long,MA$Long,inf$Long),g)
+
 
 par(mfrow=c(1,2))
 TukeyHSD(anova_bases_long)
@@ -708,8 +788,8 @@ cor.test(MA_apic$Long,MA_apic$NbFeu)         # 0.1800189, p-value = 0.001512
 cor.test(MA_lat$Long,MA_lat$NbFeu)           # 0.3975795, p-value < 2.2e-16 
 
 par(mfrow=c(1,2))
-plot(MA_apic$Long,MA_apic$NbFeu,abline(lsfit(MA_apic$Long,MA_apic$NbFeu),col=2), main ="UCs apicales",ylim=c(3,22),xlab="Longueur",ylab="Nombre de feuilles")
-plot(MA_lat$Long,MA_lat$NbFeu,abline(lsfit(MA_lat$Long,MA_lat$NbFeu),col=2),main="UCs latérales",ylim=c(3,22),xlab="Longueur",ylab="Nombre de feuilles")
+plot(MA_apic$Long,MA_apic$NbFeu, main ="UCs apicales",ylim=c(3,22),xlab="Longueur",ylab="Nombre de feuilles")      # abline(lsfit(MA_apic$Long,MA_apic$NbFeu),col=2),
+plot(MA_lat$Long,MA_lat$NbFeu,main="UCs latérales",ylim=c(3,22),xlab="Longueur",ylab="Nombre de feuilles")         # abline(lsfit(MA_lat$Long,MA_lat$NbFeu),col=2),
 #title("Etude de la corrélation entre longueur d'UC et nbr de feuilles ",outer=TRUE,line=-1)
 
 apic.lm=lm(MA_apic$NbFeu ~ MA_apic$Long) ; summary(apic.lm)            # 0.02924, p-value: 0.001512   

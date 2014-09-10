@@ -4,15 +4,18 @@ from math import *
 from random import *
 from math import degrees
 from pandas import DataFrame, read_csv
+from numpy import random
 
 seed(SEED)
 
-# Choix des parametres
+# Selection of parameters
 global current_date
 current_date =datetime(2003,7,1)           # Date de debut pour la simulation    
 global NbOfDays
-NbOfDays=48 #len(df['tempMoy'])                  
-temperature=[mean_temperature for i in xrange(NbOfDays+1)]
+NbOfDays=60 #len(df['tempMoy'])                  
+temperature=[gauss(22,1) for i in xrange(NbOfDays+1)]
+#[30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30]
+
 
 # Initialisation des variables
 #t_ip_GU=178.792/2.                            # point d'inflexion de la courbe de croissance pour les UCs
@@ -54,13 +57,15 @@ else:
   pheno_angle=[0,165,60,60,60]                      # angle entre la feuille et l'UC pour chaque stade
   
 pheno_base_temp_Inflo=[11.10,5.38,8.67,15.11,0]                # températures de base pour chaque stade phéno
-pheno_change_temp_Inflo=[70.56,133.32+70.56,230.42+133.32+70.56,999+230.42+133.32+70.56]       # temperatures auxquelles ont lieu les changements de stade Inflo
+#Tpheno_change_temp_Inflo=[70.56,133.32+70.56,230.42+133.32+70.56,999+230.42+133.32+70.56]       # temperatures auxquelles ont lieu les changements de stade Inflo
+pheno_change_temp_Inflo=[70.56,242.9139,473.3403,2000] 
+Nb_stades_pheno=len(pheno_change_temp_GU)              # nombre de stades phenologiques
 
 if Vegetative==False:
-  pheno_color=[15,16,16,16,16,16]                                    # couleurs pour chaque stade (inflorescences)
-  pheno_color_flower=[13,2,7,12,4,4]
+  pheno_color=[15,15,16,16,16,16]                                    # couleurs pour chaque stade (inflorescences)
+  pheno_color_flower=[13,2,7,17,10,4]
+  Nb_stades_pheno=len(pheno_change_temp_Inflo)
 
-Nb_stades_pheno=len(pheno_change_temp_GU)              # nombre de stades phenologiques
 
 # Parametres des distributions gaussiennes
 # Longueur des UCs (en position : apicale d'UC mere apicale, apicale d'UC mere laterale, laterale)
@@ -91,8 +96,7 @@ def normalized_pheno_stage(cumtemp,type):
     pheno_change_temp=pheno_change_temp_GU
   else:
     pheno_change_temp=pheno_change_temp_Inflo
-#  print Nb_stades_pheno, pheno_change_temp, pheno_change_temp[-1],pheno_change_temp[-2],pheno_change_temp[Nb_stades_pheno-1],pheno_change_temp[Nb_stades_pheno-3]
-#  # On cherche le stade pheno
+  # On cherche le stade pheno
   pheno_stage=None
   if cumtemp > pheno_change_temp[-2]:     # on teste si la somme des temp cumulee est superieure a la derniere temp de chgt de stade
       pheno_stage=Nb_stades_pheno-1         # si oui on est dans le dernier stade
@@ -151,6 +155,10 @@ def Start():
   totlength = [(0,0)]
   global pheno_inter_prec
   pheno_inter_prec=0
+  global deb
+  deb=0
+  global ind_deb
+  ind_deb=0
   
 def End():
   if Vegetative==True :
@@ -305,7 +313,7 @@ Bud(burst,position,mother_position,type):
       cumL=delta_temperature_Leaf*pdt
       # si oui on teste si l'UC en croissance est apicale
       if position=="A":
-        hypo=gauss(2.63,1.72)  #On tire une longueur d'espace pre-feuille
+        hypo=random.gamma(2,0.76)  #On tire une longueur d'espace pre-feuille
         # On teste le position de l'UC mere
         if (mother_position=="A"):
           final_size_internode=gauss(GU_length_apic_apic_mean,GU_length_apic_apic_sd)   # on tire une longueur dans la distribution associee
@@ -340,10 +348,10 @@ Bud(burst,position,mother_position,type):
       # Début de l'UC
       nproduce GU(ParameterSet(CodeUC='1-V',
                                age=0,
-                               final_size_GU=final_size_internode,
+                               final_size_GU=20,#final_size_internode,
                                diam=0,
                                final_size_Leaf=final_size_leaf,
-                               LEPF=hypo,
+                               LEPF=0,#hypo,
                                NbInternode=NbInternode,
                                pheno_stage=0,
                                cumsum_temp=cum,
@@ -371,7 +379,7 @@ Bud(burst,position,mother_position,type):
       nproduce Inflo(ParameterSet(CodeUC='1-F',
                                   length=0.01,
                                   age=0,
-                                  final_size=final_size_inflo,
+                                  final_size=25,#final_size_inflo,
                                   diam=0.01,
                                   pheno_stage=0,
                                   cumsum_temp=delta_temperature_Inflo*pdt,
@@ -494,7 +502,7 @@ C(type):
     produce [ ,(20) @2D @M(0.5,0.15) Label('Stade :'+stadename[pheno_inter])]
   else :
     plotCurve(totlength, pointdata = point, xextend = (0,60), yextend=(0,45))
-    stadename = {0: 'ABC', 1 :'D', 2 : 'E', 3 : 'F', 4: 'G' }
+    stadename = {0: 'ABCD', 1 : 'E', 2 : 'F', 3: 'G' }
     produce [ ,(20) @2D @M(0.5,0.15) Label('Stade :'+stadename[pheno_inter])]
 
 
@@ -531,7 +539,7 @@ Inflo(param):
     #=====    
     
     for k in xrange(0,NbAxe2):
-      nproduce InterpolateColors(13,pheno_color[param.pheno_stage+1],(param.pheno_advct+param.pheno_stage)*(1-float(k)/NbAxe2) ) 
+      nproduce InterpolateColors(13,pheno_color[param.pheno_stage+1],(param.pheno_advct+param.pheno_stage)*(1-float(k)/NbAxe2)/(2.1-max(0,param.pheno_advct+param.pheno_stage-1)) ) 
       # On choisi la couleur en fonction du stade et de son avancement
       nproduce F(param.length/NbAxe2,param.length/(NbAxe2*5.))  
       if (k<8 or k>19): nproduce \(60+(YY[k]*30))
@@ -546,9 +554,32 @@ fleur(pos,age,l,pheno,pheno_advct):
       if pos<0.7: nproduce InterpolateColors(13,pheno_color[pheno+1],(pheno_advct+pheno)*(1-float(k)/10)) 
       # On choisi la couleur en fonction du stade et de son avancement
       nproduce F(l/10.,l/100.)  
+      k2=k
+      pos2=pos
       if k>3:
+        global deb
+        if deb==1: 
+          k2-=1/10*ind_deb
+          pos2-=1/10*ind_deb
+        if pheno>=2: 
+          ind_col=min(1,(pheno_advct+max(0,pheno-2)+1-pos2+1-k2/10.)/3.)
+          if pheno==3: ind_col=0.7
+          deb=1
+          global ind_deb
+          ind_deb+=1
+          if (ind_col<0.5 and pheno==2) :ind_col=min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/5.
+        else : ind_col=min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/10. 
+        
         for d in xrange (0,3):
-          nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],pheno_advct) @O(min(age/100.,0.3))]
+          if pheno>=2:
+            if ind_col<0.5:
+              nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno],(pheno_advct+(13-k)/10.)/2.) @O(min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/10. )]
+            else:
+              nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],ind_col) @O(ind_col)]
+          else:
+            nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],ind_col) @O(ind_col)]
+           
+#          nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],(pheno_advct+(13-k)/10.)/2.) @O(min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/10. )]
 
 consider: GU
 
@@ -618,11 +649,14 @@ def __initialiseContext__(context):
 	Color_16 = pgl.Material("Color_16" , ambient = (255,82,108) , diffuse = 0.627451 , )
 	Color_16.name = "Color_16"
 	context.turtle.setMaterial(16,Color_16)
+	Color_17 = pgl.Material("Color_17" , ambient = (255,255,0) , diffuse = 1 , specular = (99,99,99) , )
+	Color_17.name = "Color_17"
+	context.turtle.setMaterial(17,Color_17)
 	Color_20 = pgl.Material("Color_20" , ambient = (0,0,0) , diffuse = 14.5455 , )
 	Color_20.name = "Color_20"
 	context.turtle.setMaterial(20,Color_20)
 	context.animation_timestep = 0.0
-	scalars = [('DAILY', 'Bool', False), ('mean_temperature', 'Float', 32.27, 20.0, 40.0, 2), ('D_EF_G', 'Bool', True), ('SEED', 'Integer', 4, 0, 100), ('Vegetative', 'Bool', True)]
+	scalars = [('DAILY', 'Bool', False), ('mean_temperature', 'Float', 25.45, 20.0, 40.0, 2), ('D_EF_G', 'Bool', True), ('SEED', 'Integer', 86, 0, 100), ('Vegetative', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]

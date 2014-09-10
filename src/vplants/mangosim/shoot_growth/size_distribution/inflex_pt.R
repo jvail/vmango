@@ -23,6 +23,8 @@ diff_inflo=STInflocogred/2-inflo$X00
 summary(inflo$X00)
 summary(diff_inflo)
 
+plot(STInflocog,inflo$X00)
+
 
 # Données ajustées par Anaëlle sur les UCs
 UC0=read.csv("paramAJUSTUCglob.csv",header=TRUE,sep=";",dec=".")
@@ -51,11 +53,11 @@ plot(inflo$haut,inflo$X00)
 
 # Etude de la répartition des points d'inflexion
 par(mfrow=c(1,2))
-hist(inflo$X00,col=8,main="inflorescences",freq=F,breaks=20)
-curve(dnorm(x,mean(inflo$X00),sd(inflo$X00)),add=T)
-hist(UC$X00,col="salmon",main="UCs",freq=F,breaks=20)
+hist(inflo$X00,col=8,main="inflorescences",freq=F,breaks=20,xlab="Temps au point d'inflexion")
+#curve(dnorm(x,mean(inflo$X00),sd(inflo$X00)),add=T)
+hist(UC$X00,col="salmon",main="UCs",freq=F,breaks=20,xlab="Temps au point d'inflexion")
 curve(dnorm(x,mean(UC$X00),sd(UC$X00)),add=T)                         # mu=79.40, sigma=10.75
-title("Répartition de la date du point d'inflexion estimé",outer=T,line=-1)
+#title("Répartition de la date du point d'inflexion estimé",outer=T,line=-1)
 
 # On ne reconnaît aucunes distributions connues our les inflorescences, on cherche donc à voir si on peut différencier des cas
 par(mfrow=c(1,3))
@@ -103,6 +105,26 @@ points(parinflo$date[parinflo$Verger=="BP"]$yday,parinflo$T_ip[parinflo$Verger==
 points(parinflo$date[parinflo$Verger=="BM"]$yday,parinflo$T_ip[parinflo$Verger=="BM"],pch=15,col="cyan")
 points(parinflo$date[parinflo$Verger=="GF"]$yday,parinflo$T_ip[parinflo$Verger=="GF"],pch=15,col="pink")
 legend("bottomright",c("Bassin Plat","Bassin Martin","Grand Fond"),col=c("salmon","cyan","pink"),pch=15)
+
+
+
+# Etude par rapport à la date de fin de croissance
+
+# Il n'y a pas d'influence visible de la position de l'UC, on cherche donc à voir si il existe une relation avec la date de débourrement
+paramInf0=read.csv("bourgeons_F.csv",header=TRUE,sep=";",dec=".")
+paramInf=paramInf0[paramInf0$stadeInflo!="B2" & paramInf0$stadeInf!="B2/C",]
+paramInf$date=strptime(as.character(paramInf$date),"%d/%m/%Y %H:%M")
+
+plot(paramInf$date,paramInf$T_ip,pch=15)
+points(paramInf$date[paramInf$Verger=="BP"],paramInf$T_ip[paramInf$Verger=="BP"],pch=15,col="salmon")
+points(paramInf$date[paramInf$Verger=="BM"],paramInf$T_ip[paramInf$Verger=="BM"],pch=15,col="cyan")
+points(paramInf$date[paramInf$Verger=="GF"],paramInf$T_ip[paramInf$Verger=="GF"],pch=15,col="pink")
+legend("topright",c("Bassin Plat","Bassin Martin","Grand Fond"),col=c("salmon","cyan","pink"),pch=15)
+
+
+
+
+
 
 
 #### Recherche de la vitesse maximale

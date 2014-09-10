@@ -65,8 +65,9 @@ else :
   
   pheno_base_temp_Inflo=[11.10,8.67,15.11,0]                # températures de base pour chaque stade phéno
   pheno_change_temp_Inflo=[70.56,133.32+70.56,230.42+133.32+70.56,999+230.42+133.32+70.56]       # temperatures auxquelles ont lieu les changements de stade Inflo
-  pheno_color=[15,16,16,16,16,16]                                    # couleurs pour chaque stade (inflorescences)
-  pheno_color_flower=[13,2,7,12,4,4]
+  #?pheno_change_temp_Inflo=[70.56,242.9139,473.3403,2000] 
+  pheno_color=[15,16,16,16,16,16]       #alternative avec toutes les données                            
+  pheno_color_flower=[13,2,7,12,4,4]                               # couleurs pour chaque stade (inflorescences)
 
   Nb_stades_pheno=len(pheno_change_temp_Inflo)
 

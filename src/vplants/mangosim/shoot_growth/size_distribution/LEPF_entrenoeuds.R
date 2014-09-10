@@ -31,19 +31,30 @@ hist(lat$LEPF, main="UCs latérales",xlim=c(0,18),breaks=seq(0,15,1),freq=F,xlab=
 legend("topright",col=2,lty=1,"N(5.94,3.17)",bty="n")
 #title("LEPF",outer=TRUE,line=-1)
 
-# anova pour l'étude de l'influence de la position de l'UC sur LEPF
-LEPF.aov=aov(LEPF ~ positionUC)
-summary(LEPF.aov)
+# étude de l'influence de la position de l'UC sur LEPF
+LEPF.kruskal=kruskal.test(LEPF ~ positionUC)    # KW= 35.8302, df = 1, p-value = 2.153e-09
+
 
 # Tests de KS pour vérifier la normalité des distributions de LEPF
 ks.test(apic$LEPF,mean(apic$LEPF),sd(apic$LEPF))                     # 0.8312
 ks.test(lat$LEPF,mean(lat$LEPF,na.rm=T),sd(lat$LEPF,na.rm=T))        # 0.9254
 
+par(mfrow=c(1,2))
+fit.gamma.apic=fitdistr(apic$LEPF,"gamma")  #2.0068648 0.7631676 
+hist(apic$LEPF,freq=F,main="Histogramme",xlab="LEPF des UCs apicales",ylim=c(0,0.3),xlim=c(0,16));curve(dgamma(x,fit.gamma.apic$est[1],fit.gamma.apic$est[2]),col=2,add=T)
+ks.test(apic$LEPF,"pgamma",fit.gamma.apic$est[1],fit.gamma.apic$est[2])                     # 0.3264
+
+lat.LEPF=lat$LEPF[-11]
+fit.gamma.lat=fitdistr(lat.LEPF,"gamma")     # 3.3760921 0.5684268 
+hist(lat.LEPF,freq=F,main="Histogramme",xlab="LEPF des UCs latérales",ylim=c(0,0.3),xlim=c(0,16));curve(dgamma(x,fit.gamma.lat$est[1],fit.gamma.lat$est[2]),col=2,add=T)
+ks.test(lat.LEPF,"pgamma",fit.gamma.lat$est[1],fit.gamma.lat$est[2])                     # 0.7447
+
+
 
 # Relation entre longeur d'UC et LEPF
-plot(apic$longueurUC,apic$LEPF,xlab="Longueur UC",ylab="LEPF")
-abline(lm(apic$LEPF ~ apic$longueurUC),col=2)
-plot(lat$longueurUC,lat$LEPF,xlab="Longueur UC",ylab="LEPF")
+plot(apic$longueurUC,apic$LEPF,xlab="Longueur UC",ylab="LEPF",main="apical")
+#abline(lm(apic$LEPF ~ apic$longueurUC),col=2)
+plot(lat$longueurUC,lat$LEPF,xlab="Longueur UC",ylab="LEPF",main="latéral")
 abline(lm(lat$LEPF ~ lat$longueurUC),col=2)
 #title("LEPF fonction de la longueur",outer=TRUE,line=-1)
 
