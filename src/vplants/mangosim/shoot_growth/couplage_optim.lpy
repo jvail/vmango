@@ -199,7 +199,7 @@ axisfunc = ProfileInterpolation(curves,[0,0.1,0.5,0.6,0.7,0.8])
 
 
 def estimate_radius(nbdescendants):
-  return 0.2*pow(nbdescendants, 0.35)
+  return 0.1*pow(nbdescendants, 0.15)
 
 # estimate nb of descendants for the pipe model
 @mm.use_global_mtg
@@ -282,7 +282,7 @@ def generate_parameters_GU(current,length,burst_date, nbdescendants):
   param = ParameterSet(burst_date=burst_date,
                        nature=mm.get_nature_gu(mtg, current),
                        cycle =mm.get_unit_cycle(mtg, current), 
-                       length=length, 
+                       length=final_size, 
                        nbdescendants = nbdescendants,
                        radius = estimate_radius(nbdescendants), 
                        mtgid = current,
@@ -308,17 +308,20 @@ def generate_elements(current, burst_date = None, length=None, nbdescendants = 1
     # GU is composed of leaves and internodes
     param=generate_parameters_GU(current,length,burst_date, nbdescendants)
     nproduce /(60) GU( param )
-    nproduce Internode(ParameterSet(length=0.01,final_size_organ=param.LEPF,diam=0.01)) /(phyllotaxy) 
-    nproduce [@Ts(0) @V &(0) Leaf(ParameterSet(position=0,size=0.1,final_size=param.final_size_Leaf*leaflength(0) )) ]
     
-    # each internode is smaller than de previous
-    totintlength=0
-    for j in xrange(1,param.NbInternode-1): totintlength+=exp(-2.64*j/float(param.NbInternode-1))
-    for i in xrange(1,param.NbInternode-1):        
-      nproduce  Internode(ParameterSet(length=0.01,final_size_organ=(param.final_size_GU-param.LEPF)*exp(-2.64*i/float(param.NbInternode-1))/totintlength,diam=0.01)) /(phyllotaxy) 
-      nproduce [@Ts(0) @V &(0) Leaf(ParameterSet(position=i/float(param.NbInternode-1),size=0.1,final_size=param.final_size_Leaf*leaflength(i/float(param.NbInternode-1)) )) ]
-    # En of GU
-    nproduce GUEnd
+    is_base = (param.burst_date is None)
+    if not is_base:
+      nproduce Internode(ParameterSet(length=0.01,final_size_organ=param.LEPF,diam=0.01)) /(phyllotaxy) 
+      nproduce [@Ts(0) @V &(0) Leaf(ParameterSet(position=0,size=0.1,final_size=param.final_size_Leaf*leaflength(0) )) ]
+      
+      # each internode is smaller than de previous
+      totintlength=0
+      for j in xrange(1,param.NbInternode-1): totintlength+=exp(-2.64*j/float(param.NbInternode-1))
+      for i in xrange(1,param.NbInternode-1):        
+        nproduce  Internode(ParameterSet(length=0.01,final_size_organ=(param.final_size_GU-param.LEPF)*exp(-2.64*i/float(param.NbInternode-1))/totintlength,diam=0.01)) /(phyllotaxy) 
+        nproduce [@Ts(0) @V &(0) Leaf(ParameterSet(position=i/float(param.NbInternode-1),size=0.1,final_size=param.final_size_Leaf*leaflength(i/float(param.NbInternode-1)) )) ]
+      # End of GU
+      nproduce GUEnd
       
       
     children = mm.vegetative_children(mtg, current)
@@ -402,8 +405,8 @@ decomposition:
 maximum depth:max(height_max - height_max_3+1,height_max_3+1)
 
 B(current):
-    length= 25 - 13*log(mtg.Height(current)+1,height_max)
-    generate_elements(current, None, length, nbdescendants[current])
+    #length= 25 - 13*log(mtg.Height(current)+1,height_max)
+    generate_elements(current, None, None, nbdescendants[current])
 
 A( p ):
   if  p.burst_date <= current_date :
@@ -411,7 +414,9 @@ A( p ):
 
 production:
 
-#group 0: # pipe model
+group 0: # pipe model
+
+consider: GU 
 
 GU(p) >> x([ GU(pl) ]) GU(pa):
   p.nbdescendants += sum([pli.nbdescendants for pli in pl])+pa.nbdescendants+1
@@ -421,7 +426,7 @@ GU(p) >> x([ GU(pl) ]) GU(pa):
   else:
     # Update of parameters
     p.age += daystep                                 
-    [pheno_advct_stage,p.pheno_stage]=normalized_pheno_stage(p.pheno_TTS,"GU",p.pheno_stage)  
+    [pheno_advct_stage,p.pheno_stage]=normalized_pheno_stage(p.pheno_TTS,"GU")  
       
     # Thermal time sum dor growth
     p.cumsum_temp+=delta_temperature_GU*daystep    
@@ -463,8 +468,6 @@ GU(p) >> x([ GU(pl) ]) :
     
   produce GU(p)
 
-  
-consider: GU 
 GU(p) < GUEnd:
   if p.pheno_stage ==4:
     produce  ]GUEnd
@@ -554,7 +557,8 @@ Inflorescence(param):
       else: nproduce \(220)
       nproduce [@Ts(0.05) @Tp(0,0,1)  +(65) fleur(float(k)/NbAxe2,param.length,max(param.length/10.,param.length*0.687-3.97)*(NbAxe2-k)/NbAxe2,param.pheno_stage,param.pheno_advct,param.deb,param.ind_deb)] 
    produce ]
-
+   
+   
 fleur(pos,age,l,pheno,pheno_advct,deb,ind_deb):
   for k in xrange(0,10):
       if pos<0.7: nproduce InterpolateColors(13,pheno_color[pheno+1],(pheno_advct+pheno)*(1-float(k)/10)) 
