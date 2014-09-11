@@ -214,7 +214,8 @@ def estimate_nb_descendants(mtg, first_uc):
 nbdescendants = estimate_nb_descendants(mtg,first_uc)
 
 
-module GU, Inflorescence, A, B, GUEnd, Internode, Leaf,Inflorescence_bud
+module GU, Inflorescence: scale = 1
+module A, B, GUEnd, Internode, Leaf,Inflorescence_bud : scale = 2
 
 def generate_parameters_GU(current,length,burst_date, nbdescendants):
   # On effectue les tirages pour la simulation
@@ -306,19 +307,24 @@ def generate_parameters_GU(current,length,burst_date, nbdescendants):
 
 def generate_elements(current, burst_date = None, length=None, nbdescendants = 1):
     # GU is composed of leaves and internodes
-    param=generate_parameters_GU(current,length,burst_date, nbdescendants)
-    nproduce /(60) GU( param )
-    nproduce Internode(ParameterSet(length=0.01,final_size_organ=param.LEPF,diam=0.01)) /(phyllotaxy) 
-    nproduce [@Ts(0) @V &(0) Leaf(ParameterSet(position=0,size=0.1,final_size=param.final_size_Leaf*leaflength(0) )) ]
+    guparam=generate_parameters_GU(current,length,burst_date, nbdescendants)
+    nproduce /(60) GU( guparam )
     
-    # each internode is smaller than de previous
-    totintlength=0
-    for j in xrange(1,param.NbInternode-1): totintlength+=exp(-2.64*j/float(param.NbInternode-1))
-    for i in xrange(1,param.NbInternode-1):        
-      nproduce  Internode(ParameterSet(length=0.01,final_size_organ=(param.final_size_GU-param.LEPF)*exp(-2.64*i/float(param.NbInternode-1))/totintlength,diam=0.01)) /(phyllotaxy) 
-      nproduce [@Ts(0) @V &(0) Leaf(ParameterSet(position=i/float(param.NbInternode-1),size=0.1,final_size=param.final_size_Leaf*leaflength(i/float(param.NbInternode-1)) )) ]
-    # En of GU
-    nproduce GUEnd
+    is_base = (guparam.burst_date is None)
+    if not is_base:    
+      nproduce Internode(ParameterSet(length=0.01,final_size_organ=guparam.LEPF,diam=0.01), guparam) /(phyllotaxy) 
+      nproduce [ Leaf(ParameterSet(position=0,size=0.1,final_size=guparam.final_size_Leaf*leaflength(0) ), guparam) ]
+      
+      # each internode is smaller than de previous
+      totintlength=0
+      for j in xrange(1,guparam.NbInternode-1): totintlength+=exp(-2.64*j/float(guparam.NbInternode-1))
+      for i in xrange(1,guparam.NbInternode-1):        
+        nproduce  Internode(ParameterSet(length=0.01,final_size_organ=(guparam.final_size_GU-guparam.LEPF)*exp(-2.64*i/float(guparam.NbInternode-1))/totintlength,diam=0.01), guparam) /(phyllotaxy) 
+        nproduce [@Ts(0) @V &(0) Leaf(ParameterSet(position=i/float(guparam.NbInternode-1),size=0.1,final_size=guparam.final_size_Leaf*leaflength(i/float(guparam.NbInternode-1)) ), guparam) ]
+      # En of GU
+      nproduce GUEnd(guparam)
+    else:
+      guparam.simplified = True
       
       
     children = mm.vegetative_children(mtg, current)
@@ -401,26 +407,40 @@ maximum depth:max(height_max - height_max_3+1,height_max_3+1)
 
 B(current):
     length= 20 - 10*log(mtg.Height(current)+1,height_max)
+    print current, nbdescendants[current]
     generate_elements(current, None, length, nbdescendants[current])
 
 A( p ):
   if  p.burst_date <= current_date :
     generate_elements(p.mtgid, p.burst_date)
 
+
+Inflorescence_bud(p):
+  bloom_date = p.bloom_dates[0] if p.bloom_dates else first_date
+  day_age = (current_date - bloom_date).days
+  if day_age < 60:
+    produce Inflorescence(p)
+  else:
+    produce 
+
 production:
 
 #group 0: # pipe model
 
+
+consider: GU
+
 GU(p) >> x([ GU(pl) ]) GU(pa):
-  p.nbdescendants += sum([pli.nbdescendants for pli in pl])+pa.nbdescendants+1
+  p.nbdescendants = sum([pli.nbdescendants for pli in pl])+pa.nbdescendants+1
   p.radius = estimate_radius(p.nbdescendants)
+  
   if p.pheno_stage==4:  # if pheno stage=4 we replace leaves and internodes by a fixed structure
     produce GU(p) [ %
   else:
-    new_param=p.copy()
+    new_param= p # p.copy()
     # Update of parameters
     new_param.age += daystep                                 
-    [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"GU",new_param.pheno_stage)  
+    [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"GU")  
       
     # Thermal time sum dor growth
     new_param.cumsum_temp+=delta_temperature_GU*daystep    
@@ -437,13 +457,19 @@ GU(p) >> x([ GU(pl) ]) GU(pa):
   produce GU(new_param)
 
 
+
+
 GU(p) >> x([ GU(pl) ]) :
-  p.nbdescendants += sum([pli.nbdescendants for pli in pl])+1
+  #assert False
+  p.nbdescendants = sum([pli.nbdescendants for pli in pl])+1
   p.radius = estimate_radius(p.nbdescendants)
-  if p.pheno_stage==4:
-    produce GU(p) [ %
+  
+  if p.pheno_stage==4 :
+    if not hasattr(p,'simplifed'):
+      p.simplified = False
+      produce GU(p) [ %
   else:
-    new_param=p.copy()
+    new_param= p # p.copy()
     # Update of parameters
     new_param.age += daystep                                 
     [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"GU")  
@@ -463,31 +489,28 @@ GU(p) >> x([ GU(pl) ]) :
     
   produce GU(new_param)
 
-  
-consider: GU 
-GU(p) < GUEnd:
+
+
+GUEnd(p):
   if p.pheno_stage ==4:
-    produce  ]GUEnd
+    if hasattr(p,'simplifed') and not p.simplified:
+      p.simplified = True
+      produce  ] GUEnd
+      
   else :
     produce GUEnd
 
-GU(p) < Internode(param):
+Internode(param, p):
   new_param=param.copy()
   new_param.length = GrowthCurve(p.cumsum_temp,new_param.final_size_organ,"GU",p.final_size_GU,p.T_ip)  # calcul de la taille de l'entrenoeud
   new_param.diam = GrowthCurve(p.cumsum_temp,final_diamI,"GU",final_diamI,p.T_ip)                             # calcul du diametre de l'entrenoeud
   produce Internode(new_param) 
 
-GU(p) < Leaf(param): 
+Leaf(param, p): 
   new_param=param.copy()
   new_param.size = GrowthCurve(p.cumsum_temp_Leaf,new_param.final_size,"Leaf",new_param.final_size,0)
   produce Leaf(new_param) 
   
-Inflorescence_bud(p):
-  bloom_date = p.bloom_dates[0] if p.bloom_dates else first_date
-  day_age = (current_date - bloom_date).days
-  if day_age < 60:
-    produce Inflorescence(p)
-
   
 Inflorescence(param): 
   new_param=param.copy()
@@ -588,9 +611,9 @@ GU(p):
         nproduce  F(length, 0.2) /(phyllotaxy) [ &(0) fLeaf(ParameterSet(position=i/float(p.NbInternode-1),size=p.final_size_Leaf*leaflength(i/float(p.NbInternode-1)) )) ]
   else:
     scale = 1.5
-    produce ,(1) _(p.radius) nF(p.length, p.radius) 
+    produce ,(1) _(p.radius) nF(p.length, p.length/20 , p.radius) 
       
-GU(p) < Internode(param):
+Internode(param,p):
   is_base = (p.burst_date is None)
   if not is_base:
     if(p.pheno_stage<4):
@@ -603,10 +626,11 @@ fLeaf(param):
   nproduce &(pheno_angle[4]) SetGuide(petioleCurve,(1-param.position)* param.size/4.) @G  Petiole((1-param.position)* param.size/4.,leafdiam(0))     
   nproduce ,(13) @Gc _(leafdiam(0.5))  Sweep(axis5,leafsection, param.size, param.size/10., param.size*0.24, leafdiam) ]  
 
-GU(paramI) < Leaf(paramL) :
+Leaf(paramL, paramI) :
  is_base = (paramI.burst_date is None)
  if not is_base:
   if(paramI.pheno_stage<4):
+    nproduce @Ts(0) @V &(0)
     nproduce @G ,(2) [ /(137.5) &(90) ,(1)  f(0) F(0.001,leafdiam(0)*leafwidth(min((paramI.cumsum_temp_Leaf+1)/378.,1)))  ^(90) 
     # Angle depends of phenological stage and advancement
     nproduce &((1-paramI.pheno_advct)*pheno_angle[paramI.pheno_stage]+paramI.pheno_advct*pheno_angle[paramI.pheno_stage+1]) 
