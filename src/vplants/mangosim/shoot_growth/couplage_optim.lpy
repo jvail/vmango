@@ -421,24 +421,27 @@ consider: GU
 GU(p) >> x([ GU(pl) ]) GU(pa):
   p.nbdescendants += sum([pli.nbdescendants for pli in pl])+pa.nbdescendants+1
   p.radius = estimate_radius(p.nbdescendants)
-  if p.pheno_stage==4:  # if pheno stage=4 we replace leaves and internodes by a fixed structure
-    produce GU(p) [ %
-  else:
-    # Update of parameters
-    p.age += daystep                                 
-    [pheno_advct_stage,p.pheno_stage]=normalized_pheno_stage(p.pheno_TTS,"GU")  
+  
+  is_base = (param.burst_date is None)
+  if not is_base:
+    if p.pheno_stage==4:  # if pheno stage=4 we replace leaves and internodes by a fixed structure
+      produce GU(p) [ %
+    else:
+      # Update of parameters
+      p.age += daystep                                 
+      [pheno_advct_stage,p.pheno_stage]=normalized_pheno_stage(p.pheno_TTS,"GU")  
+        
+      # Thermal time sum dor growth
+      p.cumsum_temp+=delta_temperature_GU*daystep    
       
-    # Thermal time sum dor growth
-    p.cumsum_temp+=delta_temperature_GU*daystep    
-    
-    #Thermal time sum for development
-    global temperature      
-    delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_GU[p.pheno_stage])
-    p.pheno_TTS+= delta_temperature_pheno*daystep    
-    p.pheno_advct=pheno_advct_stage
-    
-    if not (p.burst_date is None): p.length = GrowthCurve(p.cumsum_temp,p.final_size_GU,"GU",p.final_size_GU,p.T_ip)  # GU's length calculation
-    p.diam = GrowthCurve(p.cumsum_temp,final_diamI,"GU",final_diamI,p.T_ip)                            # GU's diameter calculation
+      #Thermal time sum for development
+      global temperature      
+      delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_GU[p.pheno_stage])
+      p.pheno_TTS+= delta_temperature_pheno*daystep    
+      p.pheno_advct=pheno_advct_stage
+      
+      if not (p.burst_date is None): p.length = GrowthCurve(p.cumsum_temp,p.final_size_GU,"GU",p.final_size_GU,p.T_ip)  # GU's length calculation
+      p.diam = GrowthCurve(p.cumsum_temp,final_diamI,"GU",final_diamI,p.T_ip)                            # GU's diameter calculation
     
   produce GU(p)
 
@@ -446,25 +449,28 @@ GU(p) >> x([ GU(pl) ]) GU(pa):
 GU(p) >> x([ GU(pl) ]) :
   p.nbdescendants += sum([pli.nbdescendants for pli in pl])+1
   p.radius = estimate_radius(p.nbdescendants)
-  if p.pheno_stage==4:
-    produce GU(p) [ %
-  else:
-    # Update of parameters
-    p.age += daystep                                 
-    [pheno_advct_stage,p.pheno_stage]=normalized_pheno_stage(p.pheno_TTS,"GU")  
+  
+  is_base = (param.burst_date is None)
+  if not is_base:
+    if p.pheno_stage==4:
+      produce GU(p) [ %
+    else:
+      # Update of parameters
+      p.age += daystep                                 
+      [pheno_advct_stage,p.pheno_stage]=normalized_pheno_stage(p.pheno_TTS,"GU")  
+        
+      # Thermal time sum for growth
+      p.cumsum_temp+=delta_temperature_GU*daystep    
+      p.cumsum_temp_Leaf+=delta_temperature_Leaf*daystep   
       
-    # Thermal time sum for growth
-    p.cumsum_temp+=delta_temperature_GU*daystep    
-    p.cumsum_temp_Leaf+=delta_temperature_Leaf*daystep   
-    
-    #Thermal time sum for development
-    global temperature      
-    delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_GU[p.pheno_stage])
-    p.pheno_TTS+= delta_temperature_pheno*daystep    
-    p.pheno_advct=pheno_advct_stage
-    
-    if not (p.burst_date is None): p.length = GrowthCurve(p.cumsum_temp,p.final_size_GU,"GU",p.final_size_GU,p.T_ip)  # GU's length calculation
-    p.diam = GrowthCurve(p.cumsum_temp,final_diamI,"GU",final_diamI,p.T_ip)                            # GU's diameter calculation
+      #Thermal time sum for development
+      global temperature      
+      delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_GU[p.pheno_stage])
+      p.pheno_TTS+= delta_temperature_pheno*daystep    
+      p.pheno_advct=pheno_advct_stage
+      
+      if not (p.burst_date is None): p.length = GrowthCurve(p.cumsum_temp,p.final_size_GU,"GU",p.final_size_GU,p.T_ip)  # GU's length calculation
+      p.diam = GrowthCurve(p.cumsum_temp,final_diamI,"GU",final_diamI,p.T_ip)                            # GU's diameter calculation
     
   produce GU(p)
 

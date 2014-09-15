@@ -1,6 +1,6 @@
 # Relations allométriques
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/data/size")
 base=read.table("base_allometriesR.csv",header=TRUE,sep=";",dec=",")
 
 # On ne garde que Cogshall

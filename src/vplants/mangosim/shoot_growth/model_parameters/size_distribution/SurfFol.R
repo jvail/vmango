@@ -1,7 +1,7 @@
 # Etude taille des feuilles
 # 2004 et 2006.
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
 
 #################################################################################################################################
 ##########################################     Récupération et mise en forme des données     ####################################
@@ -12,7 +12,7 @@ setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_gro
 ####   MA05  ####
 #################
 
-MA05_0=read.csv("MA05.csv",header=TRUE,sep=";",dec=",")
+MA05_0=read.csv("data/size/MA05.csv",header=TRUE,sep=";",dec=",")
 
 ##### Suppression des données aberrantes
 par(mfrow=c(1,2))
@@ -48,7 +48,7 @@ summary(sfolMA,na.rm=T)
 ####   Sfol2006  ####
 #####################
 
-Sfol20060=read.csv("Sfol2006.csv",header=TRUE,sep=";",dec=",")
+Sfol20060=read.csv("data/size/Sfol2006.csv",header=TRUE,sep=";",dec=",")
 
 ##### Etude préliminaire
 par(mfrow=c(1,2))
@@ -68,7 +68,7 @@ Sfol6_lat=Sfol6[Sfol6$position=="L",]
 ####   Sfol2004  ####
 #####################
 
-Sfol20040=read.csv("Sfol2004.csv",header=TRUE,sep=";",dec=",")
+Sfol20040=read.csv("data/size/Sfol2004.csv",header=TRUE,sep=";",dec=",")
 
 ##### Etude préliminaire
 par(mfrow=c(1,2))
@@ -88,7 +88,7 @@ Sfol4_lat=Sfol4[Sfol4$position=="L",]
 ####     CogshallBMA    ####
 ############################
 
-BMA=read.csv("CogshallBMA.csv",header=TRUE,sep=";",dec=",")
+BMA=read.csv("data/size/CogshallBMA.csv",header=TRUE,sep=";",dec=",")
 
 ##### Etude préliminaire
 par(mfrow=c(1,2))
@@ -107,7 +107,7 @@ BMA_lat=BMA[BMA$position=="L",]
 ####   CogshallGFOND  ####
 ##########################
 
-GFOND=read.csv("CogshallGFOND.csv",header=TRUE,sep=";",dec=",")
+GFOND=read.csv("data/size/CogshallGFOND.csv",header=TRUE,sep=";",dec=",")
 
 ##### Etude préliminaire
 par(mfrow=c(1,2))

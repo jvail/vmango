@@ -1,12 +1,12 @@
 # Distributions sur les longueurs d'inflorescences
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/data")
 
 
 ####################################################################
 #########     Récupération et mise en forme des données     ########
 ####################################################################
-data0=read.csv("BaseDeCroissanceInflo.csv",header=TRUE,sep=";",dec=",")
+data0=read.csv("growth_data/BaseDeCroissanceInflo.csv",header=TRUE,sep=";",dec=",")
 
 # On ne garde que Cogshall
 data1=data0[data0$variete=="cog",]
@@ -63,8 +63,7 @@ legend("bottomright",c("droite de régression", "IC moyenne","IC individu"),lty=c
 ####################################################################
 #########     Récupération et mise en forme des données     ########
 ####################################################################
-setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
-diam0=read.csv("relévé diam inflos Soizick.csv",header=TRUE,sep=";",dec=",",
+diam0=read.csv("size/relévé diam inflos Soizick.csv",header=TRUE,sep=";",dec=",",
 								col.names=c("DateReleveUC","Traitement","Plant","UCdisparue","numeroUC",
 										"Position","DiamètreBasalUC","IA Type","IADiamStadeF","IL1Type",
 										"IL1DiamStadeF","IL2Type","IL2DiamStadeF","IL3Type","IL3DiamStadeF",

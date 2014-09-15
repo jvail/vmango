@@ -4,8 +4,8 @@
 
 
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
-base=read.table("BaseDeCroissanceVeg.csv",header=TRUE,sep=";",dec=",")
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
+base=read.table("data/growth_data/BaseDeCroissanceVeg.csv",header=TRUE,sep=";",dec=",")
 
 # Récupération de la dernière mesure uniquement (correspond au stade phéno H)
 mesUC=base[base$stadeUC=="H",]
@@ -72,7 +72,7 @@ summary(lm(lat$LEPF ~ lat$longueurUC))
 x=((1:10)-1)/9
 internode_length=c(2,2.1,1.5,1,1,0.6,0.4,0.3,0.2,0.2)
 
-Internode.lm=lm(internode_length ~ x)   ; summary(internode.lm)
+internode.lm=lm(internode_length ~ x)   ; summary(internode.lm)
 logInternode.lm=lm(log(internode_length)~ x)        ; summary(logInternode.lm)
 #lm1=lm(log(internode_length)~log(1:10))    ; summary(lm1)
 

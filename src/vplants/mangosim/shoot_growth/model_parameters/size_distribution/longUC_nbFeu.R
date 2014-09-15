@@ -4,7 +4,7 @@
 #       - la relation entre le nombre de feuilles / la longueur des UCs
 # 2004 et 2006.
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
 
 
 #################################################################################################################################
@@ -15,7 +15,7 @@ setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_gro
 ####  Tayllamin ####
 ####################
 
-Tayllamin0=read.csv("FTayllamin.csv",header=TRUE,sep=";",dec=",",
+Tayllamin0=read.csv("data/size/FTayllamin.csv",header=TRUE,sep=";",dec=",",
 			   col.names=c("Variete","CodeArbre","Branche","NumArbre","NbRamFlo","NbUC","NomAxePo","TypAxePo","NbAxePo",
 					   "NumNdRam","AxePort","TypoPort","Long","DB","DS","NbFeu","NbFeuChut","NbNoeuds",
 					   "Conicite","Elancement"))
@@ -86,7 +86,7 @@ TA_apic_port_lat=TA_apic[TA_apic$TypAxePo=="R",]  ; TA_lat_port_lat=TA_lat[TA_la
 ####   MA05  ####
 #################
 
-MA05_0=read.csv("MA05.csv",header=TRUE,sep=";",dec=",")
+MA05_0=read.csv("data/size/MA05.csv",header=TRUE,sep=";",dec=",")
 
 ##### Suppression des données aberrantes
 par(mfrow=c(1,2))
@@ -109,7 +109,7 @@ MA_apic=MA[MA$position=="A",];MA_lat=MA[MA$position=="L",];
 ####   inference  ####
 ######################
 
-inference0=read.csv("inference.csv",header=TRUE,sep=";",dec=",")
+inference0=read.csv("data/size/inference.csv",header=TRUE,sep=";",dec=",")
 
 ##### Suppression des données aberrantes
 par(mfrow=c(1,2))
