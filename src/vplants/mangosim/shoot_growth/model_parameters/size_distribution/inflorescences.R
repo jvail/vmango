@@ -1,20 +1,26 @@
-# Distributions sur les longueurs d'inflorescences
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/data")
+# Informations sur la taille des inflorescences :
+#                                             - Distributions des longeurs
+#                                             - Relation longueur / diamètre
+#                                             - Distribution des diamètres
 
 
-####################################################################
-#########     Récupération et mise en forme des données     ########
-####################################################################
-data0=read.csv("growth_data/BaseDeCroissanceInflo.csv",header=TRUE,sep=";",dec=",")
+
+########################################################
+#########  Distribution des longueurs d'inflorescences  
+##################
+
+# On charge les données de la Base de croissance végétative
+data0=read.csv("data/growth_data/BaseDeCroissanceInflo.csv",header=TRUE,sep=";",dec=",")
 
 # On ne garde que Cogshall
 data1=data0[data0$variete=="cog",]
 
-# On s'intéresse à la taille des inflo en fin de croissance
+# On s'intéresse à la taille des inflorescences en fin de croissance
 data2=data1[data1$stadeInflo=="PF",]
 
-#Histogramme des longueurs d'inflorescence
+#Histogrammes des longueurs d'inflorescence
 par(mfrow=c(1,3))
 hist(data2$longueurInflo,breaks=20,freq=F,main="")
 curve(dnorm(x,mean(data2$longueurInflo),sd(data2$longueurInflo)),col=2,add=T)
@@ -27,8 +33,10 @@ shapiro.test(data2$longueurInflo)
 ks.test(data2$longueurInflo,mean(data2$longueurInflo),sd(data2$longueurInflo))
 
 
-
-# On recherche un relation d'allométrie entre diamètre et longueur d'inflorescence
+#############################################################################
+#########  Relation allométrique entre diamètre et longueur d'inflorescence  
+##################
+par(mfrow=c(1,1))
 plot(data2$diamAxeI ,data2$longueurInflo)
 abline(lsfit(data2$diamAxeI ,data2$longueurInflo),col=2)
 
@@ -60,10 +68,11 @@ legend("bottomright",c("droite de régression", "IC moyenne","IC individu"),lty=c
 
 
 
-####################################################################
-#########     Récupération et mise en forme des données     ########
-####################################################################
-diam0=read.csv("size/relévé diam inflos Soizick.csv",header=TRUE,sep=";",dec=",",
+################################################
+#########  Etude des distribution de diamètre  
+##################
+# On charge la base de relevés des diamètres d'inflorescences
+diam0=read.csv("data/size_data/relévé diam inflos Soizick.csv",header=TRUE,sep=";",dec=",",
 								col.names=c("DateReleveUC","Traitement","Plant","UCdisparue","numeroUC",
 										"Position","DiamètreBasalUC","IA Type","IADiamStadeF","IL1Type",
 										"IL1DiamStadeF","IL2Type","IL2DiamStadeF","IL3Type","IL3DiamStadeF",
@@ -73,22 +82,25 @@ attach(diam0)
 
 par(mfrow=c(1,2))
 # Inflorescences apicales
+# IA= Inflorescence Apicale
 hist(IADiamStadeF,breaks=40)
 
 # Inflorescences latérales
+# IL= Inflorescence Latérale
 ILDiamStadeF=unlist(list(IL1DiamStadeF,IL2DiamStadeF,IL3DiamStadeF,IL4DiamStadeF,IL5DiamStadeF,IL6DiamStadeF))
 ILType=unlist(list(IL1Type,IL2Type,IL3Type,IL4Type,IL5Type,IL6Type))
-
-
 hist(ILDiamStadeF,breaks=30)
 
 par(mfrow=c(2,2))
+# On trace pour toutes les inflorescences y compris les "mixtes"
 hist(ILDiamStadeF[ILType=="F"],xlim=c(2,8))
 hist(ILDiamStadeF[ILType=="M"],xlim=c(2,8))
 hist(ILDiamStadeF[ILType=="MF"],xlim=c(2,8))
 hist(ILDiamStadeF[ILType=="MV"],xlim=c(2,8))
 #hist(ILDiamStadeF[ILType=="V"]) pas de valeurs
 
+# On trace l'histogramme, la fonction de répartition et la droite de Henry pour démontrer la normalité 
+# de la distrbution des longueurs d'inflorescences
 par(mfrow=c(1,3))
 hist(ILDiamStadeF[ILType=="F"],xlim=c(2,8),breaks=30,freq=F)
 	curve(dnorm(x,mean(ILDiamStadeF[ILType=="F"],na.rm=T),sd(ILDiamStadeF[ILType=="F"],na.rm=T)),add=T,col=2)
@@ -97,6 +109,7 @@ plot(ecdf(ILDiamStadeF[ILType=="F"]))
 qqnorm(ILDiamStadeF[ILType=="F"])
 	qqline(ILDiamStadeF[ILType=="F"],col=2)
 
+# Tests de normalité
 shapiro.test(ILDiamStadeF[ILType=="F"])
 ks.test(ILDiamStadeF[ILType=="F"],mean(ILDiamStadeF[ILType=="F"],na.rm=T),sd(ILDiamStadeF[ILType=="F"],na.rm=T))
 

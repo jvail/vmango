@@ -1,25 +1,27 @@
-# Etude de la taille des organes
-# 2004 et 2006.
-#LEPF : Longueur de l'espace pré-feuille
-
-
-
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
+
+# Etude des entrenoeuds :
+#                           - Longueur de l'espace pré-feuille (LEPF)
+#                                    - Relation longueur UC / LEPF
+#                           - Relation longueur entrenoeuds / position entrenoeuds
+
+
+# On charge les données de la base de croissance végétative
 base=read.table("data/growth_data/BaseDeCroissanceVeg.csv",header=TRUE,sep=";",dec=",")
 
-# Récupération de la dernière mesure uniquement (correspond au stade phéno H)
+# On récupère la dernière mesure uniquement (correspond au stade phéno H)
 mesUC=base[base$stadeUC=="H",]
 attach(mesUC)
 
 
 ###########################################
-############## Etude LEPF #################
-###########################################
+############## Etude LEPF 
+###################
 
-
+# On trace l'histogrammes des longueurs d'EPF pour voir si une distribution apparaît
 hist(LEPF)
 
-# Ucs en position apicale et latérale
+# On distinue les UCs en position apicale et latérale
 apic=mesUC[positionUC=="A",]
 lat=mesUC[positionUC=="L",]
 
@@ -39,6 +41,7 @@ LEPF.kruskal=kruskal.test(LEPF ~ positionUC)    # KW= 35.8302, df = 1, p-value =
 ks.test(apic$LEPF,mean(apic$LEPF),sd(apic$LEPF))                     # 0.8312
 ks.test(lat$LEPF,mean(lat$LEPF,na.rm=T),sd(lat$LEPF,na.rm=T))        # 0.9254
 
+# On trace les résultats en ajustant des distributions gamma
 par(mfrow=c(1,2))
 fit.gamma.apic=fitdistr(apic$LEPF,"gamma")  #2.0068648 0.7631676 
 hist(apic$LEPF,freq=F,main="Histogramme",xlab="LEPF des UCs apicales",ylim=c(0,0.3),xlim=c(0,16));curve(dgamma(x,fit.gamma.apic$est[1],fit.gamma.apic$est[2]),col=2,add=T)
@@ -65,14 +68,16 @@ summary(lm(lat$LEPF ~ lat$longueurUC))
 
 
 ###########################################
-#######  Longueurs entrenoeuds  ###########
-###########################################
+#######  Longueurs entrenoeuds  
+################
 
 # renormalisation de la position des noeuds pour avoir des valeurs comprises entre 0 et 1
 x=((1:10)-1)/9
 internode_length=c(2,2.1,1.5,1,1,0.6,0.4,0.3,0.2,0.2)
 
+# On teste une relation linéaire
 internode.lm=lm(internode_length ~ x)   ; summary(internode.lm)
+# On teste une relation logarithmique
 logInternode.lm=lm(log(internode_length)~ x)        ; summary(logInternode.lm)
 #lm1=lm(log(internode_length)~log(1:10))    ; summary(lm1)
 

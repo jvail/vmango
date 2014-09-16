@@ -1,18 +1,19 @@
-# Etude taille des feuilles
-# 2004 et 2006.
-
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
 
-#################################################################################################################################
-##########################################     Récupération et mise en forme des données     ####################################
-#################################################################################################################################
+# Etude de la taille des feuilles en donction de leur position le long de l'UC
+
+
+
+#################################################################
+############   Récupération et mise en forme des données  
+##########################
 
 
 #################
 ####   MA05  ####
 #################
 
-MA05_0=read.csv("data/size/MA05.csv",header=TRUE,sep=";",dec=",")
+MA05_0=read.csv("data/size_data/MA05.csv",header=TRUE,sep=";",dec=",")
 
 ##### Suppression des données aberrantes
 par(mfrow=c(1,2))
@@ -48,7 +49,7 @@ summary(sfolMA,na.rm=T)
 ####   Sfol2006  ####
 #####################
 
-Sfol20060=read.csv("data/size/Sfol2006.csv",header=TRUE,sep=";",dec=",")
+Sfol20060=read.csv("data/size_data/Sfol2006.csv",header=TRUE,sep=";",dec=",")
 
 ##### Etude préliminaire
 par(mfrow=c(1,2))
@@ -68,7 +69,7 @@ Sfol6_lat=Sfol6[Sfol6$position=="L",]
 ####   Sfol2004  ####
 #####################
 
-Sfol20040=read.csv("data/size/Sfol2004.csv",header=TRUE,sep=";",dec=",")
+Sfol20040=read.csv("data/size_data/Sfol2004.csv",header=TRUE,sep=";",dec=",")
 
 ##### Etude préliminaire
 par(mfrow=c(1,2))
@@ -88,7 +89,7 @@ Sfol4_lat=Sfol4[Sfol4$position=="L",]
 ####     CogshallBMA    ####
 ############################
 
-BMA=read.csv("data/size/CogshallBMA.csv",header=TRUE,sep=";",dec=",")
+BMA=read.csv("data/size_data/CogshallBMA.csv",header=TRUE,sep=";",dec=",")
 
 ##### Etude préliminaire
 par(mfrow=c(1,2))
@@ -107,7 +108,7 @@ BMA_lat=BMA[BMA$position=="L",]
 ####   CogshallGFOND  ####
 ##########################
 
-GFOND=read.csv("data/size/CogshallGFOND.csv",header=TRUE,sep=";",dec=",")
+GFOND=read.csv("data/size_data/CogshallGFOND.csv",header=TRUE,sep=";",dec=",")
 
 ##### Etude préliminaire
 par(mfrow=c(1,2))
@@ -123,9 +124,9 @@ GFOND_lat=GFOND[GFOND$position=="L",]
 
 
 
-#################################################################################################
-#################################   Etude de la Surface foliaire   ##############################
-#################################################################################################
+################################################################################
+############   Etude de la Surface foliaire sans tenir compte de la position
+########################
 
 
 #####################
@@ -145,12 +146,12 @@ plot(ecdf(Sfol6_lat$Area),xlim=c(0,120))
 curve(pnorm(x,mean(Sfol6_lat$Area),sd(Sfol6_lat$Area)),add=TRUE,col=2)
 title("Surface foliaire 2006 ",outer=TRUE,line=-1)
 
-mean(Sfol6$Area)         # 44.36481
+mean(Sfol6$Area)              # 44.36481
 
 mean(Sfol6_apic$Area)         # 51.16059
-sd(Sfol6_apic$Area)         # 20.16725
-mean(Sfol6_lat$Area)         # 34.48969
-sd(Sfol6_lat$Area)         # 16.80647
+sd(Sfol6_apic$Area)           # 20.16725
+mean(Sfol6_lat$Area)          # 34.48969
+sd(Sfol6_lat$Area)            # 16.80647
 
 # Etude de l'effet de la position dur la surface (anova)
 Sfol6.aov=aov(Sfol6$Area ~ Sfol6$position)
@@ -186,9 +187,9 @@ Sfol4.aov=aov(Sfol4$Area ~ Sfol4$position)
 summary(Sfol4.aov)
 
 mean(Sfol4_apic$Area)         # 44.15534
-sd(Sfol4_apic$Area)         # 15.71035
-mean(Sfol4_lat$Area)         # 30.9968
-sd(Sfol4_lat$Area)         # 11.18507
+sd(Sfol4_apic$Area)           # 15.71035
+mean(Sfol4_lat$Area)          # 30.9968
+sd(Sfol4_lat$Area)            # 11.18507
 
 
 ###################
@@ -231,11 +232,11 @@ hist(BMA_lat$Area,freq=FALSE,xlim=c(0,150),breaks=seq(0,150,5))      ;curve(dnor
 plot(ecdf(BMA_lat$Area),xlim=c(0,150))
 curve(pnorm(x,mean(BMA_lat$Area),sd(BMA_lat$Area)),add=TRUE,col=2)
 
-mean(BMA$Area)         # 59.69813
+mean(BMA$Area)              # 59.69813
 mean(BMA_apic$Area)         # 71.87368
-mean(BMA_lat$Area)         # 45.818
-sd(BMA_apic$Area)         # 41.02476
-sd(BMA_lat$Area)         # 23.67394
+mean(BMA_lat$Area)          # 45.818
+sd(BMA_apic$Area)           # 41.02476
+sd(BMA_lat$Area)            # 23.67394
 title("Surface foliaire BMA ",outer=TRUE,line=-1)
 
 # Etude de l'effet de la position dur la surface (anova)
@@ -269,14 +270,14 @@ summary(GFOND.aov)
 
 
 mean(GFOND_apic$Area)         # 58.32553
-sd(GFOND_apic$Area)         # 19.34455
-mean(GFOND_lat$Area)         # 40.40541
-sd(GFOND_lat$Area)         # 19.32708
+sd(GFOND_apic$Area)           # 19.34455
+mean(GFOND_lat$Area)          # 40.40541
+sd(GFOND_lat$Area)            # 19.32708
 
 
-#################################################################################################
-#################################           Etude globale          ##############################
-#################################################################################################
+
+################################
+#######   Etude globale   ######
 
 par(mfrow=c(2,4))  #Sfol_glob
 hist(Sfol6_apic$Area,freq=FALSE,xlim=c(0,150),ylim=c(0,0.035),breaks=seq(0,150,8),xlab="Surface foliaire",main="Surface foliaire 6, UCs apicales");
@@ -339,15 +340,15 @@ mean(SFol_lat)      # 35.55546
 sd(SFol_lat)        # 17.31505
 
 ks.test(SFol,mean(SFol_apic),sd(SFol_apic))                    # 0.7786
-ks.test(SFol,mean(SFol_lat),sd(SFol_lat))                    # 0.8176
+ks.test(SFol,mean(SFol_lat),sd(SFol_lat))                      # 0.8176
 
 summary(aov(SFol ~ SFol_pos))
 
 
 
-#################################################################################################
-#################################  Surface fonction de la position ##############################
-#################################################################################################
+###########################################################################
+############   Etude de la Surface foliaire en fonction de la position 
+########################
 par(mfrow=c(1,4))
 plot(Sfol4$Area,col=Sfol4$UC);abline(h=17,col=2)
 plot(Sfol6$Area,col=Sfol6$UC);abline(h=20,col=2)
@@ -397,11 +398,11 @@ mean(pct_Sfol6$min2,na.rm=T)         ;mean(pct_Sfol6$min,na.rm=T)
 
 # Pourcentages de perte de surface moyen par base de donnée
 mean(c(pct_BMA$min2,pct_GFOND$min2,pct_Sfol4$min2,pct_Sfol6$min2),na.rm=T)  ;                      # 0.5206125
-	mean(c(pct_BMA$min,pct_GFOND$min,pct_Sfol4$min,pct_Sfol6$min),na.rm=T)                          # 0.3790924
+	mean(c(pct_BMA$min,pct_GFOND$min,pct_Sfol4$min,pct_Sfol6$min),na.rm=T)                           # 0.3790924
 mean(c(pct_BMA_apic$min2,pct_GFOND_apic$min2,pct_Sfol4_apic$min2,pct_Sfol6_apic$min2),na.rm=T)  ;  # 0.4994172 
-	mean(c(pct_BMA_apic$min,pct_GFOND_apic$min,pct_Sfol4_apic$min,pct_Sfol6_apic$min),na.rm=T)      # 0.3446696
+	mean(c(pct_BMA_apic$min,pct_GFOND_apic$min,pct_Sfol4_apic$min,pct_Sfol6_apic$min),na.rm=T)       # 0.3446696
 mean(c(pct_BMA_lat$min2,pct_GFOND_lat$min2,pct_Sfol4_lat$min2,pct_Sfol6_lat$min2),na.rm=T)  ;      # 0.53746
-	mean(c(pct_BMA_lat$min,pct_GFOND_lat$min,pct_Sfol4_lat$min,pct_Sfol6_lat$min),na.rm=T)          # 0.4064541
+	mean(c(pct_BMA_lat$min,pct_GFOND_lat$min,pct_Sfol4_lat$min,pct_Sfol6_lat$min),na.rm=T)           # 0.4064541
 
 
 # Etude des distributions de surface foliaire sur les plus grandes feuilles uniquement
@@ -463,9 +464,9 @@ shapiro.test(aov.apic);shapiro.test(aov.lat)
 kruskal.test(c(Feu_apic,Feu_lat)~rep(1:2, c(length(Feu_apic),length(Feu_lat)))  )
 
 
-#################################################################################################
-#############################     Conversion des aires en longueur    ###########################
-#################################################################################################
+#################################################
+############   Conversion des aires en longeur  
+########################
 
 # utilisation des résultats obtenus dans "allometries.R"
 Longueur=2.36*sqrt(Feu)
@@ -503,11 +504,11 @@ plot(ecdf(Long_apic),xlim=c(8,28),main="Fonction de répartition empirique")     
 
 mean(Long_apic)    # 17.06102
 sd(Long_apic)      # 2.689568
-mean(Long_lat)    # 14.87
-sd(Long_lat)      # 2.72
+mean(Long_lat)     # 14.87
+sd(Long_lat)       # 2.72
 
 # Tests de normalité
-ks.test(Long_apic,17.1,2.7)  # 0.9464
+ks.test(Long_apic,17.1,2.7)   # 0.9464
 ks.test(Long_lat,14.87,2.72)  # 0.9327
 shapiro.test(Long_apic)
 shapiro.test(Long_lat)

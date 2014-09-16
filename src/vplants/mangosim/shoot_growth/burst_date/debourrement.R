@@ -3,15 +3,19 @@
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/data/burst_date")
 
 
-# Fonction d'affichage des histogrammes
+# Fonction d'affichage des histogrammes 
+
+#UCs apicales en vert et latérales en blanc
 arbre_posit=function(data,numarbre){
 		hist(data[data$arbre==numarbre ,]$week,breaks=seq(0,52),xlab="semaine",ylab="Nombre de débourrement")
 		hist(data[data$arbre==numarbre & data$posit=="A" ,]$week,breaks=seq(0,52),add=T,col=3)}
 
+#UCs en vert et inflorescences en blanc (par semaine)
 arbre_nature=function(data,numarbre){
 	hist(data[data$arbre==numarbre & !is.na(data$week),]$week,breaks=seq(0,52),main=numarbre,xlab="semaine",ylab="Nombre de débourrement")
 	hist(data[data$arbre==numarbre & data$type=="V" & !is.na(data$week) ,]$week,breaks=seq(0,52),add=T,col=3)}
 
+#UCs en vert et inflorescences en blanc (par mois)
 arbre_nature_m=function(data,numarbre){
 	hist(data[data$arbre==numarbre  & !is.na(data$month),]$month,breaks=seq(0,20),main=numarbre,xlab="mois",ylab="Nombre de débourrement",xlim=c(0,12))
 	hist(data[data$arbre==numarbre & data$type=="V" & !is.na(data$month) ,]$month,breaks=seq(0,12),add=T,col=3)}
@@ -32,9 +36,55 @@ return( data)
 cly0=MEF("deb_cly.csv")
 cpea0=MEF("deb_cpea.csv")
 cirad0=MEF("deb_cirad.csv")
-cly7=cly0[cly0$arbre==7,];cly3=cly0[cly0$arbre==3,];cly20=cly0[cly0$arbre==20,];cly27=cly0[cly0$arbre==27,];cly16=cly0[cly0$arbre==16,];
+#cly7=cly0[cly0$arbre==7,];cly3=cly0[cly0$arbre==3,];cly20=cly0[cly0$arbre==20,];cly27=cly0[cly0$arbre==27,];cly16=cly0[cly0$arbre==16,];
 
 
+
+
+# Etude des distributions
+
+#UCs végétatives
+hist(cpea0[cpea0$type=="V" & !is.na(cpea0$week),]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+hist(cirad0[cirad0$type=="V" & !is.na(cirad0$week),]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+hist(cly0[cly0$type=="V" & !is.na(cly0$week),]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+
+
+
+
+# Inflorescences
+hist(cly0[cly0$type!="V" & !is.na(cly0$week),]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+  hist(cly0[cly0$type!="V" & !is.na(cly0$week) & cly0$year==2007,]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+  hist(cly0[cly0$type!="V" & !is.na(cly0$week)& cly0$year==2008,]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+
+hist(cpea0[cpea0$type!="V" & !is.na(cpea0$week),]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+  hist(cpea0[cpea0$type!="V" & !is.na(cpea0$week)& cpea0$year==2007,]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+  hist(cpea0[cpea0$type!="V" & !is.na(cpea0$week)& cpea0$year==2008,]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+
+hist(cirad0[cirad0$type!="V" & !is.na(cirad0$week),]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+  hist(cirad0[cirad0$type!="V" & !is.na(cirad0$week)& cirad0$year==2007,]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+  hist(cirad0[cirad0$type!="V" & !is.na(cirad0$week)& cirad0$year==2008,]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+  hist(cirad0[cirad0$type!="V" & !is.na(cirad0$week)& cirad0$year==2009,]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+
+# On ne garde que cpea et cirad, on regroupe les années
+tous_vergers=rbind(cpea0[,c(1:5,11:22)],cirad0[,c(1:5,15:26)])
+
+hist(tous_vergers[tous_vergers$type!="V" & !is.na(tous_vergers$week),]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+  hist(tous_vergers[tous_vergers$type!="V" & !is.na(tous_vergers$week)& tous_vergers$year==2007,]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+  hist(tous_vergers[tous_vergers$type!="V" & !is.na(tous_vergers$week)& tous_vergers$year==2008,]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+  hist(tous_vergers[tous_vergers$type!="V" & !is.na(tous_vergers$week)& tous_vergers$year==2009,]$week,breaks=seq(0,52),main="",xlab="semaine",ylab="Nombre de débourrement")
+
+# On essaye d'ajuster une loi de Poisson sur la distribution
+#x=0:52
+#semaine_debourrement=tous_vergers[tous_vergers$type!="V" & !is.na(tous_vergers$week),]$week
+#hist(semaine_debourrement,breaks=seq(0,52),freq=F,main="",xlab="semaine",ylab="Nombre de débourrement")
+#points(dpois(x,mean(semaine_debourrement)))
+
+# On essaye d'ajuster une loi binomiale sur la distribution
+semaine_debourrement=tous_vergers[tous_vergers$type!="V" & !is.na(tous_vergers$week),]$week
+hist(semaine_debourrement,breaks=seq(0,52),freq=F,main="",xlab="semaine",ylab="Nombre de débourrement")
+curve(dnorm(x,mean(semaine_debourrement),sd(semaine_debourrement)),type='l',col=2,add=T)
+
+rnorm(10,mean(semaine_debourrement),sd(semaine_debourrement))
 
 ############### Comparaison des découpages semaine / mois
 
@@ -120,6 +170,7 @@ dev.off()
 
 
 #data=cirad0
+
 ################################################################
 # On met toutes les années sur le même Histogramme les unes à la suite des autres
 #####
@@ -269,6 +320,7 @@ points( dbinom( 0:65,length(cir2009V$week[cir2009V$week>25]),mean(cir2009V$week[
 
 
 
+# Distribution sur les dates d'apparition des inflorescences
 
 
 

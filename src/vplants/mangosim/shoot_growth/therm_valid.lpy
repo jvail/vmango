@@ -200,29 +200,29 @@ def End():
   if (Vegetative==True):
     if Verger==1:
       df = DataFrame(data = infoUC, columns=['CodeUC','Days', 'TTS', 'Length','Pheno_stage','Date','SFol']) 
-      df.to_csv('simulation_results/croissUC_GF.csv',index=False,header=False)
+      df.to_csv('data/simulation_results/croissUC_GF.csv',index=False,header=False)
       #df = DataFrame(data = infoFeuInd, columns=['CodeUC','Days', 'TTS', 'Length','Date']) 
-      #df.to_csv('simulation_results/croissFeuInd_GF.csv',index=False,header=False) 
+      #df.to_csv('data/simulation_results/croissFeuInd_GF.csv',index=False,header=False) 
     elif Verger==2:
       df = DataFrame(data = infoUC, columns=['CodeUC','Days', 'TTS', 'Length','Pheno_stage','Date','SFol']) 
-      df.to_csv('simulation_results/croissUC_BP.csv',index=False,header=False)
+      df.to_csv('data/simulation_results/croissUC_BP.csv',index=False,header=False)
       #df = DataFrame(data = infoFeuInd, columns=['CodeUC','Days', 'TTS', 'Length','Date']) 
-      #df.to_csv('simulation_results/croissFeuInd_BP.csv',index=False,header=False) 
+      #df.to_csv('data/simulation_results/croissFeuInd_BP.csv',index=False,header=False) 
     else:
       df = DataFrame(data = infoUC, columns=['CodeUC','Days', 'TTS', 'Length','Pheno_stage','Date','SFol']) 
-      df.to_csv('simulation_results/croissUC_BM.csv',index=False,header=False)
+      df.to_csv('data/simulation_results/croissUC_BM.csv',index=False,header=False)
       #df = DataFrame(data = infoFeuInd, columns=['CodeUC','Days', 'TTS', 'Length','Date']) 
-      #df.to_csv('simulation_results/croissFeuInd_BM.csv',index=False,header=False) 
+      #df.to_csv('data/simulation_results/croissFeuInd_BM.csv',index=False,header=False) 
   else:
     if Verger==1:
       df = DataFrame(data = infoUC, columns=['CodeUC','Days', 'TTS', 'Length','Pheno_stage','Date']) 
-      df.to_csv('simulation_results/croissInflo_GF.csv',index=False,header=False) 
+      df.to_csv('data/simulation_results/croissInflo_GF.csv',index=False,header=False) 
     elif Verger==2:
       df = DataFrame(data = infoUC, columns=['CodeUC','Days', 'TTS', 'Length','Pheno_stage','Date']) 
-      df.to_csv('simulation_results/croissInflo_BP.csv',index=False,header=False) 
+      df.to_csv('data/simulation_results/croissInflo_BP.csv',index=False,header=False) 
     else:
       df = DataFrame(data = infoUC, columns=['CodeUC','Days', 'TTS', 'Length','Pheno_stage','Date']) 
-      df.to_csv('simulation_results/croissInflo_BM.csv',index=False,header=False)
+      df.to_csv('data/simulation_results/croissInflo_BM.csv',index=False,header=False)
     
 
 def StartEach():

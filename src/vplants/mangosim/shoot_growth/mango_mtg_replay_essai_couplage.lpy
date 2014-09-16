@@ -98,6 +98,11 @@ def Start():
   global current_cycle
   current_date = first_date
   current_cycle = get_cycle(current_date)
+  global GUs_informations
+  Leafs_informations=[]
+  Leafs_informations.append(('Date','Surface_foliaire'))
+  GUs_informations=[]
+  GUs_informations.append(('CodeUC','Nature','Days', 'TTS', 'Length','Pheno_stage','Date','SFol'))
   backward()
 
 def StartEach():
@@ -107,6 +112,8 @@ def StartEach():
   current_date += delta_date
   global current_cycle
   current_cycle = get_cycle(current_date)
+  global leafs_area
+  leafs_area=0
   
   # temperature calcul (to add to thermal time sum for growth)
   global temperature
@@ -117,6 +124,16 @@ def StartEach():
   global delta_temperature_Inflo 
   delta_temperature_Inflo=max(0,temperature[temp_index]-base_temperature_Inflo)    # Inflorescences
 
+def EndEech():
+  global leafs_area
+  Leafs_informations.append((current_date,leafs_area))
+  
+  
+def End():
+  df = DataFrame(data = GUs_informations, columns=['CodeUC','Nature','Days', 'TTS', 'Length','Pheno_stage','Date','SFol']) 
+  df.to_csv('data/simulation_results/tree_growth.csv',index=False,header=False)
+  df = DataFrame(data = Leafs_informations, columns=['Date','SFol']) 
+  df.to_csv('data/simulation_results/tree_leaf_area.csv',index=False,header=False)
 
 # Function who return phenological stage and advancement in this stage (between 0 and 1)
 def normalized_pheno_stage(cumtemp,type):
@@ -124,7 +141,7 @@ def normalized_pheno_stage(cumtemp,type):
     pheno_change_temp=pheno_change_temp_GU
   else:
     pheno_change_temp=pheno_change_temp_Inflo
-  # We are lookinf for the right phenological stage
+  # We are looking for the right phenological stage
   pheno_stage=None
   if cumtemp > pheno_change_temp[-2]:       # we control if the le thermal time sum is superior to last phenological change temperature
       pheno_stage=Nb_stades_pheno-1         # if yes, it's last phenological stage
@@ -154,12 +171,12 @@ def GU_growth(p):
     [pheno_advct_stage,p.pheno_stage]=normalized_pheno_stage(p.pheno_TTS,"GU")  
       
     # Thermal time sum dor growth
-    p.cumsum_temp+=delta_temperature_GU*daystep    
+    p.cumsum_temp+=max(0,delta_temperature_GU+p.delta_dj)*daystep    
     p.cumsum_temp_Leaf+=delta_temperature_Leaf*daystep   
 
     #Thermal time sum for development
     global temperature      
-    delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_GU[p.pheno_stage])
+    delta_temperature_pheno=max(0,temperature[temp_index]+p.delta_dj-pheno_base_temp_GU[p.pheno_stage])
     p.pheno_TTS+= delta_temperature_pheno*daystep    
     p.pheno_advct=pheno_advct_stage
     
@@ -233,8 +250,18 @@ nbdescendants = estimate_nb_descendants(mtg,first_uc)
 module GU, Inflorescence: scale = 1
 module A, B, GUEnd, Internode, Leaf,Inflorescence_bud : scale = 2
 
+#def generate_bloom_dates(date):
+#  week=gauss(29.8,2.4)                 #we take the week of bloom in a gaussian distribution
+#  yday=int(week)*7+randint(1,7)         #we trasform the week into a year day
+#  print yday, , 
+#  bloom_date=datetime(date.year,  )
+#  return [bloom_date]
+  
+  
+  
+  
 def generate_parameters_GU(current,length,burst_date, nbdescendants):
-  # On effectue les tirages pour la simulation
+  # We define parameters for simulation
   if mm.get_nature_gu(mtg, current)==1: #we control if the GU is Vegetative or reproductive
     cum=delta_temperature_GU*daystep
     cumL=delta_temperature_Leaf*daystep
@@ -316,7 +343,8 @@ def generate_parameters_GU(current,length,burst_date, nbdescendants):
                        pheno_advct=pheno_advct_stage,
                        pheno_TTS=pheno_TTS,
                        age=daystep-1,
-                       diam=0)
+                       diam=0,
+                       delta_dj=gauss(0,3))
   return param
 
 
@@ -386,7 +414,8 @@ def generate_elements(current, burst_date = None, length=None, nbdescendants = 1
                                              pheno_advct=0,
                                              pheno_TTS=0,
                                              mtgid=inflo[0],
-                                             bloom_dates=mm.get_bloom_dates(mtg,inflo[0]),
+                                             bloom_dates=[current_date],#generate_bloom_dates(current_date),#mm.get_bloom_dates(mtg,inflo[0]),
+                                             delta_dj=gauss(0,3),
                                              deb=0,ind_deb=0)) ]
       ch = apical_child[0]
       if mm.get_unit_cycle(mtg, ch) == 3:  nproduce B(ch)
@@ -405,7 +434,8 @@ def generate_elements(current, burst_date = None, length=None, nbdescendants = 1
                                              pheno_advct=0,
                                              pheno_TTS=0,
                                              mtgid=inflo[0],
-                                             bloom_dates=mm.get_bloom_dates(mtg,inflo[0]),
+                                             bloom_dates=[current_date],#generate_bloom_dates(current_date),#mm.get_bloom_dates(mtg,inflo[0]),
+                                             delta_dj=gauss(0,3),
                                              deb=0,ind_deb=0))
 module G
 module Flower
@@ -474,10 +504,11 @@ GU(p) >> x([ GU(pl) ]) :
       produce GU(p) [ %
     else:
       GU_growth(p)
+      GUs_informations.append((p.mtgid,p.nature,p.age, p.cumsum_temp, p.length,p.pheno_stage,current_date))
       produce GU(p)
 
-
-
+    
+    
 GU(p) :
   is_base = (p.burst_date is None)
   if not is_base:
@@ -504,6 +535,8 @@ Internode(param, p):
 
 Leaf(param, p): 
   param.size = GrowthCurve(p.cumsum_temp_Leaf,param.final_size,"Leaf",param.final_size,0)
+  global leafs_area
+  leafs_area+=0.18*(param.size**2)
   produce Leaf(param,p) 
   
   
@@ -625,8 +658,16 @@ GU(p):
         length=(p.final_size_GU-p.LEPF)*exp(-2.64*i/float(p.NbInternode-1))/totintlength
         nproduce  F(length, 0.2) /(phyllotaxy) [ &(0) fLeaf(ParameterSet(position=i/float(p.NbInternode-1),size=p.final_size_Leaf*leaflength(i/float(p.NbInternode-1)) )) ]
   else:
-    scale = 1.5
-    produce ,(1) _(p.radius) nF(p.length, p.length/20 , p.radius) 
+    if mtg.label(p.mtgid)=="M":
+      nproduce _(0.2) F(p.LEPF,0.2) /(phyllotaxy) [ &(0) fLeaf(ParameterSet(position=0,size=p.final_size_Leaf*leaflength(0))) ]
+      totintlength=0
+      for j in xrange(1,p.NbInternode-1): totintlength+=exp(-2.64*j/float(p.NbInternode-1))
+      for i in xrange(1,p.NbInternode-1):
+        length=(p.final_size_GU-p.LEPF)*exp(-2.64*i/float(p.NbInternode-1))/totintlength
+        nproduce  F(length, 0.2) /(phyllotaxy) [ &(0) fLeaf(ParameterSet(position=i/float(p.NbInternode-1),size=p.final_size_Leaf*leaflength(i/float(p.NbInternode-1)) )) ] 
+    else:
+      scale = 1.5
+      produce ,(1) _(p.radius) nF(p.length, p.length/20 , p.radius) 
       
 Internode(param,p):
   is_base = (p.burst_date is None)

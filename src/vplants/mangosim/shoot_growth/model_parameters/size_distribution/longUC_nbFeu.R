@@ -1,21 +1,20 @@
-# Etude de la taille des organes
-# Ici on cherche à connaître :
-#       - les distributions suivies par le nombre de feuilles / la longueur des UCs
-#       - la relation entre le nombre de feuilles / la longueur des UCs
-# 2004 et 2006.
-
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
 
+# Etude de la taille des organes :
+#                           - distribution sur le nombre de feuilles
+#                           - distributions des longueurs d'UCs
+#                           - Relation nombre de feuilles / longueur UC
 
-#################################################################################################################################
-##########################################     Récupération et mise en forme des données     ####################################
-#################################################################################################################################
+
+###########################################################################
+#######################     Récupération et mise en forme des données     
+##################################
 
 ####################
 ####  Tayllamin ####
 ####################
 
-Tayllamin0=read.csv("data/size/FTayllamin.csv",header=TRUE,sep=";",dec=",",
+Tayllamin0=read.csv("data/size_data/FTayllamin.csv",header=TRUE,sep=";",dec=",",
 			   col.names=c("Variete","CodeArbre","Branche","NumArbre","NbRamFlo","NbUC","NomAxePo","TypAxePo","NbAxePo",
 					   "NumNdRam","AxePort","TypoPort","Long","DB","DS","NbFeu","NbFeuChut","NbNoeuds",
 					   "Conicite","Elancement"))
@@ -86,7 +85,7 @@ TA_apic_port_lat=TA_apic[TA_apic$TypAxePo=="R",]  ; TA_lat_port_lat=TA_lat[TA_la
 ####   MA05  ####
 #################
 
-MA05_0=read.csv("data/size/MA05.csv",header=TRUE,sep=";",dec=",")
+MA05_0=read.csv("data/_data/MA05.csv",header=TRUE,sep=";",dec=",")
 
 ##### Suppression des données aberrantes
 par(mfrow=c(1,2))
@@ -109,7 +108,7 @@ MA_apic=MA[MA$position=="A",];MA_lat=MA[MA$position=="L",];
 ####   inference  ####
 ######################
 
-inference0=read.csv("data/size/inference.csv",header=TRUE,sep=";",dec=",")
+inference0=read.csv("data/size_data/inference.csv",header=TRUE,sep=";",dec=",")
 
 ##### Suppression des données aberrantes
 par(mfrow=c(1,2))
@@ -134,9 +133,9 @@ inf_apic=inf[inf$position=="A",];inf_lat=inf[inf$position=="L",];
 
 
 
-#################################################################################################################################
-##########################################   Etude de la distribution du nombre de feuilles  ####################################
-#################################################################################################################################
+########################################################################
+###################   Etude de la distribution du nombre de feuilles 
+############################
 
 ####################
 ####  Tayllamin ####
@@ -367,9 +366,9 @@ NbFeu_aov_inf=aov(inf_aov$NbFeu ~ inf_aov$position)
 summary(NbFeu_aov_inf)
 
 
-#################################################################################################################################
-##########################################   Etude de la distribution de la longueur des UCs  ###################################
-#################################################################################################################################
+#######################################################################
+#################   Etude de la distribution de la longueur des UCs 
+##############################
 
 ####################
 ####  Tayllamin ####
@@ -471,11 +470,10 @@ sd(TA_lat_port_lat$Long)           # 5.798276
 hist(port_apic$Long,main="UCs porteuses en position apicale",freq=FALSE)
 hist(port_lat$Long,main="UCs porteuses en position latérale",freq=FALSE)
 
-#############################
-####### Analyse de variance
-###########
 
-################# Effet position UC apicale / latérale
+################ Analyses de variance
+
+######## Effet position UC apicale / latérale
 aov.posUC=aov(TA_aov$Long ~ TA_aov$NumNdRam)
 
 # Test d'homoscédasticité
@@ -495,7 +493,7 @@ ks.test(aov.posUC$res[TA_aov$NumNdRam==1],"pnorm",0,sd(aov.posUC$res))         #
 kruskal.test(TA_aov$Long ~ TA_aov$NumNdRam)           #Kruskal-Wallis chi-squared = 73.3158, df = 1, p-value < 2.2e-16
 
 
-################# Effet position UC mère apicale / latérale
+########## Effet position UC mère apicale / latérale
 #install.packages('Rcmdr')
 library('Rcmdr')
 Long_aov_apic=aov(TA_aov_apic$Long ~ TA_aov_apic$TypAxePo-1)
@@ -551,26 +549,23 @@ plot(ecdf(TA_lat$Long),main="UC latérale")
 #title("Longueur d'une UC",outer=TRUE,line=-1)
 
 
-# Test d'adéquation à la distribution
-#par(mfrow=c(1,3))
-#qqnorm(TA_apic_port_apic$Long,main="UCs apicales de mère apicale");qqline(TA_apic_port_apic$Long,col=2)
-#qqnorm(TA_apic_port_lat$Long,main="UCs apicales de mère latérale");qqline(TA_apic_port_lat$Long,col=2)
-#qqnorm(TA_lat$Long,main="UCs latérales");qqline(TA_lat$Long,col=2)
+# Tests d'adéquation à la distribution
+par(mfrow=c(1,3))
+qqnorm(TA_apic_port_apic$Long,main="UCs apicales de mère apicale");qqline(TA_apic_port_apic$Long,col=2)
+qqnorm(TA_apic_port_lat$Long,main="UCs apicales de mère latérale");qqline(TA_apic_port_lat$Long,col=2)
+qqnorm(TA_lat$Long,main="UCs latérales");qqline(TA_lat$Long,col=2)
 #title("Droite de Henry, longueur des UCs ",outer=TRUE,line=-1)
-
-
 
 ks.test(TA_apic_port_apic$Long,"pnorm",mean(TA_apic_port_apic$Long),sd(TA_apic_port_apic$Long))   # 0.08007
 ks.test(TA_apic_port_lat$Long,"pnorm",mean(TA_apic_port_lat$Long),sd(TA_apic_port_lat$Long))      # 0.5524
 ks.test(Long_lat,"pnorm",mean(TA_lat_port_apic$Long),sd(TA_lat_port_apic$Long))                   # 0.5224
 
-#### Tests sur les distributions 
-arb_aov_long=aov(TA_aov$Long ~ TA_aov$CodeArbre*TA_aov$NumNdRam)
-summary(arb_aov_long)
-
-par(mfrow=c(1,2))
-TukeyHSD(arb_aov_long)
-plot(TukeyHSD(arb_aov_long))
+#### Tests effet arbre
+#arb_aov_long=aov(TA_aov$Long ~ TA_aov$CodeArbre*TA_aov$NumNdRam)
+#summary(arb_aov_long)
+#par(mfrow=c(1,2))
+#TukeyHSD(arb_aov_long)
+#plot(TukeyHSD(arb_aov_long))
 
 
 #################
@@ -648,9 +643,9 @@ qqnorm(Long_aov_inf$res)
 g_apic = factor(rep(1:2, c(length(inf_apic$Long),length(inf_lat$Long))), labels = c("apic","lat"))
 leveneTest(c(inf_apic$Long,inf_lat$Long),g_apic)
 
-#################################################################################################################################
-###########################     Correspondance des différents bases, Fusion, Estimation des lois    ##########################
-#################################################################################################################################
+###################################################################################
+#############  Correspondance des différents bases, Fusion, Estimation des lois  
+##############################
 
 ##### Test  de correspondance des différents bases 
 
@@ -761,9 +756,9 @@ Long_lat=c(inf_lat$Long,TA_lat$Long)
 
 
 
-#################################################################################################################################
-##########################   Etude de la corrélation entre le nombre de feuilles et la taille de l'UC  ##########################
-#################################################################################################################################
+#########################################################################################
+###########   Etude de la corrélation entre le nombre de feuilles et la taille de l'UC  
+#################################
 
 ####################
 ####  Tayllamin ####
