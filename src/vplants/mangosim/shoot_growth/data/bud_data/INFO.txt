@@ -1,0 +1,16 @@
+Ce dossier contient les bases de données permettants d'initialiser les bourgeons pour la validation.
+
+Fichiers excel :
+	- Bourgeons : fichier regroupant tous les bourgeons végétatifs
+
+	- bourgeons_BM : bourgeons végétatifs du verger Bassin Martin
+	- bourgeons_BP : bourgeons végétatifs du verger Bassin Plat
+	- bourgeons_GF : bourgeons végétatifs du verger Grand Fond
+
+	- bourgeons_F_BM : bourgeons reproductifs du verger Bassin Martin
+	- bourgeons_F_BP : bourgeons reproductifs du verger Bassin Plat
+	- bourgeons_F_GF : bourgeons reproductifs du verger Grand Fond
+
+	- Leaf_BM : données pour l'initialisation des feuilles sur le verger de Bassin Martin
+	- Leaf_BP : données pour l'initialisation des feuilles sur le verger de Bassin Plat
+	- Leaf_GF : données pour l'initialisation des feuilles sur le verger de Grans Fond
