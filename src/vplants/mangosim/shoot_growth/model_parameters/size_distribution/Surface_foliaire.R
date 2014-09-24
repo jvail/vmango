@@ -1,6 +1,6 @@
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
 
-# Etude de la taille des feuilles en donction de leur position le long de l'UC
+# Etude de la taille des feuilles en fonction de leur position le long de l'UC
 
 
 

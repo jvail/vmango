@@ -1,0 +1,24 @@
+Ce dossier contient les scripts R pour déterminer les distributions de longueur, surface, etc des organes du manguier.
+
+Scripts R :
+	- allometries : - Base allometries :
+                             - Feuilles : longueur / surface
+                             - Feuilles : largeur / surface
+                             - Feuilles : longueur / largeur
+             		- Base MA05 :
+                             - UCs : diamètre / longueur
+                             - UCs : diamètre / nombre de feuilles
+	- inflorescences : information sur a taille des inflorescences
+                                             - Distributions des longeurs
+                                             - Relation longueur / diamètre
+                                             - Distribution des diamètres
+	- LEPF_entrenoeuds : 
+			  - Longueur de l'espace pré-feuille (LEPF)
+                                    - Relation longueur UC / LEPF
+                          - Relation longueur entrenoeuds / position entrenoeuds
+	- longUC_nbFeu : Etude de la taille des organes :
+                           - distribution sur le nombre de feuilles
+                           - distributions des longueurs d'UCs
+                           - Relation nombre de feuilles / longueur UC
+	- Surface_foliaire : Etude de la taille des feuilles en donction de leur position le long de l'UC
+

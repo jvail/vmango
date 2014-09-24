@@ -1,10 +1,10 @@
 # Etude du point d'inflexion
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/size_distribution")
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/data")
 
 
 # Données ajustées par Anaëlle sur les inflos
-inflo0=read.csv("paramAJUSTinfloglob.csv",header=TRUE,sep=";",dec=".")
+inflo0=read.csv("growth_data/paramAJUSTinfloglob.csv",header=TRUE,sep=";",dec=".")
 inflo=inflo0[inflo0$var=="cog",]
 
 # calcul de la somme de température moyenne pour l'élongation de l'UC de Cogshall avec TB = 11.12031°C
@@ -27,7 +27,7 @@ plot(STInflocog,inflo$X00)
 
 
 # Données ajustées par Anaëlle sur les UCs
-UC0=read.csv("paramAJUSTUCglob.csv",header=TRUE,sep=";",dec=".")
+UC0=read.csv("growth_data/paramAJUSTUCglob.csv",header=TRUE,sep=";",dec=".")
 UC=UC0[UC0$var=="cog",]
 
 # calcul de la somme de température moyenne pour l'élongation de l'UC de Cogshall avec TB = 11.12031°C
@@ -76,7 +76,7 @@ title("Répartition de la date du point d'inflexion estimé pour les inflorescence
 
 
 # Il n'y a pas d'influence visible de la position de l'UC, on cherche donc à voir si il existe une relation avec la date de débourrement
-paramInflo0=read.csv("bourgeons_F.csv",header=TRUE,sep=";",dec=".")
+paramInflo0=read.csv("bud_data/bourgeons_F.csv",header=TRUE,sep=";",dec=".")
 paramInflo=paramInflo0[paramInflo0$stadeInflo=="B2" | paramInflo0$stadeInflo=="B2/C",]
 paramInflo$date=strptime(as.character(paramInflo$date),"%d/%m/%Y %H:%M")
 
@@ -111,7 +111,7 @@ legend("bottomright",c("Bassin Plat","Bassin Martin","Grand Fond"),col=c("salmon
 # Etude par rapport à la date de fin de croissance
 
 # Il n'y a pas d'influence visible de la position de l'UC, on cherche donc à voir si il existe une relation avec la date de débourrement
-paramInf0=read.csv("bourgeons_F.csv",header=TRUE,sep=";",dec=".")
+paramInf0=read.csv("bud_data/bourgeons_F.csv",header=TRUE,sep=";",dec=".")
 paramInf=paramInf0[paramInf0$stadeInflo!="B2" & paramInf0$stadeInf!="B2/C",]
 paramInf$date=strptime(as.character(paramInf$date),"%d/%m/%Y %H:%M")
 
@@ -120,53 +120,6 @@ points(paramInf$date[paramInf$Verger=="BP"],paramInf$T_ip[paramInf$Verger=="BP"]
 points(paramInf$date[paramInf$Verger=="BM"],paramInf$T_ip[paramInf$Verger=="BM"],pch=15,col="cyan")
 points(paramInf$date[paramInf$Verger=="GF"],paramInf$T_ip[paramInf$Verger=="GF"],pch=15,col="pink")
 legend("topright",c("Bassin Plat","Bassin Martin","Grand Fond"),col=c("salmon","cyan","pink"),pch=15)
-
-
-
-
-
-
-
-#### Recherche de la vitesse maximale
-
-# On récupère les infos de la base de croissance
-CroissInflo=read.csv("BaseDeCroissanceInflo.csv",sep=";",dec=",")
-CroissInflo$date=strptime(as.character(CroissInflo$date),"%d/%m/%y %H:%M")
-codeInflos=unique(CroissInflo$codeUC)               # Liste des inflorescences
-
-# On fait une boucle sur chaque inflorescence pour calculer les vitesses de croissance
-croiss=c();t_demi=list()
-for (i in 1:length(codeInflos)){
-	data=CroissInflo[CroissInflo$codeUC==codeInflos[i],]
-	n=length(data$longueurInflo)
-	vitesse=(data$longueurInflo[2:n]-data$longueurInflo[1:(n-1)])/as.numeric(data$date[2:n]-data$date[1:(n-1)])
-	vitesse[is.na(vitesse)]=0
-	date_max=data$date[which(vitesse==max(vitesse))+1]
-	t_demi=c(t_demi,list(date_max))
-	length_max=data$longueurInflo[data$date==date_max]
-	croiss=c(croiss,length_max/max(data$longueurInflo,na.rm=T))
-}
-
-
-# On récupère lesinfos de la base de croissance
-CroissUC=read.csv("BaseDeCroissanceVeg.csv",sep=";",dec=",")
-CroissUC$date=strptime(as.character(CroissUC$date),"%d/%m/%y %H:%M")
-codeUCs=unique(CroissUC$codeUC)               # Liste des inflorescences
-
-# On fait une boucle sur chaque inflorescence pour calculer les vitesses de croissance
-croissUC=c();t_demiUC=list()
-for (i in 1:length(codeUCs)){
-	data=CroissUC[CroissUC$codeUC==codeUCs[i],]
-	n=length(data$longueurUC)
-	vitesse=(data$longueurUC[2:n]-data$longueurUC[1:(n-1)])/as.numeric(data$date[2:n]-data$date[1:(n-1)])
-	vitesse[is.na(vitesse)]=0
-	date_max=data$date[which(vitesse==max(vitesse))+1]
-	t_demiUC=c(t_demiUC,list(date_max))
-	length_max=data$longueurUC[data$date==date_max]
-	croissUC=c(croissUC,length_max/max(data$longueurUC,na.rm=T))
-}
-
-
 
 
 
