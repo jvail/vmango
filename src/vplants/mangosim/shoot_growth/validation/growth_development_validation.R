@@ -1,7 +1,8 @@
+setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
+
 # Suivi de croissance des UCs végétatives
 # But : Regrouper les deux bases (BasedeCroissanceVeg et paramAJUSTUCglob) afin de comparer aux résultats du modèle
 
-setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
 
 
 ################# Définition de fonctions
@@ -887,12 +888,19 @@ for (i in 1:length(UCs)){res=valid_pheno_inflo(inflo2,simBM_inflo,UCs[i])}
 
 
 
+# Comparaison des vitesses de croissance à différentes températures
+# On prend 2 UCs de même taille chacune ayant grandit dans un contexte thermique différent
+UC1=data2[data2$codeUC=="2-BM-cog-V-F2-1-A" & data2$stadeUC>2,]
+UC2=data2[data2$codeUC=="2-GF-cog-V-A39-1-A",]
 
 
-
-
-
-
+# On va tracer leur courbe de croissance pour voir si il y en a une qui croit plus vite que l'autre
+par(mfrow=c(1,1))
+plot(UC1$date$yday-min(UC1$date$yday),UC1$longueurUC,type='l',col=3,xlim=c(0,20),ylab="Longueur UC",xlab="Nombre de jours de croissance")
+points(UC2$date$yday-min(UC2$date$yday),UC2$longueurUC,type='l',col=4)
+legend("bottomright",c("Bassin Martin, 24.21°C","Grand Fond, 28.18°C"),col=c(3,4),lty=1)
+mean(UC1$temperature)
+mean(UC2$temperature)
 
 
 
