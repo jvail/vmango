@@ -1,0 +1,15 @@
+Ce dossier contient toutes les sorties des simulations du modèle sous L-Py
+
+Fichiers .csv : Les fichiers sont de la forme croiss+"organe étudié"+_+"verger
+
+Les organes sont :
+	- FeuInd : simulation de feuilles une par une
+	- Inflo : simulation des inflorescences
+	- UC : simulation des UCs et de leur surface foliaire
+
+Les vergers sont :
+	- BP : Bassin Plat
+	- GF : Grand Fond
+	- BM : Bassin Martin
+
+Dossier temperature_effects : ce dossier contient plusieurs fichiers .csv issus de la simulation d'UCs et d'inflorescences dans différents contextes thermique
