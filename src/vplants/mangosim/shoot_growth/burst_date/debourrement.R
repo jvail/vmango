@@ -324,9 +324,29 @@ points( dbinom( 0:65,length(cir2009V$week[cir2009V$week>25]),mean(cir2009V$week[
 
 
 
+# Exemple passage mois / semaine
+par(mfrow=c(2,1))
+arbre_nature_year(ciradV,14);arbre_nature_year_m(ciradV,14);
+
+data=ciradV[ciradV$arbre==14 ,]
+annee=c(2008,2009)
+week=c();type=c()
+for (i in 1:length(annee)){week=c(week,data[data$year==annee[i],]$week+(i-1)*52);type=c(type,data[data$year==annee[i],]$type)}
+  hist(week,xlim=c(0,100),breaks=seq(0,100),main="Verger cirad, arbre 14",xlab="semaine",ylab="Nombre de débourrement")#,ylim=c(0,210))
+
+month=c();type=c()
+for (i in 1:length(annee)){month=c(month,data[data$year==annee[i],]$month+(i-1)*12);type=c(type,data[data$year==annee[i],]$type)}
+hist(month,xlim=c(0,22),breaks=seq(0,22),main="Verger cirad, arbre 14",xlab="mois",ylab="Nombre de débourrement")#,ylim=c(0,350))
 
 
 
+data=ciradF[ciradF$arbre==2 ,]
+annee=c(2009)
+week=c();type=c()
+for (i in 1:length(annee)){week=c(week,data[data$year==annee[i],]$week+(i-1)*52);type=c(type,data[data$year==annee[i],]$type)}
+hist(week,breaks=seq(0,52),main="Verger cirad, arbre 2",xlab="semaine",ylab="Nombre de débourrement")#,ylim=c(0,210))
 
-
+month=c();type=c()
+for (i in 1:length(annee)){month=c(month,data[data$year==annee[i],]$month+(i-1)*12);type=c(type,data[data$year==annee[i],]$type)}
+hist(month,breaks=seq(0,12),main="Verger cirad, arbre 2",xlab="mois",ylab="Nombre de débourrement")#,ylim=c(0,350))
 

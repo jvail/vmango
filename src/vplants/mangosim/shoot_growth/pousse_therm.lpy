@@ -482,7 +482,7 @@ Inflo(param): # Mise a jour des parametres et production de l'inflorescence
 
 
 interpretation:
-maximum depth:3
+maximum depth:4
 
 C(type):
   global totlength
@@ -572,14 +572,17 @@ fleur(pos,age,l,pheno,pheno_advct):
         
         for d in xrange (0,3):
           if pheno>=2:
-            if ind_col<0.5:
+            if ind_col<0.5:          
               nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno],(pheno_advct+(13-k)/10.)/2.) @O(min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/10. )]
             else:
               nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],ind_col) @O(ind_col)]
           else:
             nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],ind_col) @O(ind_col)]
            
-#          nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],(pheno_advct+(13-k)/10.)/2.) @O(min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/10. )]
+#          nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],(pheno_advct+(13-k)/10.)/2.) @O(min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/10. )]   
+
+petale(angle, longueur):
+  produce  [&(-angle) Sweep(leafpath,leafsection, longueur,0.01, 0.5, leafdiam)]
 
 consider: GU
 
@@ -652,11 +655,14 @@ def __initialiseContext__(context):
 	Color_17 = pgl.Material("Color_17" , ambient = (255,255,0) , diffuse = 1 , specular = (99,99,99) , )
 	Color_17.name = "Color_17"
 	context.turtle.setMaterial(17,Color_17)
+	Color_18 = pgl.Material("Color_18" , ambient = (255,170,0) , diffuse = 0.705882 , )
+	Color_18.name = "Color_18"
+	context.turtle.setMaterial(18,Color_18)
 	Color_20 = pgl.Material("Color_20" , ambient = (0,0,0) , diffuse = 14.5455 , )
 	Color_20.name = "Color_20"
 	context.turtle.setMaterial(20,Color_20)
 	context.animation_timestep = 0.0
-	scalars = [('DAILY', 'Bool', False), ('mean_temperature', 'Float', 25.45, 20.0, 40.0, 2), ('D_EF_G', 'Bool', True), ('SEED', 'Integer', 86, 0, 100), ('Vegetative', 'Bool', False)]
+	scalars = [('DAILY', 'Bool', False), ('mean_temperature', 'Float', 35.91, 20.0, 40.0, 2), ('D_EF_G', 'Bool', True), ('SEED', 'Integer', 86, 0, 100), ('Vegetative', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
@@ -751,10 +757,14 @@ def __initialiseContext__(context):
 	    pgl.Point3Array([(-0.416733, 0.0128104, 1),(0.2343, -0.076231, 1),(0.507411, -0.330906, 1),(0.662132, -0.814102, 1)]) , 
 	    )
 	axis5.name = "axis5"
-	panel_1 = ({'active': True, 'visible': True, 'name': 'Panel 1'},[('Curve2D',petioleCurve),('Function',leafdiam),('Function',leaflength),('Function',leafwidth),('Curve2D',leafsection),('Curve2D',leafpath),('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5)])
+	petalecurve = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(0.11039, -0.307359, 1),(0.248918, -0.177489, 1),(0.5, 0, 1)]) , 
+	    )
+	petalecurve.name = "petalecurve"
+	panel_1 = ({'active': True, 'visible': True, 'name': 'petale_area'},[('Curve2D',petioleCurve),('Function',leafdiam),('Function',leaflength),('Function',leafwidth),('Curve2D',leafsection),('Curve2D',leafpath),('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5),('Curve2D',petalecurve)])
 	parameterset = [panel_0,panel_1,]
 	context["__functions__"] = [('leafdiam',leafdiam),('leaflength',leaflength),('leafwidth',leafwidth),('leafdiam',leafdiam),('leaflength',leaflength),('leafwidth',leafwidth),]
-	context["__curves__"] = [('petioleCurve',petioleCurve),('leafsection',leafsection),('leafpath',leafpath),('axis1',axis1),('axis2',axis2),('axis3',axis3),('axis4',axis4),('axis5',axis5),('petioleCurve',petioleCurve),('leafsection',leafsection),('leafpath',leafpath),('axis1',axis1),('axis2',axis2),('axis3',axis3),('axis4',axis4),('axis5',axis5),]
+	context["__curves__"] = [('petioleCurve',petioleCurve),('leafsection',leafsection),('leafpath',leafpath),('axis1',axis1),('axis2',axis2),('axis3',axis3),('axis4',axis4),('axis5',axis5),('petioleCurve',petioleCurve),('leafsection',leafsection),('leafpath',leafpath),('axis1',axis1),('axis2',axis2),('axis3',axis3),('axis4',axis4),('axis5',axis5),('petalecurve',petalecurve),]
 	context["__parameterset__"] = parameterset
 	context["petioleCurve"] = petioleCurve
 	context["leafdiam"] = pgl.QuantisedFunction(leafdiam)
@@ -778,3 +788,4 @@ def __initialiseContext__(context):
 	context["axis3"] = axis3
 	context["axis4"] = axis4
 	context["axis5"] = axis5
+	context["petalecurve"] = petalecurve

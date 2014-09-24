@@ -99,6 +99,7 @@ def Start():
   current_date = first_date
   current_cycle = get_cycle(current_date)
   global GUs_informations
+  global Leafs_informations
   Leafs_informations=[]
   Leafs_informations.append(('Date','Surface_foliaire'))
   GUs_informations=[]
@@ -124,9 +125,12 @@ def StartEach():
   global delta_temperature_Inflo 
   delta_temperature_Inflo=max(0,temperature[temp_index]-base_temperature_Inflo)    # Inflorescences
 
-def EndEech():
-  global leafs_area
+def EndEach():
+  global Leafs_informations
+  global lefs_area
   Leafs_informations.append((current_date,leafs_area))
+  df = DataFrame(data = GUs_informations, columns=['CodeUC','Nature','Days', 'TTS', 'Length','Pheno_stage','Date','SFol']) 
+  df.to_csv('data/simulation_results/tree_growth.csv',index=False,header=False)
   
   
 def End():
@@ -171,12 +175,20 @@ def GU_growth(p):
     [pheno_advct_stage,p.pheno_stage]=normalized_pheno_stage(p.pheno_TTS,"GU")  
       
     # Thermal time sum dor growth
-    p.cumsum_temp+=max(0,delta_temperature_GU+p.delta_dj)*daystep    
-    p.cumsum_temp_Leaf+=delta_temperature_Leaf*daystep   
+    if temperature_variability:
+      p.cumsum_temp+=max(0,delta_temperature_GU+p.delta_dj)*daystep   
+      p.cumsum_temp_Leaf+=delta_temperature_Leaf*daystep 
+    else :
+      p.cumsum_temp+=delta_temperature_GU*daystep   
+      p.cumsum_temp_Leaf+=delta_temperature_Leaf*daystep 
+       
 
     #Thermal time sum for development
-    global temperature      
-    delta_temperature_pheno=max(0,temperature[temp_index]+p.delta_dj-pheno_base_temp_GU[p.pheno_stage])
+    global temperature   
+    if temperature_variability:   
+      delta_temperature_pheno=max(0,temperature[temp_index]+p.delta_dj-pheno_base_temp_GU[p.pheno_stage])
+    else:
+      delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_GU[p.pheno_stage])
     p.pheno_TTS+= delta_temperature_pheno*daystep    
     p.pheno_advct=pheno_advct_stage
     
@@ -746,7 +758,7 @@ def __initialiseContext__(context):
 	Color_20.name = "Color_20"
 	context.turtle.setMaterial(20,Color_20)
 	context.animation_timestep = 0.001
-	scalars = [('TREE', 'Integer', 0, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.01, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True), ('daystep', 'Integer', 1, 1, 100)]
+	scalars = [('TREE', 'Integer', 0, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.01, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True), ('daystep', 'Integer', 1, 1, 100), ('temperature_variability', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
