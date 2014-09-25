@@ -1,8 +1,7 @@
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
 
-# Suivi de croissance des UCs végétatives
-# But : Regrouper les deux bases (BasedeCroissanceVeg et paramAJUSTUCglob) afin de comparer aux résultats du modèle
-
+# Suivi de croissance des UCs végétatives, des feuilles et des inflorescences
+# Validation de la croissance et du développement
 
 
 ################# Définition de fonctions
@@ -37,7 +36,7 @@ affich_pheno=function(data,sim_data,codeUC){
 }
 
 
-# Fonction permettant de comparer les stades phénologiques réels et simulés
+# Fonction permettant de comparer les stades phénologiques réels et simulés pour les UCs
 valid_pheno=function(data,sim_data,codeUC){
 	UC=data[data$codeUC==codeUC,]
 	UCsim=sim_data[sim_data$CodeUC==codeUC,]
@@ -49,7 +48,6 @@ valid_pheno=function(data,sim_data,codeUC){
 			y=c(y,UCsim$Pheno_stage[i])}
 	}
 x[x<9]=0 ; x[x>8 & x<11]=1; x[x>10 & x<13]=2; x[x>12 & x<15]=3 ; x[x==15]=4
-#plot(x,y,ylim=c(0,4),xlim=c(0,4),main=codeUC,xlab="stade observé",ylab="stade estimé")
 ax=c(0,0,1,1,1,2,2,2,3,3,3,4,4)
 by=c(0,1,0,1,2,1,2,3,2,3,4,3,4)
 s=c(sum(x==0&y==0),sum(x==0&y==1),sum(x==1&y==0),sum(x==1&y==1),sum(x==1&y==2),sum(x==2&y==1),sum(x==2&y==2),sum(x==2&y==3),sum(x==3&y==2),sum(x==3&y==3),sum(x==3&y==4),sum(x==4&y==3),sum(x==4&y==4))
@@ -62,7 +60,7 @@ abline(0,1)
 list(obs=x,sim=y)
 }
 
-
+# Fonction permettant de comparer les stades phénologiques réels et simulés pour les inflorescences
 valid_pheno_inflo=function(data,sim_data,codeUC){
 	UC=data[data$codeUC==codeUC,]
 	UCsim=sim_data[sim_data$CodeUC==codeUC,]
@@ -74,7 +72,6 @@ valid_pheno_inflo=function(data,sim_data,codeUC){
 			y=c(y,UCsim$Pheno_stage[i])}
 	}
 x[x<12]=0; x[x>11 & x<14]=1 ; x[x==14 | x==16]=2 ; x[x==15]=3 ; 
-#plot(x,y,ylim=c(0,4),xlim=c(0,4),main=codeUC,xlab="stade observé",ylab="stade estimé")
 ax=c(0,0,1,1,1,2,2,2,3,3)
 by=c(0,1,0,1,2,1,2,3,2,3)
 s=c(sum(x==0&y==0),sum(x==0&y==1),sum(x==1&y==0),sum(x==1&y==1),sum(x==1&y==2),sum(x==2&y==1),sum(x==2&y==2),sum(x==2&y==3),sum(x==3&y==2),sum(x==3&y==3))
@@ -87,6 +84,7 @@ abline(0,1)
 list(obs=x,sim=y)
 }
 
+# Fonction permettant de comparer les stades phénologiques obtnus avec les 2 découpages
 comp_pheno=function(data,sim_data,sim_data2,codeUC){
 	UC=data[data$codeUC==codeUC,]
 	UCsim=sim_data[sim_data$CodeUC==codeUC,]
@@ -104,6 +102,7 @@ plot(c(1:length(x)),x-y, cex.lab = 1.7, cex.axis = 1.5)
 points(c(1:length(x)),x-y2,col=2,pch="+")
 }
 
+#Fonction traçant les données simulées en fonction des données estimées, pour les UCs
 valid_croiss=function(data,sim_data,codeUC){
 	UC=data[data$codeUC==codeUC,]
 	UCsim=sim_data[sim_data$CodeUC==codeUC,]
@@ -121,6 +120,7 @@ abline(0,1,lwd=2)
 list(obs=x,sim=y)
 }
 
+#Fonction traçant les données simulées en fonction des données estimées, pour les inflorescences
 valid_croiss_inflo=function(data,sim_data,codeUC){
 	UC=data[data$codeUC==codeUC,]
 	UCsim=sim_data[sim_data$CodeUC==codeUC,]
@@ -138,6 +138,7 @@ abline(0,1,lwd=2)
 list(obs=x,sim=y)
 }
 
+#Fonction traçant les données simulées en fonction des données estimées, pour les feuilles
 valid_croiss_feu=function(data,sim_data,codeUC,feuille){
 	UC=data[data$codeUC==codeUC,]
 	UCsim=sim_data[sim_data$CodeUC==paste(codeUC,feuille,sep=""),]
@@ -208,7 +209,6 @@ data1$stadeUC=as.numeric(data1$stadeUC)
 inflo1$longueurInflo[is.na(inflo1$longueurInflo)]=0
 inflo1$date=strptime(as.character(inflo1$date), "%d/%m/%y %H:%M")
 inflo1$codeUC=as.character(inflo1$codeUC)
-#inflo1$stadeInflo=as.numeric(inflo1$stadeInflo)
 
 
 # Récupération des températures pour tous les vergers
@@ -884,23 +884,6 @@ UCs=c("3-BM-cog-F-B14-1-L","3-BM-cog-F-B14-2-A")
 for (i in 1:length(UCs)){res=valid_pheno_inflo(inflo2,simBM_inflo,UCs[i])}
 
 
-
-
-
-
-# Comparaison des vitesses de croissance à différentes températures
-# On prend 2 UCs de même taille chacune ayant grandit dans un contexte thermique différent
-UC1=data2[data2$codeUC=="2-BM-cog-V-F2-1-A" & data2$stadeUC>2,]
-UC2=data2[data2$codeUC=="2-GF-cog-V-A39-1-A",]
-
-
-# On va tracer leur courbe de croissance pour voir si il y en a une qui croit plus vite que l'autre
-par(mfrow=c(1,1))
-plot(UC1$date$yday-min(UC1$date$yday),UC1$longueurUC,type='l',col=3,xlim=c(0,20),ylab="Longueur UC",xlab="Nombre de jours de croissance")
-points(UC2$date$yday-min(UC2$date$yday),UC2$longueurUC,type='l',col=4)
-legend("bottomright",c("Bassin Martin, 24.21°C","Grand Fond, 28.18°C"),col=c(3,4),lty=1)
-mean(UC1$temperature)
-mean(UC2$temperature)
 
 
 

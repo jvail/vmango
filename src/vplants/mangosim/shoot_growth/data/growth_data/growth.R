@@ -5,22 +5,24 @@ setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_gro
 
 ####### Définitions de fonctions
 
+
+#Fonction qui trace les vitesses de croissance et les renvoit
 vitesse_fct=function(data,cond){
-V=matrix(rep(0,length(unique(data$codeUC[cond]))*20),nrow=length(unique(data$codeUC[cond])))
-D=matrix(rep(0,length(unique(codeUCs))*20),nrow=length(unique(codeUCs)))
-plot(unique(data$date[cond]),rep(-100,length(unique(data$date[cond]))),ylim=c(0,0.3),ylab="Vitesse de croissance",xlab="")
-UCs=unique(data$codeUC[cond])
-for (i in 1:(length(UCs)-1)){
-  data1=data[data$codeUC==UCs[i],]
-  n1=length(data1$longueurUC)
-  vitesse1=(data1$longueurUC[2:n1]-data1$longueurUC[1:(n1-1)])/as.numeric(data1$date[2:n1]-data1$date[1:(n1-1)])
-  vitesse=vitesse1[!is.na(vitesse1)]/max(data1$longueurUC,na.rm=T)
-  temps=as.numeric(data1$date[2:n1]-data1$date[1:(n1-1)])[!is.na(vitesse1)]
-  D[i,2:(length(vitesse)+1)]=temps
-  V[i,2:(length(vitesse)+1)]=vitesse
-  points(data1$date[-1],vitesse1,type='l',col=i,lwd=2)
-}
-return(list("V"=V,"D"=D))
+  V=matrix(rep(0,length(unique(data$codeUC[cond]))*20),nrow=length(unique(data$codeUC[cond])))
+  D=matrix(rep(0,length(unique(codeUCs))*20),nrow=length(unique(codeUCs)))
+  plot(unique(data$date[cond]),rep(-100,length(unique(data$date[cond]))),ylim=c(0,0.3),ylab="Vitesse de croissance",xlab="")
+  UCs=unique(data$codeUC[cond])
+  for (i in 1:(length(UCs)-1)){
+    data1=data[data$codeUC==UCs[i],]
+    n1=length(data1$longueurUC)
+    vitesse1=(data1$longueurUC[2:n1]-data1$longueurUC[1:(n1-1)])/as.numeric(data1$date[2:n1]-data1$date[1:(n1-1)])
+    vitesse=vitesse1[!is.na(vitesse1)]/max(data1$longueurUC,na.rm=T)
+    temps=as.numeric(data1$date[2:n1]-data1$date[1:(n1-1)])[!is.na(vitesse1)]
+    D[i,2:(length(vitesse)+1)]=temps
+    V[i,2:(length(vitesse)+1)]=vitesse
+    points(data1$date[-1],vitesse1,type='l',col=i,lwd=2)
+  }
+  return(list("V"=V,"D"=D))
 }
 
 
@@ -66,7 +68,7 @@ for (i in 1:length(codeUCs)){
 }
 
 
-# Etudes des itesses pour 2 UCs dans des contextes thermiques différents
+# Etudes des vitesses pour 2 UCs dans des contextes thermiques différents
 UCs=c("2-BM-cog-V-F2-1-A","2-GF-cog-V-A39-1-A")
 
 data1=CroissUC[CroissUC$codeUC==UCs[1],]
@@ -84,6 +86,20 @@ points(data2$date[-1],vitesse2,type='l',col=4,lwd=2)
 #points(data1$date[-c(1,17,18,19)],vitesse1[-c(1,17,18,19)],type='l',col=3,lwd=2)
 points(data1$date[-1],vitesse1,type='l',col=3,lwd=2)
 legend("topright",c("Bassin Martin, 24.21°C","Grand Fond, 28.18°C"),lty=1,lwd=2,col=3:4)
+
+# Comparaison des vitesses de croissance à différentes températures
+# On prend 2 UCs de même taille chacune ayant grandit dans un contexte thermique différent
+UC1=data2[data2$codeUC=="2-BM-cog-V-F2-1-A" & data2$stadeUC>2,]
+UC2=data2[data2$codeUC=="2-GF-cog-V-A39-1-A",]
+
+
+# On va tracer leur courbe de croissance pour voir si il y en a une qui croit plus vite que l'autre
+par(mfrow=c(1,1))
+plot(UC1$date$yday-min(UC1$date$yday),UC1$longueurUC,type='l',col=3,xlim=c(0,20),ylab="Longueur UC",xlab="Nombre de jours de croissance")
+points(UC2$date$yday-min(UC2$date$yday),UC2$longueurUC,type='l',col=4)
+legend("bottomright",c("Bassin Martin, 24.21°C","Grand Fond, 28.18°C"),col=c(3,4),lty=1)
+mean(UC1$temperature)
+mean(UC2$temperature)
 
 
 # Etudes des vitesses pour l'ensemble des UCs
@@ -281,7 +297,8 @@ for (i in 1 :length(V3[,1])){  points(cumsum(D3[i,]),V3[i,],type='l',col=i)}
 fgamma=function(x,alpha,beta){
   (x^(alpha-1))*(beta^alpha)*exp(-beta*x)/gamma(alpha)
 }
-coeffs1=c();coeffs2=c();coeffs3=c()
+coeffs1_1=c();coeffs2_1=c();coeffs3_1=c()
+coeffs1_2=c();coeffs2_2=c();coeffs3_2=c()
 
 par(mfrow=c(1,3))
 plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="")
@@ -291,7 +308,7 @@ for (i in c(2:17,19 :length(V1[,1]))){
   #on ajuste la fonction sur les données simulées en utilisant les moindres carrés
   fit=nls(sim~fgamma(t,a,b),start=list(a=1,b=0.01))
   coeff=summary(fit)$coeff
-  coeffs1=c(coeffs1,coeff[1],coeff[2])
+  coeffs1_1=c(coeffs1_1,coeff[1]);coeffs1_2=c(coeffs1_2,coeff[2])
   points(t,fgamma(t,coeff[1],coeff[2]),type="l",col=i)
 }
 
@@ -302,7 +319,7 @@ for (i in c(2:8,10:15,17:length(V2[,1]))){
   #on ajuste la fonction sur les données simulées en utilisant les moindres carrés
   fit=nls(sim~fgamma(t,a,b),start=list(a=1,b=0.01))
   coeff=summary(fit)$coeff
-  coeffs2=c(coeffs2,coeff[1],coeff[2])
+  coeffs2_1=c(coeffs2_1,coeff[1]);coeffs2_2=c(coeffs2_2,coeff[2])
   points(t,fgamma(t,coeff[1],coeff[2]),type="l",col=i)
 }
 
@@ -312,7 +329,11 @@ for (i in c(2,3,4,7,9,12,14:16,18:22)){
   sim=V3[i,]
   #on ajuste la fonction sur les données simulées en utilisant les moindres carrés
   fit=nls(sim~fgamma(t,a,b),start=list(a=1,b=0.01))
-  coeffs3=c(coeffs3,coeff[1],coeff[2])
+  coeffs3_1=c(coeffs3_1,coeff[1]);coeffs3_2=c(coeffs3_2,coeff[2])
   coeff=summary(fit)$coeff
   points(t,fgamma(t,coeff[1],coeff[2]),type="l",col=i)
 }
+coeffs_1=c(coeffs1_1,coeffs2_1,coeffs3_1)
+coeffs_2=c(coeffs1_2,coeffs2_2,coeffs3_2)
+par(mfrow=c(1,1))
+plot(coeffs_1,coeffs_2)
