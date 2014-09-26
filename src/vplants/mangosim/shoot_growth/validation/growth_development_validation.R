@@ -2,7 +2,8 @@ setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_gro
 
 # Suivi de croissance des UCs végétatives, des feuilles et des inflorescences
 # Validation de la croissance et du développement
-
+# On valide en comparant les longueurs et les stades phénologiques simulés avec ceux des données observées
+# Section 5 du Rapport "Résultats et validation"
 
 ################# Définition de fonctions
 id=function(x){return(x)}

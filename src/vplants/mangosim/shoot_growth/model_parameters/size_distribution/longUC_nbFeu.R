@@ -5,6 +5,9 @@ setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_gro
 #                           - distributions des longueurs d'UCs
 #                           - Relation nombre de feuilles / longueur UC
 
+# Ce script nous a permis d'ajuster les distributions sur le nombre de feuilles (secondaire car on le déduit de la longueur des UCs)
+# et sur les longueurs d'UCs
+# Section 4.3 "Données relatives à la morphologie des UCs" du rapport
 
 ###########################################################################
 #######################     Récupération et mise en forme des données     

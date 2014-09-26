@@ -9,6 +9,9 @@ setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_gro
 #                             - UCs : diamètre / longueur
 #                             - UCs : diamètre / nombre de feuilles
 
+# Ce script nous sert à déterminer de nombreuses relations allométriques nécessaires à la simulation des organes du manguiers
+# Il permet notamment de déduire la longueur d'une feuille de sa surface, ce qui nous est nécessaire pour la modélisation
+# Section 4.3 "Données relatives à la morphologie des UCs" du rapport
 
 # On charge les données de la base allométrie
 base=read.table("data/size_data/base_allometriesR.csv",header=TRUE,sep=";",dec=",")

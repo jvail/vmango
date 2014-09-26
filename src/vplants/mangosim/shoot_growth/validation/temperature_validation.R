@@ -1,4 +1,9 @@
 # Validation de l'effet de la température sur la croissance d'une pousse
+# Ici nous avons cherché à tester les effets de la température sur notre modèle
+# que ça soit en faisant coître 2 UCs similaires à des températures très différentes
+# ou bien en faisant croître plusieurs UCs selon une gaussienne pour voir les effets de la variation de température
+# Section 5.2 "Croissance d'une UC et d'une inflorescence" et 7.1 "Problèmes ouverts" du rapport
+
 
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/data/simulation_results/temperature_effects")
 

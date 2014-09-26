@@ -1,4 +1,7 @@
 # ModÃ¨le stochastique : mise en forme des donnÃ©es
+# Ce script sert à mettre en forme les données pour qu'elles puissent être utilisées dans le calcul de vraisemblance
+# du modèle stochastique des stades de développement (script Vraisemblance.R)
+
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
 
 

@@ -1,4 +1,7 @@
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
+# On sa suivi les stades phénologiques dans lequel se trouvait tout un groupe d'UCs afin de voir si l'ajout de variabilité 
+# dans la somme journalière de temps thermique avait bien un effet sur les stades phénologiques
+# Section 7.1 "Distribution des stades phénologiques sur un arbre" dans le rapport
 
 # Suivi des différents stades phénologiques au sein d'un même arbre
 

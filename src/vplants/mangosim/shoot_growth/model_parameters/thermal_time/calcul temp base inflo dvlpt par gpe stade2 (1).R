@@ -1,4 +1,5 @@
 # Calcul de la température de base pour les stades phénologiques reproducteurs du manguier regroupés par stade
+# Section 4.4 "Données pour les modèles de temps thermique" du rapport
 
 setwd("D:/MesDonnées/mes documents/manguier/modélisation phéno/stage 2014/Anne-Sarah Briand/données/fichiers de données/températures de base (Anaëlle)/TB stades phéno/")                # pour mon ordi
 

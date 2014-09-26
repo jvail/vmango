@@ -5,6 +5,9 @@ setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_gro
 #                                    - Relation longueur UC / LEPF
 #                           - Relation longueur entrenoeuds / position entrenoeuds
 
+# Ce script nous permet de déterminer les longueurs d'espace-pré-feuille (premier entrenoeud)
+# et de définir une relation de proportionalité entre les différentes longueurs d'entrenoeuds
+# Section 4.3 "Données relatives à la morphologie des UCs" du rapport
 
 # On charge les données de la base de croissance végétative
 base=read.table("data/growth_data/BaseDeCroissanceVeg.csv",header=TRUE,sep=";",dec=",")

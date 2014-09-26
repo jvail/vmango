@@ -1,13 +1,16 @@
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/data")
 
-# Etude des vitesses de croissances
-
+################### Etude des vitesses de croissances
+# Script permettant d'étudier les vitesses de croissance et notamment les effets de la températures et des différents
+# vergers sur celle-ci
+# (section problèmes ouverts du rapport)
 
 ####### Définitions de fonctions
 
 
 #Fonction qui trace les vitesses de croissance et les renvoit
 vitesse_fct=function(data,cond){
+  codeUC=c()
   V=matrix(rep(0,length(unique(data$codeUC[cond]))*20),nrow=length(unique(data$codeUC[cond])))
   D=matrix(rep(0,length(unique(codeUCs))*20),nrow=length(unique(codeUCs)))
   plot(unique(data$date[cond]),rep(-100,length(unique(data$date[cond]))),ylim=c(0,0.3),ylab="Vitesse de croissance",xlab="")
@@ -21,10 +24,10 @@ vitesse_fct=function(data,cond){
     D[i,2:(length(vitesse)+1)]=temps
     V[i,2:(length(vitesse)+1)]=vitesse
     points(data1$date[-1],vitesse1,type='l',col=i,lwd=2)
+    codeUC=c(codeUC,as.character(UCs[i]))
   }
-  return(list("V"=V,"D"=D))
+  return(list("V"=V,"D"=D,"UCs"=codeUC))
 }
-
 
 
 
@@ -50,7 +53,8 @@ for (i in 1:length(codeInflos)){
 
 
 # On récupère lesinfos de la base de croissance
-CroissUC=read.csv("growth_data/BaseDeCroissanceVeg.csv",sep=";",dec=",")
+CroissUC0=read.csv("growth_data/BaseDeCroissanceVeg.csv",sep=";",dec=",")
+CroissUC=CroissUC0[CroissUC0$var=="cog",]
 CroissUC$date=strptime(as.character(CroissUC$date),"%d/%m/%Y %H:%M")
 codeUCs=unique(CroissUC$codeUC)               # Liste des inflorescences
 
@@ -144,29 +148,6 @@ plot(1:600,rep(-100,600),ylim=c(0,0.2),ylab="Vitesse de croissance",xlab="")
 for (i in 2 :length(V3[,1])){  points(cumsum(D3[i,]),V3[i,],type='l',col=i)}
 
 
-#On scinde les UCs en 3 groupes en fonction de leur durée de croissance
-par(mfrow=c(3,1))
-# Premier groupe
-E1=rep(-9,20);DE1=rep(-9,20)
-for (i in 1:length(UCs)){  if (sum(V[i,]!=0)>11){E1=rbind(E1,V[i,]);DE1=rbind(DE1,D[i,])}}
-#Deuxième groupe
-E2=rep(-9,20);DE2=rep(-9,20)
-for (i in 1:length(UCs)){  if (sum(V[i,]!=0)>8 & sum(V[i,]!=0)<=11){E2=rbind(E2,V[i,]);DE2=rbind(DE2,D[i,])}}
-#Troisième groupe
-E3=rep(-9,20);DE3=rep(-9,20)
-for (i in 1:length(UCs)){  if (sum(V[i,]!=0)<=8){E3=rbind(E3,V[i,]);DE3=rbind(DE3,D[i,])}}
-
-
-plot(1:400,rep(-100,400),ylim=c(0,0.25),ylab="Vitesse de croissance",xlab="")
-for (i in 1 :length(E1[,1])){  points(cumsum(DE1[i,]),E1[i,],type='l',col=i)}
-
-plot(1:400,rep(-100,400),ylim=c(0,0.25),ylab="Vitesse de croissance",xlab="")
-for (i in 1 :length(E2[,1])){  points(cumsum(DE2[i,]),E2[i,],type='l',col=i)}
-
-plot(1:400,rep(-100,400),ylim=c(0,0.25),ylab="Vitesse de croissance",xlab="")
-for (i in 1 :length(E3[,1])){  points(cumsum(DE3[i,]),E3[i,],type='l',col=i)}
-
-
 
 ########### Etude des vitesses normalisées par la taille de l'UC
 # Etudes des vitesses pour l'ensemble des UCs
@@ -213,46 +194,23 @@ plot(1:20,rep(-100,20),ylim=c(0,0.02),ylab="Vitesse de croissance",xlab="")
 for (i in 1 :length(V3_norm[,1])){  points(V3_norm[i,],type='l',col=i)}
 
 
-#On scinde les UCs en 3 groupes en fonction de leur durée de croissance
-par(mfrow=c(3,1))
-# Premier groupe
-E1_norm=rep(-9,20)
-for (i in 1:length(UCs)){  if (sum(V_norm[i,]!=0)>11){E1_norm=rbind(E1_norm,V_norm[i,])}}
-
-plot(1:20,rep(-100,20),ylim=c(0,0.02),ylab="Vitesse de croissance",xlab="")
-for (i in 1 :length(E1_norm[,1])){  points(E1_norm[i,],type='l',col=i)}
-
-#Deuxième groupe
-E2_norm=rep(-9,20)
-for (i in 1:length(UCs)){  if (sum(V_norm[i,]!=0)>8 & sum(V_norm[i,]!=0)<=11){E2_norm=rbind(E2_norm,V_norm[i,])}}
-
-plot(1:20,rep(-100,20),ylim=c(0,0.02),ylab="Vitesse de croissance",xlab="")
-for (i in 1 :length(E2_norm[,1])){  points(E2_norm[i,],type='l',col=i)}
-
-#Troisième groupe
-E3_norm=rep(-9,20)
-for (i in 1:length(UCs)){  if (sum(V_norm[i,]!=0)<=8){E3_norm=rbind(E3_norm,V_norm[i,])}}
-
-plot(1:20,rep(-100,20),ylim=c(0,0.02),ylab="Vitesse de croissance",xlab="")
-for (i in 1 :length(E3_norm[,1])){  points(E3_norm[i,],type='l',col=i)}
-
 
 ########### Etude des vitesses normalisées par la taille de l'UC en fonction de la date de débourrement
 # Etudes des vitesses pour l'ensemble des UCs
 # Janvier-février
 jan=CroissUC$date$mon<2 #& as.numeric(CroissUC$stadeUC)<4
 res_jan=vitesse_fct(CroissUC,jan)
-V_jan=res_jan$V;D_jan=res_jan$D
+V_jan=res_jan$V;D_jan=res_jan$D;UCs_jan=res_jan$UC
 
 # Avril
 avr=CroissUC$date$mon<5 & CroissUC$date$mon>2
 res_avr=vitesse_fct(CroissUC,avr)
-V_avr=res_avr$V;D_avr=res_avr$D
+V_avr=res_avr$V;D_avr=res_avr$D;UCs_avr=res_avr$UC
 
 # Septembre ++
 sept=CroissUC$date$mon>8
 res_sept=vitesse_fct(CroissUC,sept)
-V_sept=res_sept$V;D_sept=res_sept$D
+V_sept=res_sept$V;D_sept=res_sept$D;UCs_sept=res_sept$UC
 
 
 
@@ -269,24 +227,24 @@ for (i in 1 :length(V_sept[,1])){  points(cumsum(D_sept[i,]),V_sept[i,],type='l'
 
 #On scinde les UCs en 3 groupes en fonction de leur vitesse maximale
 # Premier groupe
-V1=rep(-9,20);D1=seq(20)
-for (i in 1:length(V_jan[,1])){  if (max(V_jan[i,])>=0.009){V1=rbind(V1,V_jan[i,]);D1=rbind(D1,D_jan[i,])}}
+V1=rep(-9,20);D1=seq(20);UCs1=c()
+for (i in 1:length(V_jan[,1])){  if (max(V_jan[i,])>=0.01){V1=rbind(V1,V_jan[i,]);D1=rbind(D1,D_jan[i,]);UCs1=c(UCs1,UCs_jan[i])}}
 #Deuxième groupe
-V2=rep(-9,20);D2=seq(20)
-for (i in 1:length(V_jan[,1])){  if (max(V_jan[i,])<0.009 & max(V_jan[i,])>0.007){V2=rbind(V2,V_jan[i,]);D2=rbind(D2,D_jan[i,])}}
+V2=rep(-9,20);D2=seq(20);UCs2=c()
+for (i in 1:length(V_jan[,1])){  if (max(V_jan[i,])<0.01 & max(V_jan[i,])>0.008){V2=rbind(V2,V_jan[i,]);D2=rbind(D2,D_jan[i,]);UCs2=c(UCs2,UCs_jan[i])}}
 #Troisième groupe
-V3=rep(-9,20);D3=seq(20)
-for (i in 1:length(V_jan[,1])){  if (max(V_jan[i,])<=0.007){V3=rbind(V3,V_jan[i,]);D3=rbind(D3,D_jan[i,])}}
+V3=rep(-9,20);D3=seq(20);UCs3=c()
+for (i in 1:length(V_jan[,1])){  if (max(V_jan[i,])<=0.008){V3=rbind(V3,V_jan[i,]);D3=rbind(D3,D_jan[i,]);UCs3=c(UCs3,UCs_jan[i])}}
 
 par(mfrow=c(2,3))
 
-plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="")
+plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="heures")
 for (i in 1 :length(V1[,1])){  points(cumsum(D1[i,]),V1[i,],type='l',col=i)}
 
-plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="")
+plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="heures")
 for (i in 1 :length(V2[,1])){  points(cumsum(D2[i,]),V2[i,],type='l',col=i)}
 
-plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="")
+plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="heures")
 for (i in 1 :length(V3[,1])){  points(cumsum(D3[i,]),V3[i,],type='l',col=i)}
 
 
@@ -300,8 +258,8 @@ fgamma=function(x,alpha,beta){
 coeffs1_1=c();coeffs2_1=c();coeffs3_1=c()
 coeffs1_2=c();coeffs2_2=c();coeffs3_2=c()
 
-par(mfrow=c(1,3))
-plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="")
+#par(mfrow=c(1,3))
+plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="heures")
 for (i in c(2:17,19 :length(V1[,1]))){
   t=cumsum(D1[i,])
   sim=V1[i,]
@@ -312,7 +270,7 @@ for (i in c(2:17,19 :length(V1[,1]))){
   points(t,fgamma(t,coeff[1],coeff[2]),type="l",col=i)
 }
 
-plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="")
+plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="heures")
 for (i in c(2:8,10:15,17:length(V2[,1]))){
   t=cumsum(D2[i,])
   sim=V2[i,]
@@ -323,7 +281,7 @@ for (i in c(2:8,10:15,17:length(V2[,1]))){
   points(t,fgamma(t,coeff[1],coeff[2]),type="l",col=i)
 }
 
-plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="")
+plot(1:400,rep(-100,400),ylim=c(0,0.015),ylab="Vitesse de croissance",xlab="heures")
 for (i in c(2,3,4,7,9,12,14:16,18:22)){
   t=cumsum(D3[i,])
   sim=V3[i,]
@@ -333,7 +291,16 @@ for (i in c(2,3,4,7,9,12,14:16,18:22)){
   coeff=summary(fit)$coeff
   points(t,fgamma(t,coeff[1],coeff[2]),type="l",col=i)
 }
+
+
+
 coeffs_1=c(coeffs1_1,coeffs2_1,coeffs3_1)
 coeffs_2=c(coeffs1_2,coeffs2_2,coeffs3_2)
 par(mfrow=c(1,1))
 plot(coeffs_1,coeffs_2)
+
+
+
+
+
+

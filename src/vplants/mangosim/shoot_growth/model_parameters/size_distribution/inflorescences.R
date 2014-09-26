@@ -5,6 +5,9 @@ setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_gro
 #                                             - Relation longueur / diamètre
 #                                             - Distribution des diamètres
 
+# Ce script nous permet de déterminer toutes les informations nécessaires à la définition d'une onflorescence sous L-PY,
+# C'est à dire sa longueur, son nombre d'awes secondaires et son diamètre.
+# Section 4.3 "Données relatives à la morphologie des UCs" du rapport
 
 
 ########################################################

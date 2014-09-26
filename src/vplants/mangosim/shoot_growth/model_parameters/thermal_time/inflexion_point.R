@@ -1,4 +1,8 @@
-# Etude du point d'inflexion
+##### Etude du point d'inflexion
+#Script permettant l'étude de la distribution des points d'inflexion
+# Le point d'inflexion étant un des paramètres à déterminer pour définir la courbe des croissance des UCs et inflorescences
+# Section 4.4 "Données pour les modèles de temps thermique" du rapport
+
 
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/data")
 

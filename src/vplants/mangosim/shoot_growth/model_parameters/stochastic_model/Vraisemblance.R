@@ -1,4 +1,7 @@
 # ModÃ¨le stochastique : calcul de la vraisemblance
+# Ce scripte nous permete, au travers d'un calcul de vraisemblance, de calculer les paramètres de variance 
+# du modèle stochastique pour les stades phénologiques (développement)
+# Section 3.3.2 "Modélisation du développement" du rapport
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
 
 #################################

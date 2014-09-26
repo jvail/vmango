@@ -2,7 +2,9 @@ setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_gro
 
 # Etude de la taille des feuilles en fonction de leur position le long de l'UC
 
-
+# Ce script nous a permis d'étudier la distribution des surfaces foliaires mais surtout d'en déduire la distribution
+#de leurs longueurs grâce à une relation allométrique.
+# Section 4.3 "Données relatives à la morphologie des UCs" du rapport
 
 #################################################################
 ############   Récupération et mise en forme des données  

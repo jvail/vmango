@@ -1,5 +1,8 @@
-# Etude des dates de débourrement des UCs et des inflorescences
-
+############# Etude des dates de débourrement des UCs et des inflorescences
+# Ce script sert à comparer la distribution des dates de débourrement au mois et à la semaine 
+# afin de voir si il s'en dégage un motif récurrent permettant de passer facilement d'une distribution au mois 
+# à une distribution à la semaine
+### (Section Problèmes ouverts du rapport)
 setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth/data/burst_date")
 
 

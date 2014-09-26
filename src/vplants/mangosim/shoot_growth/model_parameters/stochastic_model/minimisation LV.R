@@ -3,7 +3,7 @@
 # données de départ: le temps thermique total pour atteindre la fin de la croissance en longueur des UC
 # STUCcog dans le script 'calcul temp base UC.r'
 # Il faut avoir pour chaque valeur du temps thermique nécessaire à l'arrêt de la croissance (t), le nombre d'UC correspondantes, et le temps thermique la veille (t - 1)
-
+# Section 3.3.1 "Modélisation pour la croissance" du rappport
 setwd("D:/MesDonnées/mes documents/manguier/modélisation phéno/stage 2014/Anne-Sarah Briand/données/fichiers de données/températures de base (Anaëlle)/TB durée croissance/bases et scripts/")
 
  nT <- read.csv( "nT.csv", sep=";", dec=".", header=T)
