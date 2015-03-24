@@ -213,7 +213,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
     data$Burst_Date_Children = ordered(data$Burst_Date_Children, levels = level_order)
     data$Burst_Date_Children = factor(data$Burst_Date_Children)
 
-    data$Burst_Delta_Date_Children1 = factor(data$Burst_Delta_Date_Children)
+    #data$Burst_Delta_Date_Children1 = factor(data$Burst_Delta_Date_Children)
 
     attach(data)
     summary(data)
@@ -466,36 +466,36 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
     ##############################################
     #### Delta Burst date of children    
     ##############################################
-    if (verbose >= 1) print("Estimate Delta Burst date of children with vglm") 
+    #if (verbose >= 1) print("Estimate Delta Burst date of children with vglm") 
 
         
     ### complete GLM ###
     # For all trees  
-    complete_vglm.delta_burst_date_children1.all = vglm( Delta_Burst_Date_Children1 ~ Tree_Fruit_Load + 
-                                                                        Burst_Date + 
-                                                                        Position_A + 
-                                                                        Position_Ancestor_A + 
-                                                                        Nature_Ancestor_V,
-                                                  family = cumulative(parallel=T) ,data=data, subset = index_bursted.all)
-    if (verbose >= 3) {
-        summary(complete_vglm.delta_burst_date_children1.all) # Log-likelihood: 
-        print(paste("AIC:",get_vglm_AIC(complete_vglm.delta_burst_date_children1.all)))
-    }
+    #complete_vglm.delta_burst_date_children1.all = vglm( Delta_Burst_Date_Children1 ~ Tree_Fruit_Load + 
+    #                                                                    Burst_Date + 
+    #                                                                    Position_A + 
+    #                                                                    Position_Ancestor_A + 
+    #                                                                    Nature_Ancestor_V,
+    #                                              family = cumulative(parallel=T) ,data=data, subset = index_bursted.all)
+    #if (verbose >= 3) {
+    #    summary(complete_vglm.delta_burst_date_children1.all) # Log-likelihood: 
+    #    print(paste("AIC:",get_vglm_AIC(complete_vglm.delta_burst_date_children1.all)))
+    #}
 
     # For each tree, loaded trees and not loaded trees
-    complete_vglm.delta_burst_date_children1.tree = list()
+    #complete_vglm.delta_burst_date_children1.tree = list()
     #AIC.vglm.burst_date_children.tree = list()
-    for(tree_name in trees){
-        if(length(index_bursted.trees[[tree_name]])>MinNbGUForGLM){
+    #for(tree_name in trees){
+    #    if(length(index_bursted.trees[[tree_name]])>MinNbGUForGLM){
 
-            complete_vglm.delta_burst_date_children1.tree[[tree_name]] = vglm(Delta_Burst_Date_Children1 ~ Burst_Date + 
-                                                                                             Position_A + 
-                                                                                             Position_Ancestor_A + 
-                                                                                             Nature_Ancestor_V,
-                                                family = cumulative(parallel=T), data=data, subset=index_bursted.trees[[tree_name]])
+    #        complete_vglm.delta_burst_date_children1.tree[[tree_name]] = vglm(Delta_Burst_Date_Children1 ~ Burst_Date + 
+    #                                                                                         Position_A + 
+    #                                                                                         Position_Ancestor_A + 
+    #                                                                                         Nature_Ancestor_V,
+    #                                            family = cumulative(parallel=T), data=data, subset=index_bursted.trees[[tree_name]])
             #AIC.vglm.burst_date_children.tree[[tree_name]] = get_vglm_AIC(complete_vglm.burst_date_children.tree[[tree_name]])
-        }
-    }
+    #    }
+    #}
 
 
     ### selected GLM ###

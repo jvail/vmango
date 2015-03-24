@@ -158,7 +158,7 @@ def explicative_variables_transition(mtg, gu):
     if get_unit_cycle(mtg,gu) == 3:
         Burst_Date = NotAvailable
     else:
-        Burst_Date =  get_date_burst(mtg,gu).month
+        Burst_Date =  get_burst_date(mtg,gu).month
 
     # get loaded feature
     Tree_Fruit_Load = load_state(mtg, get_tree_of_gu(mtg,gu))
