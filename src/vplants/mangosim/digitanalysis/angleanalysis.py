@@ -1,3 +1,10 @@
+from os.path import join, exists
+from openalea.deploy.shared_data import shared_data
+import vplants.mangosim
+share_dir = shared_data(vplants.mangosim, share_path = join("share",'digitized_mango_mtg'))
+
+def get_mtg_filename(name):
+	return join(share_dir,name)
 
 def get_ucs(m):
     return [e for e in m.vertices(scale=2) if m.class_name(e) == 'U']
@@ -46,7 +53,8 @@ def plot_histo(angles):
 
 if __name__ == '__main__':
     from openalea.mtg import *
-    #m = MTG("a19.mtg")
+
+    m = MTG(get_mtg_filename("a19.mtg"))
     #m = MTG("jf31.mtg")
     ucs = get_ucs(m)
     #print ucfirstpos(ucs[0],m)
