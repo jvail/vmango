@@ -75,29 +75,29 @@ determine_table_prob_from_glm = function(myglm){
 
     if (is_vglm){
         if(!is.null(variables)){
-            probs = predictvglm(myglm, newdata= data_probs,type="response")
-            for(i in 1:length(colnames(probs)) ){
-                data_probs[colnames(probs)[i] ] = probs[,i]
+            probability = predictvglm(myglm, newdata= data_probs,type="response")
+            for(i in 1:length(colnames(probability)) ){
+                data_probs[colnames(probability)[i] ] = probability[,i]
             }
         }
         else{
             # cas du glm null
-            probs = predictvglm(myglm,type="response")[1,] # on predit sans valeur de x
+            probability = predictvglm(myglm,type="response")[1,] # on predit sans valeur de x
             months_p = colnames(myglm@y) # on recupere le nom des mois (valeur possible de la variable y du glm)
             # on veut transformer probs en dataframe. Mais plutot en colonne qu'en ligne (du coup on fait une transposé)
-            data_probs = t(data.frame(probs))
+            data_probs = t(data.frame(probability))
             colnames(data_probs)= months_p
         }
     }
     else {
         if(myglm$family[1]=="binomial" || myglm$family[1]=="poisson"){  
             if (!is.null(variables)) {
-                probs = predict(myglm, newdata=data_probs, type="response")
-                data_probs["probas"]=probs
+                probability = predict(myglm, newdata=data_probs, type="response")
+                data_probs["probability"]=probability
             }
             else{
-                probs = predict(myglm,type="response")[1]
-                data_probs = data.frame(probs)
+                probability = predict(myglm,type="response")[1]
+                data_probs = data.frame(probability)
             }
         }
     }
@@ -133,6 +133,8 @@ writing_glm_tables = function(vegetative_burst,
                               has_lateral_gu, 
                               nb_lateral_gu, 
                               burst_date_children, 
+                              burst_delta_date_children, 
+                              burst_delta_date_children_poisson,
                               flowering, 
                               nb_inflo, 
                               flowering_week, 
@@ -163,6 +165,18 @@ writing_glm_tables = function(vegetative_burst,
         if (verbose) print("Write probas of burst_date_children")
         table_prob_burst_date_children = determine_table_prob_from_glm(burst_date_children)
         write.csv(table_prob_burst_date_children,file=paste(output_dir,"burst_date_children_",year,".csv",sep=""), row.names = FALSE)
+    }
+
+    if( !is.null(burst_delta_date_children) ){
+        if (verbose) print("Write probas of burst_delta_date_children")
+        table_prob_burst_delta_date_children = determine_table_prob_from_glm(burst_delta_date_children)
+        write.csv(table_prob_burst_delta_date_children,file=paste(output_dir,"burst_delta_date_children_",year,".csv",sep=""), row.names = FALSE)
+    }
+
+    if( !is.null(burst_delta_date_children_poisson) ){
+        if (verbose) print("Write probas of burst_delta_date_children_poisson")
+        table_prob_burst_delta_date_children_poisson = determine_table_prob_from_glm(burst_delta_date_children_poisson)
+        write.csv(table_prob_burst_delta_date_children_poisson,file=paste(output_dir,"burst_delta_date_children_poisson_",year,".csv",sep=""), row.names = FALSE)
     }
 
     if( !is.null(flowering) ){
@@ -213,7 +227,8 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
     data$Burst_Date_Children = ordered(data$Burst_Date_Children, levels = level_order)
     data$Burst_Date_Children = factor(data$Burst_Date_Children)
 
-    #data$Burst_Delta_Date_Children1 = factor(data$Burst_Delta_Date_Children)
+    data$Burst_Delta_Date_ChildrenP = data$Burst_Delta_Date_Children
+    data$Burst_Delta_Date_ChildrenP = data$Burst_Delta_Date_ChildrenP
 
     attach(data)
     summary(data)
@@ -437,12 +452,12 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
     }
 
     # For each tree, loaded trees and not loaded trees
-    complete_vglm.burst_date_children.tree = list()
+    complete_vglm.burst_date_children.trees = list()
     #AIC.vglm.burst_date_children.tree = list()
     for(tree_name in trees){
         if(length(index_bursted.trees[[tree_name]])>MinNbGUForGLM){
 
-            complete_vglm.burst_date_children.tree[[tree_name]] = vglm(Burst_Date_Children ~ Burst_Date + 
+            complete_vglm.burst_date_children.trees[[tree_name]] = vglm(Burst_Date_Children ~ Burst_Date + 
                                                                                              Position_A + 
                                                                                              Position_Ancestor_A + 
                                                                                              Nature_Ancestor_V,
@@ -466,36 +481,36 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
     ##############################################
     #### Delta Burst date of children    
     ##############################################
-    #if (verbose >= 1) print("Estimate Delta Burst date of children with vglm") 
+    if (verbose >= 1) print("Estimate Burst delta date of children with vglm") 
 
         
     ### complete GLM ###
     # For all trees  
-    #complete_vglm.delta_burst_date_children1.all = vglm( Delta_Burst_Date_Children1 ~ Tree_Fruit_Load + 
-    #                                                                    Burst_Date + 
-    #                                                                    Position_A + 
-    #                                                                    Position_Ancestor_A + 
-    #                                                                    Nature_Ancestor_V,
-    #                                              family = cumulative(parallel=T) ,data=data, subset = index_bursted.all)
-    #if (verbose >= 3) {
-    #    summary(complete_vglm.delta_burst_date_children1.all) # Log-likelihood: 
-    #    print(paste("AIC:",get_vglm_AIC(complete_vglm.delta_burst_date_children1.all)))
-    #}
+    complete_vglm.burst_delta_date_children.all = vglm( Burst_Delta_Date_Children ~ Tree_Fruit_Load + 
+                                                                        Burst_Date + 
+                                                                        Position_A + 
+                                                                        Position_Ancestor_A + 
+                                                                        Nature_Ancestor_V,
+                                                  family = cumulative(parallel=T) ,data=data, subset = index_bursted.all)
+    if (verbose >= 3) {
+        summary(complete_vglm.burst_delta_date_children.all) # Log-likelihood: 
+        print(paste("AIC:",get_vglm_AIC(complete_vglm.burst_delta_date_children.all)))
+    }
 
     # For each tree, loaded trees and not loaded trees
-    #complete_vglm.delta_burst_date_children1.tree = list()
-    #AIC.vglm.burst_date_children.tree = list()
-    #for(tree_name in trees){
-    #    if(length(index_bursted.trees[[tree_name]])>MinNbGUForGLM){
+    complete_vglm.burst_delta_date_children.trees = list()
+    #AIC.vglm.burst_delta_date_children.tree = list()
+    for(tree_name in trees){
+        if(length(index_bursted.trees[[tree_name]])>MinNbGUForGLM){
 
-    #        complete_vglm.delta_burst_date_children1.tree[[tree_name]] = vglm(Delta_Burst_Date_Children1 ~ Burst_Date + 
-    #                                                                                         Position_A + 
-    #                                                                                         Position_Ancestor_A + 
-    #                                                                                         Nature_Ancestor_V,
-    #                                            family = cumulative(parallel=T), data=data, subset=index_bursted.trees[[tree_name]])
+            complete_vglm.burst_delta_date_children.trees[[tree_name]] = vglm(Burst_Delta_Date_Children ~ Burst_Date + 
+                                                                                             Position_A + 
+                                                                                             Position_Ancestor_A + 
+                                                                                             Nature_Ancestor_V,
+                                                family = cumulative(parallel=T), data=data, subset=index_bursted.trees[[tree_name]])
             #AIC.vglm.burst_date_children.tree[[tree_name]] = get_vglm_AIC(complete_vglm.burst_date_children.tree[[tree_name]])
-    #    }
-    #}
+        }
+    }
 
 
     ### selected GLM ###
@@ -507,7 +522,43 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
 
     #............ TODO
 
+    ##############################################
+    #### Delta Burst date of children  with poisson  
+    ##############################################
+    if (verbose >= 1) print("Estimate Burst delta date of children with poisson") 
 
+
+
+
+    ### complete GLM ###
+    # For all trees
+    complete_glm.burst_delta_date_children_poisson.all = glm( Burst_Delta_Date_ChildrenP  ~ Tree_Fruit_Load + 
+                                                           Burst_Date + 
+                                                           Position_A + 
+                                                           Position_Ancestor_A + 
+                                                           Nature_Ancestor_V,
+        family = poisson, data=data, subset = index_bursted.all)
+    if (verbose >= 3) summary(complete_glm.burst_delta_date_children_poisson.all)  # AIC : 
+
+    # For each tree, loaded trees and not loaded trees
+    complete_glm.burst_delta_date_children_poisson.trees = list()
+    for(tree_name in trees){
+        complete_glm.burst_delta_date_children_poisson.trees[[tree_name]] = glm(Burst_Delta_Date_ChildrenP ~ 
+            Burst_Date + Position_A + Position_Ancestor_A + Nature_Ancestor_V,
+            family = poisson, data=data, subset=index_bursted.trees[[tree_name]])
+    }
+
+
+    ### selected GLM ###
+    # For all trees
+    selected_glm.burst_delta_date_children_poisson.all = step(complete_glm.burst_delta_date_children_poisson.all, trace = tracestep)
+    if (verbose >= 3) summary(selected_glm.burst_delta_date_children_poisson.all)  # AIC : 
+
+    # For each tree, loaded trees and not loaded trees
+    selected_glm.burst_delta_date_children_poisson.trees = list()
+    for(tree_name in trees){
+        selected_glm.burst_delta_date_children_poisson.trees[[tree_name]] = step(complete_glm.burst_delta_date_children_poisson.trees[[tree_name]], trace = tracestep)
+    }
 
 
     ##############################################
@@ -672,6 +723,8 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                        complete_glm.has_lateral_gu_children.all, 
                        complete_glm.nb_lateral_gu.all, 
                        complete_vglm.burst_date_children.all, 
+                       complete_vglm.burst_delta_date_children.all, 
+                       complete_glm.burst_delta_date_children_poisson.all, 
                        complete_glm.flowering.all, 
                        complete_glm.nb_inflorescences.all, 
                        complete_vglm.flowering_week.all,
@@ -684,7 +737,9 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                            complete_glm.has_lateral_gu_children.trees[[tree_name]], 
                            complete_glm.has_apical_gu_child.trees[[tree_name]], 
                            complete_glm.nb_lateral_gu.trees[[tree_name]], 
-                           complete_vglm.burst_date_children.tree[[tree_name]], 
+                           complete_vglm.burst_date_children.trees[[tree_name]], 
+                           complete_vglm.burst_delta_date_children.trees[[tree_name]], 
+                           complete_glm.burst_delta_date_children_poisson.trees[[tree_name]], 
                            complete_glm.flowering.trees[[tree_name]], 
                            complete_glm.nb_inflorescences.trees[[tree_name]], 
                            complete_vglm.flowering_week.trees[[tree_name]], 
@@ -700,6 +755,8 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                        selected_glm.has_lateral_gu_children.all, 
                        selected_glm.nb_lateral_gu.all, 
                        complete_vglm.burst_date_children.all, 
+                       complete_vglm.burst_delta_date_children.all, 
+                       selected_glm.burst_delta_date_children_poisson.all, 
                        selected_glm.flowering.all, 
                        selected_glm.nb_inflorescences.all, 
                        complete_vglm.flowering_week.all,
@@ -712,7 +769,9 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                            selected_glm.has_apical_gu_child.trees[[tree_name]], 
                            selected_glm.has_lateral_gu_children.trees[[tree_name]], 
                            selected_glm.nb_lateral_gu.trees[[tree_name]], 
-                           complete_vglm.burst_date_children.tree[[tree_name]], 
+                           complete_vglm.burst_date_children.trees[[tree_name]], 
+                           complete_vglm.burst_delta_date_children.trees[[tree_name]], 
+                           selected_glm.burst_delta_date_children_poisson.trees[[tree_name]], 
                            selected_glm.flowering.trees[[tree_name]], 
                            selected_glm.nb_inflorescences.trees[[tree_name]], 
                            complete_vglm.flowering_week.trees[[tree_name]], 
@@ -1083,6 +1142,8 @@ determining_glm_tables_between_cycle = function(data, year, with_burstdate = FAL
                        NULL, 
                        NULL, 
                        NULL, 
+                       NULL, 
+                       NULL, 
                        path_complete_glm_all_trees, year, verbose >= 2)
 
     for(tree_name in trees){
@@ -1093,6 +1154,8 @@ determining_glm_tables_between_cycle = function(data, year, with_burstdate = FAL
                            complete_glm.has_lateral_gu_children.trees[[tree_name]], 
                            complete_glm.nb_lateral_gu.trees[[tree_name]], 
                            complete_vglm.burst_date_children.tree[[tree_name]], 
+                           NULL, 
+                           NULL, 
                            NULL, 
                            NULL, 
                            NULL, 
@@ -1111,6 +1174,8 @@ determining_glm_tables_between_cycle = function(data, year, with_burstdate = FAL
                        NULL, 
                        NULL, 
                        NULL, 
+                       NULL, 
+                       NULL, 
                        path_selected_glm_all_trees, year, verbose >= 2)
 
     for(tree_name in trees){
@@ -1121,6 +1186,8 @@ determining_glm_tables_between_cycle = function(data, year, with_burstdate = FAL
                            selected_glm.has_lateral_gu_children.trees[[tree_name]], 
                            selected_glm.nb_lateral_gu.trees[[tree_name]], 
                            complete_vglm.burst_date_children.tree[[tree_name]], 
+                           NULL, 
+                           NULL, 
                            NULL, 
                            NULL, 
                            NULL, 
@@ -1135,6 +1202,7 @@ determining_glm_tables_between_cycle_for_year = function(input_dir, year, with_b
     determining_glm_tables_between_cycle(table_gu_within_cycle, year,with_burstdate, verbose)
 }
 
+print("start")
 verbose = 1
 determining_glm_tables_within_cycle_for_year(input_dir, "04", verbose)
 determining_glm_tables_within_cycle_for_year(input_dir, "05", verbose)
