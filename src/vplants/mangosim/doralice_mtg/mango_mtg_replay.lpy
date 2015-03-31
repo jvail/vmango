@@ -60,6 +60,7 @@ def estimate_nb_descendants(mtg, first_uc):
 
 nbdescendants = estimate_nb_descendants(first_uc)
 
+initial_view = 1
 
 module GU, Inflorescence, A, B
 

@@ -2,7 +2,7 @@ from openalea.plantgl.all import * #Text
 from datetime import *# date, timedelta, datetime
 from math import *#floor, ceil, log, exp, degrees
 from random import *
-from pandas import DataFrame, read_csv
+#from pandas import DataFrame, read_csv
 
 from vplants.mangosim.state import *
 from vplants.mangosim.util_date import *
@@ -758,7 +758,7 @@ def __initialiseContext__(context):
 	Color_20.name = "Color_20"
 	context.turtle.setMaterial(20,Color_20)
 	context.animation_timestep = 0.001
-	scalars = [('TREE', 'Integer', 0, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.01, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True), ('daystep', 'Integer', 1, 1, 100), ('temperature_variability', 'Bool', False)]
+	scalars = [('TREE', 'Integer', 0, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.01, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True), ('daystep', 'Integer', 30, 1, 100), ('temperature_variability', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]

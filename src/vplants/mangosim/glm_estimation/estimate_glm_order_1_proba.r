@@ -72,6 +72,7 @@ determine_table_prob_from_glm = function(myglm){
                                  "Nature_V")
  
     data_probs = unique(produit_cartesien[variables])
+    print(data_probs)
 
     if (is_vglm){
         if(!is.null(variables)){
@@ -265,7 +266,10 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
     complete_glm.vegetative_burst.all = glm( Vegetative_Burst ~ Tree_Fruit_Load + Burst_Date + Position_A + Position_Ancestor_A +  Nature_Ancestor_V,
                                              family = binomial, data=data)
     if (verbose >= 3) summary(complete_glm.vegetative_burst.all) # AIC : 1711
-        
+    
+    nbgus= ftable(data$Tree_Fruit_Load,data$Position_A,data$Position_Ancestor_A,data$Nature_Ancestor_V,data$Burst_Date)
+    #print(nbgus)
+    
     # For each tree, loaded trees and not loaded trees
     complete_glm.vegetative_burst.trees = list()
     for(tree_name in trees){
@@ -278,6 +282,10 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
     # For all trees
     selected_glm.vegetative_burst.all = step(complete_glm.vegetative_burst.all, trace = tracestep)   
     if (verbose >= 3) summary(selected_glm.vegetative_burst.all) # AIC : 
+    sglm = selected_glm.vegetative_burst.all
+    factors = sglm$x
+    print(factors)
+    #nbgus= ftable(factors)
 
     # For each tree, loaded trees and not loaded trees
     selected_glm.vegetative_burst.trees = list()
@@ -1203,10 +1211,10 @@ determining_glm_tables_between_cycle_for_year = function(input_dir, year, with_b
 }
 
 print("start")
-verbose = 1
+verbose = 0
 determining_glm_tables_within_cycle_for_year(input_dir, "04", verbose)
-determining_glm_tables_within_cycle_for_year(input_dir, "05", verbose)
+#determining_glm_tables_within_cycle_for_year(input_dir, "05", verbose)
 
-determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", FALSE, verbose)
-determining_glm_tables_between_cycle_for_year(input_dir, "04to05", TRUE, verbose)
+#determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", FALSE, verbose)
+#determining_glm_tables_between_cycle_for_year(input_dir, "04to05", TRUE, verbose)
 

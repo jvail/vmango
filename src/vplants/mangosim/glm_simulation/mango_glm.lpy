@@ -99,17 +99,17 @@ estimationtype = eCompleteGlm if COMPLETE_GLM else eSelectedGlm
 
 Axiom: 
   mname = {eTreeBased : 'TreeBased', eManagementTypeBased : 'ManagementTypeBased', eVarietyBased : 'VarietyBased' }
-  nproduce Tree(ParameterSet(treename=treename, method=mname[estimationbase], estimation='CompleteGLM' if estimationtype == eCompleteGlm else 'SelectedGLM',loading='C' if Tree_Fruit_Load else 'NC',variety=variety, seed=SEED))
-  produce A(ParameterSet(burst_date=first_date,position=eApical,position_ancestor=None,nature_ancestor=None))
-#  l = Lsystem('../doralice_mtg/mango_mtg_replay.lpy',{'TREE':TREE})
-#  base = l.derive(1)
-#  for m in base:
-#    if m.name == 'A':
-#      if m[0].burst_date.month < 6:
-#        d = m[0].burst_date
-#        m[0].burst_date = date(year=d.year,month = 6,day=d.day)
-#  nsproduce(base)
-#
+  #  nproduce Tree(ParameterSet(treename=treename, method=mname[estimationbase], estimation='CompleteGLM' if estimationtype == eCompleteGlm else 'SelectedGLM',loading='C' if Tree_Fruit_Load else 'NC',variety=variety, seed=SEED))
+  #  produce A(ParameterSet(burst_date=first_date,position=eApical,position_ancestor=None,nature_ancestor=None))
+  l = Lsystem('../doralice_mtg/mango_mtg_replay.lpy',{'TREE':TREE})
+  base = l.derive(1)
+  for m in base:
+    if m.name == 'A':
+      if m[0].burst_date.month < 6:
+        d = m[0].burst_date
+        m[0].burst_date = date(year=d.year,month = 6,day=d.day)
+  nsproduce(base)
+
 derivation length: int(nbsteps)
 ignore: / &
 production:
@@ -275,7 +275,7 @@ def __initialiseContext__(context):
 	Color_7 = pgl.Material("Color_7" , ambient = (57,65,12) , diffuse = 1.66154 , )
 	Color_7.name = "Color_7"
 	context.turtle.setMaterial(7,Color_7)
-	scalars = [('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('TIMESTEP', 'Integer', 30, 1, 750), ('EXPORT_TO_MTG', 'Bool', True), ('SAVE_MTG', 'Bool', True), ('Geometry', 'Category'), ('TIMEBAR', 'Bool', True), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('GLM', 'Category'), ('COMPLETE_GLM', 'Bool', True), ('SEED', 'Integer', 2, 1, 100000)]
+	scalars = [('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('TIMESTEP', 'Integer', 30, 1, 750), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Geometry', 'Category'), ('TIMEBAR', 'Bool', True), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('GLM', 'Category'), ('COMPLETE_GLM', 'Bool', True), ('SEED', 'Integer', 2, 1, 100000)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
