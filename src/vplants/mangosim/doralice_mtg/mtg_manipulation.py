@@ -16,6 +16,7 @@ __MtgStyle = eMeasuredMtg
 
 BurstDatePropertyName = 'date_burst'
 BloomPropertyName = 'flowering'
+NbFruitPropertyName = 'nb_fr'
 CyclePropertyName = 'year'
 VarietyPropertyName = 'var'
 TreeNamePropertyName = 'code'
@@ -96,7 +97,16 @@ def has_burst_date(mtg, unit):
 
 @use_global_mtg
 def get_bloom_dates(mtg, inflo, default=None):
-    mtg.property(BloomPropertyName).get(inflo,default)
+    return mtg.property(BloomPropertyName).get(inflo,default)
+
+@use_global_mtg
+def get_nb_fruits(mtg, inflo, default=None):
+    nb_fruit = mtg.property(NbFruitPropertyName).get(inflo,'')
+    if len(nb_fruit) == 0:
+        return 0
+    else:
+        return int(nb_fruit)
+
 
 @use_global_mtg
 def is_gu_dead_before_cycle_end(mtg, gu, cycle):
