@@ -12,6 +12,9 @@ vegetative_proba = ['vegetative_burst','burst_date_children','has_apical_gu_chil
 vegetative_proba_family = [eBinomial, eVglm, eBinomial, eBinomial, ePoisson]
 flowering_proba  = ['flowering','nb_inflorescences','flowering_week']
 flowering_proba_family  = [eBinomial, ePoisson, eVglm ]
+fruiting_proba  = ['fruiting','nb_fruits']
+fruiting_proba_family  = [eBinomial, ePoisson ]
+
 
 within_extension = {3 : None, 4 : 'within_04', 5 : 'within_05'}
 between_extension = {3 : 'between_03to0405', 4 : 'between_04to05', 5 : None }
@@ -98,7 +101,7 @@ def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationty
         proba_within, proba_between = {}, {}
         if within_extension[cycle]:
             ext = within_extension[cycle]
-            for prop,family in zip(vegetative_proba+flowering_proba,vegetative_proba_family+flowering_proba_family):
+            for prop,family in zip(vegetative_proba+flowering_proba+fruiting_proba,vegetative_proba_family+flowering_proba_family+fruiting_proba_family):
                 propfile = join(probafilepath,prop+'_'+ext+'.csv')
                 if exists(propfile):
                     p = ProbaTable(prop,family,propfile)
@@ -245,8 +248,17 @@ class UnitDev:
         period_beg, period_end = bloom_weeks[self.cycle][fweek]
         return period_beg + timedelta(days=randint(0,(period_end-period_beg).days))
 
+    def fruiting(self):
+        try:
+            return self.get_realization('fruiting')
+        except KeyError, ie:
+            return False
+
+    def nb_fruits(self):
+        return self.get_realization('nb_fruits')+1
+
     def process(self):
-        apical_child, nb_lateral_gu_children, nb_inflorescences = False, 0, 0
+        apical_child, nb_lateral_gu_children, nb_inflorescences, nb_fruits = False, 0, 0, 0
         date_children_burst, date_inflo_bloom = None, None
         if self.cycle > 3 and self.vegetative_burst():
             apical_child = self.has_apical_gu_child()
@@ -259,6 +271,8 @@ class UnitDev:
                 nb_inflorescences = self.nb_inflorescences()
                 date_inflo_bloom  = self.flowering_date()
                 self.paramsdelayed['Nature_V'] = eInflorescence
+                if self.fruiting():
+                    nb_fruits = self.nb_fruits()
             else:
                 self.paramsdelayed['Nature_V'] = eVegetative
 
@@ -268,7 +282,7 @@ class UnitDev:
                 if self.has_lateral_gu_children(eLaterCycle):
                     nb_lateral_gu_children += self.nb_lateral_gu_children(eLaterCycle)
                 date_children_burst = self.burst_date_children(eLaterCycle)
-        return apical_child, nb_lateral_gu_children, nb_inflorescences, date_children_burst, date_inflo_bloom
+        return apical_child, nb_lateral_gu_children, nb_inflorescences, nb_fruits, date_children_burst, date_inflo_bloom
             
 
 

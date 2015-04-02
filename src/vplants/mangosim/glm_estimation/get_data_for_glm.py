@@ -84,7 +84,7 @@ def flowering_dev_variables(mtg, gu, cycle = None):
       Flowering = NotRelevant
       Nb_Inflorescence = NotRelevant
       Flowering_Week = NotRelevant
-      Fruiting, NbFruits = NotRelevant, NotRelevant
+      Fruiting, Nb_Fruits = NotRelevant, NotRelevant
     else : 
       # The inflorescence children of the gu
       if not cycle is None:
@@ -95,7 +95,7 @@ def flowering_dev_variables(mtg, gu, cycle = None):
       if not Flowering : 
         Nb_Inflorescence = NotRelevant
         Flowering_Week = NotRelevant
-        Fruiting, NbFruits = NotRelevant, NotRelevant
+        Fruiting, Nb_Fruits = NotRelevant, NotRelevant
       else : 
         # A unique entity in the MTG represent all the inflorescence children of a given gu
         inflo = inflorescence_child[0]
@@ -115,18 +115,18 @@ def flowering_dev_variables(mtg, gu, cycle = None):
             Flowering_Week = get_bloom_week(date_flo[0], icycle)
         
         nbfruits = get_nb_fruits(mtg, inflo)
-        Fruiting, NbFruits = int(nbfruits > 0), nbfruits 
+        Fruiting, Nb_Fruits = int(nbfruits > 0), nbfruits 
         
-    return is_terminal, Flowering, Nb_Inflorescence, Flowering_Week, Fruiting, NbFruits
+    return is_terminal, Flowering, Nb_Inflorescence, Flowering_Week, Fruiting, Nb_Fruits
 
 def add_flowering_dev_variables(dict_gu_prop, mtg, gu, cycle):
-    is_terminal, Flowering, Nb_Inflorescence, Flowering_Week, Fruiting, NbFruits = flowering_dev_variables(mtg, gu, cycle)
+    is_terminal, Flowering, Nb_Inflorescence, Flowering_Week, Fruiting, Nb_Fruits = flowering_dev_variables(mtg, gu, cycle)
     dict_gu_prop["is_terminal"] = is_terminal
     dict_gu_prop["Flowering"] = Flowering
     dict_gu_prop["Nb_Inflorescence"] = Nb_Inflorescence 
     dict_gu_prop["Flowering_Week"] = Flowering_Week
     dict_gu_prop["Fruiting"] = Fruiting
-    dict_gu_prop["NbFruits"] = NbFruits
+    dict_gu_prop["Nb_Fruits"] = Nb_Fruits
 
 def explicative_variables_inside(mtg, gu):
     # get position feature (as mother)

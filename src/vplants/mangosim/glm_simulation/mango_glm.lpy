@@ -1,4 +1,4 @@
-from openalea.plantgl.all import Text
+from openalea.plantgl.all import Text, Scaled, Sphere
 from datetime import date, timedelta
 from math import floor, ceil, log
 
@@ -45,6 +45,12 @@ def Start():
   current_cycle = get_cycle(current_date)
   backward()
 
+new_elements = True
+def StartEach():
+  global new_elements
+  useGroup(1 if new_elements else 0)
+  new_elements = False
+
 
 def EndEach():
   global current_date
@@ -84,7 +90,7 @@ def export_to_mtg(lstring, lscene):
   return mtg
 
 
-module Tree, GU, Inflorescence, A
+module Tree, GU, Inflorescence, Fruit, A
 
 def estimate_radius(nbdescendants):
   return 0.02*pow(nbdescendants, 0.35)
@@ -114,6 +120,7 @@ derivation length: int(nbsteps)
 ignore: / &
 production:
 
+group 1:
 GU(p) >> x([ GU(pl) ]) GU(pa):
   p.nbdescendants = sum([pli.nbdescendants for pli in pl])+pa.nbdescendants+1
   p.radius = estimate_radius(p.nbdescendants)
@@ -124,16 +131,20 @@ GU(p) >> x([ GU(pl) ]) :
   p.radius = estimate_radius(p.nbdescendants)
   produce GU(p)
 
+
+group 0:
 decomposition:
 maximum depth: 100
 A( p ):
   if  p.burst_date <= current_date :
+    global new_elements
+    new_elements = True
     dev = UnitDev(Burst_Date=p.burst_date, 
                   Position_A=p.position,
                   Position_Ancestor_A=p.position_ancestor,
                   Nature_Ancestor_V=p.nature_ancestor,
                   Tree_Fruit_Load=Tree_Fruit_Load)
-    apical_child, nb_lat_children, nb_inflorescences, date_children_burst, date_inflo_bloom = dev.process()
+    apical_child, nb_lat_children, nb_inflorescences, nb_fruits, date_children_burst, date_inflo_bloom = dev.process()
     
     p = p.copy()
     p.set(nature = eInflorescence if nb_inflorescences > 0 else eVegetative,
@@ -143,6 +154,7 @@ A( p ):
     
     nb_lat_inflo = nb_inflorescences if apical_child else max(0,nb_inflorescences-1)
     nb_lat_elements = nb_lat_children + nb_lat_inflo
+    nb_fruiting_lat_inflo = min(nb_lat_inflo, max(0, nb_fruits - int(not apical_child)))
     if nb_lat_elements > 0:
       anglebetweenchildren = 360./nb_lat_elements
     if not date_children_burst is None:
@@ -161,17 +173,21 @@ A( p ):
       
     if nb_inflorescences > 0:
       for i in xrange(nb_lat_inflo):
-          nproduce /(anglebetweenchildren) [&(60) Inflorescence(ParameterSet(bloom_date=date_inflo_bloom, cycle =  get_cycle(date_inflo_bloom))) ]
+          nproduce /(anglebetweenchildren) [&(60) Inflorescence(ParameterSet(bloom_date=date_inflo_bloom, cycle =  get_cycle(date_inflo_bloom), nb_fruits = (1 if i < nb_fruiting_lat_inflo else 0))) ]
     
     if apical_child:
         p = baseparameter
         p.set(position = eApical)
         nproduce A(p)
     elif nb_inflorescences > 0:
-      nproduce Inflorescence(ParameterSet(bloom_date=date_inflo_bloom, cycle =  get_cycle(date_inflo_bloom)))
+      nproduce Inflorescence(ParameterSet(bloom_date=date_inflo_bloom, cycle =  get_cycle(date_inflo_bloom), nb_fruits = nb_fruits - nb_fruiting_lat_inflo))
     
 
-
+Inflorescence(param):
+  if param.nb_fruits > 0 and (param.bloom_date - current_date).days >=  60:
+    for i in xrange(param.nb_fruits):
+      nproduce [Fruit(ParameterSet(inflo_bloom_date= param.bloom_date))]
+    
 
 
 interpretation:
@@ -264,6 +280,9 @@ FlowerRepr(day_age,s) :
   else:
     scale = 0.3
     produce ,(4) _(inflo_radius(0))F(scale,inflo_radius(1))
+
+Fruit(p):
+  nproduce F(0.3) ,(6) @g(Scaled(0.2, 0.2, 0.4, Sphere(1)))
 
 endlsystem
 ###### INITIALISATION ######

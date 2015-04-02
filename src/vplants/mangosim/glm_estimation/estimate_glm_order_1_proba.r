@@ -72,7 +72,7 @@ determine_table_prob_from_glm = function(myglm){
                                  "Nature_V")
  
     data_probs = unique(produit_cartesien[variables])
-    print(data_probs)
+    #print(data_probs)
 
     if (is_vglm){
         if(!is.null(variables)){
@@ -139,7 +139,8 @@ writing_glm_tables = function(vegetative_burst,
                               flowering, 
                               nb_inflo, 
                               flowering_week, 
-					fruiting,
+                              fruiting,
+                              nb_fruits,
                               output_dir, 
                               year, 
                               verbose = TRUE){
@@ -202,6 +203,12 @@ writing_glm_tables = function(vegetative_burst,
         if (verbose) print("Write probas of fruiting")
         table_prob_fruiting = determine_table_prob_from_glm(fruiting)
         write.csv(table_prob_fruiting,file=paste(output_dir,"fruiting_",year,".csv",sep=""), row.names = FALSE)
+    }
+
+    if( !is.null(nb_fruits) ){
+        if (verbose) print("Write probas of nb_fruits")
+        table_prob_nb_fruits = determine_table_prob_from_glm(nb_fruits)
+        write.csv(table_prob_nb_fruits,file=paste(output_dir,"nb_fruits_",year,".csv",sep=""), row.names = FALSE)
     }
 
 
@@ -274,7 +281,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                                              family = binomial, data=data)
     if (verbose >= 3) summary(complete_glm.vegetative_burst.all) # AIC : 1711
     
-    nbgus= ftable(data$Tree_Fruit_Load,data$Position_A,data$Position_Ancestor_A,data$Nature_Ancestor_V,data$Burst_Date)
+    #nbgus= ftable(data$Tree_Fruit_Load,data$Position_A,data$Position_Ancestor_A,data$Nature_Ancestor_V,data$Burst_Date)
     #print(nbgus)
     
     # For each tree, loaded trees and not loaded trees
@@ -290,8 +297,8 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
     selected_glm.vegetative_burst.all = step(complete_glm.vegetative_burst.all, trace = tracestep)   
     if (verbose >= 3) summary(selected_glm.vegetative_burst.all) # AIC : 
     sglm = selected_glm.vegetative_burst.all
-    factors = sglm$x
-    print(factors)
+    #factors = sglm$x
+    #print(factors)
     #nbgus= ftable(factors)
 
     # For each tree, loaded trees and not loaded trees
@@ -769,6 +776,61 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
     }
 
 
+   ##############################################
+    #### Number of fruits 
+    ##############################################
+    if (verbose >= 1) print("Estimate Number of fruits") 
+    index_fruiting.all = which(Fruiting == 1)
+    Nb_fruits = Nb_Fruits -1
+
+    index_fruiting.trees = list()
+    for(tree_name in trees){
+        if(tree_name=="loaded"){
+            index_fruiting.trees[[tree_name]] = which(Tree_Fruit_Load == 1 & Fruiting == 1)
+        }else if(tree_name=="notloaded"){
+            index_fruiting.trees[[tree_name]] = which(Tree_Fruit_Load == 0 & Fruiting == 1)
+        }else{
+            index_fruiting.trees[[tree_name]] = which(tree == tree_name & Fruiting == 1)
+        }
+    }
+
+
+    ### complete GLM ###
+    # For all trees
+    complete_glm.nb_fruits.all = glm( Nb_fruits ~ Burst_Date + 
+                                                  Position_A + 
+                                                  Position_Ancestor_A + 
+                                                  Nature_Ancestor_V,
+        family = poisson, data=data, subset = index_fruiting.all)
+    if (verbose >= 3) summary(complete_glm.nb_fruits.all)  # AIC : 
+
+    # For each tree, loaded trees and not loaded trees
+    complete_glm.nb_fruits.trees = list()
+    for(tree_name in trees){
+        if(tree_name=="notloaded" | tree_name== "B14" | tree_name =="F6"){
+            complete_glm.nb_fruits.trees[[tree_name]] = NULL
+        }
+        else {
+        complete_glm.nb_fruits.trees[[tree_name]] = glm( Nb_fruits ~ Burst_Date + 
+                                                                            Position_A + 
+                                                                            Position_Ancestor_A + 
+                                                                            Nature_Ancestor_V,
+            family = poisson, data=data, subset=index_fruiting.trees[[tree_name]])
+        }
+    }
+
+
+    ### selected GLM ###
+    # For all trees
+    selected_glm.nb_fruits.all = step(complete_glm.nb_fruits.all, trace = tracestep) 
+    if (verbose >= 3) summary(selected_glm.nb_fruits.all)  # AIC : 
+
+    # For each tree, loaded trees and not loaded trees
+    selected_glm.nb_fruits.trees = list()
+    for(tree_name in trees){
+        if (is.null(complete_glm.nb_fruits.trees[[tree_name]])){selected_glm.nb_fruits.trees[[tree_name]] = NULL}
+        else {selected_glm.nb_fruits.trees[[tree_name]] = step(complete_glm.nb_fruits.trees[[tree_name]], trace = tracestep)}
+    }
 
        
 
@@ -795,6 +857,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                        complete_glm.nb_inflorescences.all, 
                        complete_vglm.flowering_week.all,
                        complete_glm.fruiting.all, 
+                       complete_glm.nb_fruits.all, 
                        path_complete_glm_all_trees, year, verbose >= 2)
 
     for(tree_name in trees){
@@ -811,6 +874,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                            complete_glm.nb_inflorescences.trees[[tree_name]], 
                            complete_vglm.flowering_week.trees[[tree_name]], 
                            complete_glm.fruiting.trees[[tree_name]], 
+                           complete_glm.nb_fruits.trees[[tree_name]], 
                            path_complete_glm_tree, year, verbose >= 2)
     }
 
@@ -829,6 +893,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                        selected_glm.nb_inflorescences.all, 
                        complete_vglm.flowering_week.all,
                        selected_glm.fruiting.all, 
+                       selected_glm.nb_fruits.all, 
                        path_selected_glm_all_trees, year, verbose >= 2)
 
     for(tree_name in trees){
@@ -845,6 +910,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                            selected_glm.nb_inflorescences.trees[[tree_name]], 
                            complete_vglm.flowering_week.trees[[tree_name]], 
                            selected_glm.fruiting.trees[[tree_name]], 
+                           selected_glm.nb_fruits.trees[[tree_name]], 
                            path_selected_glm_tree, year, verbose >= 2)
     }
 
@@ -1215,6 +1281,7 @@ determining_glm_tables_between_cycle = function(data, year, with_burstdate = FAL
                        NULL, 
                        NULL, 
                        NULL, 
+                       NULL, 
                        path_complete_glm_all_trees, year, verbose >= 2)
 
     for(tree_name in trees){
@@ -1225,6 +1292,7 @@ determining_glm_tables_between_cycle = function(data, year, with_burstdate = FAL
                            complete_glm.has_lateral_gu_children.trees[[tree_name]], 
                            complete_glm.nb_lateral_gu.trees[[tree_name]], 
                            complete_vglm.burst_date_children.tree[[tree_name]], 
+                           NULL, 
                            NULL, 
                            NULL, 
                            NULL, 
@@ -1249,6 +1317,7 @@ determining_glm_tables_between_cycle = function(data, year, with_burstdate = FAL
                        NULL, 
                        NULL, 
                        NULL, 
+                       NULL, 
                        path_selected_glm_all_trees, year, verbose >= 2)
 
     for(tree_name in trees){
@@ -1259,6 +1328,7 @@ determining_glm_tables_between_cycle = function(data, year, with_burstdate = FAL
                            selected_glm.has_lateral_gu_children.trees[[tree_name]], 
                            selected_glm.nb_lateral_gu.trees[[tree_name]], 
                            complete_vglm.burst_date_children.tree[[tree_name]], 
+                           NULL, 
                            NULL, 
                            NULL, 
                            NULL, 
@@ -1277,10 +1347,10 @@ determining_glm_tables_between_cycle_for_year = function(input_dir, year, with_b
 }
 
 print("start")
-verbose = 0
+verbose = 1
 determining_glm_tables_within_cycle_for_year(input_dir, "04", verbose)
-#determining_glm_tables_within_cycle_for_year(input_dir, "05", verbose)
+determining_glm_tables_within_cycle_for_year(input_dir, "05", verbose)
 
-#determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", FALSE, verbose)
-#determining_glm_tables_between_cycle_for_year(input_dir, "04to05", TRUE, verbose)
+determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", FALSE, verbose)
+determining_glm_tables_between_cycle_for_year(input_dir, "04to05", TRUE, verbose)
 

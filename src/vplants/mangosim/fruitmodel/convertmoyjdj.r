@@ -1,9 +1,10 @@
-## fonction pour convertir températures moyennes journalières en ddj
+## fonction pour convertir temperatures moyennes journalieres en ddj
 convertmoyjdj <- function(Tu, Tl, Tmax, Tmin)
 {
 	provi <- (Tmax + Tmin)/2
 	if (provi >= Tl)
-		provi - Tl
+		return (provi - Tl)
 	else
-		0
+		return (0)
 }
+

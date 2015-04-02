@@ -1,21 +1,23 @@
-setwd ("D:/Mes Données/doc mathieu/fichier R/modèle-mangue")
+setwd ("/Users/fboudon/Develop/vplants/branches/mangosim/src/vplants/mangosim/fruitmodel")
 getwd()
-tempstpierre2002 <- read.table("tempstpierre2002.txt", header=T, sep="\t")
-tempstpierre2002$Date <- as.Date(tempstpierre2002$Date, "%d/%m/%Y")
-#  "Avis : class discarded from column ‘Date’"
-rayostpierre2002 <- read.table("rayorun02f1bis.txt", header=T, sep="\t")
-      rayostpierre2002$DATE <- as.Date(rayostpierre2002$DATE, "%d/%m/%y")
+tempstpierre2002 <- read.table("tempstpierre2002.csv", header=T, sep=";")
+tempstpierre2002$Date <- as.Date(tempstpierre2002$Date, "%d/%m/%y")
+head(tempstpierre2002)
+#  "Avis : class discarded from column ?Date?"
+rayostpierre2002 <- read.table("rayostpierre2002.csv", header=T, sep=";")
+rayostpierre2002$DATE <- as.Date(rayostpierre2002$DATE, "%d/%m/%y")
+head(rayostpierre2002)
 k1runquant <- read.table("k1runquant.txt", header=T, sep="\t")
-source("D:/Mes Données/doc mathieu/fichier R/modèle-mangue/convertmoyjdj.R")
-source("modèle-complet-arbreB2-paramML.R")
+source("convertmoyjdj.r")
+source("modele-complet-arbreB2-paramML.r")
 
 
 
-rec02 <- read.table("D:/Mes Données/doc mathieu/fichier R/modèle-mangue/MFrec02.csv", header=T, sep=";")
-rec02split <- split(rec02, rec02$arbre)
+#rec02 <- read.table("MFrec02.csv", header=T, sep=";")
+#rec02split <- split(rec02, rec02$arbre)
 
 
-# fonction permettant d'estimer les paramètres de la distribution
+# fonction permettant d'estimer les param?tres de la distribution
 logvraineg <- function(param, obs) {
 m1 <- param[1]
 sd1 <- param[2]
@@ -24,7 +26,7 @@ sd1 <- param[2]
 
 
 # ++++++++++++++++++++----------------------------------------------++++++++++++++++++++++++++++++++++++++++
-# essai sur B2 uniquement --> méthode de Monte-Carlo
+# essai sur B2 uniquement --> m?thode de Monte-Carlo
 # ++++++++++++++++++++----------------------------------------------++++++++++++++++++++++++++++++++++++++++
 
 
@@ -35,7 +37,7 @@ sd1 <- param[2]
 
 # SIMULATIONS DE MC
 
-nbfruits <- dim(rec02split$B2)[1]
+nbfruits <- 10 # dim(rec02split$B2)[1]
 paramloi <- matrix(nrow=20,ncol=3)  
 paramloi2 <- matrix(nrow=20,ncol=3)
 paramloi3 <- matrix(nrow=20,ncol=3)
@@ -46,13 +48,15 @@ distribdataC <- NULL
 distribdataD <- NULL
 distribdataMS <- NULL
 
+mangsucreauB202(1)
+
 for (i in 1:20){
 
 mangsucreauB202(nbfruits)
 
 breaks <- seq(0,800,50)                               # classes de poids        
 dist <- table(cut(resultfincroiss[,"MF"], breaks))    # nb de fruits dans chaque classe   
-distribdata <- dist/dim(resultfincroiss)[1]           # fréquence des poids 
+distribdata <- dist/dim(resultfincroiss)[1]           # fr?quence des poids 
 fit <- optim(f = logvraineg, p = c(350,50), obs = resultfincroiss[,"MF"])
 est <- fit$par
 paramloi[i,1:3] <- c(round(fit$par[1],0),round(fit$par[2],0),nbfruits)
@@ -100,68 +104,68 @@ dimnames(rsltdistribMS)[[2]] <- c("x","moy","sd","qt25","qt75")
 
 par(mfrow=c(1,2))
 
-# graphique calibre à la récolte
+# graphique calibre ? la r?colte
 # -----------------------------------------------------------------------------------------
 
-# OBSERVATIONS --> graphe de la fréquence !
+# OBSERVATIONS --> graphe de la fr?quence !
 breaks <- seq(0,800,50)                               # classes de poids        
 dist <- table(cut(rec02split$B2[,"poids"], breaks))    # nb de fruits dans chaque classe   
-distribdataOBS <- dist/dim(rec02split$B2)[1]           # fréquence des poids
+distribdataOBS <- dist/dim(rec02split$B2)[1]           # fr?quence des poids
 plot(seq(25,775,by=50),distribdataOBS,type="l",lwd=2,ylim=c(0,0.5),main="Calibres")
-# définition de la loi normale   
-paramloiOBS <- vector(length=3)     # vecteur des paramètres de la loi ajustée
+# d?finition de la loi normale   
+paramloiOBS <- vector(length=3)     # vecteur des param?tres de la loi ajust?e
 names(paramloiOBS) <- c("MFmoy","MFsd","nbfruits")
 fit <- optim(f = logvraineg, p = c(350,50), obs = rec02split$B2[,"poids"])
 est <- fit$par
 paramloiOBS[1:3] <- c(round(fit$par[1],0),round(fit$par[2],0),nrow(rec02split$B2))
 
-# SIMULATIONS --> graphe de la distribution moyenne avec quantiles à 25% et 75%
+# SIMULATIONS --> graphe de la distribution moyenne avec quantiles ? 25% et 75%
 lines(rsltdistribC$x,rsltdistribC$moy)
 lines(rsltdistribC$x,rsltdistribC$qt75,lty="dashed")
 lines(rsltdistribC$x,rsltdistribC$qt25,lty="dashed")
 
 
-# graphique date de récolte
+# graphique date de r?colte
 # -----------------------------------------------------------------------------------------
 
-# OBSERVATIONS --> graphe de la fréquence !
+# OBSERVATIONS --> graphe de la fr?quence !
 breaks <- seq(90,200,10)                               # classes de poids        
 dist <- table(cut(rec02split$B2[,"DAB"], breaks))    # nb de fruits dans chaque classe   
-distribdataOBS <- dist/dim(rec02split$B2)[1]           # fréquence des poids
-plot(seq(95,195,by=10),distribdataOBS,type="l",lwd=2,ylim=c(0,0.5),main="Date récolte")
-# définition de la loi normale   
-paramloiOBS <- vector(length=3)     # vecteur des paramètres de la loi ajustée
+distribdataOBS <- dist/dim(rec02split$B2)[1]           # fr?quence des poids
+plot(seq(95,195,by=10),distribdataOBS,type="l",lwd=2,ylim=c(0,0.5),main="Date r?colte")
+# d?finition de la loi normale   
+paramloiOBS <- vector(length=3)     # vecteur des param?tres de la loi ajust?e
 names(paramloiOBS) <- c("DABmoy","DABsd","nbfruits")
 fit <- optim(f = logvraineg, p = c(160,20), obs = rec02split$B2[,"DAB"])
 est <- fit$par
 paramloiOBS[1:3] <- c(round(fit$par[1],0),round(fit$par[2],0),nrow(rec02split$B2))
 
-# SIMULATIONS --> graphe de la distribution moyenne avec quantiles à 25% et 75%
+# SIMULATIONS --> graphe de la distribution moyenne avec quantiles ? 25% et 75%
 lines(rsltdistribD$x,rsltdistribD$moy)
 lines(rsltdistribD$x,rsltdistribD$qt75,lty="dashed")
 lines(rsltdistribD$x,rsltdistribD$qt25,lty="dashed")
 # --------------------------------------------------------------------------------------------------------------
 
-# graphique de la MS à la récolte
+# graphique de la MS ? la r?colte
 # -----------------------------------------------------------------------------------------
 
-# teneur en MS moyenne à la récolte: 20.75%
+# teneur en MS moyenne ? la r?colte: 20.75%
 
-# OBSERVATIONS --> graphe de la fréquence !
+# OBSERVATIONS --> graphe de la fr?quence !
 x11()
 breaks <- seq(0,150,10) 
 MS <- rec02split$B2[,"poids"]*0.2075                              # classes de poids        
 dist <- table(cut(MS, breaks))          # nb de fruits dans chaque classe   
-distribdataOBS <- dist/length(MS)           # fréquence des poids
+distribdataOBS <- dist/length(MS)           # fr?quence des poids
 plot(seq(5,145,by=10),distribdataOBS,type="l",lwd=2,ylim=c(0,0.5),main="MS")
-# définition de la loi normale   
-paramloiOBS <- vector(length=3)     # vecteur des paramètres de la loi ajustée
+# d?finition de la loi normale   
+paramloiOBS <- vector(length=3)     # vecteur des param?tres de la loi ajust?e
 names(paramloiOBS) <- c("MSmoy","MSFsd","nbfruits")
 fit <- optim(f = logvraineg, p = c(75,20), obs = MS)
 est <- fit$par
 paramloiOBS[1:3] <- c(round(fit$par[1],0),round(fit$par[2],0),nrow(rec02split$B2))
 
-# SIMULATIONS --> graphe de la distribution moyenne avec quantiles à 25% et 75%
+# SIMULATIONS --> graphe de la distribution moyenne avec quantiles ? 25% et 75%
 lines(rsltdistribMS$x,rsltdistribMS$moy)
 lines(rsltdistribMS$x,rsltdistribMS$qt75,lty="dashed")
 lines(rsltdistribMS$x,rsltdistribMS$qt25,lty="dashed")

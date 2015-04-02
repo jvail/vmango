@@ -1,4 +1,4 @@
-from openalea.plantgl.all import Text
+from openalea.plantgl.all import Text, Scaled, Sphere
 from datetime import date, timedelta, datetime
 from math import floor, ceil, log
 
@@ -36,6 +36,12 @@ def Start():
   current_cycle = get_cycle(current_date)
   backward()
 
+new_elements = True
+def StartEach():
+  global new_elements
+  useGroup(1 if new_elements else 0)
+  new_elements = False
+
 
 def EndEach():
   global current_date
@@ -65,6 +71,8 @@ initial_view = 1
 module GU, Inflorescence, A, B
 
 def generate_elements(current, burst_date = None, length=1, nbdescendants = 1):
+    global new_elements
+    new_elements = True
     param = ParameterSet(burst_date=burst_date,
                          nature=mm.get_nature_gu(mtg, current),
                          cycle =mm.get_unit_cycle(mtg, current), 
@@ -77,9 +85,12 @@ def generate_elements(current, burst_date = None, length=1, nbdescendants = 1):
     apical_child = [c for c in children if mm.is_apical(mtg, c)]
     lat_children = [c for c in children if mm.is_lateral(mtg,c)]
     inflo = mm.inflorescence_children(mtg, current)
+    nb_inflorescences = len(inflo)
     nb_lat_children = len(lat_children)
+    nb_lat_inflo = nb_inflorescences if len(apical_child) > 0 else max(0,nb_inflorescences-1)
+    nb_lat_elements = nb_lat_children + nb_lat_inflo
     if nb_lat_children > 0:
-      lat_angle = 360./nb_lat_children
+      lat_angle = 360./nb_lat_elements
     def gu_parameters(gu):
        p = ParameterSet(mtgid=gu, 
                           position=mm.get_position_gu(mtg,gu), 
@@ -97,12 +108,21 @@ def generate_elements(current, burst_date = None, length=1, nbdescendants = 1):
         nproduce ]
     if len(apical_child) > 0:
       if len(inflo) > 0:
-        nproduce [ Inflorescence(ParameterSet(mtgid=inflo[0],bloom_dates=mm.get_bloom_dates(mtg,inflo[0]))) ]
+        for i in xrange(1,len(inflo)):
+          bloom_date = mm.get_bloom_dates(mtg,inflo[i])     
+          if not bloom_date: bloom_date = cycle_begining(get_cycle(burst_date if burst_date else first_date)+1)
+          else: bloom_date = bloom_date[0]
+          nbfruits = mm.get_nb_fruits(mtg,inflo[i])
+          nproduce /(lat_angle) [ &(60) Inflorescence(ParameterSet(mtgid=inflo[i],bloom_date=bloom_date,nb_fruits=nbfruits)) ]
       ch = apical_child[0]
       if mm.get_unit_cycle(mtg, ch) == 3:  nproduce B(ch)
       else: nproduce A( gu_parameters(ch) )
     elif len(inflo) > 0:
-        nproduce Inflorescence(ParameterSet(mtgid=inflo[0],bloom_dates=mm.get_bloom_dates(mtg,inflo[0])))
+        bloom_date = mm.get_bloom_dates(mtg,inflo[0])        
+        if not bloom_date: bloom_date = cycle_begining(get_cycle(burst_date if burst_date else first_date)+1)
+        else: bloom_date = bloom_date[0]
+        nbfruits = mm.get_nb_fruits(mtg,inflo[0])
+        nproduce Inflorescence(ParameterSet(mtgid=inflo[0],bloom_date=bloom_date,nb_fruits=nbfruits))
 
 
 module G
@@ -126,7 +146,7 @@ B(current):
 
 production:
 
-group 0: # pipe model
+group 1: # pipe model
 GU(p) >> x([ GU(pl) ]) GU(pa):
   p.nbdescendants = sum([pli.nbdescendants for pli in pl])+pa.nbdescendants+1
   p.radius = estimate_radius(p.nbdescendants)
@@ -144,6 +164,12 @@ A( p ):
 
 
 
+Inflorescence(param):
+  if param.nb_fruits > 0 and  (current_date - param.bloom_date).days >= 60:
+    print 'change inflo to fruit',param.mtgid, param.bloom_date, (current_date - param.bloom_date).days
+    for i in xrange(param.nb_fruits):
+      nproduce [Fruit(ParameterSet(inflo_bloom_date= param.bloom_date))]
+    produce
 
 interpretation:
 maximum depth:5
@@ -198,10 +224,9 @@ Leaf(angle, radius, length, scale ):
   produce [ /(angle) &(90)  f(radius) @Ge @Gc @v &(10) Sweep(leafpath,leafsection,length*scale,length*scale/10,scale,leafdiam)]
 
 Inflorescence(p) :
-  bloom_date = p.bloom_dates[0] if p.bloom_dates else first_date
-  day_age = (current_date - bloom_date).days
+  day_age = (current_date - p.bloom_date).days
   if day_age < 60:
-    produce FlowerRepr(day_age, bloom_date.year + bloom_date.month + bloom_date.day)
+    produce FlowerRepr(day_age, p.bloom_date.year + p.bloom_date.month + p.bloom_date.day)
 
 FlowerRepr(day_age,s) :
   growth_duration = 21.
@@ -232,7 +257,8 @@ FlowerRepr(day_age,s) :
     scale = 0.3
     produce ,(4) _(inflo_radius(0))F(scale,inflo_radius(1))
 
-
+Fruit(p):
+  nproduce F(0.3) ,(6) @g(Scaled(0.2, 0.2, 0.3, Sphere(1)))
 
 endlsystem
 ###### INITIALISATION ######
