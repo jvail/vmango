@@ -1,0 +1,18 @@
+Installing VGAM for R. 
+----------------------
+Two solutions exists:
+1/ Launch R and type:
+> install.packages('VGAM')
+
+2/ Retrieve source and installing in a shell.
+Go to page 
+http://cran.r-project.org/web/packages/VGAM/index.html
+An download last version of the module.
+In a shell, type:
+R CMD INSTALL VGAM_X.X.X.tar.gz
+
+
+Executing the R script. 
+-----------------------
+From the shell,
+$ R -f estimate_glm_order_1_proba.r 
