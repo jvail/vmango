@@ -761,6 +761,7 @@ def __initialiseContext__(context):
 	Color_20.name = "Color_20"
 	context.turtle.setMaterial(20,Color_20)
 	context.animation_timestep = 0.001
+	context.options.setSelection('Module declaration',1)
 	scalars = [('TREE', 'Integer', 4, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True), ('daystep', 'Integer', 15, 1, 100), ('temperature_variability', 'Bool', False), ('EXPORT_DATA', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
