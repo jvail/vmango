@@ -1,4 +1,4 @@
-from openalea.plantgl.all import * #Text
+from openalea.plantgl.all import * #Text, Scaled, Sphere
 from datetime import *# date, timedelta, datetime
 from math import *#floor, ceil, log, exp, degrees
 from random import *
@@ -283,6 +283,7 @@ module A, B, GUEnd, Internode, Leaf, Inflorescence_bud : scale = 2
 module Information
 module Flower, fleur
 module Petiole, fLeaf 
+module Fruit
 
   
   
@@ -478,7 +479,7 @@ def generate_elements(current, burst_date = None, length = None, nbdescendants =
                                              mtgid=inflo[0],
                                              bloom_date=bloom_date,
                                              delta_dj=gauss(0,3),
-                                             deb=0,ind_deb=0))
+                                             deb=0,ind_deb=0, nb_fruits = nbfruits))
 
 def gupheno(p):
   is_base = (p.burst_date is None)
@@ -570,21 +571,26 @@ Leaf(param, p):
   
   
 Inflorescence(param): 
-  new_param=param.copy()
-  new_param.age += daystep
-  [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"Inflo")   
+  if  (current_date - param.bloom_date).days >= 60:
+    print 'change inflo to fruit',param.mtgid, param.bloom_date, (current_date - param.bloom_date).days
+    for i in xrange(param.nb_fruits):
+      nproduce [Fruit(ParameterSet(inflo_bloom_date= param.bloom_date))]
+    produce  
+  else :
+    new_param=param.copy()
+    new_param.age += daystep
+    [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"Inflo") 
+    # Thermal time sum for growth
+    new_param.cumsum_temp+= delta_temperature_Inflo*daystep
+      
+    # Thermal time sum for development
+    global temperature      
+    delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_Inflo[new_param.pheno_stage])
+    new_param.pheno_TTS+= delta_temperature_pheno*daystep     
+    new_param.pheno_advct=pheno_advct_stage
     
-  # Thermal time sum for growth
-  new_param.cumsum_temp+= delta_temperature_Inflo*daystep
-    
-  # Thermal time sum for development
-  global temperature      
-  delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_Inflo[new_param.pheno_stage])
-  new_param.pheno_TTS+= delta_temperature_pheno*daystep     
-  new_param.pheno_advct=pheno_advct_stage
-  
-  new_param.length = GrowthCurve(new_param.cumsum_temp,new_param.final_size,"Inflo",new_param.final_size,0)
-  produce Inflorescence(new_param) 
+    new_param.length = GrowthCurve(new_param.cumsum_temp,new_param.final_size,"Inflo",new_param.final_size,0)
+    produce Inflorescence(new_param) 
 
 interpretation:
 maximum depth:10
@@ -716,6 +722,10 @@ Leaf(paramL, paramI) :
 Petiole(length,radius):
   nproduce nF(length, length/InternodeRes,radius)
 
+Fruit(p):
+  scale = 20
+  nproduce F(0.3) ,(6) @g(Scaled(0.2*scale, 0.2*scale, 0.3*scale, Sphere(1)))
+  
 endlsystem
 
 ###### INITIALISATION ######
@@ -761,7 +771,6 @@ def __initialiseContext__(context):
 	Color_20.name = "Color_20"
 	context.turtle.setMaterial(20,Color_20)
 	context.animation_timestep = 0.001
-	context.options.setSelection('Module declaration',1)
 	scalars = [('TREE', 'Integer', 4, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True), ('daystep', 'Integer', 15, 1, 100), ('temperature_variability', 'Bool', False), ('EXPORT_DATA', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
@@ -832,7 +841,7 @@ def __initialiseContext__(context):
 	    ctrlPointList = pgl.Point3Array([(0, 0.107326, 1),(0.192635, 0.0975655, 1),(0.457142, 0.000244746, 1),(1, 0.026087, 1)]) , 
 	    )
 	radius.name = "radius"
-	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel 2'},[('Function',leafsize),('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5),('Function',leaflength),('Curve2D',petioleCurve),('Function',leafwidth),('Curve2D',leafpath),('Function',inflo_elasticity),('Curve2D',leafsection),('Function',leafdiam),('Function',inflo_radius),('Function',radius_base03),('Function',radius)])
+	panel_0 = ({'active': True, 'visible': False, 'name': 'Panel 2'},[('Function',leafsize),('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5),('Function',leaflength),('Curve2D',petioleCurve),('Function',leafwidth),('Curve2D',leafpath),('Function',inflo_elasticity),('Curve2D',leafsection),('Function',leafdiam),('Function',inflo_radius),('Function',radius_base03),('Function',radius)])
 	parameterset = [panel_0,]
 	context["__functions__"] = [('leafsize',leafsize),('leaflength',leaflength),('leafwidth',leafwidth),('inflo_elasticity',inflo_elasticity),('leafdiam',leafdiam),('inflo_radius',inflo_radius),('radius_base03',radius_base03),('radius',radius),]
 	context["__curves__"] = [('axis1',axis1),('axis2',axis2),('axis3',axis3),('axis4',axis4),('axis5',axis5),('petioleCurve',petioleCurve),('leafpath',leafpath),('leafsection',leafsection),]
