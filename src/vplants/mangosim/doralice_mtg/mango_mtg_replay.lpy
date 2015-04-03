@@ -203,7 +203,6 @@ GU(p):
     week_age = week_difference(current_date,bdate)
     produce ,(2) _(p.radius) LeafSets(p.radius, week_age, 1)
   else:
-    scale = 1.5
     produce ,(1) _(p.radius) nF(p.length, p.length/10.)
 
 LeafSets(lradius, age, scale):
