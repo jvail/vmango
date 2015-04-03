@@ -2,7 +2,7 @@ from openalea.plantgl.all import * #Text
 from datetime import *# date, timedelta, datetime
 from math import *#floor, ceil, log, exp, degrees
 from random import *
-#from pandas import DataFrame, read_csv
+from pandas import DataFrame, read_csv
 
 from vplants.mangosim.state import *
 from vplants.mangosim.util_date import *
@@ -34,6 +34,12 @@ nbsteps = ceil((last_date -first_date).days/float(daystep))
 current_date = first_date
 current_cycle = 3
 
+LeafWidthRes = 4
+LeafLengthRes = 5
+InternodeRes = 5
+
+leafsection.stride = LeafWidthRes
+axis5.stride = LeafLengthRes
 
 global NbOfDays
 NbOfDays=3000 #len(df['tempMoy'])                  
@@ -98,15 +104,22 @@ def Start():
   global current_cycle
   current_date = first_date
   current_cycle = get_cycle(current_date)
-  global GUs_informations
-  global Leafs_informations
-  Leafs_informations=[]
-  Leafs_informations.append(('Date','Surface_foliaire'))
-  GUs_informations=[]
-  GUs_informations.append(('CodeUC','Nature','Days', 'TTS', 'Length','Pheno_stage','Date','SFol'))
   backward()
+  if EXPORT_DATA:
+    global GUs_informations
+    global Leafs_informations
+    Leafs_informations=[]
+    Leafs_informations.append(('Date','Surface_foliaire'))
+    GUs_informations=[]
+    GUs_informations.append(('CodeUC','Nature','Days', 'TTS', 'Length','Pheno_stage','Date','SFol'))
 
+
+new_elements = True
 def StartEach():
+  global new_elements
+  useGroup(1 if new_elements else 0)
+  new_elements = False
+  
   global temp_index
   global current_date
   temp_index+=daystep
@@ -125,19 +138,22 @@ def StartEach():
   global delta_temperature_Inflo 
   delta_temperature_Inflo=max(0,temperature[temp_index]-base_temperature_Inflo)    # Inflorescences
 
+
 def EndEach():
-  global Leafs_informations
-  global lefs_area
-  Leafs_informations.append((current_date,leafs_area))
-  df = DataFrame(data = GUs_informations, columns=['CodeUC','Nature','Days', 'TTS', 'Length','Pheno_stage','Date','SFol']) 
-  df.to_csv('data/simulation_results/tree_growth.csv',index=False,header=False)
+  if EXPORT_DATA:
+    global Leafs_informations
+    global lefs_area
+    Leafs_informations.append((current_date,leafs_area))
+    df = DataFrame(data = GUs_informations, columns=['CodeUC','Nature','Days', 'TTS', 'Length','Pheno_stage','Date','SFol']) 
+    df.to_csv('data/simulation_results/tree_growth.csv',index=False,header=False)
   
   
 def End():
-  df = DataFrame(data = GUs_informations, columns=['CodeUC','Nature','Days', 'TTS', 'Length','Pheno_stage','Date','SFol']) 
-  df.to_csv('data/simulation_results/tree_growth.csv',index=False,header=False)
-  df = DataFrame(data = Leafs_informations, columns=['Date','SFol']) 
-  df.to_csv('data/simulation_results/tree_leaf_area.csv',index=False,header=False)
+  if EXPORT_DATA:  
+    df = DataFrame(data = GUs_informations, columns=['CodeUC','Nature','Days', 'TTS', 'Length','Pheno_stage','Date','SFol']) 
+    df.to_csv('data/simulation_results/tree_growth.csv',index=False,header=False)
+    df = DataFrame(data = Leafs_informations, columns=['Date','SFol']) 
+    df.to_csv('data/simulation_results/tree_leaf_area.csv',index=False,header=False)
 
 # Function who return phenological stage and advancement in this stage (between 0 and 1)
 def normalized_pheno_stage(cumtemp,type):
@@ -235,7 +251,9 @@ def ProfileInterpolation(curves,knotlist = None,degree = 3):
     p = NurbsPatch(ctrlPointList=ppts,udegree=degree,vdegree=3)
     def getSectionAt(t): 
       section = p.getIsoUSectionAt(t)
-      return NurbsCurve2D([(i.x,i.y,i.w) for i in section.ctrlPointList], section.knotList,section.degree)
+      res = NurbsCurve2D([(i.x,i.y,i.w) for i in section.ctrlPointList], section.knotList,section.degree)
+      res.stride = LeafLengthRes
+      return res
     p.getAt = getSectionAt
     return p
 
@@ -260,16 +278,11 @@ nbdescendants = estimate_nb_descendants(mtg,first_uc)
 
 
 module GU, Inflorescence: scale = 1
-module A, B, GUEnd, Internode, Leaf,Inflorescence_bud : scale = 2
+module A, B, GUEnd, Internode, Leaf, Inflorescence_bud : scale = 2
+module G
+module Flower, fleur
+module Petiole, fLeaf 
 
-#def generate_bloom_dates(date):
-#  week=gauss(29.8,2.4)                 #we take the week of bloom in a gaussian distribution
-#  yday=int(week)*7+randint(1,7)         #we trasform the week into a year day
-#  print yday, , 
-#  bloom_date=datetime(date.year,  )
-#  return [bloom_date]
-  
-  
   
   
 def generate_parameters_GU(current,length,burst_date, nbdescendants):
@@ -362,6 +375,9 @@ def generate_parameters_GU(current,length,burst_date, nbdescendants):
 
 
 def generate_elements(current, burst_date = None, length=None, nbdescendants = 1):
+    global new_elements
+    new_elements = True
+    
     # GU is composed of leaves and internodes
     guparam=generate_parameters_GU(current,length,burst_date, nbdescendants)
     nproduce /(60) GU( guparam )
@@ -387,9 +403,12 @@ def generate_elements(current, burst_date = None, length=None, nbdescendants = 1
     apical_child = [c for c in children if mm.is_apical(mtg, c)]
     lat_children = [c for c in children if mm.is_lateral(mtg,c)]
     inflo = mm.inflorescence_children(mtg, current)
+    nb_inflorescences = len(inflo)
     nb_lat_children = len(lat_children)
+    nb_lat_inflo = nb_inflorescences if len(apical_child) > 0 else max(0,nb_inflorescences-1)
+    nb_lat_elements = nb_lat_children + nb_lat_inflo
     if nb_lat_children > 0:
-      lat_angle = 360./nb_lat_children
+      lat_angle = 360./nb_lat_elements
     def gu_parameters(gu):
       if mm.get_parent(mtg,mm.get_parent(mtg,gu))!=None:
        p = ParameterSet(mtgid=gu, 
@@ -414,21 +433,27 @@ def generate_elements(current, burst_date = None, length=None, nbdescendants = 1
         nproduce ]
     if len(apical_child) > 0:
       if len(inflo) > 0:
-        final_size_inflo=gauss(Inflo_length_mean,Inflo_length_sd)
-        while (final_size_inflo <5) or (final_size_inflo >44):
+        for i in xrange(1,len(inflo)):
           final_size_inflo=gauss(Inflo_length_mean,Inflo_length_sd)
-        nproduce [Inflorescence_bud(ParameterSet(length=0.01,
-                                             age=0,
+          while (final_size_inflo <5) or (final_size_inflo >44):
+            final_size_inflo=gauss(Inflo_length_mean,Inflo_length_sd)
+          bloom_date = mm.get_bloom_dates(mtg,inflo[i])     
+          if not bloom_date: bloom_date = cycle_begining(get_cycle(burst_date if burst_date else first_date)+1)
+          elif type(bloom_date) is list: bloom_date = bloom_date[0]
+          nbfruits = mm.get_nb_fruits(mtg,inflo[i])
+          nproduce  /(lat_angle) [ &(60) Inflorescence_bud(ParameterSet(length=0.01,
+                                               age=0,
                                              final_size=final_size_inflo,
                                              diam=0.01,
                                              pheno_stage=0,
                                              cumsum_temp=delta_temperature_Inflo*daystep,
                                              pheno_advct=0,
                                              pheno_TTS=0,
-                                             mtgid=inflo[0],
-                                             bloom_dates=[current_date],#generate_bloom_dates(current_date),#mm.get_bloom_dates(mtg,inflo[0]),
+                                             mtgid=inflo[i],
+                                             bloom_date = bloom_date,
                                              delta_dj=gauss(0,3),
-                                             deb=0,ind_deb=0)) ]
+                                             deb=0,ind_deb=0,
+                                             nbfruits = nbfruits)) ]
       ch = apical_child[0]
       if mm.get_unit_cycle(mtg, ch) == 3:  nproduce B(ch)
       else:   
@@ -437,6 +462,10 @@ def generate_elements(current, burst_date = None, length=None, nbdescendants = 1
         final_size_inflo=gauss(Inflo_length_mean,Inflo_length_sd)
         while (final_size_inflo <5) or (final_size_inflo >44):
           final_size_inflo=gauss(Inflo_length_mean,Inflo_length_sd)
+        bloom_date = mm.get_bloom_dates(mtg,inflo[0])        
+        if not bloom_date: bloom_date = cycle_begining(get_cycle(burst_date if burst_date else first_date)+1)
+        elif type(bloom_date) is list: bloom_date = bloom_date[0]
+        nbfruits = mm.get_nb_fruits(mtg,inflo[0])
         nproduce Inflorescence_bud(ParameterSet(length=0.01,
                                              age=0,
                                              final_size=final_size_inflo,
@@ -446,18 +475,27 @@ def generate_elements(current, burst_date = None, length=None, nbdescendants = 1
                                              pheno_advct=0,
                                              pheno_TTS=0,
                                              mtgid=inflo[0],
-                                             bloom_dates=[current_date],#generate_bloom_dates(current_date),#mm.get_bloom_dates(mtg,inflo[0]),
+                                             bloom_date=bloom_date,
                                              delta_dj=gauss(0,3),
                                              deb=0,ind_deb=0))
-module G
-module Flower
+
+def gupheno(p):
+  is_base = (p.burst_date is None)
+  if not is_base:
+    if p.pheno_stage==4:  # if pheno stage=4 we replace leaves and internodes by a fixed structure
+      nproduce GU(p) [ %
+    else:
+      if EXPORT_DATA:
+        GUs_informations.append((p.mtgid,p.nature,p.age, p.cumsum_temp, p.length,p.pheno_stage,current_date))
+      GU_growth(p)
+      nproduce GU(p)
 
 initial_view = 1
 
 Axiom: 
   nproduce  G B(first_uc) 
 
-derivation length: int(nbsteps)
+derivation length: 30 # int(nbsteps)
 ignore: / &
 
 production:
@@ -467,7 +505,6 @@ maximum depth:max(height_max - height_max_3+1,height_max_3+1)
 
 B(current):
     length= 20 - 10*log(mtg.Height(current)+1,height_max)
-    #print current, nbdescendants[current]
     generate_elements(current, None, length, nbdescendants[current])
 
 A( p ):
@@ -476,31 +513,20 @@ A( p ):
 
 
 Inflorescence_bud(p):
-  bloom_date = p.bloom_dates[0] if p.bloom_dates else first_date
-  day_age = (current_date - bloom_date).days
-  if day_age < 60:
-    produce Inflorescence(p)
-  else:
-    produce 
+  if  p.bloom_date <= current_date :
+     produce Inflorescence(p)
 
 production:
 
 #group 0: # pipe model
 
-
+group 1: # pipemodel
 consider: GU
 
 GU(p) >> x([ GU(pl) ]) GU(pa):
   p.nbdescendants = sum([pli.nbdescendants for pli in pl])+pa.nbdescendants+1
   p.radius = estimate_radius(p.nbdescendants)
-  
-  is_base = (p.burst_date is None)
-  if not is_base:
-    if p.pheno_stage==4:  # if pheno stage=4 we replace leaves and internodes by a fixed structure
-      produce GU(p) [ %
-    else:
-      GU_growth(p)
-      produce GU(p)
+  gupheno(p)
 
 
 
@@ -509,27 +535,14 @@ GU(p) >> x([ GU(pl) ]) :
   #assert False
   p.nbdescendants = sum([pli.nbdescendants for pli in pl])+1
   p.radius = estimate_radius(p.nbdescendants)
+  gupheno(p)
   
-  is_base = (p.burst_date is None)
-  if not is_base:
-    if p.pheno_stage==4:  # if pheno stage=4 we replace leaves and internodes by a fixed structure
-      produce GU(p) [ %
-    else:
-      GU_growth(p)
-      GUs_informations.append((p.mtgid,p.nature,p.age, p.cumsum_temp, p.length,p.pheno_stage,current_date))
-      produce GU(p)
 
-    
-    
+group 0:
+
 GU(p) :
-  is_base = (p.burst_date is None)
-  if not is_base:
-    if p.pheno_stage==4:  # if pheno stage=4 we replace leaves and internodes by a fixed structure
-      produce GU(p) [ %
-    else:
-      GU_growth(p)
-      produce GU(p)
- 
+  gupheno(p)
+
 
 GUEnd(p):
   if p.pheno_stage ==4:
@@ -593,9 +606,10 @@ G :
 
 
 
-A(p) --> ,(3) f(0.1) @O(0.1)
+# A(p) -static-> ,(3) f(0.1) @O(0.1)
 
 Inflorescence(param):
+   #return
    nproduce [   
    if (param.cumsum_temp>=800):
      nproduce ,(1) @O(0.01)
@@ -652,13 +666,6 @@ fleur(pos,age,l,pheno,pheno_advct,deb,ind_deb):
 
 
 
-Inflorescence_bud(p):
-  bloom_date = p.bloom_dates[0] if p.bloom_dates else first_date
-  day_age = (current_date - bloom_date).days
-  if day_age < 60:
-    produce FlowerRepr(day_age, bloom_date.year + bloom_date.month + bloom_date.day)
-
-
 GU(p):
   is_base = (p.burst_date is None)
   if not is_base:
@@ -679,8 +686,8 @@ GU(p):
         nproduce  F(length, 0.2) /(phyllotaxy) [ &(0) fLeaf(ParameterSet(position=i/float(p.NbInternode-1),size=p.final_size_Leaf*leaflength(i/float(p.NbInternode-1)) )) ] 
     else:
       scale = 1.5
-      produce ,(1) _(p.radius) nF(p.length, p.length/20 , p.radius) 
-      
+      produce ,(1) _(p.radius) nF(p.length, p.length/InternodeRes , p.radius) 
+
 Internode(param,p):
   is_base = (p.burst_date is None)
   if not is_base:
@@ -711,10 +718,10 @@ Leaf(paramL, paramI) :
     nproduce @Gc _(leafdiam(paramI.diam))  Sweep(axisfunc.getAt(min(1,(paramI.pheno_stage+paramI.pheno_advct)/(Nb_stades_pheno-2))),leafsection, paramL.size, paramL.size/10., (paramL.size*0.24)*leafwidth(min((paramI.age+1)/20.,1)), leafdiam) ]  
 
 Petiole(length,radius):
-  for i in xrange(10):
-    nproduce F(length/10.,radius)
+  nproduce nF(length, length/InternodeRes,radius)
 
 endlsystem
+
 ###### INITIALISATION ######
 
 __lpy_code_version__ = 1.1
@@ -758,7 +765,7 @@ def __initialiseContext__(context):
 	Color_20.name = "Color_20"
 	context.turtle.setMaterial(20,Color_20)
 	context.animation_timestep = 0.001
-	scalars = [('TREE', 'Integer', 0, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.01, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True), ('daystep', 'Integer', 30, 1, 100), ('temperature_variability', 'Bool', False)]
+	scalars = [('TREE', 'Integer', 0, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.01, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True), ('daystep', 'Integer', 15, 1, 100), ('temperature_variability', 'Bool', False), ('EXPORT_DATA', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
