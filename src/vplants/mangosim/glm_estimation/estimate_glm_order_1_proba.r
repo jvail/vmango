@@ -242,9 +242,8 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
     data$Burst_Date_Children = ordered(data$Burst_Date_Children, levels = level_order)
     data$Burst_Date_Children = factor(data$Burst_Date_Children)
 
-    data$Burst_Delta_Date_ChildrenP = data$Burst_Delta_Date_Children
-    data$Burst_Delta_Date_ChildrenP = data$Burst_Delta_Date_ChildrenP
-
+    data$Burst_Delta_Date_ChildrenP = data$Burst_Delta_Date_Children - 1
+    
     attach(data)
     summary(data)
 
@@ -505,7 +504,6 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
     ##############################################
     if (verbose >= 1) print("Estimate Burst delta date of children with vglm") 
 
-        
     ### complete GLM ###
     # For all trees  
     complete_vglm.burst_delta_date_children.all = vglm( Burst_Delta_Date_Children ~ Tree_Fruit_Load + 

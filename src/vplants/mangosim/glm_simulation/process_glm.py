@@ -1,43 +1,59 @@
-from openalea.lpy import *
-from openalea.deploy.shared_data import shared_data
-import vplants.mangosim
-share_dir = shared_data(vplants.mangosim, share_path = "share")
+import vplants.mangosim.doralice_mtg.mtg_manipulation as mm
+reload(mm) 
+from vplants.mangosim.doralice_mtg.mtg_manipulation import *
+from vplants.mangosim.state import *
+from vplants.mangosim.tools import *
+import os
 from os.path import join
+from vplants.mangosim.util_path import get_glm_mtg_repository, mtgfname
 
-def run():
-   """ """
-   l = Lsystem('mango-asynchrony-glm2.lpy')
-   l.EXPORT_MTG = True
-   if l.GLM_SELECTED :
-      path_glm = "glm_selected"
-   else :
-      path_glm = "glm_complet"
-   if l.LOADED_FACTOR :
-      path_choice = "by_all_trees"
-   else :
-      if l.SELECT_TREE :
-         path_choice = "by_tree"
-      else : 
-         path_choice = "by_feature_loaded_tree"
-   path_file = join(share_dir,"simulation_mangotree","simulations_mangotree_glm",path_glm,path_choice)
-   l.derive()
-   return l.name, path_file
+lsysfile = 'mango_glm.lpy'
 
 
-def looprun(nb=1000):
-   """ """
-   for i in xrange(nb): 
-      try :
-         name, path_file = run()
-         outdir = join(path_file,name)
-         import shutil, os
-         if not os.path.exists(outdir):
-            os.makedirs(outdir)
-         shutil.copyfile( "mango_asynchrony_glm.bmtg" , join(outdir,"mango_"+name+"_asynchrony_{0:03d}.bmtg".format(i)) )		 
-      except :
-         import traceback
-         traceback.print_exc()
-         pass      
-#
+def generate_mtg(trees = range(5), params = dict()):
+    from openalea.lpy import Lsystem
+    from openalea.mtg.algo import union
+    g = None
+    for tree in trees:
+        nparams = params.copy()
+        nparams.update({'TREE':tree,'TIMESTEP': 180,'EXPORT_TO_MTG':True})
+        l = Lsystem(lsysfile,  nparams)
+        l.iterate()
+        resmtg = l.resultmtg
+        if g is None:
+            g = resmtg
+        else:
+            g = union(g,resmtg)
+    return g
+
+
+def generate_mtgs(trees = range(5), 
+                  params = dict(), 
+                  seeds = range(10), 
+                  optionname = None):
+    outputdir = get_glm_mtg_repository(trees, params, optionname, lsysfile)
+    if not os.path.exists(outputdir): os.makedirs(outputdir)
+    for seed in seeds:
+      fname = mtgfname.format(str(seed).zfill(4))
+      if not os.path.exists(join(outputdir,fname)):  
+        print 'Generate trees with seed',seed
+        nparams = params.copy()
+        nparams.update({'SEED':seed})
+        try :
+            mtg = generate_mtg(trees, nparams)
+        except :
+            import traceback
+            traceback.print_exc()
+            continue      
+        dump_obj(mtg,fname, outputdir)
+        print "Write "+repr(str(join(outputdir,fname)))
+
+
+def generate_all(nb = 1000, withindelaymethods = [eMonthGlmForWithin, eDeltaGlmForWithin, eDeltaPoissonForWithin]):
+    for withindelaymethod in withindelaymethods:
+        generate_mtgs(params = {'WITHINDELAYMETHOD' : withindelaymethod},seeds = range(nb))
+
+
+
 if __name__ == '__main__' :
-   looprun()
+   generate_all(withindelaymethods =[eDeltaGlmForWithin])

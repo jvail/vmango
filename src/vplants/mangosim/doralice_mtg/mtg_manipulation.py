@@ -26,13 +26,14 @@ LoadingPropertyName = 'fr_load'
 LoadedValue = 'C'
 NotLoadedValue = 'NC'
 InfloLabel = 'F'
+FruitLabel = ''
 
 TreeScale = 1
 GUScale = 4
 
 def setMtgStyle(style):
     global __MtgStyle, BurstDatePropertyName, BloomPropertyName, CyclePropertyName, VarietyPropertyName, TreeNamePropertyName, MixedInfloPropertyName, LoadingPropertyName
-    global LoadedValue, NotLoadedValue, InfloLabel
+    global LoadedValue, NotLoadedValue, InfloLabel, FruitLabel
     global TreeScale, GUScale
     if __MtgStyle != style:
         __MtgStyle = style
@@ -48,6 +49,7 @@ def setMtgStyle(style):
         LoadedValue = 'C'
         NotLoadedValue = 'NC'
         InfloLabel = 'F'
+        FruitLabel = ''
 
         TreeScale = 1
         GUScale = 4
@@ -63,6 +65,7 @@ def setMtgStyle(style):
         LoadedValue = 'C'
         NotLoadedValue = 'NC'
         InfloLabel = 'Inflorescence'
+        FruitLabel = 'Fruit'
 
         TreeScale = 1
         GUScale = 2
@@ -124,9 +127,25 @@ def is_inflorescence(mtg, unit):
     return mtg.label(unit) == InfloLabel
 
 @use_global_mtg
+def is_fruit(mtg, unit):
+    return mtg.label(unit) == FruitLabel
+
+@use_global_mtg
+def is_gu(mtg, unit):
+    return not mtg.label(unit) in [InfloLabel,FruitLabel]
+
+@use_global_mtg
 def is_gu_inflorescent(mtg, gu, inflocycle = None):
     for ch in mtg.children(gu):
         if is_inflorescence(mtg, ch):
+            if inflocycle is None or get_unit_cycle(mtg,ch) == inflocycle:
+                return True
+            else : return False
+
+@use_global_mtg
+def is_gu_fruiting(mtg, gu, inflocycle = None):
+    for ch in mtg.children(gu):
+        if is_fruit(mtg, ch) :
             if inflocycle is None or get_unit_cycle(mtg,ch) == inflocycle:
                 return True
             else : return False
@@ -140,7 +159,7 @@ def is_terminal_at_cycle(mtg, gu, cycle):
     # we consider gu borned in cycle or before and not dead before end of cycle.
     if get_unit_cycle(mtg,gu) <= cycle and not is_gu_dead_before_cycle_end(mtg,gu,cycle):
         for child in mtg.children(gu):
-            if not is_inflorescence(mtg,child) and get_unit_cycle(mtg,child) <= cycle:
+            if is_gu(mtg,child) and get_unit_cycle(mtg,child) <= cycle:
                 return False
         # No child of gu was borned before end of cycle
         return True
@@ -150,6 +169,7 @@ def is_terminal_at_cycle(mtg, gu, cycle):
 @use_global_mtg
 def get_nature_gu(mtg, gu):
   """ """
+  #if is_gu_fruiting(mtg,gu) : return eFruit
   return eInflorescence if is_gu_inflorescent(mtg, gu) else eVegetative
 
 @use_global_mtg
@@ -217,11 +237,11 @@ def get_tree_of_gu(mtg, gu):
 
 @use_global_mtg
 def vegetative_children(mtg,gu):
-    return [child for child in mtg.children(gu) if not is_inflorescence(mtg,child) ]
+    return [child for child in mtg.children(gu) if is_gu(mtg,child) ]
 
 @use_global_mtg
 def vegetative_children_at_cycle(mtg,gu,cycle):
-    return [child for child in mtg.children(gu) if not is_inflorescence(mtg,child) and get_unit_cycle(mtg,child) == cycle]
+    return [child for child in mtg.children(gu) if is_gu(mtg,child) and get_unit_cycle(mtg,child) == cycle]
 
 
 @use_global_mtg
@@ -309,7 +329,7 @@ def get_all_gus_of_tree(mtg, tree):
   Parameters : 
     tree: integer in g.property('var')
     cycle: integer 3, 4 or 5"""
-  return [i for i in mtg.components_at_scale(tree,scale=GUScale) if not is_inflorescence(mtg,i)]
+  return [i for i in mtg.components_at_scale(tree,scale=GUScale) if is_gu(mtg,i)]
  
 
 @use_global_mtg
@@ -620,23 +640,6 @@ def check_apical_strength(mtg, cycles = [4,5], variety = 'cogshall'):
 
 
 
-def plot_histo(keys, allvalues, _title = None):
-    import matplotlib.pyplot as plt
-    import numpy as np
-    fig, ax = plt.subplots()
-    nbplot = len(allvalues)
-    #colors = plt.get_cmap('jet',nbplot)
-    colors = lambda x: ['r','y','g','b','c','m'][x]
-    nbx = len(allvalues[0])
-    width = 1
-    ind = np.arange(0,nbx*(nbplot+1)*width,(nbplot+1)*width)
-    for i,values in enumerate(allvalues):
-        ax.bar(ind+(i+0.5)*width, values, width,color=colors(i) )
-    ax.set_xticks(ind+(nbplot+1)*width/2.)
-    ax.set_xticklabels(keys)
-    if _title: ax.set_title(_title)
-    plt.show()
-
 
 @use_global_mtg
 def check_burst_dates(mtg, cycles = [4,5], variety = 'cogshall'):
@@ -657,19 +660,62 @@ def check_burst_dates(mtg, cycles = [4,5], variety = 'cogshall'):
         #plot_histo([Month[m] for m in histo_date[0].keys()],list(reversed([hd.values() for hd in histo_date])),'Burst date of gu of order '+str(order))
         plot_histo([Month[m] for m in histo_date[0].keys()],list(reversed([hd.values() for hd in histo_date])),'Burst date of gu of order '+str(order))
 
-@use_global_mtg
-def check_burst_date_distribution(mtg, cycles = [4,5], variety = 'cogshall'):
+
+def __strip_histo(histo):
+    # We remove the first and last part of the histo if it is equal to 0.
+    keyvalues = histo.keys()
+    for d in keyvalues:
+        if histo[d] == 0:
+            del histo[d]
+        else : break
+    if len(histo) > 0:
+        for d in reversed(keyvalues):
+            if histo[d] == 0:
+                del histo[d]
+            else : break
+
+def burst_date_cycle_distribution(mtg, ucs, strip = True):
     from vplants.mangosim.util_date import Month
     Month = dict([(i,v) for v,i in Month.items()])
     from collections import OrderedDict
-    histo_date = OrderedDict([(i,0) for i in xrange(6,13)]+[(i,0) for i in xrange(1,6)])
-    for uc in get_all_gus_of_variety(mtg, None, variety):
+    histo_date = OrderedDict([(i,0) for i in xrange(3,6)])
+    for uc in ucs:
         if has_burst_date(mtg,uc):
-            m = get_burst_date(mtg,uc).month
-            histo_date[m] += 1
+            c = get_cycle(get_burst_date(mtg,uc))
+            histo_date[c] += 1
+    if strip : __strip_histo(histo_date)
+    return histo_date
 
-    plot_histo([Month[m] for m in histo_date.keys()],[histo_date.values()],'Distribution of burst date of gu')
+def burst_date_month_distribution(mtg, ucs, strip = True):
+    from vplants.mangosim.util_date import Month
+    Month = dict([(i,v) for v,i in Month.items()])
+    from collections import OrderedDict
+    daterange = monthdate_range(cycle_end(3),cycle_begin(6))
+    histo_date = OrderedDict([(d,0) for d in daterange])
+    for uc in ucs:
+        if has_burst_date(mtg,uc):
+            d = get_burst_date(mtg,uc)
+            m = d.month
+            y = d.year
+            histo_date[(m,y)] += 1
+    if strip : __strip_histo(histo_date)
+    return histo_date
 
+#@use_global_mtg
+def estimate_burst_date_distribution(mtgs = None, variety = 'cogshall', reference = True):
+    from vplants.mangosim.util_date import Month
+    Month = dict([(i,v) for v,i in Month.items()])
+    histo_date = []
+    if type(mtgs) == MTG: mtgs = [mtgs] 
+    for mtg in mtgs:
+        histo_date.append(burst_date_month_distribution(mtg, get_all_gus_of_variety(mtg, None, variety), False ))
+    currentmtgstyle = __MtgStyle
+    setMtgStyle(eMeasuredMtg)
+    mtg = get_mtg()
+    ref_histo_date = burst_date_month_distribution(mtg, get_all_gus_of_variety(mtg, None, variety), False )
+    setMtgStyle(currentmtgstyle)
+
+    return [Month[m]+'-'+str(y) for m,y in histo_date[0].keys()],[h.values() for h in histo_date], ref_histo_date.values()
 
 if __name__ == '__main__' :
     # check_cycle_and_burst_date_coherence()

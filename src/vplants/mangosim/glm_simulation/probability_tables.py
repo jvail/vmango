@@ -1,15 +1,16 @@
 from vplants.mangosim.tools import share_dir
 from vplants.mangosim.state import *
 from vplants.mangosim.util_date import *
+from vplants.mangosim.util_path import *
 
 
-def get_repository(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm):
-    from os.path import join
-    return join(share_dir, 'glm_output_proba', variety, 'complete_glm' if estimationtype == eCompleteGlm else 'selected_glm', treename)
+vegetative_proba = ['vegetative_burst','has_apical_gu_child','has_lateral_gu_children','nb_lateral_gu_children']
+vegetative_proba_family = [eBinomial, eBinomial, eBinomial, ePoisson]
+vegetative_proba_within = ['burst_date_children','burst_delta_date_children','burst_delta_date_children_poisson']
+vegetative_proba_within_family = [eVglm, eVglm, ePoisson]
+vegetative_proba_between = ['burst_date_children']
+vegetative_proba_between_family = [eVglm]
 
-
-vegetative_proba = ['vegetative_burst','burst_date_children','has_apical_gu_child','has_lateral_gu_children','nb_lateral_gu_children']
-vegetative_proba_family = [eBinomial, eVglm, eBinomial, eBinomial, ePoisson]
 flowering_proba  = ['flowering','nb_inflorescences','flowering_week']
 flowering_proba_family  = [eBinomial, ePoisson, eVglm ]
 fruiting_proba  = ['fruiting','nb_fruits']
@@ -64,7 +65,11 @@ class ProbaTable:
         except KeyError, e:
             print self.factors, args, self.type, self.name
             raise e
-        return self.values[factoractualvalue]
+        try:
+            return self.values[factoractualvalue]
+        except KeyError, e:
+            #print self.factors, factoractualvalue, self.type, self.name
+            raise e            
 
     def realization(self, **args):
         from numpy import cumsum
@@ -94,14 +99,14 @@ class ProbaTable:
 
 def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm):
     from os.path import exists, join
-    probafilepath = get_repository(variety, treename, estimationtype)
+    probafilepath = get_probabily_repository(variety, treename, estimationtype)
     if not exists(probafilepath): raise ValueError("Proba path repository does not exist", probafilepath)
     probacycle = {}
     for cycle in range(3,6):
         proba_within, proba_between = {}, {}
         if within_extension[cycle]:
             ext = within_extension[cycle]
-            for prop,family in zip(vegetative_proba+flowering_proba+fruiting_proba,vegetative_proba_family+flowering_proba_family+fruiting_proba_family):
+            for prop,family in zip(vegetative_proba+vegetative_proba_within+flowering_proba+fruiting_proba,vegetative_proba_family+vegetative_proba_within_family+flowering_proba_family+fruiting_proba_family):
                 propfile = join(probafilepath,prop+'_'+ext+'.csv')
                 if exists(propfile):
                     p = ProbaTable(prop,family,propfile)
@@ -114,7 +119,7 @@ def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationty
                     warnings.warn("Table '%s' for variety '%s', tree '%s' does not exist." % (prop, variety, treename))
         if between_extension[cycle]:
             ext = between_extension[cycle]
-            for prop, family in zip(vegetative_proba,vegetative_proba_family):
+            for prop, family in zip(vegetative_proba+vegetative_proba_between,vegetative_proba_family+vegetative_proba_between_family):
                 propfile = join(probafilepath,prop+'_'+ext+'.csv')
                 if exists(propfile):
                     p = ProbaTable(prop,family,propfile)
@@ -166,7 +171,6 @@ def set_seed(value):
     from random import seed
     seed(value)
 
-
 current_unitdev = None
 
 class UnitDev:
@@ -175,10 +179,12 @@ class UnitDev:
                        Nature_V = None, 
                        Position_Ancestor_A = None,
                        Nature_Ancestor_V = None, 
-                       Tree_Fruit_Load  = eLoaded):
+                       Tree_Fruit_Load  = eLoaded,
+                       WithinDelayMethod = eDeltaPoissonForWithin):
         self.burst_date = Burst_Date
         self.cycle = get_cycle(Burst_Date)
         self.trace = False
+        self.withindelaymethod = WithinDelayMethod
 
         self.params = dict(Burst_Date = Burst_Date.month,
                            Position_A = Position_A, 
@@ -207,17 +213,39 @@ class UnitDev:
             return False
 
     def burst_date_children(self, cycle = eWithinCycle):
-        burst_index = int(self.get_realization('burst_date_children',cycle))
-        cycle_delay, burst_month = divmod(burst_index,100)
-        pyear = self.burst_date.year
-        if self.burst_date.month < 6: pyear -= 1
-        burst_year = pyear + cycle_delay
-        if burst_month < 6:  burst_year += 1
+        if cycle == eLaterCycle or self.withindelaymethod == eMonthMultiVariateForWithin:
+            burst_index = int(self.get_realization('burst_date_children',cycle))
+            cycle_delay, burst_month = divmod(burst_index,100)
+            pyear = self.burst_date.year
+            if self.burst_date.month < 6: pyear -= 1
+            burst_year = pyear + cycle_delay
+            if burst_month < 6:  burst_year += 1
+        else:
+            if self.withindelaymethod == eDeltaMultiVariateForWithin:
+                burst_delta = int(self.get_realization('burst_delta_date_children',cycle))
+            else:
+                burst_delta = self.get_realization('burst_delta_date_children_poisson',cycle)+1
+            burst_year = self.burst_date.year
+            burst_month = self.burst_date.month + burst_delta
+            if burst_month  > 12:
+                dyear = (burst_month-1) // 12
+                burst_year += dyear
+                burst_month -=  dyear*12
+                if not(1 <= burst_month <= 12): 
+                    raise ValueError('Invalid month',burst_month, burst_delta, self.burst_date.month)
+
 
         if  not (burst_year > self.burst_date.year or burst_month >= self.burst_date.month):
-            raise ValueError('Children burst date is before parent burst',(burst_year, burst_month), self.burst_date )
+            return self.burst_date_children(cycle)
+            #raise ValueError('Children burst date is before parent burst',(burst_year, burst_month), self.burst_date )
         if (burst_year == self.burst_date.year and burst_month == self.burst_date.month):
-            print 'Warning: Children GUs are borned in the same month than their parent GU'
+            return self.burst_date_children(cycle)
+            #print 'Warning: Children GUs are borned in the same month than their parent GU'
+        if cycle == eWithinCycle:
+            endcycle = cycle_end(self.cycle)
+            if (endcycle < date(year=burst_year,month=burst_month,day=15)):
+                # print 'Warning within cycle children borned outside cycle'
+                return self.burst_date_children(cycle)
         return (burst_year, burst_month)
 
     def has_apical_gu_child(self, cycle = eWithinCycle):
@@ -227,7 +255,10 @@ class UnitDev:
         return self.get_realization('has_lateral_gu_children',cycle)
 
     def nb_lateral_gu_children(self, cycle = eWithinCycle):
-        return self.get_realization('nb_lateral_gu_children',cycle)+1
+        try:
+            return self.get_realization('nb_lateral_gu_children',cycle)+1
+        except KeyError, ie:
+            return 0
 
     def flowering(self):
         try:

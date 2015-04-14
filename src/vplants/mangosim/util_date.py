@@ -21,8 +21,8 @@ def week_difference(d1,d2):
     from math import ceil
     return ceil((d2 -d1).days/7.)
 
-# Fred note : The actual cycle seems to start at begining of June
-def cycle_begining(cycle):
+# Fred note : The actual cycle seems to start at beginning of June
+def cycle_begin(cycle):
     return date(2000+cycle-1,6,1)
     # return date(2000+cycle-1,7,1)
 
@@ -31,14 +31,26 @@ def cycle_end(cycle):
    # return date(2000+cycle,6,30)
 
 def in_cycle(date, cycle):
-    return cycle_begining(cycle) <= date <= cycle_end(cycle)
+    return cycle_begin(cycle) <= date <= cycle_end(cycle)
 
 
 def get_cycle(date):
-    if date < cycle_begining(4) : return 3
-    elif date < cycle_begining(5) : return 4
+    if date < cycle_begin(4) : return 3
+    elif date < cycle_begin(5) : return 4
     else : return 5
 
+def monthdate_range(begindate, enddate):
+    if enddate < begindate: return []
+    currentmonth, currentyear = begindate.month, begindate.year
+    endmonth, endyear = enddate.month, enddate.year
+    res = []
+    while currentmonth != endmonth or currentyear != endyear:
+        res.append((currentmonth, currentyear))
+        currentmonth += 1
+        if currentmonth > 12:
+            currentyear += 1
+            currentmonth -= 12
+    return res
 
 #beg_end_period = {'E' : (7,8,9,10), 'I' : (11,12,1,2), 'L' : (3,4,5,6)}
 

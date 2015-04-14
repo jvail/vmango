@@ -16,12 +16,20 @@ treenames = mm.get_treenames_of_variety(variety)
 #['B10', 'B12', 'B14', 'F2', 'F6']
 
 treeselection = TREE
-estimationbase = eVarietyBased
-estimationtype = eCompleteGlm if COMPLETE_GLM else eSelectedGlm
+estimationbase = eVarietyBased if not 'ESTIMATIONBASE' in globals() else ESTIMATIONBASE
+if 'ESTIMATIONTYPE' in globals():
+  estimationtype = ESTIMATIONTYPE
+else:
+  estimationtype = (eCompleteGlm if COMPLETE_GLM else eSelectedGlm) if not NULL_MODEL else eNullGlm
 
 treename = treenames[treeselection]
 treeid = mm.get_tree_from_name(treename)
 Tree_Fruit_Load = mm.load_state(treeid)
+
+if 'WITHINDELAYMETHOD' in globals():
+  WithinDelayMethod = WITHINDELAYMETHOD
+else:
+  WithinDelayMethod = eMonthMultiVariateForWithin # eMonthMultiVariateForWithin, eDeltaMultiVariateForWithin, eDeltaPoissonForWithin
 
 use_proba_table_from(treenames[treeselection], estimationbase, estimationtype)
 set_seed(SEED)
@@ -79,9 +87,9 @@ def export_to_mtg(lstring, lscene):
   parameters = {}
   scales = {}
   # Name of the modules to export
-  modules_to_export = ['Tree', 'GU','Inflorescence']
-  params_to_export = [['treename','method','estimation','loading','variety','seed'],['burst_date','cycle'],['bloom_date','cycle']]
-  scales = [1,2,2]
+  modules_to_export = ['Tree', 'GU','Inflorescence','Fruit']
+  params_to_export = [['treename','method','estimation','loading','variety','within_delay_method','seed'],['burst_date','cycle'],['bloom_date','cycle'],['inflo_bloom_date','cycle']]
+  scales = [1,2,2,2]
   # Convert lstring into mtg
   mtg = axialtree2mtg(lstring,
                       scale = dict(zip(modules_to_export,scales)),
@@ -100,12 +108,9 @@ module LeafSets(lradius, age, scale)
 module Flower(burst_date,order) # represent flower
 module FlowerRepr(day_age,s)
 
-estimationbase = eVarietyBased
-estimationtype = eCompleteGlm if COMPLETE_GLM else eSelectedGlm
 
 Axiom: 
-  mname = {eTreeBased : 'TreeBased', eManagementTypeBased : 'ManagementTypeBased', eVarietyBased : 'VarietyBased' }
-  #  nproduce Tree(ParameterSet(treename=treename, method=mname[estimationbase], estimation='CompleteGLM' if estimationtype == eCompleteGlm else 'SelectedGLM',loading='C' if Tree_Fruit_Load else 'NC',variety=variety, seed=SEED))
+  nproduce Tree(ParameterSet(treename=treename, method=EstimationBaseName[estimationbase], estimation='CompleteGLM' if estimationtype == eCompleteGlm else 'SelectedGLM',loading='C' if Tree_Fruit_Load else 'NC',variety=variety, seed=SEED, within_delay_method = WithinDelayMethodName[WithinDelayMethod]))
   #  produce A(ParameterSet(burst_date=first_date,position=eApical,position_ancestor=None,nature_ancestor=None))
   l = Lsystem('../doralice_mtg/mango_mtg_replay.lpy',{'TREE':TREE})
   base = l.derive(1)
@@ -143,7 +148,8 @@ A( p ):
                   Position_A=p.position,
                   Position_Ancestor_A=p.position_ancestor,
                   Nature_Ancestor_V=p.nature_ancestor,
-                  Tree_Fruit_Load=Tree_Fruit_Load)
+                  Tree_Fruit_Load=Tree_Fruit_Load,
+                  WithinDelayMethod = WithinDelayMethod)
     apical_child, nb_lat_children, nb_inflorescences, nb_fruits, date_children_burst, date_inflo_bloom = dev.process()
     
     p = p.copy()
@@ -160,7 +166,8 @@ A( p ):
     if not date_children_burst is None:
       date_children_burst = date(year=date_children_burst[0], month=date_children_burst[1], day=15)
       if date_children_burst > cycle_end(5):
-        raise ValueError('Invalid date of burst %s (after last date %s) of children with parent borned in %s (in cycle %i)' %(date_children_burst, cycle_end(5),p.burst_date,current_cycle))
+        import warnings
+        warnings.warn('Invalid date of burst %s (after last date %s) of children with parent borned in %s (in cycle %i)' %(date_children_burst, cycle_end(5),p.burst_date,current_cycle))
       cyclechange = (get_cycle(date_children_burst) != get_cycle(p.burst_date))
       baseparameter = ParameterSet(burst_date=date_children_burst, 
                                  nature_ancestor=p.nature_ancestor if not cyclechange else p.nature, 
@@ -173,20 +180,27 @@ A( p ):
       
     if nb_inflorescences > 0:
       for i in xrange(nb_lat_inflo):
-          nproduce /(anglebetweenchildren) [&(60) Inflorescence(ParameterSet(bloom_date=date_inflo_bloom, cycle =  get_cycle(date_inflo_bloom), nb_fruits = (1 if i < nb_fruiting_lat_inflo else 0))) ]
+          nproduce /(anglebetweenchildren) [&(60) Inflorescence(ParameterSet(bloom_date=date_inflo_bloom, cycle =  get_cycle(p.burst_date), nb_fruits = (1 if i < nb_fruiting_lat_inflo else 0))) ]
     
     if apical_child:
         p = baseparameter
         p.set(position = eApical)
         nproduce A(p)
     elif nb_inflorescences > 0:
-      nproduce Inflorescence(ParameterSet(bloom_date=date_inflo_bloom, cycle =  get_cycle(date_inflo_bloom), nb_fruits = nb_fruits - nb_fruiting_lat_inflo))
+      nproduce Inflorescence(ParameterSet(bloom_date=date_inflo_bloom, cycle =  get_cycle(p.burst_date), nb_fruits = nb_fruits - nb_fruiting_lat_inflo))
     
 
 Inflorescence(param):
-  if param.nb_fruits > 0 and (param.bloom_date - current_date).days >=  60:
-    for i in xrange(param.nb_fruits):
-      nproduce [Fruit(ParameterSet(inflo_bloom_date= param.bloom_date))]
+  if not param.hasattr('produced') and param.nb_fruits > 0 and (param.bloom_date - current_date).days >=  60:
+    param.produced = True
+    nproduce Inflorescence(param)
+    if param.nb_fruits == 1 :
+      nproduce [Fruit(ParameterSet(inflo_bloom_date= param.bloom_date, cycle = param.cycle))]
+    else : 
+      anglebetweenfruits = 120. / (param.nb_fruits -1)
+      angles = [90 - i * anglebetweenfruits for i in xrange(param.nb_fruits)]
+      for ang in angles:
+        nproduce [+(ang) Fruit(ParameterSet(inflo_bloom_date= param.bloom_date, cycle = param.cycle))]
     
 
 
@@ -294,7 +308,7 @@ def __initialiseContext__(context):
 	Color_7 = pgl.Material("Color_7" , ambient = (57,65,12) , diffuse = 1.66154 , )
 	Color_7.name = "Color_7"
 	context.turtle.setMaterial(7,Color_7)
-	scalars = [('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('TIMESTEP', 'Integer', 30, 1, 750), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Geometry', 'Category'), ('TIMEBAR', 'Bool', True), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('GLM', 'Category'), ('COMPLETE_GLM', 'Bool', True), ('SEED', 'Integer', 2, 1, 100000)]
+	scalars = [('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('TIMESTEP', 'Integer', 30, 1, 750), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Geometry', 'Category'), ('TIMEBAR', 'Bool', True), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('GLM', 'Category'), ('COMPLETE_GLM', 'Bool', False), ('SEED', 'Integer', 2, 1, 100000), ('NULL_MODEL', 'Bool', True)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]

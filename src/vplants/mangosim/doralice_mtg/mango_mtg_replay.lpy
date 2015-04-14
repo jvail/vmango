@@ -110,7 +110,7 @@ def generate_elements(current, burst_date = None, length=1, nbdescendants = 1):
       if len(inflo) > 0:
         for i in xrange(1,len(inflo)):
           bloom_date = mm.get_bloom_dates(mtg,inflo[i])     
-          if not bloom_date: bloom_date = cycle_begining(get_cycle(burst_date if burst_date else first_date)+1)
+          if not bloom_date: bloom_date = cycle_begin(get_cycle(burst_date if burst_date else first_date)+1)
           else: bloom_date = bloom_date[0]
           nbfruits = mm.get_nb_fruits(mtg,inflo[i])
           nproduce /(lat_angle) [ &(60) Inflorescence(ParameterSet(mtgid=inflo[i],bloom_date=bloom_date,nb_fruits=nbfruits)) ]
@@ -119,7 +119,7 @@ def generate_elements(current, burst_date = None, length=1, nbdescendants = 1):
       else: nproduce A( gu_parameters(ch) )
     elif len(inflo) > 0:
         bloom_date = mm.get_bloom_dates(mtg,inflo[0])        
-        if not bloom_date: bloom_date = cycle_begining(get_cycle(burst_date if burst_date else first_date)+1)
+        if not bloom_date: bloom_date = cycle_begin(get_cycle(burst_date if burst_date else first_date)+1)
         else: bloom_date = bloom_date[0]
         nbfruits = mm.get_nb_fruits(mtg,inflo[0])
         nproduce Inflorescence(ParameterSet(mtgid=inflo[0],bloom_date=bloom_date,nb_fruits=nbfruits))

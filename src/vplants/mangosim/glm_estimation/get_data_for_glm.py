@@ -57,7 +57,7 @@ def vegetative_dev_variables(mtg, gu, cycle = None):
             raise ValueError("Cycle difference between a mother and its children is not in [0,1,2]", cycle_diff)
         Burst_Date_Children = mostFrequentDate.month + 100*cycle_diff
         if get_unit_cycle(mtg,gu) == 3:
-            Burst_Delta_Date_Children = month_difference(mostFrequentDate,cycle_begining(3))
+            Burst_Delta_Date_Children = month_difference(mostFrequentDate,cycle_end(3))
         else:
             Burst_Delta_Date_Children = month_difference(mostFrequentDate, get_burst_date(mtg,gu))
 
