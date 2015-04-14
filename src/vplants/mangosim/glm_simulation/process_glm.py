@@ -49,11 +49,41 @@ def generate_mtgs(trees = range(5),
         print "Write "+repr(str(join(outputdir,fname)))
 
 
-def generate_all(nb = 1000, withindelaymethods = [eMonthGlmForWithin, eDeltaGlmForWithin, eDeltaPoissonForWithin]):
+def generate_all(nb = 1000, withindelaymethods = [eMonthMultiVariateForWithin, eDeltaMultiVariateForWithin, eDeltaPoissonForWithin]):
     for withindelaymethod in withindelaymethods:
         generate_mtgs(params = {'WITHINDELAYMETHOD' : withindelaymethod},seeds = range(nb))
 
 
+def _generate(params):
+        print('python process_glm.py '+params)
+        os.system('python process_glm.py '+params)
+
+def process_set_of_simulations(paramvalueslist):
+    from multiprocessing import Pool
+
+    paramvalueslist = [' '.join(map(str,param)) for param in paramvalueslist]
+    #print paramvalueslist
+    # _generate(paramvalueslist[2])
+    pool = Pool(processes=26)
+    pool.map(_generate,paramvalueslist)
+
+
+def process_null_models(nb=1000):
+    import itertools
+    params = list(itertools.product(range(nb),['ESTIMATIONTYPE'],['eNullGlm'],['WITHINDELAYMETHOD'],['eMonthMultiVariateForWithin', 'eDeltaMultiVariateForWithin', 'eDeltaPoissonForWithin']))
+
+    process_set_of_simulations(params)
+
 
 if __name__ == '__main__' :
-   generate_all(withindelaymethods =[eDeltaGlmForWithin])
+    import sys
+    if len(sys.argv) > 1:
+        seed = int(sys.argv[1])
+        params = dict()
+        paramcmd = sys.argv[2:]
+        assert len(paramcmd) % 2 == 0
+        for i in xrange(len(paramcmd)/2):
+            params[paramcmd[2*i]] = eval(paramcmd[2*i+1])
+        generate_mtgs(seeds=[seed],params=params)
+    else:
+        process_null_models()

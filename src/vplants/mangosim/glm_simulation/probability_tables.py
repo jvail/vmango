@@ -129,7 +129,7 @@ def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationty
                     proba_between[prop] = p
                 else:
                     import warnings
-                    warnings.warn("Table '%s' for variety '%s', tree '%s' does not exist." % (prop, variety, treename))
+                    # warnings.warn("Table '%s' for variety '%s', tree '%s' does not exist." % (prop, variety, treename))
         probacycle[cycle] = (proba_within, proba_between)
     return probacycle
 
@@ -207,6 +207,8 @@ class UnitDev:
         return self.proba_tables[0 if cycle == eWithinCycle else 1][name].realization(**p)
 
     def vegetative_burst(self, cycle = eWithinCycle):
+        if cycle == eWithinCycle and self.burst_date.month == cycle_end(self.cycle).month:
+            return False
         try:
             return self.get_realization('vegetative_burst',cycle)
         except KeyError, ie: # some month may not be fulfilled.
