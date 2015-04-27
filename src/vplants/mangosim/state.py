@@ -1,7 +1,8 @@
 
 
 eLateral, eApical = 0,1
-eVegetative, eInflorescence, eFruit = 1,0,-1
+eVegetative, eFlowering, eFruiting = range(3)
+eGU, eInflorescence = 1, 0
 eLoaded, eNotLoaded = 1, 0
 
 eCompleteGlm, eSelectedGlm, eNullGlm = 1,2,3

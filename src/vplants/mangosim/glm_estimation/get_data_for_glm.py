@@ -138,29 +138,29 @@ def explicative_variables_inside(mtg, gu):
     ancestor = get_ancestor_of_previous_cycle(mtg, gu)
     if ancestor:
         # Fred Note: Position value has been changed. 1 for position means Apical
-        Nature_Ancestor_V   = get_nature_gu(mtg,ancestor)
+        Nature_Ancestor_F   = get_nature_gu(mtg,ancestor)
         Position_Ancestor_A = get_position_gu(mtg,ancestor)
     else:
-        Nature_Ancestor_V   = NotAvailable
+        Nature_Ancestor_F   = NotAvailable
         Position_Ancestor_A = NotAvailable
 
     # get loaded feature
     Tree_Fruit_Load = load_state(mtg, get_tree_of_gu(mtg,gu))
-    return Position_A, Burst_Date, Nature_Ancestor_V, Position_Ancestor_A, Tree_Fruit_Load
+    return Position_A, Burst_Date, Nature_Ancestor_F, Position_Ancestor_A, Tree_Fruit_Load
 
 
 def add_explicative_variables_inside(dict_gu_prop, mtg, gu):
-    Position_A, Burst_Date, Nature_Ancestor_V, Position_Ancestor_A, Tree_Fruit_Load = explicative_variables_inside(mtg, gu)
+    Position_A, Burst_Date, Nature_Ancestor_F, Position_Ancestor_A, Tree_Fruit_Load = explicative_variables_inside(mtg, gu)
     dict_gu_prop["Position_A"] = Position_A
     dict_gu_prop["Burst_Date"] = Burst_Date
-    dict_gu_prop["Nature_Ancestor_V"] = Nature_Ancestor_V 
+    dict_gu_prop["Nature_Ancestor_F"] = Nature_Ancestor_F
     dict_gu_prop["Position_Ancestor_A"] = Position_Ancestor_A
     dict_gu_prop["Tree_Fruit_Load"] = Tree_Fruit_Load
 
 def explicative_variables_transition(mtg, gu):
     # get position feature (as mother)
     Position_A   = get_position_gu(mtg,gu)
-    Nature_V     = get_nature_gu(mtg,gu)
+    Nature_F     = get_nature_gu(mtg,gu)
 
     # get burst date feature (as mother)
     if get_unit_cycle(mtg,gu) == 3:
@@ -170,13 +170,13 @@ def explicative_variables_transition(mtg, gu):
 
     # get loaded feature
     Tree_Fruit_Load = load_state(mtg, get_tree_of_gu(mtg,gu))
-    return Position_A, Nature_V, Burst_Date, Tree_Fruit_Load
+    return Position_A, Nature_F, Burst_Date, Tree_Fruit_Load
 
 
 def add_explicative_variables_transition(dict_gu_prop, mtg, gu):
-    Position_A, Nature_V, Burst_Date, Tree_Fruit_Load = explicative_variables_transition(mtg, gu)
+    Position_A, Nature_F, Burst_Date, Tree_Fruit_Load = explicative_variables_transition(mtg, gu)
     dict_gu_prop["Position_A"] = Position_A
-    dict_gu_prop["Nature_V"] = Nature_V 
+    dict_gu_prop["Nature_F"] = Nature_F 
     dict_gu_prop["Burst_Date"] = Burst_Date
     dict_gu_prop["Tree_Fruit_Load"] = Tree_Fruit_Load
 
