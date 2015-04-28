@@ -1,4 +1,4 @@
-#setwd("~/Develop/vplants/branches/mangosim/src/vplants/mangosim/glm_estimation")
+﻿#setwd("~/Develop/vplants/branches/mangosim/src/vplants/mangosim/glm_estimation")
 #
 #
 ### Importation of data :
@@ -747,7 +747,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                                                   Position_A + 
                                                   Position_Ancestor_A + 
                                                   Nature_Ancestor_F,
-                                family = binomial, data=data, subset = index_flowering.all)
+                                family = binomial, data=data, subset = index_fruiting.all)
     if (verbose >= 3) summary(complete_glm.fruiting.all) # AIC : 
 
     # For each tree, loaded trees and not loaded trees
