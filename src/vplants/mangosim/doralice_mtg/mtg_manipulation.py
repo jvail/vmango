@@ -78,6 +78,15 @@ def use_global_mtg(f):
             return f(get_mtg(),*args,**kwds)
         else:
             return f(*args,**kwds)
+    import inspect
+    args, varargs, keywords = inspect.getargs(f.func_code)
+    if varargs: args.append('*'+varargs)
+    if keywords: args.append('**'+keywords)
+    doc = f.func_name+'('+','.join(args)+')'
+    if f.__doc__:
+        doc += '\n'+f.__doc__
+    simplified_func.__doc__ = doc
+    simplified_func.original = f
     return simplified_func
 
 # Characterizing UCs
@@ -385,10 +394,9 @@ def get_all_gus_of_cycle(mtg, cycle = 4, loaded = None, variety = "cogshall"):
   return gus_of_cycle
 
 @use_global_mtg
-def get_all_gus_of_variety(mtg, loaded = None, variety = "cogshall"):
+def get_all_gus_of_variety(mtg, variety = "cogshall", loaded = None):
   """ 
   Parameters : 
-    cycle : an integer, cycle 4 or 5
     loaded : a booleen, if true, return trees which are loaded, if false, return trees which are not loaded.
     variety : a string, the choice of variety is : 
             'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
@@ -417,10 +425,26 @@ def get_sorted_gus(mtg, cycles = [4,5], loaded = [eLoaded,eNotLoaded], varieties
     return gus
 
 @use_global_mtg
+def get_all_inflo_of_tree(mtg, tree):
+  """ 
+  Parameters : 
+    tree: the tree id.
+  """
+  return [i for i in mtg.components_at_scale(tree,scale=GUScale) if is_inflorescence(mtg,i)]
+
+@use_global_mtg
+def get_all_inflo_of_tree_at_cycle(mtg, tree, cycle):
+  """ 
+  Parameters : 
+    tree: the tree id.
+  """
+  return [i for i in mtg.components_at_scale(tree,scale=GUScale) if is_inflorescence(mtg,i) and in_flowering_cycle(get_bloom_date(i),cycle) ]
+
+
+@use_global_mtg
 def get_all_inflo_of_variety(mtg, loaded = None, variety = "cogshall"):
   """ 
   Parameters : 
-    cycle : an integer, cycle 4 or 5
     loaded : a booleen, if true, return trees which are loaded, if false, return trees which are not loaded.
     variety : a string, the choice of variety is : 
             'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
@@ -428,32 +452,8 @@ def get_all_inflo_of_variety(mtg, loaded = None, variety = "cogshall"):
   inflos = []
   trees = select_trees(mtg, loaded, variety)
   for tree in trees :
-        inflos += [i for i in mtg.components_at_scale(tree,scale=GUScale) if is_inflorescence(mtg,i)]
+        inflos += get_all_inflo_of_tree(mtg, tree)
   return inflos
-
-
-
-# def get_gus_tree_cycle_in_extremity(tree, cycle):
-#   """Return a list of unit growth which are in the extremity of the canopy (for a tree and for a cycle).
-#   If a unit growth dead in the cycle, it is remove from the list of terminal unit growth.
-#   Parameters : 
-#     tree: integer giving id of one tree. To select in g.property('var').keys() for instance.
-# 	cycle: integer 3, 4 or 5"""
-
-#   extremity = []
-  
-#   if cycle == 4 or cycle == 5:
-#     # Fred: Je ne comprends pas ce qui est fait la.
-#     gus_extremity_cycleMinus1 = get_terminal_gus(mtg, tree,cycle-1)
-#     for i1 in gus_extremity_cycleMinus1:
-#       children_extremity = [i2 for i2 in g.children(i1) if g.label(i2)!='F' and get_cycle_gu(i2)==cycle]
-#       if children_extremity == [] and not is_dead_in_cycle(i1,cycle): extremity.append(i1)
-
-#   gus_veget_tree_cycle = get_all_gus_of_tree_at_cycle(mtg, tree, cycle)
-#   for i in gus_veget_tree_cycle :
-#     childrens_in_cycle = [child for child in g.children(i) if not g.label(child)!='F' and get_cycle_gu(child)==cycle ]
-#     if childrens_in_cycle == [] : extremity.append(i)
-#   return extremity
 
 
 
@@ -722,6 +722,23 @@ def date_month_distribution(mtg, ucs, strip = True, date_accessor = get_burst_da
     if strip : __strip_histo(histo_date)
     return histo_date
 
+def date_week_distribution(mtg, ucs, strip = True, date_accessor = get_burst_date):
+    from vplants.mangosim.util_date import Month
+    from collections import OrderedDict
+    histo_date = dict()
+    for uc in ucs:
+        try:
+            d = date_accessor(mtg,uc).isocalendar()
+            w = d[1]
+            y = d[0]
+            histo_date[(w,y)] = histo_date.get((w,y),0) + 1
+        except : pass
+    dates = histo_date.keys()
+    dates.sort(cmp=lambda a,b: cmp((a[1],a[0]),(b[1],b[0])))
+    sorted_histo_date = OrderedDict([(d,histo_date[d]) for d in dates])
+    return sorted_histo_date
+
+
 #@use_global_mtg
 def estimate_burst_date_distribution(mtgs = None, variety = 'cogshall', reference = True, exclude = None, consider = None):
     from vplants.mangosim.util_date import Month
@@ -748,26 +765,38 @@ def estimate_burst_date_distribution(mtgs = None, variety = 'cogshall', referenc
         return [Month[m]+'-'+str(y) for m,y in histo_date[0].keys()],[h.values() for h in histo_date]
 
 
-def estimate_bloom_date_distribution(mtgs = None, variety = 'cogshall', reference = True):
+def estimate_bloom_date_distribution(mtgs = None, variety = 'cogshall', reference = True, showallweeks = False):
     from vplants.mangosim.util_date import Month
     Month = dict([(i,v) for v,i in Month.items()])
     histo_date = []
+    if variety is None:
+        inflo_selector = lambda mtg : mtg.property(BloomPropertyName).keys()
+    else:
+        inflo_selector = lambda mtg : get_all_inflo_of_variety(mtg, None, variety)
+
     if type(mtgs) == MTG: mtgs = [mtgs] 
+    def strdate(w,y) : 
+        from datetime import datetime
+        d = datetime.strptime(str(y)+' '+str(w)+' 1', '%Y %W %w')
+        return str(d.day)+'-'+str(d.month)+'-'+str(y)
     for mtg in mtgs:
-        histo_date.append(date_month_distribution(mtg, get_all_inflo_of_variety(mtg, None, variety), False, get_bloom_date ))
+        histo_date.append(date_week_distribution(mtg,inflo_selector(mtg), False, get_bloom_date ))
     if reference:
         currentmtgstyle = __MtgStyle
         setMtgStyle(eMeasuredMtg)
         mtg = get_mtg()
-        ref_histo_date = date_month_distribution(mtg, get_all_inflo_of_variety(mtg, None, variety), False, get_bloom_date )
+        if variety is None:
+            inflo_selector = lambda mtg : mtg.property(BloomPropertyName).keys()
+        ref_histo_date = date_week_distribution(mtg, inflo_selector(mtg), False, get_bloom_date )
         setMtgStyle(currentmtgstyle)
 
-        return [Month[m]+'-'+str(y) for m,y in histo_date[0].keys()],[h.values() for h in histo_date], ref_histo_date.values()
+        return [str(w)+'/'+strdate(w,y) for w,y in histo_date[0].keys()],[h.values() for h in histo_date], ref_histo_date.values()
     else:
-        return [Month[m]+'-'+str(y) for m,y in histo_date[0].keys()],[h.values() for h in histo_date]
+        return [str(w)+'/'+strdate(w,y) for w,y in histo_date[0].keys()],[h.values() for h in histo_date]
 
 if __name__ == '__main__' :
-    months,values = estimate_bloom_date_distribution([get_mtg()], reference = False)
+    setMtgStyle(eMeasuredMtg)
+    months,values = estimate_bloom_date_distribution([get_mtg()], 'cogshall', reference = False)
     from vplants.mangosim.glm_simulation.plot_distribution import plot_histo
     plot_histo(months,values,'Distribution of bloom date of inflorescences')
     # check_cycle_and_burst_date_coherence()

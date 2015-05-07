@@ -37,8 +37,11 @@ def plot_histo_curve(keys, allvalues, _title = None, legends = None):
     nbplot = len(allvalues)
     nbx = len(allvalues[0])
     width = 1
-    #colors = plt.get_cmap('jet',nbplot)
-    colors = lambda x: ['r','y','g','b','c','m'][x]
+    if nbplot > 6:
+        _colors = plt.get_cmap('jet',nbplot)
+        colors = lambda x: _colors(nbplot-1-x)
+    else:
+        colors = lambda x: ['r','y','g','b','c','m'][x]
     ind = np.arange(0,nbx*width,width)
     for i,values in enumerate(allvalues):
         ax.plot(ind, values, '-o', color=colors(i), label = '' if legends is None else legends[i] )

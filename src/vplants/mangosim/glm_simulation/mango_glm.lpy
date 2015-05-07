@@ -308,7 +308,7 @@ def __initialiseContext__(context):
 	Color_7 = pgl.Material("Color_7" , ambient = (57,65,12) , diffuse = 1.66154 , )
 	Color_7.name = "Color_7"
 	context.turtle.setMaterial(7,Color_7)
-	scalars = [('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('TIMESTEP', 'Integer', 30, 1, 750), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Geometry', 'Category'), ('TIMEBAR', 'Bool', True), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('GLM', 'Category'), ('COMPLETE_GLM', 'Bool', False), ('SEED', 'Integer', 2, 1, 100000), ('NULL_MODEL', 'Bool', True)]
+	scalars = [('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('TIMESTEP', 'Integer', 30, 1, 750), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Geometry', 'Category'), ('TIMEBAR', 'Bool', True), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('GLM', 'Category'), ('COMPLETE_GLM', 'Bool', False), ('SEED', 'Integer', 2, 1, 100000), ('NULL_MODEL', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]

@@ -1,12 +1,13 @@
 
 
+eGU, eInflorescence, eFruit, eLeaf, eInternode = range(5)
 eLateral, eApical = 0,1
 eVegetative, eFlowering, eFruiting = range(3)
-eGU, eInflorescence = 1, 0
+
 eLoaded, eNotLoaded = 1, 0
 
 eCompleteGlm, eSelectedGlm, eNullGlm = 1,2,3
-GlmTypeName= {eCompleteGlm : 'complete_glm', eSelectedGlm : 'selected_glm', eNullGlm : 'null_glm'} 
+GlmTypeName = {eCompleteGlm : 'complete_glm', eSelectedGlm : 'selected_glm', eNullGlm : 'null_glm'} 
 
 eBinomial, ePoisson, eVglm = range(1,4)
 
