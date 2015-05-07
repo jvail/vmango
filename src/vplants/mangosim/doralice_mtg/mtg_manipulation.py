@@ -72,6 +72,8 @@ def setMtgStyle(style):
     else:
         assert __MtgStyle in [eMeasuredMtg,eSimulatedMtg]
 
+def getMtgStyle(): return __MtgStyle
+
 def use_global_mtg(f):
     def simplified_func(*args, **kwds):
         if not 'mtg' in kwds and len(args) == 0 or type(args[0]) != MTG:

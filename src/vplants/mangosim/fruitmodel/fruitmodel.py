@@ -7,7 +7,7 @@ def runmodel():
 def get_fruitmodel_functions():
     script = file(U"fruitmodel.r",'r').read()
     r.r(script)
-    return r.r('fruitmodel')
+    return r.r('fruitmodel'), r.r('fruitgrowth')
 
 def test():
     fruitmodel, fruitgrowth = get_fruitmodel_functions()
@@ -17,15 +17,54 @@ def test():
     print fruitdata
 
 
-def applymodel(mtg, cycle):
+def applymodel(mtg, cycle, fruit_distance = 3):
     print 'apply fruit model'
     import fruitingstructure as fs; reload(fs)
-    fruiting_structures = fs.determine_fruiting_structure(mtg,cycle, 3)
-    print fruiting_structures
+    fruiting_structures = fs.determine_fruiting_structure(mtg,cycle, fruit_distance = fruit_distance)
+    params = mtg.property('p')
+    for inflos, gus in 
+        bloom_dates = [params[inflo].bloom_date for inflo in inflos]
+        leaf_nbs     = sum([len(params[gu].final_size_Leaves) for gu in gus])
+        # call fruit model in r 
+    return fruiting_structures
+
+
+def color_structures(fruiting_structures, mtg, scene):
+    import matplotlib.pyplot as plt
+    from openalea.plantgl.all import Material, Shape
+    nbcolors = len(fruiting_structures)
+    _colors = plt.get_cmap('jet',nbcolors)
+    colors = lambda x: _colors( x )
+
+    structures = dict()
+    idmap  = mtg.property('_axial_id')
+
+    i = 0
+    print 'determine colors'
+    for inflos, gus in fruiting_structures:
+        col = colors(i)
+        mat = Material([int(c*200) for c in col[:3]])
+        for j in inflos:
+            structures[idmap[j]] = mat
+        for j in gus:
+            structures[idmap[j]] = mat
+        i += 1
+
+    defmat = Material((0,0,0))
+    print 'compute colored scene'
+    nscene = Scene([Shape(sh.geometry,  structures.get(sh.id,defmat), sh.id, sh.parentId) for sh in scene ])
+    return nscene
 
 
 
 if __name__ == '__main__':
+    import sys
     from vplants.mangosim.tools import load_obj
+    from openalea.plantgl.all import Scene, Viewer
     mtg = load_obj('fruitstructure.pkl','../shoot_growth')
-    applymodel(mtg, 3)
+    sc = Scene('../shoot_growth/fruitstructure.bgeom')
+    fs = applymodel(mtg, 3, int(sys.argv[1]) if len(sys.argv) > 1 else 3) 
+    print len(fs)
+    for inflos, gus in fs:
+        print inflos, list(gus)    
+    Viewer.display(color_structures(fs, mtg, sc))

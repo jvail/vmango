@@ -46,7 +46,7 @@ current_date  = first_date
 current_cycle = get_cycle(current_date)
 
 
-if FULL_RESOLUTION:
+if RESOLUTION == 2:
   LeafWidthRes  = 10
   LeafLengthRes = 20
   InternodeRes  = 1
@@ -56,6 +56,13 @@ else:
   LeafLengthRes = 5
   InternodeRes  = 1
   PetioleRes    = 3  
+  if RESOLUTION == 0:
+    smbcode = """
+Axiom: @Gc Sweep(axis5, leafsection, 1., 1./LeafLengthRes, 0.24, leafdiam) 
+"""
+    l = Lsystem()
+    l.setCode(smbcode, globals())
+    leafsmb = l.sceneInterpretation(l.axiom)[0].geometry
 
 leafsection.stride = LeafWidthRes
 
@@ -159,12 +166,15 @@ def EndEach(lstring, lscene):
 
   global inflo_flush_start
   if inflo_flush_start and current_date == inflo_flush_start + timedelta(days=50):
-    import vplants.mangosim.fruitmodel.fruitmodel as fm ; reload(fm)
-    from vplants.mangosim.fruitmodel.fruitmodel import applymodel
-    # Fruit model evaluation
-    lmtg = export_to_mtg_light(lstring, None) # , lscene)
-    dump_obj(lmtg, 'fruitstructure.pkl')
-    applymodel(lmtg, get_flowering_cycle(inflo_flush_start))
+    if FRUIT_MODEL:
+      import vplants.mangosim.fruitmodel.fruitmodel as fm ; reload(fm)
+      from vplants.mangosim.fruitmodel.fruitmodel import applymodel
+      print 'Fruit model evaluation'
+      Viewer.showMessage('Fruit model evaluation : '+str(current_date), 3000)
+      lmtg = export_to_mtg_light(lstring, None) # , lscene)
+      dump_obj(lmtg, 'fruitstructure.pkl')
+      lscene.save('fruitstructure.bgeom')
+      applymodel(lmtg, get_flowering_cycle(inflo_flush_start))
     inflo_flush_start = None
 
 
@@ -250,12 +260,14 @@ def set_dimension_parameters_GU(params):
   mean, sd = gu_size_distrib[(position,position_parent)]
   final_size_GU = get_length(mean, sd, 5, 25)
   
+  # Number of leafs depend of GU's length
+  nb_internodes = int(max(ceil(0.6 * final_size_GU) + randint(-1,1) ,1))
   
   leaf_size_distrib = { eApical  : (Leaf_length_apic_mean , Leaf_length_apic_sd),
                         eLateral : (Leaf_length_lat_mean  , Leaf_length_lat_sd) }
   
   mean, sd = leaf_size_distrib[position]
-  final_size_Leaf = get_length(mean, sd, 5, 34)
+  final_size_Leaves = [get_length(mean, sd, 5, 34) for i in xrange(nb_internodes)]
   
   if position == eApical:
     LEPF = gauss(2.63,1.72)  #length of space before the first leaf
@@ -264,15 +276,13 @@ def set_dimension_parameters_GU(params):
     #length of space before the first leaf depend of GU's length
     LEPF = final_size_GU*0.38 + 0.88 + randint(-1,1)  
   
-  # Number of leafs depend of GU's length
-  nb_internodes = int(max(ceil(0.6 * final_size_GU) + randint(-1,1) ,1))
   t_ip=gauss(t_ip_GU_mean,t_ip_GU_sd)
   
   params = params.copy()
   params.set( radius = estimate_radius(params.nbdescendants), 
              
              final_size_GU    = final_size_GU,
-             final_size_Leaf  = final_size_Leaf,
+             final_size_Leaves  = final_size_Leaves,
              LEPF             = LEPF,
              nb_internodes    = nb_internodes,
              diam             = 0,
@@ -342,14 +352,14 @@ def generate_elements(apexparam):
       guparam.simplified = False
       guparam.leafy = True
       nproduce Internode(ParameterSet(length=0.01,final_size_organ=guparam.LEPF,diam=0.01), guparam) /(phyllotaxy) 
-      nproduce [ Leaf(ParameterSet(position=0,size=0.1,final_size=guparam.final_size_Leaf*leaflength(0) ), guparam) ]
+      nproduce [ Leaf(ParameterSet(position=0,size=0.1,final_size=guparam.final_size_Leaves[0]*leaflength(0) ), guparam) ]
       
       # each internode is smaller than de previous
       totintlength=0
       for j in xrange(1,guparam.nb_internodes-1): totintlength+=exp(-2.64*j/float(guparam.nb_internodes-1))
       for i in xrange(1,guparam.nb_internodes-1):        
         nproduce  Internode(ParameterSet(length=0.01,final_size_organ=(guparam.final_size_GU-guparam.LEPF)*exp(-2.64*i/float(guparam.nb_internodes-1))/totintlength,diam=0.01), guparam) /(phyllotaxy) 
-        nproduce [ Leaf(ParameterSet(position=i/float(guparam.nb_internodes-1),size=0.1,final_size=guparam.final_size_Leaf*leaflength(i/float(guparam.nb_internodes-1)) ), guparam) ]
+        nproduce [ Leaf(ParameterSet(position=i/float(guparam.nb_internodes-1),size=0.1,final_size=guparam.final_size_Leaves[i]*leaflength(i/float(guparam.nb_internodes-1)) ), guparam) ]
       # End of GU
       nproduce GUEnd(guparam)
     else:
@@ -563,7 +573,7 @@ Inflorescence(param):
    if ( growth_ttsum >= 800):
        nproduce ,(1) @O(0.01)
    else:
-      if FULL_RESOLUTION: 
+      if RESOLUTION >= 1 : 
           nproduce _(length/100.) 
           NbAxe2=int(1.19*param.final_size)
           
@@ -602,7 +612,7 @@ Flower(pos,age,l,pheno,pheno_advct):
         
         for d in xrange (0,3):
           if pheno>=2:
-            if ind_col<0.5:
+            if ind_col < 0.5:
               nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno],(pheno_advct+(13-k)/10.)/2.) @O(min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/10. )]
             else:
               nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],ind_col) @O(ind_col)]
@@ -616,13 +626,13 @@ GU(p):
     radius = p.radius
     if p.leafy :
       nproduce ,(1) _(radius) F(p.LEPF,radius) /(phyllotaxy) 
-      if LEAFY: nproduce [ fLeaf(0,p.final_size_Leaf*leaflength(0)) ]
+      if LEAFY: nproduce [ fLeaf(0,p.final_size_Leaves[0]*leaflength(0)) ]
       totintlength=0
       for j in xrange(1,p.nb_internodes-1): totintlength+=exp(-2.64*j/float(p.nb_internodes-1))
       for i in xrange(1,p.nb_internodes-1):
         length=(p.final_size_GU-p.LEPF)*exp(-2.64*i/float(p.nb_internodes-1))/totintlength
         nproduce  F(length, radius) /(phyllotaxy) 
-        if LEAFY: nproduce [ fLeaf(i/float(p.nb_internodes-1),p.final_size_Leaf*leaflength(i/float(p.nb_internodes-1)) ) ]
+        if LEAFY:  nproduce [ fLeaf(i/float(p.nb_internodes-1),p.final_size_Leaves[i]*leaflength(i/float(p.nb_internodes-1)) ) ]
     else:
       produce ,(21) _(radius) nF(p.final_size_GU*p.scale, p.final_size_GU/InternodeRes , radius) 
 
@@ -634,8 +644,12 @@ Internode(param,p):
 fLeaf(position, size):
   nproduce [ /(137.5) &(90) ,(1)  F(0.001,leafdiam(0)*leafwidth(1))  ^(90) 
   # petiole
-  nproduce &(pheno_angle[4]) Petiole((1-position)* size/4.,leafdiam(0))   
-  nproduce @Ge ,(13) @Gc _(leafdiam(0.5))  Sweep(axis5, leafsection, size, size/LeafLengthRes, size*0.24, leafdiam) 
+  nproduce &(pheno_angle[4]) 
+  nproduce Petiole((1-position)* size/4.,leafdiam(0))   
+  if RESOLUTION >= 1:
+    nproduce @Ge ,(13) @Gc _(leafdiam(0.5))  Sweep(axis5, leafsection, size, size/LeafLengthRes, size*0.24, leafdiam)
+  else:
+    nproduce  ,(13) _(leafdiam(0.5)) @g(leafsmb, size)
   nproduce ]  
 
 Leaf(paramL, paramI) :
@@ -660,7 +674,10 @@ Leaf(paramL, paramI) :
       nproduce @Ge @Gc _(leafdiam(paramI.diam))  Sweep(axisfunc.getAt(min(1,(pheno_stage+pheno_rank)/(Nb_stades_pheno-2))),leafsection, paramL.size, paramL.size/LeafLengthRes, maxwidth, leafdiam) ]  
 
 Petiole(length,radius):
-  nproduce SetGuide(petioleCurve,length) nF(length, length/PetioleRes,radius)
+  if RESOLUTION > 0:
+    nproduce SetGuide(petioleCurve,length) nF(length, length/PetioleRes,radius)
+  else:
+    nproduce SetGuide(petioleCurve,length) f(length)
 
 endlsystem
 
@@ -722,7 +739,7 @@ def __initialiseContext__(context):
 	context.animation_timestep = 0.001
 	context.options.setSelection('Module declaration',1)
 	context.options.setSelection('Warning with sharp module',0)
-	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', False), ('WITH_INFLO', 'Bool', True), ('FULL_RESOLUTION', 'Bool', False), ('Elasticity', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 1, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', True), ('Environment', 'Category'), ('TIMEBAR', 'Bool', True), ('BACKGROUND', 'Bool', False)]
+	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 0, 0, 2), ('Elasticity', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 1, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', True), ('Environment', 'Category'), ('TIMEBAR', 'Bool', True), ('BACKGROUND', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
