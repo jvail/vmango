@@ -438,7 +438,7 @@ def get_all_inflo_of_tree_at_cycle(mtg, tree, cycle):
   Parameters : 
     tree: the tree id.
   """
-  return [i for i in mtg.components_at_scale(tree,scale=GUScale) if is_inflorescence(mtg,i) and in_flowering_cycle(get_bloom_date(i),cycle) ]
+  return [i for i in mtg.components_at_scale(tree,scale=GUScale) if is_inflorescence(mtg,i) and in_flowering_cycle(get_bloom_date(mtg,i),cycle) ]
 
 
 @use_global_mtg
