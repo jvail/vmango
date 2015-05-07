@@ -32,7 +32,7 @@ TreeScale = 1
 GUScale = 4
 
 def setMtgStyle(style):
-    global __MtgStyle, BurstDatePropertyName, BloomPropertyName, CyclePropertyName, VarietyPropertyName, TreeNamePropertyName, MixedInfloPropertyName, LoadingPropertyName
+    global __MtgStyle, BurstDatePropertyName, BloomPropertyName, NbFruitPropertyName, CyclePropertyName, VarietyPropertyName, TreeNamePropertyName, MixedInfloPropertyName, LoadingPropertyName
     global LoadedValue, NotLoadedValue, InfloLabel, FruitLabel
     global TreeScale, GUScale
     if __MtgStyle != style:
@@ -40,6 +40,7 @@ def setMtgStyle(style):
     if __MtgStyle == eMeasuredMtg:
         BurstDatePropertyName = 'date_burst'
         BloomPropertyName = 'flowering'
+        NbFruitPropertyName = 'nb_fr'
         CyclePropertyName = 'year'
         VarietyPropertyName = 'var'
         TreeNamePropertyName = 'code'
@@ -56,6 +57,7 @@ def setMtgStyle(style):
     elif __MtgStyle == eSimulatedMtg:
         BurstDatePropertyName = 'burst_date'
         BloomPropertyName = 'bloom_date'
+        NbFruitPropertyName = 'nb_fruits'
         CyclePropertyName = 'cycle'
         VarietyPropertyName = 'variety'
         TreeNamePropertyName = 'treename'
@@ -128,11 +130,8 @@ def get_bloom_date(mtg, inflo, default=None):
 
 @use_global_mtg
 def get_nb_fruits(mtg, inflo, default=None):
-    nb_fruit = mtg.property(NbFruitPropertyName).get(inflo,'')
-    if len(nb_fruit) == 0:
-        return 0
-    else:
-        return int(nb_fruit)
+    return mtg.property(NbFruitPropertyName).get(inflo,'')
+
 
 
 @use_global_mtg

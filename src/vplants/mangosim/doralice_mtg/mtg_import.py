@@ -14,6 +14,11 @@ def normalize_property(g):
   if "flowering" in g.property_names():
     raise IOError('`flowering` property has already been computed !')
   #warnings.warn('`flowering` property will be added to the mangotree but `date_flo` property will be removed !')
+  
+  olppropnb_fr = g.property('nb_fr')
+  newpropnb_fr = dict([(vid, int(v)) for vid,v in olppropnb_fr.items() if len(v) > 0])
+  g.properties()['nb_fr'] = newpropnb_fr
+
   old = g.property('date_flo')
   g.add_property('flowering')
   new = g.property('flowering')

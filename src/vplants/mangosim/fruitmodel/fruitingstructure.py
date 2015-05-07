@@ -33,8 +33,8 @@ def determine_fruiting_structure(mtg, cycle, fruit_distance):
     setMtgStyle(eSimulatedMtg)
     tree = get_all_trees(mtg)[0]
 
-    inflo = get_all_inflo_of_tree_at_cycle(mtg, tree, cycle)
-    inflo_support = [([i],nodes_at_distance(mtg,i,fruit_distance)) for i in inflo if get_nb_fruits(mtg,i) > 0]
+    inflo = [inflo for inflo in get_all_inflo_of_tree_at_cycle(mtg, tree, cycle) if get_nb_fruits(mtg,inflo) > 0]
+    inflo_support = [([i],nodes_at_distance(mtg,i,fruit_distance)) for i in inflo]
 
 
     i = 0

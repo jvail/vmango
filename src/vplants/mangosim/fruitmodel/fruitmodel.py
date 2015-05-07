@@ -1,11 +1,14 @@
 import rpy2.robjects as r
+from os.path import join, abspath, dirname
+
+RScriptRepo = dirname(abspath(__file__))
 
 def runmodel():
     script = file(U"sim.r",'r').read()
     r.r(script)
 
 def get_fruitmodel_functions():
-    script = file(U"fruitmodel.r",'r').read()
+    script = file(join(RScriptRepo,"fruitmodel.r"),'r').read()
     r.r(script)
     return r.r('fruitmodel'), r.r('fruitgrowth')
 
@@ -16,16 +19,33 @@ def test():
         fruitdata = fruitgrowth(fruitdata)
     print fruitdata
 
+def get_fruitmodel_function_test():
+    script = file(join(RScriptRepo,"fruitmodel.r"),'r').read()
+    r.r(script)
+    return r.r('empty_fruit_model')
+
 
 def applymodel(mtg, cycle, fruit_distance = 3):
     print 'apply fruit model'
+    print " * Load R function"
+    fruitmodel = get_fruitmodel_function_test()
+
+    print " * Compute fruiting structures"
     import fruitingstructure as fs; reload(fs)
     fruiting_structures = fs.determine_fruiting_structure(mtg,cycle, fruit_distance = fruit_distance)
+
+    print " * Compute property of the structures"
     params = mtg.property('p')
-    for inflos, gus in 
+    for inflos, gus in fruiting_structures:
         bloom_dates = [params[inflo].bloom_date for inflo in inflos]
-        leaf_nbs     = sum([len(params[gu].final_size_Leaves) for gu in gus])
+        leaf_nbs    = sum([len(params[gu].final_size_Leaves) for gu in gus])
+        nb_fruits   = [params[inflo].nb_fruits for inflo in inflos]
+
+        bloom_date  = bloom_dates[0]
+        bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/'+str(bloom_date.year)
         # call fruit model in r 
+        fruitmodel(bloom_date, nb_fruits, leaf_nbs)
+
     return fruiting_structures
 
 

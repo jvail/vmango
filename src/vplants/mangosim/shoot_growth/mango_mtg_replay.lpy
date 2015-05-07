@@ -309,7 +309,7 @@ def set_dimension_parameters_GU(params):
 def generate_parameters_Inflo(inflo,guparam):
     
     final_size_inflo = get_length(Inflo_length_mean, Inflo_length_sd, 5, 44)
-    nbfruits = mm.get_nb_fruits(mtg,inflo)
+    nb_fruits = mm.get_nb_fruits(mtg,inflo)
     
     bloom_date = mm.get_bloom_dates(mtg,inflo)        
     if not bloom_date: 
@@ -327,7 +327,7 @@ def generate_parameters_Inflo(inflo,guparam):
                          
                          burst_date = bloom_date - timedelta(days=28),
                          bloom_date = bloom_date,
-                         nbfruits = nbfruits,
+                         nb_fruits = nb_fruits,
                          
                          length=0.01,
                          final_size=final_size_inflo,

@@ -16,7 +16,7 @@ def export_to_mtg(lstring, lscene):
 
 def export_to_mtg_light(lstring, lscene):
   from openalea.mtg.io import axialtree2mtg
-  params_to_export = [['treename','variety'],['burst_date','cycle'],['bloom_date','cycle'],['inflo_bloom_date','cycle']]
+  params_to_export = [['treename','variety'],['burst_date','cycle'],['bloom_date','cycle','nb_fruits'],['inflo_bloom_date','cycle']]
   params_to_export = [['p']+p for p in params_to_export]
   # Convert lstring into mtg
   mtg = axialtree2mtg(lstring,
