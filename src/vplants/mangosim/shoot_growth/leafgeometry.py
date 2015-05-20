@@ -1,6 +1,6 @@
-from openalea.plantgl.all import Point4Matrix, NurbsPatch, NurbsCurve2D, BezierCurve2D
 
 def retrieveCurves(globals):
+  from openalea.plantgl.all import BezierCurve2D
   # Determine the set of curve representing axis at different time. 
   # Look for object in global namespace name axisX 
   curves = [(n,v) for n,v in globals.items() if 'axis' in n and type(v) == BezierCurve2D ]
@@ -13,6 +13,7 @@ def retrieveCurves(globals):
 
 
 def ProfileInterpolation(curves, knotlist = None, degree = 3, resolution = 10):
+    from openalea.plantgl.all import Point4Matrix, NurbsPatch, NurbsCurve2D, BezierCurve2D
     nbcurves = len(curves)
     if knotlist is None: knotlist = [i/float(nbcurves-1) for i in xrange(nbcurves)]
     k = [knotlist[0] for i in xrange(degree-1)]+knotlist+[knotlist[-1] for i in xrange(degree-1)]
@@ -26,3 +27,10 @@ def ProfileInterpolation(curves, knotlist = None, degree = 3, resolution = 10):
       return res
     p.getAt = getSectionAt
     return p
+
+def sweepSymbol(path, section, length, dlength, radius = 1, radiusvariation = None):
+  from openalea.plantgl.all import PglTurtle
+  t = PglTurtle()
+  t.start()
+  return t.startGC().sweep(path, section, length, dlength, radius, radiusvariation).stopGC().getScene()[0].geometry
+

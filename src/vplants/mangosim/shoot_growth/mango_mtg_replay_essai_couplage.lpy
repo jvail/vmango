@@ -633,7 +633,7 @@ Inflorescence(param):
      nproduce ,(1) @O(0.01)
    else:
     nproduce _(param.length/100.) 
-    NbAxe2=int(1.19*param.final_size)
+    NbAxe2=int(1.19*param.final_size) # cf these agostini
     
     #=====
     XX=[187525232.]
@@ -670,13 +670,14 @@ fleur(pos,age,l,pheno,pheno_advct,deb,ind_deb):
           if pheno==3: ind_col=0.7
           deb=1
           ind_deb+=1
+          
           if (ind_col<0.5 and pheno==2) :ind_col=min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/5.
         else : ind_col=min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/10. 
         
         for d in xrange (0,3):
           if pheno>=2:
             if ind_col<0.5:
-              nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno],(pheno_advct+(13-k)/10.)/2.) @O(min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/10. )]
+              nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) SetColor(pheno_color_flower[pheno]) @O(min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/10. )]
             else:
               nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],ind_col) @O(ind_col)]
           else:

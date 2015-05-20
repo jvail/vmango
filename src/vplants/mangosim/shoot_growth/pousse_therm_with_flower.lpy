@@ -1,0 +1,828 @@
+from datetime import *
+from openalea.plantgl.all import *
+from math import *
+from random import *
+from math import degrees
+from pandas import DataFrame, read_csv
+from numpy import random
+
+seed(SEED)
+
+# Selection of parameters
+global current_date
+current_date =datetime(2003,7,1)           # Date de debut pour la simulation    
+global NbOfDays
+NbOfDays=60 #len(df['tempMoy'])                  
+temperature=[gauss(22,1) for i in xrange(NbOfDays+1)]
+#[30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30]
+
+
+# Initialisation des variables
+#t_ip_GU=178.792/2.                            # point d'inflexion de la courbe de croissance pour les UCs
+mean_tip_GU=79.40
+sd_tip_GU=10.75
+t_ip_Leaf=182.04/2.                           # point d'inflexion de la courbe de croissance pour les feuilles
+t_ip_Inflo=346.03/2.                          # point d'inflexion de la courbe de croissance pour les inflorescences
+
+base_temperature_GU=9.2                     # Temperature de base des UCs
+base_temperature_Leaf=10.73                 # Temperature de base des feuilles
+base_temperature_Inflo=11.12                # Temperature de base des inflorescences
+
+totlength = []                              # vecteur des longueurs de l'UC
+infoUC= []                                  # vecteur permettantla recoltes d'informations lors de la croissance
+if Vegetative==True: infoUC.append(('CodeUC','Days', 'TTS', 'Length','Pheno_stage','Date','Surface_Fol'))
+else: infoUC.append(('CodeUC','Days', 'TTS', 'Length','Pheno_stage','Date'))
+phyllotaxy = 144+randint(-2,2)              # angle correspondant a la phyllotaxie du manguier
+final_diamI = 0.2                           # diametre final des UCs
+temp_index=0                                # index permettant de parcourir les temperatures jour par jour
+point=[]
+
+# Choix d'un pas de temps horaire ou journalier : 1/24 = une heure
+if DAILY:
+  pdt = 1
+else:
+  pdt=1/24.                              
+delta_date = timedelta(hours=24*pdt)
+
+# Choix d'un decoupage et definition des stades phenologiques
+if D_EF_G:
+  pheno_base_temp_GU=[12.40516,13.57918,13.57918,9.784431,0] #stades D_EF_G_H
+  pheno_change_temp_GU=[41.84,46.78+41.84,46.56+46.78+41.84,316.376+46.56+46.78+41.84,999+316.376+46.56+46.78+41.84]       # temperatures auxquelles ont lieu les changements de stade UC
+  pheno_color=[7,10,11,14,13,13]                          # couleurs pour chaque stade
+  pheno_angle=[0,90,165,60,60,60]                         # angle entre la feuille et l'UC pour chaque stade
+else:
+  pheno_base_temp_GU=[13.37766,13.37766,9.784431,0]    # stades DEF_G_H
+  pheno_change_temp_GU=[38.50,47.61+38.50,47.39+47.61+38.50,316.376+47.39+47.61+38.50,999+316.376+47.39+47.61+38.50]       # temperatures auxquelles ont lieu les changements de stade UC
+  pheno_color=[7,11,14,13,13]                       # couleurs pour chaque stade
+  pheno_angle=[0,165,60,60,60]                      # angle entre la feuille et l'UC pour chaque stade
+  
+pheno_base_temp_Inflo=[11.10,5.38,8.67,15.11,0]                # températures de base pour chaque stade phéno
+#Tpheno_change_temp_Inflo=[70.56,133.32+70.56,230.42+133.32+70.56,999+230.42+133.32+70.56]       # temperatures auxquelles ont lieu les changements de stade Inflo
+pheno_change_temp_Inflo=[70.56,242.9139,473.3403,2000] 
+Nb_stades_pheno=len(pheno_change_temp_GU)              # nombre de stades phenologiques
+
+if Vegetative==False:
+  pheno_color=[15,15,16,16,16,16]                                    # couleurs pour chaque stade (inflorescences)
+  pheno_color_flower=[13,2,7,17,10,4]
+  Nb_stades_pheno=len(pheno_change_temp_Inflo)
+
+
+# Parametres des distributions gaussiennes
+# Longueur des UCs (en position : apicale d'UC mere apicale, apicale d'UC mere laterale, laterale)
+GU_length_apic_apic_mean=18.14
+GU_length_apic_apic_sd=4.14
+
+GU_length_apic_lat_mean=13.79
+GU_length_apic_lat_sd=4.03
+
+GU_length_lat_mean=12.59
+GU_length_lat_sd=3.38
+
+# Longueur des feuilles (en position apicale, laterale)
+Leaf_length_apic_mean=17.06 
+Leaf_length_apic_sd=2.7
+
+Leaf_length_lat_mean=14.87
+Leaf_length_lat_sd=2.7
+
+# Longueur des inflorescences
+Inflo_length_mean=23.15833
+Inflo_length_sd=6.767254
+
+# Fonction qui donne l'état de floraison (entre 0 et 1) d'une fleur
+def floraison(pos,k,cumsum_temp):
+  if cumsum_temp<242.9139:
+    indice_floraison=0
+  else:
+    avct_pheno=(cumsum_temp-242.9139)/473.3403
+    indice_floraison=((2-pos-k)+4*avct_pheno)/6.
+  return indice_floraison
+
+# Fct qui renvoit le stade pheno et l'avancement (entre 0 et 1) dans ce stade
+def normalized_pheno_stage(cumtemp,type):
+  if type=="GU":
+    pheno_change_temp=pheno_change_temp_GU
+  else:
+    pheno_change_temp=pheno_change_temp_Inflo
+  # On cherche le stade pheno
+  pheno_stage=None
+  if cumtemp > pheno_change_temp[-2]:     # on teste si la somme des temp cumulee est superieure a la derniere temp de chgt de stade
+      pheno_stage=Nb_stades_pheno-1         # si oui on est dans le dernier stade
+  else:
+      i=Nb_stades_pheno-3                   # si non, on boucle jusqu'a etre inferieur a une temp de chgt de stade
+      while i!=-1:
+        if cumtemp > pheno_change_temp[i]:
+          pheno_stage=i+1
+          i=-1
+        else:
+          i=i-1     
+  if pheno_stage==None: pheno_stage=0
+  if pheno_stage == (Nb_stades_pheno-1):     # si on est au dernier stade on n'avance plus
+    pheno_advancement =0                     
+  else:                                      # si non, on calcul l'avancement dans le stade
+    if pheno_stage==0: entry_pheno_temp=0
+    else:
+      entry_pheno_temp=pheno_change_temp[pheno_stage-1]
+    exit_pheno_temp=pheno_change_temp[pheno_stage]
+    cumtemp=cumtemp-entry_pheno_temp 
+    pheno_advancement =cumtemp/(exit_pheno_temp-entry_pheno_temp)
+  return [pheno_advancement, pheno_stage]
+
+
+def retrieveCurves():
+  # Determine the set of curve representing axis at different time. 
+  # Look for object in global namespace name axisX 
+  curves = [(n,v) for n,v in globals().items() if 'axis' in n and type(v) == BezierCurve2D ]
+  
+  # sort curves according to their names
+  for n,v in curves: v.name = n
+  curves = [v for n,v in curves]
+  curves.sort(lambda x,y : cmp(x.name,y.name))
+  return curves
+
+# Fonction qui permet d'interpoler des courbes afin de faire evoluer une forme (ici cellede la feuille) au cours du temps
+def ProfileInterpolation(curves,knotlist = None,degree = 3):
+    nbcurves = len(curves)
+    if knotlist is None: knotlist = [i/float(nbcurves-1) for i in xrange(nbcurves)]
+    k = [knotlist[0] for i in xrange(degree-1)]+knotlist+[knotlist[-1] for i in xrange(degree-1)]
+    pts = [[(i.x,i.y,0,1) for i in c.ctrlPointList] for c in curves]
+    ppts = Point4Matrix(pts)
+    p = NurbsPatch(ctrlPointList=ppts,udegree=degree,vdegree=3)
+    def getSectionAt(t): 
+      section = p.getIsoUSectionAt(t)
+      return NurbsCurve2D([(i.x,i.y,i.w) for i in section.ctrlPointList], section.knotList,section.degree)
+    p.getAt = getSectionAt
+    return p
+
+curves = retrieveCurves()
+axisfunc = ProfileInterpolation(curves,[0,0.1,0.5,0.6,0.7,0.8])
+
+
+def Start():
+  global totlength
+  totlength = [(0,0)]
+  global pheno_inter_prec
+  pheno_inter_prec=0
+  global deb
+  deb=0
+  global ind_deb
+  ind_deb=0
+  
+def End():
+  if Vegetative==True :
+    df = DataFrame(data = infoUC, columns=['CodeUC','Days', 'TTS', 'Length','Pheno_stage','Date','Surface_Fol']) 
+    df.to_csv('croissUC_test.csv',index=True,header=False)
+  else :
+    df = DataFrame(data = infoUC, columns=['CodeUC','Days', 'TTS', 'Length','Pheno_stage','Date']) 
+    df.to_csv('croissInflo_test.csv',index=True,header=False)
+
+ 
+def StartEach():
+  # On verifie si on passe au jour suivant et on avance d'un pas de temps
+  global current_date
+  if ((current_date.month!=(current_date+delta_date).month) or (current_date.day!=(current_date+delta_date).day)):
+    global temp_index
+    temp_index+=1
+  current_date += delta_date
+  
+  # longueur et age de l'UC pour tracer le graphique
+  global length_inter
+  length_inter=0.0001   #initialisation a 0
+  global age_inter
+  age_inter=0.0001
+  global cumsum_inter
+  cumsum_inter=0.0001
+  global pheno_inter
+  pheno_inter=0
+  
+  # Calcul de la temperature a ajouter a la somme en temps thermique (croissance)
+  global temperature
+  global delta_temperature_GU      
+  delta_temperature_GU=max(0,temperature[temp_index]-base_temperature_GU)        # pour les UCs
+  global delta_temperature_Leaf 
+  delta_temperature_Leaf=max(0,temperature[temp_index]-base_temperature_Leaf)    # pour les feuilles
+  global delta_temperature_Inflo 
+  delta_temperature_Inflo=max(0,temperature[temp_index]-base_temperature_Inflo)    # pour les inflorescences
+
+
+# Fonction qui calcule la taille de l'organe (feuille ou UC) 
+# en fonction de sa taille finale et de ses tem cumulees 
+def GrowthCurve(T,FinalSize_organ,type,FinalSize,t_ip):
+  if type=="GU":                               # Pour les UCs
+    maxER=0.0111513*FinalSize                  # relation entre taille finale et vitesse maximale de croissance pour les UCs
+    B=FinalSize/(4*maxER)   
+    y=FinalSize_organ/(1+exp(-(T-t_ip)/B))  # equation de la sigmoide
+
+  elif type == "Leaf":                                        # Pour les feuilles
+    maxER=-0.0188725+0.0147985*FinalSize
+    B=FinalSize/(4*maxER)
+    y=FinalSize/(1+exp(-(T-t_ip_Leaf)/B))
+    
+  else:                                        # Pour les inflorescences
+    maxER=0.0049161*FinalSize 
+    B=FinalSize/(4*maxER)
+    y=FinalSize_organ/(1+exp(-(T-t_ip_Inflo)/B))
+  return(y)
+  
+
+# Fonction qui permet de tracer la courbe de croissance de l'UC
+def plotCurve(curvedata, pointdata = None, xextend = None, yextend = None, pos = (0.1,0.1), dim = (0.8,0.8), xtick = None, ytick = None, withorigin = True ):
+  if LPY_VERSION_MAJOR < 2 or (LPY_VERSION_MAJOR == 2 and LPY_VERSION_MINOR < 4):
+    import warnings
+    warnings.warn("Your version of lpy do not allow 2D plot")
+    return
+  from math import ceil, floor, log
+  from openalea.plantgl.all import Polyline2D
+  if type(curvedata) == tuple:
+    curvedata = zip(curvedata[0],curvedata[1])
+  if type(pointdata) == tuple:
+    pointdata = zip(pointdata[0],pointdata[1])
+  data = list(curvedata)
+  if not pointdata is None:
+    data += pointdata
+  if len(data) > 1:
+    if xextend:
+      minx, maxx = xextend
+    else :
+      minx = floor(min([x for x,y in data]))
+      maxx = ceil(max([x for x,y in data]))
+    if yextend:
+      miny, maxy = yextend
+    else :
+      miny = floor(min([y for x,y in data]))
+      maxy = ceil(max([y for x,y in data]))
+    if withorigin:
+      maxx = max(0,maxx)
+      minx = min(0,minx)
+      maxy = max(0,maxy)
+      miny = min(0,miny)
+    xext = maxx - minx
+    yext = maxy - miny
+    x2Dlength, y2Dlength = dim
+    projx = lambda x: (x2Dlength*(x-minx)/xext)
+    projy = lambda y: (y2Dlength*(y-miny)/yext)
+    if xtick is None:
+      nbdigit = round(log(xext,10))
+      xtick = 10**(nbdigit-1)
+    if ytick is None:
+      nbdigit = round(log(yext,10))
+      ytick = 10**(nbdigit-1)
+    curvedata = [(projx(x),projy(y)) for x,y in curvedata]
+    ticklength = 0.02
+    
+    nproduce [ @2D SetColor(255,0,0) @M(pos[0],pos[1]) @R 
+    if not curvedata is None:
+      nproduce @g(Polyline2D(curvedata,width=2))
+    if not pointdata is None:
+      nproduce SetColor(255,0,255)
+      for x,y in pointdata:
+        nproduce [ @M(pos[0]+projx(x),pos[1]+projy(y)) @O(0.015)]
+    if miny <= 0 <= maxy:
+      nproduce SetColor(0,255,0) @g(Polyline2D([(projx(minx),projy(0)),(projx(maxx),projy(0))]))
+      cxtick = ((minx // xtick) * xtick)
+      if cxtick < minx : cxtick += xtick
+      while cxtick <= maxx:
+        if cxtick != 0:
+          nproduce @g(Polyline2D([(projx(cxtick),projy(0)-ticklength),(projx(cxtick),projy(0)+ticklength)]))
+        cxtick += xtick
+    if minx <= 0 <= maxx:
+      nproduce SetColor(0,0,255) @g(Polyline2D([(projx(0),projy(miny)),(projx(0),projy(maxy))]))
+      cytick = ((miny // ytick)*ytick)
+      if cytick < miny : cytick += ytick
+      while cytick <= maxy:
+        if cytick != 0:
+          nproduce @g(Polyline2D([(projx(0)-ticklength,projy(cytick)),(projx(0)+ticklength,projy(cytick))]))
+        cytick += ytick
+    nproduce ]
+
+
+
+
+module Bud(burstdate,position,mother_position,type) 
+module Internode(length, age, final_size, diam, pheno_stage,cumsum_temp,pheno_advct)
+module Leaf(position, length, age, final_size,cumsum_temp)
+module Env
+module C(type)  # module permettant la visualisation de la courbe de croissance
+
+Axiom: 
+  nproduce Env 
+  if Vegetative==True:
+    nproduce Bud(current_date+timedelta(days=1),"A","A","V")
+  else :
+    nproduce Bud(current_date+timedelta(days=1),"A","A","F")
+
+derivation length: int(ceil(NbOfDays/pdt))
+production:
+
+Bud(burst,position,mother_position,type):
+  if (burst == current_date) : # On teste si c'est le jour du debourrement
+    if type=="V": #On teste si on est en presence d'une UC vegetative
+      cum=delta_temperature_GU*pdt
+      cumL=delta_temperature_Leaf*pdt
+      # si oui on teste si l'UC en croissance est apicale
+      if position=="A":
+        hypo=random.gamma(2,0.76)  #On tire une longueur d'espace pre-feuille
+        # On teste le position de l'UC mere
+        if (mother_position=="A"):
+          final_size_internode=gauss(GU_length_apic_apic_mean,GU_length_apic_apic_sd)   # on tire une longueur dans la distribution associee
+          while (final_size_internode <5) or (final_size_internode >25):                # si on sort des bornes on tire a nouveau, jusqu'a etre dans les bornes
+            final_size_internode=gauss(GU_length_apic_apic_mean,GU_length_apic_apic_sd)
+        else:
+          final_size_internode=gauss(GU_length_apic_lat_mean,GU_length_apic_lat_sd)
+          while (final_size_internode <5) or (final_size_internode >25):
+            final_size_internode=gauss(GU_length_apic_lat_mean,GU_length_apic_lat_sd)
+        
+        # On tire la taille finale des feuilles selon le meme principe    
+        final_size_leaf=gauss(Leaf_length_apic_mean,Leaf_length_apic_sd)
+        while (final_size_leaf <5) or (final_size_leaf >34):
+          final_size_leaf=gauss(Leaf_length_apic_mean,Leaf_length_apic_sd)
+      
+      # Sinon on est dans le cas lateral    
+      else:
+        final_size_internode=gauss(GU_length_lat_mean,GU_length_lat_sd)
+        while (final_size_internode <5) or (final_size_internode >25):
+          final_size_internode=gauss(GU_length_lat_mean,GU_length_lat_sd) 
+        
+        final_size_leaf=gauss(Leaf_length_lat_mean,Leaf_length_lat_sd)
+        while (final_size_leaf <5) or (final_size_leaf >34):
+          final_size_leaf=gauss(Leaf_length_lat_mean,Leaf_length_lat_sd)
+  
+        hypo=final_size_internode*0.38+0.88+randint(-1,1)  #On calcul la longueur de l'espace pre-feuille en fonction de celle de l'UC
+            
+      # on calcule le nombre de feuilles en fonction de la longueur de l'UC
+      NbInternode=int(max(ceil(0.6*final_size_internode)+randint(-1,1) ,1))
+      t_ip=gauss(mean_tip_GU,sd_tip_GU)
+      
+      # Début de l'UC
+      nproduce GU(ParameterSet(CodeUC='1-V',
+                               age=0,
+                               final_size_GU=20,#final_size_internode,
+                               diam=0,
+                               final_size_Leaf=final_size_leaf,
+                               LEPF=0,#hypo,
+                               NbInternode=NbInternode,
+                               pheno_stage=0,
+                               cumsum_temp=cum,
+                               cumsum_temp_Leaf=cumL,
+                               pheno_advct=0,
+                               pheno_TTS=0,
+                               T_ip=t_ip))
+      # on trace l'espace pré-feuille et la première feuille
+      nproduce Internode(ParameterSet(length=0.01,final_size_organ=hypo,diam=0.01)) /(phyllotaxy) [ &(0) Leaf(ParameterSet(position=0,size=0.1,final_size=final_size_leaf*leaflength(0))) ]
+  
+      # On trace les entrenoeuds restants en les espacant de moins en moins, chaque entenoeud suivi d'une feuille
+      totintlength=0
+      for j in xrange(1,NbInternode-1): totintlength+=exp(-2.64*j/float(NbInternode-1))
+      for i in xrange(1,NbInternode-1):
+        nproduce  Internode(ParameterSet(length=0.01,final_size_organ=(final_size_internode-hypo)*exp(-2.64*i/float(NbInternode-1))/totintlength,diam=0.01)) /(phyllotaxy) [ &(0) Leaf(ParameterSet(position=i/float(NbInternode-1),size=0.1,final_size=final_size_leaf*leaflength(i/float(NbInternode-1)))) ]
+      nproduce C("V")
+      # Fin de l'UC
+      nproduce GUEnd
+      
+      
+    else : # On est en presence d'une UC florifaire
+      final_size_inflo=gauss(Inflo_length_mean,Inflo_length_sd)
+      while (final_size_inflo <5) or (final_size_inflo >44):
+          final_size_inflo=gauss(Inflo_length_mean,Inflo_length_sd)
+      nproduce Inflo(ParameterSet(CodeUC='1-F',
+                                  length=0.01,
+                                  age=0,
+                                  final_size=25,#final_size_inflo,
+                                  diam=0.01,
+                                  pheno_stage=0,
+                                  cumsum_temp=delta_temperature_Inflo*pdt,
+                                  pheno_advct=0,
+                                  pheno_TTS=0,
+                                  indice_floraison=0)) /(phyllotaxy)
+      nproduce C("F")
+
+
+GU(p):
+  if p.pheno_stage==4:
+    produce GU(p) [ %
+  else:
+    new_param=p.copy()
+    # Mise a jour des parametres pour la croissance
+    new_param.age += pdt                                 # on incremente l'age du pas de temps
+    [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"GU")  #calcul de l'avct ds le stade pheno  
+      
+    # Somme de temperatures pour la croissance
+    new_param.cumsum_temp+=delta_temperature_GU*pdt     # on incremente la somme de temperatures cumulees
+    
+    #Somme de temperature pour les stades pheno
+    global temperature      
+    delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_GU[new_param.pheno_stage])
+    new_param.pheno_TTS+= delta_temperature_pheno*pdt     # on incremente la somme de temperatures cumulees
+    new_param.pheno_advct=pheno_advct_stage
+    
+    l = GrowthCurve(new_param.cumsum_temp,new_param.final_size_GU,"GU",new_param.final_size_GU,new_param.T_ip)  # calcul de la taille de l'UC
+    d = GrowthCurve(new_param.cumsum_temp,final_diamI,"GU",final_diamI,new_param.T_ip)                             # calcul du diametre de l'UC
+    new_param.length=l
+    new_param.diam=d
+    
+    # Mise a jour des parametres pour la courbe de croissance  
+    global length_inter
+    length_inter +=l
+    global age_inter
+    age_inter=new_param.age
+    
+    # Gestion de la croissance des feuilles
+    new_param.cumsum_temp_Leaf+= delta_temperature_Leaf*pdt
+    surfFol=0.18*GrowthCurve(new_param.cumsum_temp_Leaf,new_param.final_size_Leaf*leaflength(0),"Leaf",new_param.final_size_Leaf*leaflength(0),0)**2
+    # On fait une boucle pour récupérer la surface de chaque feuille
+    for i in xrange(1,new_param.NbInternode-1):
+      leaf_length=new_param.final_size_Leaf*leaflength(i/float(new_param.NbInternode-1))
+      surfFol+=0.18*GrowthCurve(new_param.cumsum_temp_Leaf,leaflength,"Leaf",leaf_length,0)**2
+          
+    # Recolte des informations sur la croissance de l'UC
+    global cumsum_inter
+    cumsum_inter=new_param.cumsum_temp
+    global pheno_inter
+    pheno_inter=new_param.pheno_stage
+    infoUC.append((new_param.CodeUC,new_param.age,new_param.cumsum_temp,new_param.length,new_param.pheno_stage,current_date,surfFol))
+    produce GU(new_param)
+
+consider: GU
+
+GU(p) < GUEnd:
+  if p.pheno_stage ==4:
+    produce ] GUEnd
+  else :
+    produce GUEnd
+
+GU(p) < Internode(param):
+  new_param=param.copy()
+  new_param.length = GrowthCurve(p.cumsum_temp,new_param.final_size_organ,"GU",p.final_size_GU,p.T_ip)  # calcul de la taille de l'entrenoeud
+  new_param.diam = GrowthCurve(p.cumsum_temp,final_diamI,"GU",final_diamI,p.T_ip)                             # calcul du diametre de l'entrenoeud
+  # production de l'entrenoeud
+  produce Internode(new_param)   
+
+
+GU(p) < Leaf(param): # Mise a jour des parametres et production de la feuille
+  new_param=param.copy()
+  new_param.size = GrowthCurve(p.cumsum_temp_Leaf,new_param.final_size,"Leaf",new_param.final_size,0)
+  produce Leaf(new_param)  
+  
+Inflo(param): # Mise a jour des parametres et production de l'inflorescence
+  new_param=param.copy()
+  new_param.age += pdt
+  [pheno_advct_stage,new_param.pheno_stage]=normalized_pheno_stage(new_param.pheno_TTS,"Inflo")  #calcul de l'avct ds le stade pheno  
+    
+  # Somme de temperatures pour la croissance
+  new_param.cumsum_temp+= delta_temperature_Inflo*pdt
+    
+  #Somme de temperature pour les stades pheno
+  global temperature      
+  delta_temperature_pheno=max(0,temperature[temp_index]-pheno_base_temp_Inflo[new_param.pheno_stage])
+  new_param.pheno_TTS+= delta_temperature_pheno*pdt     # on incremente la somme de temperatures cumulees
+  new_param.pheno_advct=pheno_advct_stage
+  
+  new_param.length = GrowthCurve(new_param.cumsum_temp,new_param.final_size,"Inflo",new_param.final_size,0)
+  if new_param.pheno_stage >=2:
+    new_param.indice_floraison+=pdt*10  
+  
+  # Mise a jour des parametres pour la courbe de croissance  
+  global length_inter
+  length_inter = new_param.length
+  global age_inter
+  age_inter=new_param.age
+  global pheno_inter
+  pheno_inter=new_param.pheno_stage
+  infoUC.append((new_param.CodeUC,new_param.age,new_param.cumsum_temp,new_param.length,new_param.pheno_stage,current_date))
+  produce Inflo(new_param) 
+
+
+interpretation:
+maximum depth:10
+
+C(type):
+  global totlength
+  global age_inter
+  global point
+  global cumsum_inter
+  global pheno_inter
+  global pheno_inter_prec
+  if age_inter <=55:  # On trace la courbe jusqu'au 55ieme jour de l'UC
+    totlength.append((age_inter,length_inter))
+  if pheno_inter!=pheno_inter_prec :
+    point.append((age_inter,length_inter))
+    pheno_inter_prec=pheno_inter
+  if (type=="V"):
+    plotCurve(totlength, pointdata = point, xextend = (0,30), yextend=(0,25))
+    stadename = {0: 'ABCD', 1 :'E', 2 : 'F', 3 : 'G', 4: 'H' }
+    produce [ ,(20) @2D @M(0.5,0.15) Label('Stade :'+stadename[pheno_inter])]
+  else :
+    plotCurve(totlength, pointdata = point, xextend = (0,60), yextend=(0,45))
+    stadename = {0: 'ABCD', 1 : 'E', 2 : 'F', 3: 'G' }
+    produce [ ,(20) @2D @M(0.5,0.15) Label('Stade :'+stadename[pheno_inter])]
+
+
+GU(p):
+  if p.pheno_stage==4:
+    # on trace l'espace pre_feuille et la premiere feuille
+    nproduce _(0.2) F(p.LEPF,0.2) /(phyllotaxy) [ &(0) fLeaf(ParameterSet(position=0,size=p.final_size_Leaf*leaflength(0))) ]
+    # On trace les entrenoeuds restants en les espacant de moins en moins, chaque entenoeud suivi d'une feuille
+    totintlength=0
+    for j in xrange(1,p.NbInternode-1): totintlength+=exp(-2.64*j/float(p.NbInternode-1))
+    for i in xrange(1,p.NbInternode-1):
+      length=(p.final_size_GU-p.LEPF)*exp(-2.64*i/float(p.NbInternode-1))/totintlength
+      nproduce  F(length, 0.2) /(phyllotaxy) [ &(0) fLeaf(ParameterSet(position=i/float(p.NbInternode-1),size=p.final_size_Leaf*leaflength(i/float(p.NbInternode-1)) )) ]
+      
+GU(p) < Internode(param):
+  if(p.pheno_stage<4):
+    produce _(param.diam) F(param.length,param.diam) 
+
+Inflo(param):
+   nproduce [   
+   if (param.cumsum_temp>=800):
+     nproduce ,(1) @O(0.01)
+   else:
+    nproduce _(param.length/100.) 
+    NbAxe2=int(1.19*param.final_size)
+    
+    #=====
+    XX=[187525232.]
+    YY=[XX[0]/(2.**32)]
+    
+    for k in xrange(0,NbAxe2):
+      XX.append( (69069.*XX[k]) % (2.**32))
+      YY.append( XX[k+1] / (2.**32))
+    #=====    
+    
+    for k in xrange(0,NbAxe2):
+      nproduce InterpolateColors(13,pheno_color[param.pheno_stage+1],(param.pheno_advct+param.pheno_stage)*(1-float(k)/NbAxe2)/(2.1-max(0,param.pheno_advct+param.pheno_stage-1)) ) 
+      # On choisi la couleur en fonction du stade et de son avancement
+      nproduce F(param.length/NbAxe2,param.length/(NbAxe2*5.))  
+      if (k<8 or k>19): nproduce \(60+(YY[k]*30))
+      else: nproduce \(220)
+      #nproduce [@Ts(0.05) @Tp(0,0,1)  +(65) fleur(float(k)/(NbAxe2-1),param.length,max(param.length/10.,param.length*0.687-3.97)*(NbAxe2-k)/NbAxe2,param.pheno_stage,param.pheno_advct,param.pheno_TTS)]
+      nproduce [@Ts(0.05) @Tp(0,0,1)  +(65) fleur(float(k)/(NbAxe2-1),param)] 
+      #if (i<8 or i>19): nproduce /(60+(YY[k]*30)) \(90)
+   produce ]
+
+fleur(pos,param):
+  for k in xrange(0,10):
+    #(0,10):
+      l=(1-pos)*max(param.length/10.,param.length*0.687-3.97)
+      if pos<0.7: nproduce InterpolateColors(13,pheno_color[param.pheno_stage+1],(param.pheno_advct+param.pheno_stage)*(1-float(k)/10)) 
+      # On choisi la couleur en fonction du stade et de son avancement
+      nproduce F(l/10.,l/100.)  
+      #k2=k
+      #pos2=pos
+      if k>3:
+        for d in xrange (0,3):
+          indice_floraison=floraison(pos,k/9.,param.pheno_TTS)
+          nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02) fleur_fine(indice_floraison,param,pos)]
+#          if pheno>=2:
+#            if ind_col<0.5:          
+#              nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno],(pheno_advct+(13-k)/10.)/2.) @O(min((age+k/10.)/100.,0.3) +min(1,max(0,pheno+pheno_advct-1))/10. )]
+#            else:
+#              if pheno==2:
+#                nproduce nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02)  /(120*d+k*2) fleur_fine(0)
+#              else:
+#                nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],ind_col) @O(ind_col)]
+#          else:
+#            nproduce [ \(120*d+k*2) +(75) F(l/5*(9-k)/18,0.02),(4) InterpolateColors(pheno_color_flower[pheno],pheno_color_flower[pheno+1],ind_col) @O(ind_col)]
+#             
+
+
+
+
+fleur_fine(indice_floraison,param,pos):
+  if indice_floraison==0:
+    nproduce ,(4) InterpolateColors(pheno_color_flower[param.pheno_stage],pheno_color_flower[param.pheno_stage+1],param.pheno_advct) @O((param.pheno_advct+param.pheno_TTS)/600.)
+  elif (indice_floraison >0.45 and pos>0.5) or(indice_floraison >0.5) or (param.pheno_stage==3) :#& (param.pheno_stage==3):
+    nproduce ,(10) @O(0.3)
+  elif indice_floraison<0.2:
+    nproduce ,(9) @Ts(0,0,0) petale(30,0.5) \(120)  petale(30,0.5)\(120)  petale(30,0.5) 
+  elif indice_floraison<0.28:
+    nproduce ,(25) @Ts(0,0,0) petale(40,0.65) \(120)  petale(40,0.65)\(120)  petale(40,0.65) 
+    nproduce petale(15,0.5) \(120)  petale(15,0.5) \(120) petale(15,0.5) #@O(0.1)
+  elif indice_floraison<0.35:
+    nproduce ,(26) @Ts(0,0,0) petale(50,0.85) \(120)  petale(50,0.85)\(120)  petale(50,0.85) 
+    nproduce petale(15,0.65) \(120)  petale(15,0.65) \(120) petale(15,0.65) #@O(0.1)
+  else :
+    nproduce ,(18) #InterpolateColors(pheno_color_flower[param.pheno_stage-1],18,indice_floraison) 
+    nproduce   @Ts(0,0,0) petale(90,1) \(120)  petale(90,1)\(120)  petale(90,1) 
+    nproduce petale(35,1) \(120)  petale(35,1) \(120) petale(35,1) #@O(0.1)
+
+petale(angle, longueur):
+  produce  [&(-angle) Sweep(leafpath,petalecurve, longueur,0.01, 0.5, leafdiam)]
+
+consider: GU
+
+fLeaf(param):
+  nproduce @G ,(2) [ /(137.5) &(90) ,(1)  f(0) F(0.001,leafdiam(0)*leafwidth(1))  ^(90) 
+  # On trace le petiole
+  nproduce &(pheno_angle[4]) SetGuide(petioleCurve,(1-param.position)* param.size/4.) @G  Petiole((1-param.position)* param.size/4.,leafdiam(0))  
+  # On choisi la couleur   
+  nproduce ,(13) @Gc _(leafdiam(0.5))  Sweep(axisfunc.getAt(1),leafsection, param.size, param.size/10., (param.size*0.24)*leafwidth(1), leafdiam) ]  
+
+GU(paramI) < Leaf(paramL) :
+  if(paramI.pheno_stage<4):
+    nproduce @G ,(2) [ /(137.5) &(90) ,(1)  f(0) F(0.001,leafdiam(0)*leafwidth(min((paramI.cumsum_temp_Leaf+1)/378.,1)))  ^(90) 
+    # On va chercher les angles correspondants au debut du stade pheno et du stade pheno suivant et on interpole 
+    nproduce &((1-paramI.pheno_advct)*pheno_angle[paramI.pheno_stage]+paramI.pheno_advct*pheno_angle[paramI.pheno_stage+1]) 
+    # On trace le petiole
+    nproduce SetGuide(petioleCurve,(1-paramL.position)* paramL.size/4.) @G  Petiole((1-paramL.position)* paramL.size/4.,leafdiam(0)*leafwidth(min((paramI.cumsum_temp_Leaf+1)/378.,1)))  
+    # On choisi la couleur en fonction du stade et de son avancement
+    nproduce InterpolateColors(pheno_color[paramI.pheno_stage],pheno_color[paramI.pheno_stage+1],paramI.pheno_advct)    
+    # On cherche la courbure de feuille correspondant a l'avancement et on trace la feuille
+    nproduce @Gc _(leafdiam(paramI.diam))  Sweep(axisfunc.getAt(min(1,(paramI.pheno_stage+paramI.pheno_advct)/(Nb_stades_pheno-2))),leafsection, paramL.size, paramL.size/10., (paramL.size*0.24)*leafwidth(min((paramI.age+1)/20.,1)), leafdiam) ]  
+  
+Bud(burstdate,position) --> ,(7) @O(0.1)
+
+Petiole(length,radius):
+  for i in xrange(10):
+    nproduce F(length/10.,radius)
+
+Env --> ,(20) @g(ScreenProjected(Translated(-0.5,-0.7,0,Text(str(current_date))))) ,(1) /(getIterationNb()/2.)
+
+endlsystem
+
+
+###### INITIALISATION ######
+
+__lpy_code_version__ = 1.1
+
+def __initialiseContext__(context):
+	import openalea.plantgl.all as pgl
+	Color_7 = pgl.Material("Color_7" , ambient = (62,125,20) , diffuse = 2.04 , )
+	Color_7.name = "Color_7"
+	context.turtle.setMaterial(7,Color_7)
+	Color_8 = pgl.Material("Color_8" , ambient = (78,102,23) , diffuse = 1.50437 , )
+	Color_8.name = "Color_8"
+	context.turtle.setMaterial(8,Color_8)
+	Color_9 = pgl.Material("Color_9" , ambient = (70,113,21) , diffuse = 1.77218 , )
+	Color_9.name = "Color_9"
+	context.turtle.setMaterial(9,Color_9)
+	Color_10 = pgl.Material("Color_10" , ambient = (95,79,27) , diffuse = 0.968421 , )
+	Color_10.name = "Color_10"
+	context.turtle.setMaterial(10,Color_10)
+	Color_11 = pgl.Material("Color_11" , ambient = (121,46,33) , diffuse = 0.165289 , )
+	Color_11.name = "Color_11"
+	context.turtle.setMaterial(11,Color_11)
+	Color_12 = pgl.Material("Color_12" , ambient = (60,60,15) , diffuse = 3 , )
+	Color_12.name = "Color_12"
+	context.turtle.setMaterial(12,Color_12)
+	Color_13 = pgl.Material("Color_13" , ambient = (30,60,10) , diffuse = 1.68333 , )
+	Color_13.name = "Color_13"
+	context.turtle.setMaterial(13,Color_13)
+	Color_14 = pgl.Material("Color_14" , ambient = (55,60,14) , diffuse = 3 , )
+	Color_14.name = "Color_14"
+	context.turtle.setMaterial(14,Color_14)
+	Color_15 = pgl.Material("Color_15" , ambient = (159,235,97) , diffuse = 0.680851 , )
+	Color_15.name = "Color_15"
+	context.turtle.setMaterial(15,Color_15)
+	Color_16 = pgl.Material("Color_16" , ambient = (255,82,108) , diffuse = 0.627451 , )
+	Color_16.name = "Color_16"
+	context.turtle.setMaterial(16,Color_16)
+	Color_17 = pgl.Material("Color_17" , ambient = (255,255,0) , diffuse = 1 , specular = (99,99,99) , )
+	Color_17.name = "Color_17"
+	context.turtle.setMaterial(17,Color_17)
+	Color_18 = pgl.Material("Color_18" , ambient = (255,170,0) , diffuse = 0.705882 , )
+	Color_18.name = "Color_18"
+	context.turtle.setMaterial(18,Color_18)
+	Color_20 = pgl.Material("Color_20" , ambient = (0,0,0) , diffuse = 14.5455 , )
+	Color_20.name = "Color_20"
+	context.turtle.setMaterial(20,Color_20)
+	Color_24 = pgl.Material("Color_24" , ambient = (70,113,21) , diffuse = 1.77218 , )
+	Color_24.name = "Color_24"
+	context.turtle.setMaterial(24,Color_24)
+	Color_25 = pgl.Material("Color_25" , ambient = (132,160,19) , diffuse = 1.41675 , )
+	Color_25.name = "Color_25"
+	context.turtle.setMaterial(25,Color_25)
+	Color_26 = pgl.Material("Color_26" , ambient = (207,194,12) , diffuse = 1.06131 , )
+	Color_26.name = "Color_26"
+	context.turtle.setMaterial(26,Color_26)
+	Color_27 = pgl.Material("Color_27" , ambient = (255,170,0) , diffuse = 0.705882 , )
+	Color_27.name = "Color_27"
+	context.turtle.setMaterial(27,Color_27)
+	context.animation_timestep = 0.0
+	scalars = [('DAILY', 'Bool', False), ('mean_temperature', 'Float', 35.91, 20.0, 40.0, 2), ('D_EF_G', 'Bool', True), ('SEED', 'Integer', 86, 0, 100), ('Vegetative', 'Bool', False)]
+	context["__scalars__"] = scalars
+	for s in scalars:
+		if not s[1] == "Category" : context[s[0]] = s[2]
+	import openalea.plantgl.all as pgl
+	petioleCurve = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.543785, 0.192006, 1),(-0.178289, 0.176044, 1),(-0.0656355, 0.0728558, 1),(0.548469, 0.597983, 1),(0.397151, 0.581459, 1),(0.543571, 0.599108, 1)]) , 
+	    )
+	petioleCurve.name = "petioleCurve"
+	import openalea.plantgl.all as pgl
+	leafdiam = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.0846264, 1),(0.239002, 1.00091, 1),(0.485529, 0.991241, 1),(0.718616, 1.00718, 1),(0.877539, 0.231273, 1),(1, 0.00332359, 1)]) , 
+	    )
+	leafdiam.name = "leafdiam"
+	leaflength = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 1, 1),(0.00149779, 1.00072, 1),(1, 0.995671, 1),(1, 0.400121, 1)]) , 
+	    )
+	leaflength.name = "leaflength"
+	leafwidth = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.0123039, 1),(0.289062, 0.0763736, 1),(0.289062, 0.454469, 1),(0.331839, 0.989763, 1),(1, 1, 1)]) , 
+	    )
+	leafwidth.name = "leafwidth"
+	leafsection = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.508209, 0.16873, 1),(-0.515031, 0.138195, 1),(-0.198373, -0.0924227, 1),(-0.00298323, 0.188761, 1),(0.0897461, -0.106293, 1),(0.555704, 0.0979703, 1),(0.545047, 0.12817, 1)]) , 
+	    )
+	leafsection.name = "leafsection"
+	leafpath = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.416733, 0.0128104, 1),(0.2343, -0.076231, 1),(0.507411, -0.330906, 1),(0.662132, -0.814102, 1)]) , 
+	    )
+	leafpath.name = "leafpath"
+	axis1 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.214286, 0.00865801, 1),(0.45671, 0.138528, 1)]) , 
+	    )
+	axis1.name = "axis1"
+	axis2 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.209957, -0.017316, 1),(0.491342, -0.0952381, 1)]) , 
+	    )
+	axis2.name = "axis2"
+	axis3 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.166667, 0, 1),(0.5, 0, 1)]) , 
+	    )
+	axis3.name = "axis3"
+	axis4 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.158009, -0.047619, 1),(0.166667, 0.004329, 1),(0.443723, -0.393939, 1)]) , 
+	    )
+	axis4.name = "axis4"
+	axis5 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.416733, 0.0128104, 1),(0.2343, -0.076231, 1),(0.507411, -0.330906, 1),(0.662132, -0.814102, 1)]) , 
+	    )
+	axis5.name = "axis5"
+	panel_0 = ({'active': True, 'visible': False, 'name': 'Panel 1 2'},[('Curve2D',petioleCurve),('Function',leafdiam),('Function',leaflength),('Function',leafwidth),('Curve2D',leafsection),('Curve2D',leafpath),('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5)])
+	petioleCurve = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.543785, 0.192006, 1),(-0.178289, 0.176044, 1),(-0.0656355, 0.0728558, 1),(0.548469, 0.597983, 1),(0.397151, 0.581459, 1),(0.543571, 0.599108, 1)]) , 
+	    )
+	petioleCurve.name = "petioleCurve"
+	leafdiam = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.0846264, 1),(0.239002, 1.00091, 1),(0.485529, 0.991241, 1),(0.718616, 1.00718, 1),(0.877539, 0.231273, 1),(1, 0.00332359, 1)]) , 
+	    )
+	leafdiam.name = "leafdiam"
+	leaflength = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 1, 1),(0.00149779, 1.00072, 1),(1, 0.995671, 1),(1, 0.400121, 1)]) , 
+	    )
+	leaflength.name = "leaflength"
+	leafwidth = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.0123039, 1),(0.289062, 0.0763736, 1),(0.289062, 0.454469, 1),(0.331839, 0.989763, 1),(1, 1, 1)]) , 
+	    )
+	leafwidth.name = "leafwidth"
+	leafsection = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.508209, 0.16873, 1),(-0.515031, 0.138195, 1),(-0.198373, -0.0924227, 1),(-0.00298323, 0.188761, 1),(0.0897461, -0.106293, 1),(0.555704, 0.0979703, 1),(0.545047, 0.12817, 1)]) , 
+	    )
+	leafsection.name = "leafsection"
+	leafpath = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.416733, 0.0128104, 1),(0.2343, -0.076231, 1),(0.507411, -0.330906, 1),(0.662132, -0.814102, 1)]) , 
+	    )
+	leafpath.name = "leafpath"
+	axis1 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.214286, 0.00865801, 1),(0.45671, 0.138528, 1)]) , 
+	    )
+	axis1.name = "axis1"
+	axis2 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.209957, -0.017316, 1),(0.491342, -0.0952381, 1)]) , 
+	    )
+	axis2.name = "axis2"
+	axis3 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.166667, 0, 1),(0.5, 0, 1)]) , 
+	    )
+	axis3.name = "axis3"
+	axis4 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.158009, -0.047619, 1),(0.166667, 0.004329, 1),(0.443723, -0.393939, 1)]) , 
+	    )
+	axis4.name = "axis4"
+	axis5 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.416733, 0.0128104, 1),(0.2343, -0.076231, 1),(0.507411, -0.330906, 1),(0.662132, -0.814102, 1)]) , 
+	    )
+	axis5.name = "axis5"
+	petalecurve = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(0.11039, -0.307359, 1),(0.248918, -0.177489, 1),(0.5, 0, 1)]) , 
+	    )
+	petalecurve.name = "petalecurve"
+	panel_1 = ({'active': True, 'visible': True, 'name': 'petale_area'},[('Curve2D',petioleCurve),('Function',leafdiam),('Function',leaflength),('Function',leafwidth),('Curve2D',leafsection),('Curve2D',leafpath),('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5),('Curve2D',petalecurve)])
+	parameterset = [panel_0,panel_1,]
+	context["__functions__"] = [('leafdiam',leafdiam),('leaflength',leaflength),('leafwidth',leafwidth),('leafdiam',leafdiam),('leaflength',leaflength),('leafwidth',leafwidth),]
+	context["__curves__"] = [('petioleCurve',petioleCurve),('leafsection',leafsection),('leafpath',leafpath),('axis1',axis1),('axis2',axis2),('axis3',axis3),('axis4',axis4),('axis5',axis5),('petioleCurve',petioleCurve),('leafsection',leafsection),('leafpath',leafpath),('axis1',axis1),('axis2',axis2),('axis3',axis3),('axis4',axis4),('axis5',axis5),('petalecurve',petalecurve),]
+	context["__parameterset__"] = parameterset
+	context["petioleCurve"] = petioleCurve
+	context["leafdiam"] = pgl.QuantisedFunction(leafdiam)
+	context["leaflength"] = pgl.QuantisedFunction(leaflength)
+	context["leafwidth"] = pgl.QuantisedFunction(leafwidth)
+	context["leafsection"] = leafsection
+	context["leafpath"] = leafpath
+	context["axis1"] = axis1
+	context["axis2"] = axis2
+	context["axis3"] = axis3
+	context["axis4"] = axis4
+	context["axis5"] = axis5
+	context["petioleCurve"] = petioleCurve
+	context["leafdiam"] = pgl.QuantisedFunction(leafdiam)
+	context["leaflength"] = pgl.QuantisedFunction(leaflength)
+	context["leafwidth"] = pgl.QuantisedFunction(leafwidth)
+	context["leafsection"] = leafsection
+	context["leafpath"] = leafpath
+	context["axis1"] = axis1
+	context["axis2"] = axis2
+	context["axis3"] = axis3
+	context["axis4"] = axis4
+	context["axis5"] = axis5
+	context["petalecurve"] = petalecurve
