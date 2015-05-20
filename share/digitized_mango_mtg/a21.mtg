@@ -37,10 +37,10 @@ nb_Feuilles	INT
 Remarque	ALPHA																		
 MTG:																			
 ENTITY-CODE						XX	YY	ZZ	AA	BB	CC	Long	TopDiameter	BottomDiameter	num_plant	nb_Feuilles	Remarque		  
- /E21						-19.41	32.88	-19.6	-63.66	3.54	10.25			0	21		A21		   
+ /E21						-19.41	32.88	-19.6	-63.66	3.54	10.25				21		A21		   
 ^/U1/S1
 ^<U2/S1
-^<U3/S1																			      
+^<U3																			      
 ^/S1																			
 	 +U1																S1		        
 	^/S1																		
