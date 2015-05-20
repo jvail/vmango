@@ -122,7 +122,7 @@ def generate_pov(i=0,nbpovprocess=1):
         mpovtext = mainpovtemplate % (imageresolution[0],imageresolution[1],steppovfile)
         mpovfile = mainpovfile.format(step)
         file(mpovfile,'w').write(mpovtext)
-        cmd = povcomdline.format(mpovfile, imgfile.format(step), imageresolution[0], imageresolution[1])
+        cmd = povcomdline.format(mpovfile, imgfile.format(str(step).zfill(4)), imageresolution[0], imageresolution[1])
         print
         print i,'>>>',cmd
         os.system(cmd)
