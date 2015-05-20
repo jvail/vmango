@@ -35,7 +35,7 @@ def generate_bgeom():
     import os
     print 'Scene generator launched'
     l = Lsystem(lsysfile,{'RESOLUTION' : 2})
-    nbsteps = 4 # l.derivationLength
+    nbsteps = l.derivationLength
     open(stepfile,'w').write(str(nbsteps))
     if not os.path.exists(workingrep) : os.makedirs(workingrep)
     for step in xrange(nbsteps):
