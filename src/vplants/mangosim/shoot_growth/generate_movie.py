@@ -5,23 +5,25 @@ tempbgeomfile = 'temp_scene.bgeom'
 bgeomfile     = 'scene_{}.bgeom'
 povfile       = 'scene_{}.pov'
 mainpovfile   = 'image_{}.pov'
+imgfile       = 'image_{}.png'
 stepfile      = 'simu_nbsteps.txt'
 imageresolution = 1920, 1080
-povcomdline   = 'povray -I{} +FN +W{} +H{} +A -D'
+povcomdline   = 'povray -I{} -O{} +FN +W{} +H{} +A -D -GA'
 
 from multiprocessing import cpu_count
 import os
 from os.path import join
 
-nbpovprocess = 1
+
 
 def _generate(params):
-        os.system('python generate_movie.py --process '+str(params))
+    p, nbpovprocess = params
+    os.system('python generate_movie.py --process '+str(p)+' '+str(nbpovprocess))
 
-def generate_movie():
+def generate_movie(nbpovprocess):
     from multiprocessing import Pool
 
-    paramvalueslist = range(-1,nbpovprocess+1)
+    paramvalueslist = [(i,nbpovprocess) for i in range(-1,nbpovprocess)]
     #print paramvalueslist
     # _generate(paramvalueslist[2])
     pool = Pool(processes=nbpovprocess+1)
@@ -33,7 +35,7 @@ def generate_bgeom():
     import os
     print 'Scene generator launched'
     l = Lsystem(lsysfile,{'RESOLUTION' : 2})
-    nbsteps = l.derivationLength
+    nbsteps = 4 # l.derivationLength
     open(stepfile,'w').write(str(nbsteps))
     if not os.path.exists(workingrep) : os.makedirs(workingrep)
     for step in xrange(nbsteps):
@@ -103,7 +105,7 @@ plane { <0,0,1> 0
 '''
 
 
-def generate_pov(i=0):
+def generate_pov(i=0,nbpovprocess=1):
     """ generate ith images modulo nbpovprocess """
     print 'Image generator ',i,' launched'
     from openalea.plantgl.all import Scene
@@ -120,8 +122,9 @@ def generate_pov(i=0):
         mpovtext = mainpovtemplate % (imageresolution[0],imageresolution[1],steppovfile)
         mpovfile = mainpovfile.format(step)
         file(mpovfile,'w').write(mpovtext)
-        cmd = povcomdline.format(mpovfile,imageresolution[0],imageresolution[1])
-        print cmd
+        cmd = povcomdline.format(mpovfile, imgfile.format(step), imageresolution[0], imageresolution[1])
+        print
+        print i,'>>>',cmd
         os.system(cmd)
         os.remove(steppovfile)
         os.remove(mpovfile)
@@ -137,16 +140,16 @@ def main():
     if processflag  in sys.argv:
         pfi = sys.argv.index(processflag)
         numproc = int(sys.argv[pfi+1])
+        nbpovprocess = int(sys.argv[pfi+2])
         if numproc == -1: generate_bgeom()
-        else : generate_pov(numproc)
+        else : generate_pov(numproc,nbpovprocess)
     elif numjobflag in sys.argv:
-        global nbpovprocess
         njf = sys.argv.index(numjobflag)
         if len(sys.argv) > njf+1:
             nbpovprocess = int(sys.argv[njf+1])
         else:
             nbpovprocess = cpu_count() - 1
-        generate_movie()
+        generate_movie(nbpovprocess)
     elif '--bgeom' in sys.argv:
         generate_bgeom()
     else:
