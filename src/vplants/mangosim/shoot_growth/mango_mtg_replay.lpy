@@ -642,6 +642,7 @@ Inflorescence(param):
       from math import exp
       return (log(x+1))/(log(2))
    length = param.length
+   if length <= 1e-3: return
    growth_ttsum = param.growth_tts.ttsum
    pheno_stage = param.pheno_tts.stage
    pheno_rank  = param.pheno_tts.rank_in_stage()
@@ -673,6 +674,7 @@ Inflorescence(param):
    
    
 Flower(pos, age, length, nbwhorl, pheno_stage, pheno_rank):
+  if length <= 1e-3: return
   deb, ind_deb = 0, 0
   npheno = pheno_stage+ pheno_rank
   nbflower = 3
@@ -750,6 +752,7 @@ GU(p):
     radius = p.radius
     if p.leafy :
       if (not p.basestructure and p.gu_pheno_tts.stage < 4):
+        if p.length_gu < 1e-3: return
         finalleaf = False
         pheno_stage       = p.gu_pheno_tts.stage
         pheno_rank        = p.gu_pheno_tts.rank_in_stage()
