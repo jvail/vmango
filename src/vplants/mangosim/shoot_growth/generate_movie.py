@@ -52,10 +52,10 @@ def generate_bgeom():
         os.rename(tempbgeomfile,fname)
         print "Scene",step,"generated ..."
 
-def wait_for_file(fname, timeout = 60):
+def wait_for_file(fname, timeout = 600):
     import time
     c = time.time()
-    while not os.path.exists(fname) and time.time() - c > timeout:
+    while not os.path.exists(fname) and (time.time() - c) > timeout:
         time.sleep(.05)
     if not os.path.exists(fname) : raise ValueError(fname)
     time.sleep(.05)
