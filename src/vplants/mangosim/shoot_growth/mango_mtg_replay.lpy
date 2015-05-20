@@ -235,7 +235,7 @@ def End(lstring, lscene):
       dump_obj(resultmtg, export_fname)
 
 
-def to_be_developped(gu, date = current_date, mtg = mtg):
+def to_be_developped(gu, date = first_date, mtg = mtg):
     bdate = mm.get_burst_date(mtg,gu)
     return (bdate is None or bdate < date)
 
@@ -439,7 +439,7 @@ def generate_elements(apexparam):
     for ch in lat_children:
         nproduce  [ /(lat_angle*nb_proc_lat+60) &(60)
         nb_proc_lat += 1
-        if to_be_developped(ch, current_date): 
+        if to_be_developped(ch): 
            generate_elements( generate_parameters_GU(ch, nbdescendants[ch]) )
            # nproduce B( generate_parameters_GU(ch, nbdescendants[ch]) )
         else:  
@@ -453,7 +453,7 @@ def generate_elements(apexparam):
             nproduce   [ /(lat_angle*nb_proc_lat) &(60) Inflorescence_bud(p) ]
             nb_proc_lat += 1
       ch = apical_child[0]
-      if  to_be_developped(ch, current_date):  
+      if  to_be_developped(ch):  
         generate_elements( generate_parameters_GU(ch, nbdescendants[ch]) )
         # nproduce B( generate_parameters_GU(ch, nbdescendants[ch]))
       else:   
@@ -879,7 +879,7 @@ def __initialiseContext__(context):
 	context.animation_timestep = 0.101
 	context.options.setSelection('Module declaration',1)
 	context.options.setSelection('Warning with sharp module',0)
-	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 0, 0, 2), ('Elasticity', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 1, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', False), ('Environment', 'Category'), ('TIMEBAR', 'Bool', False), ('BACKGROUND', 'Bool', False)]
+	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 2, 0, 2), ('Elasticity', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 1, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', False), ('Environment', 'Category'), ('TIMEBAR', 'Bool', False), ('BACKGROUND', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]

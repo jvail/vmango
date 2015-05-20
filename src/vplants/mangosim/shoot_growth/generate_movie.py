@@ -8,7 +8,7 @@ mainpovfile   = 'image_{}.pov'
 imgfile       = 'image_{}.png'
 stepfile      = 'simu_nbsteps.txt'
 imageresolution = 1920, 1080
-povcomdline   = 'povray -I{} -O{} +FN +W{} +H{} +A -D -GA'
+povcomdline   = 'povray -I{} -O{} +FN +W{} +H{} +A -D'
 
 from multiprocessing import cpu_count
 import os
@@ -21,6 +21,8 @@ def _generate(params):
     os.system('python generate_movie.py --process '+str(p)+' '+str(nbpovprocess))
 
 def generate_movie(nbpovprocess):
+    import time
+    init = time.time()
     from multiprocessing import Pool
 
     paramvalueslist = [(i,nbpovprocess) for i in range(-1,nbpovprocess)]
@@ -28,29 +30,34 @@ def generate_movie(nbpovprocess):
     # _generate(paramvalueslist[2])
     pool = Pool(processes=nbpovprocess+1)
     pool.map(_generate,paramvalueslist)
+    os.remove(stepfile)
+    print 'Computed in ',time.time() - init,'sec ...'
+
 
 
 def generate_bgeom():
     from openalea.lpy import Lsystem
     import os
     print 'Scene generator launched'
-    l = Lsystem(lsysfile,{'RESOLUTION' : 2})
+    l = Lsystem(lsysfile,{'RESOLUTION' : 2, 'daystep' : 1})
     nbsteps = l.derivationLength
     open(stepfile,'w').write(str(nbsteps))
     if not os.path.exists(workingrep) : os.makedirs(workingrep)
     for step in xrange(nbsteps):
-        lstring = l.derive(1)
+        if step == 0: lstring = l.derive(1)
+        else: lstring = l.derive(lstring,step,1)
         lscene = l.sceneInterpretation(lstring)
         fname = join(workingrep, bgeomfile.format(str(step).zfill(4)))
         lscene.save(tempbgeomfile)
         os.rename(tempbgeomfile,fname)
         print "Scene",step,"generated ..."
-    os.remove(stepfile)
 
-def wait_for_file(fname):
+def wait_for_file(fname, timeout = 60):
     import time
-    while not os.path.exists(fname):
+    c = time.time()
+    while not os.path.exists(fname) and time.time() - c > timeout:
         time.sleep(.05)
+    if not os.path.exists(fname) : raise ValueError(fname)
     time.sleep(.05)
 
 
@@ -108,7 +115,7 @@ plane { <0,0,1> 0
 def generate_pov(i=0,nbpovprocess=1):
     """ generate ith images modulo nbpovprocess """
     print 'Image generator ',i,' launched'
-    from openalea.plantgl.all import Scene
+    from openalea.plantgl.all import Scene, Tesselator, PovFilePrinter
     wait_for_file(stepfile)
     nbsteps = int(open(stepfile,'r').read())
     step = i
@@ -117,19 +124,30 @@ def generate_pov(i=0,nbpovprocess=1):
         bgeomfname = bgeomfile.format(str(step).zfill(4))
         wait_for_file(bgeomfname)
         lscene = Scene(bgeomfname)
+        for sh in lscene:
+            sh.setComputedName()
         steppovfile = povfile.format(str(step).zfill(4))
+        stepimgfile = imgfile.format(str(step).zfill(4))
         lscene.save(steppovfile)
-        mpovtext = mainpovtemplate % (imageresolution[0],imageresolution[1],steppovfile)
-        mpovfile = mainpovfile.format(step)
-        file(mpovfile,'w').write(mpovtext)
-        cmd = povcomdline.format(mpovfile, imgfile.format(str(step).zfill(4)), imageresolution[0], imageresolution[1])
-        print
-        print i,'>>>',cmd
-        os.system(cmd)
-        os.remove(steppovfile)
-        os.remove(mpovfile)
-        os.remove(bgeomfname)
-        print 'Image ',step,'computed ...'
+        #tess = Tesselator()
+        #printer = PovFilePrinter(steppovfile,tess)
+        #lscene.apply(printer)
+        if os.path.exists(steppovfile):
+            mpovtext = mainpovtemplate % (imageresolution[0],imageresolution[1],steppovfile)
+            mpovfile = mainpovfile.format(step)
+            file(mpovfile,'w').write(mpovtext)
+            cmd = povcomdline.format(mpovfile, stepimgfile, imageresolution[0], imageresolution[1])
+            print
+            print i,'>>>',cmd
+            print 'Image ',step,'computed ...'
+            os.system(cmd)
+            if os.path.exists(stepimgfile):
+                os.remove(mpovfile)
+                os.remove(steppovfile)
+                os.remove(bgeomfname)
+            else:
+                print 'Error with image', step
+        else: print 'Error with image', step
         step += nbpovprocess
 
 
@@ -152,6 +170,8 @@ def main():
         generate_movie(nbpovprocess)
     elif '--bgeom' in sys.argv:
         generate_bgeom()
+    elif len(sys.argv) > 1:
+        raise ValueError(sys.argv[1:])
     else:
         generate_bgeom()
         generate_pov()
