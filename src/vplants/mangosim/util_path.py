@@ -1,5 +1,12 @@
-from os.path import join
-from vplants.mangosim.tools import *
+from os.path import join, exists, abspath, dirname
+
+import vplants.mangosim
+try:
+    share_dir = shared_data(vplants.mangosim, share_path = "share")
+except:
+    share_dir = join(dirname(__file__),'..','..','..','share')
+share_dir = abspath(share_dir)
+
 from vplants.mangosim.state import *
 
 
