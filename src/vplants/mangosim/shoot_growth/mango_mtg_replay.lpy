@@ -164,6 +164,7 @@ def getSweepSymbol(nstage):
   except KeyError, e:
     cleafsmb = sweepSymbol(axisfunc.getAt(min(1,nstage/3.)), leafsection, 1., 1./LeafLengthRes, Leaf_width_length_ratio, leafdiam)
     leafsmbdb[nstage] = cleafsmb
+    cleafsmb.name = 'leaf_'+str(nstage).replace('.','_')
     return cleafsmb
 
 def Start():

@@ -39,7 +39,7 @@ def generate_bgeom():
     from openalea.lpy import Lsystem
     import os
     print 'Scene generator launched'
-    l = Lsystem(lsysfile,{'RESOLUTION' : 2, 'daystep' : 1})
+    l = Lsystem(lsysfile,{'RESOLUTION' : 2, 'daystep' : 1, 'TIMEBAR' : False})
     nbsteps = l.derivationLength
     open(stepfile,'w').write(str(nbsteps))
     if not os.path.exists(workingrep) : os.makedirs(workingrep)
