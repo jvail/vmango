@@ -1,5 +1,5 @@
 
-workingrep    = 'images'
+workingrep    = 'images2'
 lsysfile      = 'mango_mtg_replay.lpy'
 tempbgeomfile = 'temp_scene.bgeom'
 bgeomfile     = 'scene_{}.bgeom'
@@ -108,7 +108,10 @@ plane { <0,0,1> 0
 
 #end // __camera_definition__
 
-#include "%s"
+union {
+    #include "%s"
+    rotate <0,0,%i>
+}
 '''
 
 
@@ -133,7 +136,7 @@ def generate_pov(i=0,nbpovprocess=1):
         #printer = PovFilePrinter(steppovfile,tess)
         #lscene.apply(printer)
         if os.path.exists(steppovfile):
-            mpovtext = mainpovtemplate % (imageresolution[0],imageresolution[1],steppovfile)
+            mpovtext = mainpovtemplate % (imageresolution[0],imageresolution[1],steppovfile, step)
             mpovfile = mainpovfile.format(step)
             file(mpovfile,'w').write(mpovtext)
             cmd = povcomdline.format(mpovfile, stepimgfile, imageresolution[0], imageresolution[1])
