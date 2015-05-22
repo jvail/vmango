@@ -1,4 +1,4 @@
-from vplants.mangosim.tools import share_dir
+#from vplants.mangosim.tools import share_dir
 from vplants.mangosim.state import *
 from vplants.mangosim.util_date import *
 from vplants.mangosim.util_path import *
