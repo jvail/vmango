@@ -100,7 +100,9 @@ def structural_comparison(wdmv = 0, glmestimation = eNullGlm, nb = None , nbproc
         global allres
         manager = Manager()
         allres = manager.dict()
-        p = Pool(processes = min(nbproc, len(mtgfnames), nbproc))
+        nbprocesses = min(nbproc, len(mtgfnames), cpu_count())
+        print 'use',nbprocesses,'processes'
+        p = Pool(processes = nbprocesses)
         p.map(process, mtgfnames)
         allres = dict(allres)
         dump_obj(allres,structural_comparison_cache,inputdir)
