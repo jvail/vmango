@@ -93,24 +93,25 @@ def structural_comparison(wdmv = 0, glmestimation = eNullGlm, nb = None , nbproc
     distrib_file = join(inputdir, structural_comparison_cache)
     global refmtg
     refmtg = get_reference_mtg()
-    if not os.path.exists(distrib_file):
-        print 'Retrieve MTGs'
-        mtgfnames = retrieve_mtg_filenames(inputdir,nb)
+    print 'Retrieve MTGs'
+    mtgfnames = retrieve_mtg_filenames(inputdir,nb)
 
+    if os.path.exists(distrib_file):
+        print 'Retreive structural comparision from',repr(str(distrib_file))
+        allres = load_obj(structural_comparison_cache,inputdir)
+        mtgfnames = [fname for fname in mtgfnames if not fname in allres]
+    else : allres = {}
+    if len(mtgfnames) > 0:
         global allres
         manager = Manager()
-        allres = manager.dict()
+        allres = manager.dict(allres)
         nbprocesses = min(nbproc, len(mtgfnames), cpu_count())
         print 'use',nbprocesses,'processes'
         p = Pool(processes = nbprocesses)
         p.map(process, mtgfnames)
         allres = dict(allres)
         dump_obj(allres,structural_comparison_cache,inputdir)
-
-    else:
-        print 'Retreive structural comparision from',repr(str(distrib_file))
-        allres = load_obj(structural_comparison_cache,inputdir)
-
+    return allres
 
 if __name__ == '__main__':
     structural_comparison(0,eSelectedGlm,100,None)
