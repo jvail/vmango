@@ -85,6 +85,7 @@ def process(mtgfname):
     allres[mtgfname] = res
 
 def structural_comparison(wdmv = 0, glmestimation = eNullGlm, nb = None , nbproc = 1):
+    global allres
     from multiprocessing import Pool, Manager, cpu_count
     if nbproc is None : nbproc = cpu_count()
     mm.setMtgStyle(eSimulatedMtg)
@@ -102,7 +103,6 @@ def structural_comparison(wdmv = 0, glmestimation = eNullGlm, nb = None , nbproc
         mtgfnames = [fname for fname in mtgfnames if not fname in allres]
     else : allres = {}
     if len(mtgfnames) > 0:
-        global allres
         manager = Manager()
         allres = manager.dict(allres)
         nbprocesses = min(nbproc, len(mtgfnames), cpu_count())
