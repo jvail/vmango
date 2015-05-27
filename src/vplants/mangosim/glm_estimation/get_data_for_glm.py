@@ -1,4 +1,4 @@
-from vplants.mangosim.tools import *
+from vplants.mangosim.util_path import *
 from vplants.mangosim.state import *
 from vplants.mangosim.util_date import *
 from vplants.mangosim.doralice_mtg.mtg_import import get_mtg
@@ -138,7 +138,7 @@ def explicative_variables_inside(mtg, gu):
     ancestor = get_ancestor_of_previous_cycle(mtg, gu)
     if ancestor:
         # Fred Note: Position value has been changed. 1 for position means Apical
-        Nature_Ancestor_F   = get_nature_gu(mtg,ancestor)
+        Nature_Ancestor_F   = 0 if get_nature_gu(mtg,ancestor) == 0 else 1
         Position_Ancestor_A = get_position_gu(mtg,ancestor)
     else:
         Nature_Ancestor_F   = NotAvailable
@@ -160,7 +160,7 @@ def add_explicative_variables_inside(dict_gu_prop, mtg, gu):
 def explicative_variables_transition(mtg, gu):
     # get position feature (as mother)
     Position_A   = get_position_gu(mtg,gu)
-    Nature_F     = get_nature_gu(mtg,gu)
+    Nature_F     = 0 if get_nature_gu(mtg,gu) == 0 else 1
 
     # get burst date feature (as mother)
     if get_unit_cycle(mtg,gu) == 3:
