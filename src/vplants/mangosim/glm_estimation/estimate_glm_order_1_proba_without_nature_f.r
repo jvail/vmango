@@ -5,7 +5,7 @@
 
 share_dir = '../../../../share/'
 input_dir = paste(share_dir,'glm_estimate_input/cogshall/', sep="")
-output_dir = paste(share_dir,'glm_output_proba/cogshall/without_nature_f', sep="")
+output_dir = paste(share_dir,'glm_output_proba/cogshall/without_nature_f/', sep="")
 if (file.exists(output_dir)){
     dir.create(output_dir,recursive=TRUE)
 }
