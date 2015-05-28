@@ -47,7 +47,7 @@ def burst_date_distribution(i=0, glmestimation = eNullGlm):
 
 def burst_date_distribution_comparison():
     allvalues = []
-    for glmtype, withindelaymethodval in itertools.product([eSelectedGlm, eNullGlm],WITHINDELAYMETHODVALUES):
+    for glmtype, withindelaymethodval in itertools.product([eSelectedGlm, eNullGlm],[eMonthMultiVariateForWithin]):
         params = {'WITHINDELAYMETHOD' : withindelaymethodval, 'ESTIMATIONTYPE' : glmtype}
         inputdir = get_glm_mtg_repository( params = params)
         distrib_file = join(inputdir, gu_distrib_fname)
@@ -55,9 +55,16 @@ def burst_date_distribution_comparison():
         months,values,refvalues = load_obj(gu_distrib_fname,inputdir)
         if len(allvalues) == 0: allvalues.append(refvalues)
         allvalues.append([mean([values[j][i] for j in range(len(values))] ) for i in range(len(values[0]))])
-    legends = ['Reference']+[b+' - '+a for a,b in itertools.product(['GLM','Null GLM'],['Month Multivariate', 'Delta Multivariate', 'Delta Poisson'])]
+    legends = ['Reference']+[a for a,b in itertools.product(['GLM','Null GLM'],['Month Multivariate'])]
     print legends
-    plot_histo_curve(months, allvalues, 'Distribution of burst date of gu', legends=legends)
+    def translate(txt):
+        m = [('janv','jan'),('fev','feb'),('mars','march'),('avril','april'),('mai','may'),('juin','june'),('juil','july'),('aout','aug')]
+        for p,nm in m:
+            txt = txt.replace(p,nm)
+        return txt
+
+    months = map(translate, months)
+    plot_histo_curve(months, allvalues, 'Distribution of burst dates of growth units', legends=legends,linewidth=2)
 
 inflo_distrib_fname = 'inflo_distribution.pkl'
 
@@ -119,7 +126,8 @@ def process_burst_date_distribution():
 
 
 if __name__ == '__main__':
-    process_burst_date_distribution()
+    #process_burst_date_distribution()
     #burst_date_distribution_comparison()
     #burst_date_distribution_comparison()
     #bloom_date_distribution()
+    pass

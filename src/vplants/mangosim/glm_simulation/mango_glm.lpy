@@ -31,7 +31,13 @@ if 'WITHINDELAYMETHOD' in globals():
 else:
   WithinDelayMethod = eMonthMultiVariateForWithin # eMonthMultiVariateForWithin, eDeltaMultiVariateForWithin, eDeltaPoissonForWithin
 
-use_proba_table_from(treenames[treeselection], estimationbase, estimationtype)
+
+if 'FACTORRESTRICTION' in globals():
+  factorrestriction = FACTORRESTRICTION
+else:
+  factorrestriction = None # eBurstDateRestriction, ePositionARestriction, ePositionAncestorA, eNatureF
+
+use_proba_table_from(treenames[treeselection], estimationbase, estimationtype, factorrestriction)
 set_seed(SEED)
 
 first_date = cycle_end(3)
@@ -88,11 +94,12 @@ def export_to_mtg(lstring, lscene):
   scales = {}
   # Name of the modules to export
   modules_to_export = ['Tree', 'GU','Inflorescence','Fruit']
-  params_to_export = [['treename','method','estimation','loading','variety','within_delay_method','seed'],['burst_date','cycle'],['bloom_date','cycle'],['inflo_bloom_date','cycle']]
+  params_to_export = [['treename','method','estimation','loading','variety','within_delay_method','factor_restriction','seed'],['burst_date','cycle'],['bloom_date','cycle'],['inflo_bloom_date','cycle']]
   scales = [1,2,2,2]
   # Convert lstring into mtg
   mtg = axialtree2mtg(lstring,
                       scale = dict(zip(modules_to_export,scales)),
+                      
                       scene = None,
                       parameters = dict(zip(modules_to_export,params_to_export)))
   return mtg
@@ -110,7 +117,7 @@ module FlowerRepr(day_age,s)
 
 
 Axiom: 
-  nproduce Tree(ParameterSet(treename=treename, method=EstimationBaseName[estimationbase], estimation='CompleteGLM' if estimationtype == eCompleteGlm else 'SelectedGLM',loading='C' if Tree_Fruit_Load else 'NC',variety=variety, seed=SEED, within_delay_method = WithinDelayMethodName[WithinDelayMethod]))
+  nproduce Tree(ParameterSet(treename=treename, method=EstimationBaseName[estimationbase], estimation='CompleteGLM' if estimationtype == eCompleteGlm else 'SelectedGLM',loading='C' if Tree_Fruit_Load else 'NC',variety=variety, seed=SEED, within_delay_method = WithinDelayMethodName[WithinDelayMethod],factor_restriction=factorrestriction))
   #  produce A(ParameterSet(burst_date=first_date,position=eApical,position_ancestor=None,nature_ancestor=None))
   l = Lsystem('../doralice_mtg/mango_mtg_replay.lpy',{'TREE':TREE})
   base = l.derive(1)
@@ -147,13 +154,13 @@ A( p ):
     dev = UnitDev(Burst_Date=p.burst_date, 
                   Position_A=p.position,
                   Position_Ancestor_A=p.position_ancestor,
-                  Nature_Ancestor_V=p.nature_ancestor,
+                  Nature_Ancestor_F = eVegetative if p.nature_ancestor == eVegetative else eFlowering,
                   Tree_Fruit_Load=Tree_Fruit_Load,
                   WithinDelayMethod = WithinDelayMethod)
     apical_child, nb_lat_children, nb_inflorescences, nb_fruits, date_children_burst, date_inflo_bloom = dev.process()
     
     p = p.copy()
-    p.set(nature = eInflorescence if nb_inflorescences > 0 else eVegetative,
+    p.set(nature = eFlowering if nb_inflorescences > 0 else eVegetative,
           nbdescendants = 1, radius = estimate_radius(1),
           cycle = current_cycle)
     nproduce /(phyllotaxy) GU(p)
@@ -194,14 +201,14 @@ Inflorescence(param):
   if not param.hasattr('produced') and param.nb_fruits > 0 and (param.bloom_date - current_date).days >=  60:
     param.produced = True
     nproduce Inflorescence(param)
-    if param.nb_fruits == 1 :
-      nproduce [Fruit(ParameterSet(inflo_bloom_date= param.bloom_date, cycle = param.cycle))]
-    else : 
-      anglebetweenfruits = 120. / (param.nb_fruits -1)
-      angles = [90 - i * anglebetweenfruits for i in xrange(param.nb_fruits)]
-      for ang in angles:
-        nproduce [+(ang) Fruit(ParameterSet(inflo_bloom_date= param.bloom_date, cycle = param.cycle))]
-    
+    if FRUITING:
+      if param.nb_fruits == 1 :
+        nproduce [Fruit(ParameterSet(inflo_bloom_date= param.bloom_date, cycle = param.cycle))]
+      else : 
+        anglebetweenfruits = 120. / (param.nb_fruits -1)
+        angles = [90 - i * anglebetweenfruits for i in xrange(param.nb_fruits)]
+        for ang in angles:
+          nproduce [+(ang) Fruit(ParameterSet(inflo_bloom_date= param.bloom_date, cycle = param.cycle))]
 
 
 interpretation:
@@ -308,7 +315,7 @@ def __initialiseContext__(context):
 	Color_7 = pgl.Material("Color_7" , ambient = (57,65,12) , diffuse = 1.66154 , )
 	Color_7.name = "Color_7"
 	context.turtle.setMaterial(7,Color_7)
-	scalars = [('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('TIMESTEP', 'Integer', 30, 1, 750), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Geometry', 'Category'), ('TIMEBAR', 'Bool', True), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('GLM', 'Category'), ('COMPLETE_GLM', 'Bool', False), ('SEED', 'Integer', 2, 1, 100000), ('NULL_MODEL', 'Bool', False)]
+	scalars = [('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('TIMESTEP', 'Integer', 30, 1, 750), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('FRUITING', 'Bool', False), ('Geometry', 'Category'), ('TIMEBAR', 'Bool', True), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('GLM', 'Category'), ('COMPLETE_GLM', 'Bool', False), ('SEED', 'Integer', 2, 1, 100000), ('NULL_MODEL', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]

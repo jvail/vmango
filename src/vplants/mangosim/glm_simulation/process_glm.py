@@ -51,7 +51,11 @@ def generate_mtgs(trees = range(5),
 
 def generate_all(nb = 1000, withindelaymethods = [eMonthMultiVariateForWithin, eDeltaMultiVariateForWithin, eDeltaPoissonForWithin]):
     for withindelaymethod in withindelaymethods:
-        generate_mtgs(params = {'WITHINDELAYMETHOD' : withindelaymethod},seeds = range(nb))
+        generate_mtgs(params = {'WITHINDELAYMETHOD' : withindelaymethod}, seeds = range(nb))
+
+def generate_all_restriction(nb = 1000):
+    for withindelaymethod in withindelaymethods:
+        generate_mtgs(params = {'WITHINDELAYMETHOD' : withindelaymethod}, seeds = range(nb))
 
 
 def _generate(params):
@@ -75,6 +79,13 @@ def process_null_models(nb=1000):
     process_set_of_simulations(params)
 
 
+def process_restricted_models(nb=1000):
+    import itertools
+    params = list(itertools.product(range(nb),['ESTIMATIONTYPE'],['eSelectedGlm'],['WITHINDELAYMETHOD'],['eMonthMultiVariateForWithin'],['FACTORRESTRICTION'],['eBurstDateRestriction', 'ePositionARestriction', 'ePositionAncestorARestriction', 'eNatureFRestriction']))
+
+    process_set_of_simulations(params)
+
+
 if __name__ == '__main__' :
     import sys
     if len(sys.argv) > 1:
@@ -86,4 +97,5 @@ if __name__ == '__main__' :
             params[paramcmd[2*i]] = eval(paramcmd[2*i+1])
         generate_mtgs(seeds=[seed],params=params)
     else:
-        process_null_models()
+        process_restricted_models(1)
+        #process_null_models()

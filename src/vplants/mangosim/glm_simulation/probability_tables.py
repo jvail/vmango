@@ -7,12 +7,12 @@ from vplants.mangosim.util_path import *
 vegetative_proba = ['vegetative_burst','has_apical_gu_child','has_lateral_gu_children','nb_lateral_gu_children']
 vegetative_proba_family = [eBinomial, eBinomial, eBinomial, ePoisson]
 vegetative_proba_within = ['burst_date_children','burst_delta_date_children','burst_delta_date_children_poisson']
-vegetative_proba_within_family = [eVglm, eVglm, ePoisson]
+vegetative_proba_within_family = [eMultiVariate, eMultiVariate, ePoisson]
 vegetative_proba_between = ['burst_date_children']
-vegetative_proba_between_family = [eVglm]
+vegetative_proba_between_family = [eMultiVariate]
 
 flowering_proba  = ['flowering','nb_inflorescences','flowering_week']
-flowering_proba_family  = [eBinomial, ePoisson, eVglm ]
+flowering_proba_family  = [eBinomial, ePoisson, eMultiVariate ]
 fruiting_proba  = ['fruiting','nb_fruits']
 fruiting_proba_family  = [eBinomial, ePoisson ]
 
@@ -20,8 +20,8 @@ fruiting_proba_family  = [eBinomial, ePoisson ]
 within_extension = {3 : None, 4 : 'within_04', 5 : 'within_05'}
 between_extension = {3 : 'between_03to0405', 4 : 'between_04to05', 5 : None }
 
-allfactors = ['Tree_Fruit_Load', 'Burst_Date', 'Position_A', 'Position_Ancestor_A', 'Nature_Ancestor_V', 'Nature_V']
-factorsvalues = [range(0,2), range(1,13), [eApical,eLateral], [eApical,eLateral], [eVegetative, eInflorescence], [eVegetative, eInflorescence]]
+allfactors = ['Tree_Fruit_Load', 'Burst_Date', 'Position_A', 'Position_Ancestor_A', 'Nature_Ancestor_F', 'Nature_F']
+factorsvalues = [range(0,2), range(1,13), [eApical,eLateral], [eApical,eLateral], [eVegetative, eFlowering], [eVegetative, eFlowering]]
 factorsvalues = dict(zip(allfactors,factorsvalues))
 
 class ProbaTable:
@@ -44,7 +44,7 @@ class ProbaTable:
 
         self.factors = [ name for name in list(tablevalues.columns) if name in allfactors]
         extrafactors = [ name for name in list(tablevalues.columns) if name not in allfactors]
-        if self.family == eVglm:
+        if self.family == eMultiVariate:
             self.answers = list(extrafactors)
 
         subset_table_factor = tablevalues[self.factors]
@@ -63,12 +63,12 @@ class ProbaTable:
         try:
             factoractualvalue = tuple([args[f] for f in self.factors])
         except KeyError, e:
-            print self.factors, args, self.type, self.name
+            #print self.factors, args, self.type, self.name
             raise e
         try:
             return self.values[factoractualvalue]
         except KeyError, e:
-            #print self.factors, factoractualvalue, self.type, self.name
+            # print self.factors, factoractualvalue, self.type, self.name
             raise e            
 
     def realization(self, **args):
@@ -76,10 +76,10 @@ class ProbaTable:
         from numpy.random import binomial, poisson, uniform
         probavalue = self.get_proba_value(args)
         if self.family == eBinomial:
-            return bool( binomial(1,probavalue) )
+            return bool( binomial(1,probavalue[0]) )
         elif self.family == ePoisson:
             return int( poisson(probavalue,1) )
-        elif self.family == eVglm:
+        elif self.family == eMultiVariate:
             cumsum_probs = list( cumsum(probavalue) )
             unif_realization = float( uniform(0,1,1) )
             cumsum_probs[-1] = 1
@@ -89,17 +89,17 @@ class ProbaTable:
     def check(self):
         if self.type == eWithinCycle:
             for f in self.factors:
-                if not f in ['Tree_Fruit_Load', 'Burst_Date', 'Position_A', 'Position_Ancestor_A', 'Nature_Ancestor_V']:
+                if not f in ['Tree_Fruit_Load', 'Burst_Date', 'Position_A', 'Position_Ancestor_A', 'Nature_Ancestor_F']:
                     raise ValueError('Invalid factor for Within cycle proba',f)
         elif self.type == eLaterCycle:
             for f in self.factors:
-                if not f in ['Tree_Fruit_Load', 'Burst_Date', 'Position_A', 'Nature_V']:
+                if not f in ['Tree_Fruit_Load', 'Burst_Date', 'Position_A', 'Nature_F']:
                     raise ValueError('Invalid factor for Within cycle proba',f)
 
 
-def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm):
+def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm, restriction = None):
     from os.path import exists, join
-    probafilepath = get_probabily_repository(variety, treename, estimationtype)
+    probafilepath = get_probability_repository(variety, treename, estimationtype, restriction)
     if not exists(probafilepath): raise ValueError("Proba path repository does not exist", probafilepath)
     probacycle = {}
     for cycle in range(3,6):
@@ -136,17 +136,18 @@ def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationty
 global_proba_tables = {}
 current_proba_table = None
     
-def get_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm):
+def get_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm, restriction = None):
     global global_proba_tables
-    if not (variety, treename, estimationtype) in global_proba_tables:
-        global_proba_tables[(variety, treename, estimationtype)] = read_proba_tables(variety, treename, estimationtype)
-    return global_proba_tables[(variety, treename, estimationtype)]
+    tableid = (variety, treename, estimationtype, restriction)
+    if not tableid in global_proba_tables:
+        global_proba_tables[tableid] = read_proba_tables(variety, treename, estimationtype, restriction)
+    return global_proba_tables[tableid]
 
-def use_proba_table(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm):
+def use_proba_table(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm, restriction = None):
     global current_proba_table
-    current_proba_table = get_proba_tables(variety, treename, estimationtype)
+    current_proba_table = get_proba_tables(variety, treename, estimationtype, restriction)
 
-def use_proba_table_from(treename,  estimationbase, estimationtype = eCompleteGlm):
+def use_proba_table_from(treename,  estimationbase, estimationtype = eCompleteGlm, restriction = None):
     import vplants.mangosim.doralice_mtg.mtg_manipulation  as mm
     probnames = treename
     if estimationbase == eManagementTypeBased:
@@ -154,7 +155,7 @@ def use_proba_table_from(treename,  estimationbase, estimationtype = eCompleteGl
         probnames = 'loaded' if Tree_Fruit_Load == eLoaded else 'notloaded'
     elif estimationbase == eVarietyBased:
         probnames = 'all_trees'
-    use_proba_table(mm.get_variety(mm.get_tree_from_name(treename)), probnames, estimationtype)
+    use_proba_table(mm.get_variety(mm.get_tree_from_name(treename)), probnames, estimationtype, restriction)
 
 def iterprobatables():
     for k, ps in global_proba_tables.items():
@@ -176,9 +177,9 @@ current_unitdev = None
 class UnitDev:
     def __init__(self, Burst_Date, 
                        Position_A, 
-                       Nature_V = None, 
+                       Nature_F = None, 
                        Position_Ancestor_A = None,
-                       Nature_Ancestor_V = None, 
+                       Nature_Ancestor_F = None, 
                        Tree_Fruit_Load  = eLoaded,
                        WithinDelayMethod = eDeltaPoissonForWithin):
         self.burst_date = Burst_Date
@@ -189,12 +190,12 @@ class UnitDev:
         self.params = dict(Burst_Date = Burst_Date.month,
                            Position_A = Position_A, 
                            Position_Ancestor_A = Position_Ancestor_A, 
-                           Nature_Ancestor_V   = Nature_Ancestor_V,
+                           Nature_Ancestor_F   = Nature_Ancestor_F,
                            Tree_Fruit_Load     = Tree_Fruit_Load)
 
         self.paramsdelayed = dict(Burst_Date = Burst_Date.month,
                                   Position_A = Position_A,
-                                  Nature_V   = Nature_V,
+                                  Nature_F   = Nature_F,
                                   Tree_Fruit_Load = Tree_Fruit_Load)
 
         self.proba_tables = current_proba_table[self.cycle]
@@ -303,11 +304,11 @@ class UnitDev:
             if self.cycle > 3 and self.flowering():
                 nb_inflorescences = self.nb_inflorescences()
                 date_inflo_bloom  = self.flowering_date()
-                self.paramsdelayed['Nature_V'] = eInflorescence
+                self.paramsdelayed['Nature_F'] = eFlowering
                 if self.fruiting():
                     nb_fruits = self.nb_fruits()
             else:
-                self.paramsdelayed['Nature_V'] = eVegetative
+                self.paramsdelayed['Nature_F'] = eVegetative
 
             if self.cycle < 5 and self.vegetative_burst(eLaterCycle):
                 apical_child = self.has_apical_gu_child(eLaterCycle)

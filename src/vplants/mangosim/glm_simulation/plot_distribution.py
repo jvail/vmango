@@ -27,7 +27,7 @@ def plot_histo(keys, allvalues, _title = None, reference = None):
     plt.show()
 
 
-def plot_histo_curve(keys, allvalues, _title = None, legends = None):
+def plot_histo_curve(keys, allvalues, _title = None,  legends = None, linewidth = 1):
     import matplotlib.pyplot as plt
     import numpy as np
     #fig, ax = plt.subplots()
@@ -44,7 +44,7 @@ def plot_histo_curve(keys, allvalues, _title = None, legends = None):
         colors = lambda x: ['r','y','g','b','c','m'][x]
     ind = np.arange(0,nbx*width,width)
     for i,values in enumerate(allvalues):
-        ax.plot(ind, values, '-o', color=colors(i), label = '' if legends is None else legends[i] )
+        ax.plot(ind, values, '-o', color=colors(i), linewidth=linewidth,label = '' if legends is None else legends[i] )
     ax.set_xticks(ind)
 
     ax.set_xticklabels(keys, rotation=90)
