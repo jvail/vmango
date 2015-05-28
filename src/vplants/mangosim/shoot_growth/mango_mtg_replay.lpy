@@ -49,12 +49,13 @@ nbsteps     = ceil((last_date -first_date).days/float(daystep))
 delta_date  = timedelta(hours=24*daystep)
 nb_of_days  = int(ceil((last_date -first_date).days))
 
+previous_date = first_date
 current_date  = first_date
 current_cycle = get_cycle(current_date)
 
 init_temperatures()
 
-current_temperature = get_temperature(first_date)
+current_temperatures = [get_temperature(first_date)]
 
 # Initializing variables
 t_ip_GU_mean = 79.40
@@ -168,11 +169,12 @@ def getSweepSymbol(nstage):
     return cleafsmb
 
 def Start():
-  global current_date, current_cycle, current_temperature
+  global previous_date, current_date, current_cycle, current_temperatures
   
-  current_date = first_date
+  previous_date = first_date
+  current_date  = first_date
   current_cycle = get_cycle(current_date)
-  current_temperature = get_temperature(first_date)
+  current_temperature = [get_temperature(first_date)]
   
   backward()
 
@@ -190,11 +192,12 @@ def StartEach():
   
   new_elements = False
   
-  global current_date, current_cycle, current_temperature
+  global previous_date, current_date, current_cycle, current_temperatures
   
+  previous_date = current_date
   current_date += delta_date  
   current_cycle = get_cycle(current_date)  
-  current_temperature = get_temperature(current_date)
+  current_temperatures = [get_temperature(cdate) for cdate in date_xrange(previous_date+timedelta(days=1),current_date+timedelta(days=1))]
   
   global inflo_flush_start
   if current_date == flowering_cycle_begin(current_cycle):
@@ -204,7 +207,7 @@ def StartEach():
   firstleaf = True
 
 
-export_fname = 'simulated_mango.bmtg'
+export_fname = 'replayed_mango.bmtg'
 resultmtg = None
 
 def EndEach(lstring, lscene):
@@ -261,7 +264,8 @@ module Tree(p) : scale = 1
 module GU(p), Inflorescence(p): scale = 2
 module A(p), GUEnd, Internode, Leaf, Inflorescence_bud : scale = 3
 module Information : scale = 1 
-module Flower, Petiole, fLeaf, gLeaf, Petal
+module Pedicel, Flower
+module Petiole, fLeaf, gLeaf
 
 ###### Generation and initialization of elements #########
 
@@ -494,7 +498,8 @@ def gu_growth(p):
   if p.gu_pheno_tts.stage < 4 :
     # Update of parameters                               
     for tts in [p.gu_growth_tts, p.leaf_growth_tts, p.gu_pheno_tts]:
-        tts.accumulate(current_temperature)    
+        for ctemperature in current_temperatures:
+            tts.accumulate(ctemperature)    
     
     p.length_gu = growth_function(eGU, p.gu_growth_tts.ttsum, p.final_length_gu, t_ip = p.t_ip)  # GU's length calculation
     #p.diam   = growth_function(eGU, p.gu_growth_tts.ttsum, final_diamI, t_ip = p.t_ip)     # GU's diameter calculation
@@ -504,8 +509,9 @@ def gu_growth(p):
 
 def inflo_growth(p):
   if p.pheno_tts.stage < 4 :
-    p.growth_tts.accumulate(current_temperature)
-    p.pheno_tts.accumulate(current_temperature)
+    for ctemperature in current_temperatures:
+        p.growth_tts.accumulate(ctemperature)
+        p.pheno_tts.accumulate(ctemperature)
     
     p.length = growth_function(eInflorescence, p.growth_tts.ttsum, p.final_length)
 
@@ -546,7 +552,8 @@ Inflorescence_bud(p):
      for day in date_xrange(p.burst_date, current_date+timedelta(days=1)):
         daytemp = get_temperature(day)
         for tts in [p.growth_tts, p.pheno_tts]:
-            tts.accumulate(daytemp)  
+            tts.accumulate(daytemp)
+     p.length = growth_function(eInflorescence, p.growth_tts.ttsum, p.final_length)
      produce Inflorescence(p)
 
 production:
@@ -621,7 +628,7 @@ Information :
     ar = False
     envsize = 0.8
     nproduce [ @2D @R @Ts(0),(5) @M(-0.90,-0.85) 
-    nproduce Label('Tree: '+treename+'. Date: '+str(current_date.year)+'-'+str(current_date.month).zfill(2)+'-'+str(current_date.day).zfill(2)+'. Cycle: '+str(get_cycle(current_date))+'. T: '+str(current_temperature)+'°',14)
+    nproduce Label('Tree: '+treename+'. Date: '+str(current_date.year)+'-'+str(current_date.month).zfill(2)+'-'+str(current_date.day).zfill(2)+'. Cycle: '+str(get_cycle(current_date))+'. T: '+str(current_temperatures[-1])+'°',14)
     clength = (current_date - init_date).days/float((last_date - init_date).days)
     nproduce ,(4) @M(-0.91,-0.9) -(90) _(0.04) F(0.01)
     if clength > 0:
@@ -644,13 +651,13 @@ Inflorescence(param):
    length = param.length
    if length <= 1e-3: return
    growth_ttsum = param.growth_tts.ttsum
-   pheno_stage = param.pheno_tts.stage
-   pheno_rank  = param.pheno_tts.rank_in_stage()
-   n_pheno = pheno_stage + pheno_rank
    nproduce [   
    if ( growth_ttsum >= 800):
        nproduce ,(1) @O(0.01)
    else:
+      pheno_stage = param.pheno_tts.stage
+      pheno_rank  = param.pheno_tts.rank_in_stage()
+      n_pheno = pheno_stage + pheno_rank
       if RESOLUTION >= 1 : 
           nproduce  _(length/100.) 
           if RESOLUTION == 1 : nproduce SectionResolution(5)
@@ -667,15 +674,15 @@ Inflorescence(param):
             nproduce F(internode_length,internode_length/5.) \(param.phyloangles[k])
             axelength = max(length/10., length * 0.687 - 3.97)*myratio(1-pos)
             nbwhorl = 6 + int(8 * (1-pos))
-            nproduce [ +(65) Flower(pos, length, axelength, nbwhorl, pheno_stage, pheno_rank)] 
+            nproduce [ +(65) Pedicel(pos, length, axelength, nbwhorl, pheno_stage, pheno_rank)] 
       else:
           nproduce InterpolateColors(pheno_color_flower[pheno_stage],pheno_color_flower[pheno_stage+1],pheno_rank) _(length/10) F(length,0.1)
    produce ]
    
    
-Flower(pos, age, length, nbwhorl, pheno_stage, pheno_rank):
+Pedicel(pos, age, length, nbwhorl, pheno_stage, pheno_rank):
   if length <= 1e-3: return
-  deb, ind_deb = 0, 0
+  flowering_index = 0
   npheno = pheno_stage+ pheno_rank
   nbflower = 3
   floangle = 360. / nbflower
@@ -693,7 +700,7 @@ Flower(pos, age, length, nbwhorl, pheno_stage, pheno_rank):
       kpos = 1 - k/float(nbwhorl -1.)
       
       if pos < 0.7: 
-        nproduce InterpolateColors(13,pheno_color_inflo[pheno_stage+1], npheno * kpos) 
+        nproduce InterpolateColors(13, pheno_color_inflo[pheno_stage+1], npheno * kpos) 
       # On choisi la couleur en fonction du stade et de son avancement
       nproduce  F(intlength,intradius)  
       
@@ -704,15 +711,15 @@ Flower(pos, age, length, nbwhorl, pheno_stage, pheno_rank):
           # pos on primary axis and pos on secondary axis
           #ind_col = max(0,0.2 + (npheno-2) - (((age * pos) + (length * k/float(nbwhorl -1.))) / age))
           
-          ind_col = min(0.7,((npheno-2) + ppos + kpos)/3.)
+          flowering_index = min(0.7,((npheno-2) + ppos + kpos)/3.)
           
-          if (ind_col < 0.5 and pheno_stage==2) :
-            ind_col = min((age+k/10.)/100.,0.3) +min(1,max(0,npheno-1))/5.
+          if (flowering_index < 0.5) :
+            flowering_index = min((age+k/10.)/100.,0.3) + min(1,max(0,npheno-1))/5.
           
         elif pheno_stage == 3:
-          ind_col = 0.7
-        else : 
-          ind_col=min((age+k/10.)/100.,0.3) +min(1,max(0,npheno-1))/10. 
+          flowering_index = 0.7
+        else : # pheno stage 0 or 1
+          flowering_index = min((age+k/10.)/100.,0.3) + min(1,max(0,npheno-1))/10. 
         
         if k == nbwhorl - 1: 
           nbflower = 1
@@ -720,7 +727,7 @@ Flower(pos, age, length, nbwhorl, pheno_stage, pheno_rank):
         for d in xrange (nbflower):
           nproduce [ \(floangle*d + k*2) &(75 if nbflower > 1 else 0) F(latintlength * kpos,0.05)
           
-          radius, colinterpolation = ind_col, ind_col
+          radius, colinterpolation = flowering_index, flowering_index
           if pheno_stage >= 2 and ind_col < 0.5:
             
               radius = min((age+k/10.)/100.,0.3) + min(1,max(0,npheno-1))/10.
@@ -729,11 +736,11 @@ Flower(pos, age, length, nbwhorl, pheno_stage, pheno_rank):
           elif pheno_stage == 3:
               nproduce SetColor(pheno_color_flower[pheno_stage+1])
           else:
-              nproduce InterpolateColors(pheno_color_flower[pheno_stage],pheno_color_flower[pheno_stage+1],colinterpolation) 
-          nproduce Petal(radius, pheno_stage, pheno_rank) ] # @O(radius)]
+              nproduce InterpolateColors(pheno_color_flower[pheno_stage], pheno_color_flower[pheno_stage+1], colinterpolation) 
+          nproduce Flower(radius, pheno_stage, pheno_rank) ] # @O(radius)]
   #print
 
-Petal(radius, pheno_stage, pheno_rank):
+Flower(radius, pheno_stage, pheno_rank):
   if False : # pheno_stage > 1:
     nbpetal = 4 
     petalangle = 360 / nbpetal
@@ -883,7 +890,7 @@ def __initialiseContext__(context):
 	context.animation_timestep = 0.101
 	context.options.setSelection('Module declaration',1)
 	context.options.setSelection('Warning with sharp module',0)
-	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 2, 0, 2), ('Elasticity', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 1, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', False), ('Environment', 'Category'), ('TIMEBAR', 'Bool', False), ('BACKGROUND', 'Bool', False)]
+	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', False), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 0, 0, 2), ('Elasticity', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 100, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', False), ('Environment', 'Category'), ('TIMEBAR', 'Bool', False), ('BACKGROUND', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
