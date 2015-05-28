@@ -97,5 +97,5 @@ if __name__ == '__main__' :
             params[paramcmd[2*i]] = eval(paramcmd[2*i+1])
         generate_mtgs(seeds=[seed],params=params)
     else:
-        process_restricted_models(1)
+        process_restricted_models(1000)
         #process_null_models()
