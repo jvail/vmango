@@ -81,7 +81,7 @@ def date_range(begindate, enddate, daystep = 1):
     currentdate = begindate
     delta = timedelta(days=daystep)
     res = []
-    while currentdate != enddate :
+    while currentdate < enddate :
         res.append(currentdate)
         currentdate += delta
     return res
@@ -89,7 +89,7 @@ def date_range(begindate, enddate, daystep = 1):
 def date_xrange(begindate, enddate, daystep = 1):
     currentdate = begindate
     delta = timedelta(days=daystep)
-    while currentdate  != enddate :
+    while currentdate  < enddate :
         yield currentdate
         currentdate += delta
 

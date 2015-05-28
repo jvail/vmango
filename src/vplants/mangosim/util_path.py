@@ -10,9 +10,12 @@ share_dir = abspath(share_dir)
 from vplants.mangosim.state import *
 
 
-def get_probabily_repository(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm):
+def get_probability_repository(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm, restriction = None):
     from os.path import join
-    return join(share_dir, 'glm_output_proba', variety, GlmTypeName[estimationtype], treename)
+    path = join(share_dir, 'glm_output_proba', variety)
+    if restriction : path = join(path,RestrictionName[restriction])
+    path = join(path,GlmTypeName[estimationtype], treename)
+    return path
 
 
 def get_simulated_mtg_repository(variety = 'cogshall'):
@@ -23,11 +26,14 @@ def get_option_glm_mtg_repository(variety = 'cogshall',
                            treename = 'all_trees', 
                            estimationbase = eVarietyBased,
                            estimationtype = eSelectedGlm,
-                           withindelaymethod = eMonthMultiVariateForWithin):
-    return join(get_simulated_mtg_repository(variety), EstimationBaseName[estimationbase].lower(), 
-                GlmTypeName[estimationtype],  
-                WithinDelayMethodName[withindelaymethod].lower(),
+                           withindelaymethod = eMonthMultiVariateForWithin,
+                           restriction = None):
+    path = join(get_simulated_mtg_repository(variety), EstimationBaseName[estimationbase].lower(), 
+                GlmTypeName[estimationtype])  
+    if restriction : path = join(path,RestrictionName[restriction])
+    path = join(path,WithinDelayMethodName[withindelaymethod].lower(),
                 treename)
+    return path
 
 def get_glm_mtg_repository(trees = range(5), 
                            params = dict(), 
@@ -39,6 +45,7 @@ def get_glm_mtg_repository(trees = range(5),
     repparams['estimationbase'] = params.get('ESTIMATIONBASE', l.estimationbase)
     repparams['estimationtype'] = params.get('ESTIMATIONTYPE', l.estimationtype)
     repparams['withindelaymethod'] = params.get('WITHINDELAYMETHOD', l.WithinDelayMethod)
+    repparams['restriction'] = params.get('FACTORRESTRICTION', l.factorrestriction)
     outputdir = get_option_glm_mtg_repository(**repparams)
     if optionname:
         outputdir = join(outputdir,optionname)
