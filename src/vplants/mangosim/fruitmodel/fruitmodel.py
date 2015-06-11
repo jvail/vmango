@@ -39,13 +39,13 @@ def applymodel(mtg, cycle, fruit_distance = 3):
     for inflos, gus in fruiting_structures:
         bloom_dates = [params[inflo].bloom_date for inflo in inflos]
         leaf_nbs    = sum([len(params[gu].final_size_Leaves) for gu in gus])
-        nb_fruits   = [params[inflo].nb_fruits for inflo in inflos]
+        nb_fruits   = sum([params[inflo].nb_fruits for inflo in inflos])
         print nb_fruits
 
         bloom_date  = bloom_dates[0]
         bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/'+str(bloom_date.year)
         # call fruit model in r 
-        fruitmodel(bloom_date, nb_fruits, leaf_nbs)
+        result = fruitmodel(bloom_date, nb_fruits, leaf_nbs)
 
     return fruiting_structures
 
