@@ -12,7 +12,7 @@ def init_temperatures(filename = 'meteo-BMA.csv'):
     temperature_data = read_csv(join(share_dir, filename), parse_dates = [0],date_parser=date_parser,delimiter=';')
     
     __temperatures = temperature_data['Tmoy']
-    __first_day = temperature_data['Date'][0].date()
+    __first_day = temperature_data['Date'][0]
     
     #for i in xrange(1,len(temperature_data['Date'])):
     #    assert (temperature_data['Date'][i] - temperature_data['Date'][i-1]).days == 1
@@ -25,7 +25,8 @@ def get_last_day_for_temperature():
     return __first_day+timedelta(days=len(__temperatures)-1)
 
 def get_temperature(date):
-    return __temperatures[(date-__first_day).days]
+    if type(date) == datetime:  return __temperatures[(date-__first_day).days]
+    else : return __temperatures[(date-__first_day.date()).days]
 
 if __name__ == '__main__':
     init_temperatures()

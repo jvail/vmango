@@ -1,5 +1,5 @@
 
-workingrep    = 'images2'
+workingrep    = 'images3'
 lsysfile      = 'mango_mtg_replay.lpy'
 tempbgeomfile = 'temp_scene.bgeom'
 bgeomfile     = 'scene_{}.bgeom'
@@ -39,7 +39,7 @@ def generate_bgeom():
     from openalea.lpy import Lsystem
     import os
     print 'Scene generator launched'
-    l = Lsystem(lsysfile,{'RESOLUTION' : 2, 'daystep' : 1, 'TIMEBAR' : False})
+    l = Lsystem(lsysfile,{'RESOLUTION' : 2, 'daystep' : 0.25, 'TIMEBAR' : False, 'LEAFY' : True, 'WITH_INFLO' : True, 'EXPORT_TO_MTG' : False})
     nbsteps =  l.derivationLength
     open(stepfile,'w').write(str(nbsteps))
     if not os.path.exists(workingrep) : os.makedirs(workingrep)
@@ -78,6 +78,7 @@ camera {
 light_source {
      <120,  90,500>
     color rgb <1,1,1>
+    jitter
 }
 
 
@@ -85,6 +86,7 @@ light_source {
 light_source {
      <379.656,291.526,52.1352>
     color rgb 0.1
+    jitter
 }
 
 
@@ -169,7 +171,7 @@ def main():
         if len(sys.argv) > njf+1:
             nbpovprocess = int(sys.argv[njf+1])
         else:
-            nbpovprocess = cpu_count() - 1
+            nbpovprocess = 3 # cpu_count() - 1
         generate_movie(nbpovprocess)
     elif '--bgeom' in sys.argv:
         generate_bgeom()

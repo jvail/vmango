@@ -6,6 +6,11 @@ Month = {'janv' : 1, 'fev' : 2, 'mars' : 3,
          'juil' : 7, 'aout' : 8, 'sept' : 9,
          'oct' : 10, 'nov' : 11, 'dec' : 12 }
 
+MonthEn = {'jan' : 1, 'feb' : 2, 'march' : 3,
+         'april' : 4, 'may' : 5, 'june' : 6,
+         'july' : 7, 'august' : 8, 'sept' : 9,
+         'oct' : 10, 'nov' : 11, 'dec' : 12 }
+
 def date_from_string(string):
     """From string = 'month.year', it return a date
     """
@@ -30,13 +35,15 @@ def cycle_end(cycle):
    return date(2000+cycle,5,31)
    # return date(2000+cycle,6,30)
 
-def in_cycle(date, cycle):
-    return cycle_begin(cycle) <= date <= cycle_end(cycle)
+def in_cycle(cdate, cycle):
+    if type(cdate) != date: cdate = cdate.date()
+    return cycle_begin(cycle) <= cdate <= cycle_end(cycle)
 
 
-def get_cycle(date):
-    if date < cycle_begin(4) : return 3
-    elif date < cycle_begin(5) : return 4
+def get_cycle(cdate):
+    if type(cdate) != date: cdate = cdate.date()
+    if cdate < cycle_begin(4) : return 3
+    elif cdate < cycle_begin(5) : return 4
     else : return 5
 
 def flowering_cycle_begin(cycle):
@@ -45,8 +52,9 @@ def flowering_cycle_begin(cycle):
 def flowering_cycle_end(cycle):
     return date(2000+cycle, 10, 31)
 
-def in_flowering_cycle(date, cycle):
-    return flowering_cycle_begin(cycle) <= date <= flowering_cycle_end(cycle)
+def in_flowering_cycle(cdate, cycle):
+    if type(cdate) != date: cdate = cdate.date()
+    return flowering_cycle_begin(cycle) <= cdate <= flowering_cycle_end(cycle)
 
 def get_flowering_cycle(date):
     return date.year - 2000
@@ -79,7 +87,8 @@ def monthdate_xrange(begindate, enddate):
 def date_range(begindate, enddate, daystep = 1):
     if enddate <= begindate: return []
     currentdate = begindate
-    delta = timedelta(days=daystep)
+    if type(daystep) == timedelta: delta = daystep
+    else: delta = timedelta(days=daystep)
     res = []
     while currentdate < enddate :
         res.append(currentdate)
@@ -88,7 +97,8 @@ def date_range(begindate, enddate, daystep = 1):
 
 def date_xrange(begindate, enddate, daystep = 1):
     currentdate = begindate
-    delta = timedelta(days=daystep)
+    if type(daystep) == timedelta: delta = daystep
+    else: delta = timedelta(days=daystep)
     while currentdate  < enddate :
         yield currentdate
         currentdate += delta

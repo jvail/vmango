@@ -12,7 +12,6 @@ from vplants.mangosim.state import *
 import vplants.mangosim.util_lstring2mtg as lm ; reload(lm)
 from vplants.mangosim.util_lstring2mtg import *
 from vplants.mangosim.temperature import *
-import vplants.mangosim.thermaltime as tt; reload(tt)
 from vplants.mangosim.thermaltime import *
 
 import vplants.mangosim.doralice_mtg.mtg_manipulation  as mm
@@ -21,11 +20,14 @@ reload(mm)
 seed(SEED)
 nprand.seed(SEED)
 
+
 #from vplants.mangosim.tools import load_obj
 #mtg = load_obj("simulated_mango_glm.bmtg",'../glm_simulation')
 #mm.setMtgStyle(mm.eSimulatedMtg)
 
 mtg = mm.get_mtg()
+
+
 
 treenames = mm.get_treenames_of_variety(mtg)
 #['B10', 'B12', 'B14', 'F2', 'F6']
@@ -34,15 +36,23 @@ treename = treenames[treeselection]
 
 treeid = mm.get_tree_from_name(mtg,treename)
 first_uc = mm.get_first_gu(mtg,treeid)
+tree_load = mm.is_loaded(mtg, treeid)
 
 height_max_3 = max([mtg.Height(gu) for gu in mm.get_terminal_gus_of_tree_at_cycle(mtg,treeid,3)])
 height_max = max([mtg.Height(gu) for gu in mm.get_terminal_gus_of_tree_at_cycle(mtg,treeid,5)])
 
+if daystep < 1:
+  def todatetime(d,h=12,m=0,s=0): 
+    if d is None: return None
+    return datetime(d.year,d.month,d.day,h,m,s)
+else:
+  def todatetime(d): return d
+
 init_date  = cycle_end(3)-timedelta(days=1)
 final_date = cycle_end(5)
 
-first_date = init_date # date(2003,7,8) 
-last_date  = final_date # date(2003,10,17)
+first_date = todatetime(init_date) # date(2003,7,8) 
+last_date  = todatetime(final_date) # date(2003,10,17)
 
 total_weeks = week_difference(last_date,first_date)
 nbsteps     = ceil((last_date -first_date).days/float(daystep))
@@ -55,7 +65,7 @@ current_cycle = get_cycle(current_date)
 
 init_temperatures()
 
-current_temperatures = [get_temperature(first_date)]
+current_temperatures = [get_temperature(current_date)]
 
 # Initializing variables
 t_ip_GU_mean = 79.40
@@ -197,7 +207,11 @@ def StartEach():
   previous_date = current_date
   current_date += delta_date  
   current_cycle = get_cycle(current_date)  
-  current_temperatures = [get_temperature(cdate) for cdate in date_xrange(previous_date+timedelta(days=1),current_date+timedelta(days=1))]
+  if daystep > 1:
+    current_temperatures = [get_temperature(cdate) for cdate in date_xrange(previous_date+timedelta(days=1),current_date+timedelta(days=1))]
+  else:
+    current_temperatures = [get_temperature(current_date)]
+    
   
   global inflo_flush_start
   if current_date == flowering_cycle_begin(current_cycle):
@@ -239,9 +253,11 @@ def End(lstring, lscene):
       dump_obj(resultmtg, export_fname)
 
 
-def to_be_developped(gu, date = first_date, mtg = mtg):
+def to_be_developped(gu, cdate = first_date, mtg = mtg):
     bdate = mm.get_burst_date(mtg,gu)
-    return (bdate is None or bdate < date)
+    if bdate is None: return True
+    if type(cdate) == datetime: cdate = cdate.date()
+    return bdate < cdate
 
 def estimate_radius(nbdescendants):
   return 0.3*pow(nbdescendants, 0.45)
@@ -286,7 +302,7 @@ def generate_parameters_GU(gu, nbdescendants = 1):
                     position_parent  = mm.get_position_gu(mtg,parent),
                     nbdescendants    = nbdescendants)
    #if mm.has_burst_date(mtg,gu) : 
-   p.set(burst_date = mm.get_burst_date(mtg,gu)) 
+   p.set(burst_date = todatetime(mm.get_burst_date(mtg,gu))) 
    return p
 
 
@@ -393,7 +409,7 @@ def set_dimension_parameters_Inflo(params):
     pheno_tts    = MultiPhaseThermalTimeAccumulator(pheno_base_temp_Inflo, pheno_change_temp_Inflo, 350)
     
     # burst date should be computed from bloom date and pheno_tts reverse timing
-    burst_date = pheno_tts.reverse_from_finaldate(0, params.bloom_date, get_temperature)
+    burst_date = todatetime(pheno_tts.reverse_from_finaldate(0, params.bloom_date, get_temperature))
     
     # burst_date = bloom_date - timedelta(days=28)
     
@@ -478,28 +494,34 @@ def growth_function(type, T,  FinalSize, t_ip = None):
   """ Sigmoid function used to compute growth of organs """
 
   if type == eGU:                                  # GUs
-    maxER = 0.0111513*FinalSize                     # relationship between final size and maximum growth rate for GUs
-    B = FinalSize/(4*maxER)   
+    # relationship between final size and maximum growth rate for GUs
+    # maxGR = 0.0111513*FinalSize                     
+    # B = FinalSize/(4*maxGR) 
+    B = 22.41891079963771 # 1. / 0.0446052
     y = FinalSize/(1+exp(-(T-t_ip)/B))        # sigmoid equation
   
   elif type == eLeaf:                            # Leafs
-    maxER = -0.0188725+0.0147985*FinalSize
-    B = FinalSize/(4*maxER)
+    maxGR = -0.0188725+0.0147985*FinalSize
+    B = FinalSize/(4*maxGR)
     y = FinalSize/(1+exp(-(T-t_ip_Leaf)/B))
     
   elif type == eInflorescence:                                           # Inflorescences
-    maxER = 0.0049161*FinalSize 
-    B = FinalSize/(4*maxER)
+    #maxER = 0.0049161*FinalSize 
+    # B = FinalSize/(4*maxER)
+    B = 50.853318687577556 # 1. / 0.0196644
     y = FinalSize/(1+exp(-(T-t_ip_Inflo)/B))
   
   return y
 
 def gu_growth(p):
   if p.gu_pheno_tts.stage < 4 :
-    # Update of parameters                               
+    # Update of parameters
     for tts in [p.gu_growth_tts, p.leaf_growth_tts, p.gu_pheno_tts]:
-        for ctemperature in current_temperatures:
-            tts.accumulate(ctemperature)    
+        if daystep > 1:
+          for ctemperature in current_temperatures:
+              tts.accumulate(ctemperature)
+        else:
+          tts.accumulate(current_temperatures[-1], daystep)
     
     p.length_gu = growth_function(eGU, p.gu_growth_tts.ttsum, p.final_length_gu, t_ip = p.t_ip)  # GU's length calculation
     #p.diam   = growth_function(eGU, p.gu_growth_tts.ttsum, final_diamI, t_ip = p.t_ip)     # GU's diameter calculation
@@ -509,9 +531,14 @@ def gu_growth(p):
 
 def inflo_growth(p):
   if p.pheno_tts.stage < 4 :
-    for ctemperature in current_temperatures:
-        p.growth_tts.accumulate(ctemperature)
-        p.pheno_tts.accumulate(ctemperature)
+    if daystep > 1:
+      for ctemperature in current_temperatures:
+          p.growth_tts.accumulate(ctemperature)
+          p.pheno_tts.accumulate(ctemperature)
+    else:
+          p.growth_tts.accumulate(current_temperatures[-1], daystep)
+          p.pheno_tts.accumulate(current_temperatures[-1], daystep)
+      
     
     p.length = growth_function(eInflorescence, p.growth_tts.ttsum, p.final_length)
 
@@ -628,8 +655,8 @@ Information :
     ar = False
     envsize = 0.8
     nproduce [ @2D @R @Ts(0),(5) @M(-0.90,-0.85) 
-    nproduce Label('Tree: '+treename+'. Date: '+str(current_date.year)+'-'+str(current_date.month).zfill(2)+'-'+str(current_date.day).zfill(2)+'. Cycle: '+str(get_cycle(current_date))+'. T: '+str(current_temperatures[-1])+'°',14)
-    clength = (current_date - init_date).days/float((last_date - init_date).days)
+    nproduce Label('Tree: '+treename+('. Loaded' if tree_load else '. Not loaded')+'. Date: '+str(current_date.year)+'-'+str(current_date.month).zfill(2)+'-'+str(current_date.day).zfill(2)+'. Cycle: '+str(get_cycle(current_date))+'. T: '+str(current_temperatures[-1])+'°',14)
+    clength = (current_date - first_date).days/float((last_date - first_date).days)
     nproduce ,(4) @M(-0.91,-0.9) -(90) _(0.04) F(0.01)
     if clength > 0:
       nproduce ,(2) @M(-0.9,-0.9) _(0.03) F(clength*envsize)
@@ -709,7 +736,7 @@ Pedicel(pos, age, length, nbwhorl, pheno_stage, pheno_rank):
         if pheno_stage == 2:
           # A flowering probability that takes into account pheno, 
           # pos on primary axis and pos on secondary axis
-          #ind_col = max(0,0.2 + (npheno-2) - (((age * pos) + (length * k/float(nbwhorl -1.))) / age))
+          #flowering_index = max(0,0.2 + (npheno-2) - (((age * pos) + (length * k/float(nbwhorl -1.))) / age))
           
           flowering_index = min(0.7,((npheno-2) + ppos + kpos)/3.)
           
@@ -728,7 +755,7 @@ Pedicel(pos, age, length, nbwhorl, pheno_stage, pheno_rank):
           nproduce [ \(floangle*d + k*2) &(75 if nbflower > 1 else 0) F(latintlength * kpos,0.05)
           
           radius, colinterpolation = flowering_index, flowering_index
-          if pheno_stage >= 2 and ind_col < 0.5:
+          if pheno_stage >= 2 and flowering_index < 0.5:
             
               radius = min((age+k/10.)/100.,0.3) + min(1,max(0,npheno-1))/10.
               colinterpolation = (pheno_rank+(13-k)/10.)/2.
@@ -890,7 +917,7 @@ def __initialiseContext__(context):
 	context.animation_timestep = 0.101
 	context.options.setSelection('Module declaration',1)
 	context.options.setSelection('Warning with sharp module',0)
-	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', False), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 0, 0, 2), ('Elasticity', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 100, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', False), ('Environment', 'Category'), ('TIMEBAR', 'Bool', False), ('BACKGROUND', 'Bool', False)]
+	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 1, 0, 2), ('Elasticity', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 3, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 1, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', True), ('Environment', 'Category'), ('TIMEBAR', 'Bool', True), ('BACKGROUND', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
