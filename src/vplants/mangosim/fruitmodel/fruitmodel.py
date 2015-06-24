@@ -38,7 +38,7 @@ def applymodel(mtg, cycle, fruit_distance = 3):
     params = mtg.property('p')
     for inflos, gus in fruiting_structures:
         bloom_dates = [params[inflo].bloom_date for inflo in inflos]
-        leaf_nbs    = sum([len(params[gu].final_size_Leaves) for gu in gus])
+        leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus])
         nb_fruits   = sum([params[inflo].nb_fruits for inflo in inflos])
         print nb_fruits
 
