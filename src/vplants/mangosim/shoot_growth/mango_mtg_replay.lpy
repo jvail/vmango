@@ -195,7 +195,7 @@ inflo_flush_start = None
 firstleaf = True
 
 def StartEach():
-  global new_elements
+  global new_elements, inflo_flush_start
   
   useGroup(1 if new_elements else 0)
   backward()
@@ -205,7 +205,11 @@ def StartEach():
   global previous_date, current_date, current_cycle, current_temperatures
   
   previous_date = current_date
-  current_date += delta_date  
+  current_date += delta_date
+  if FRUIT_MODEL and inflo_flush_start:
+    fruit_model_date = inflo_flush_start + timedelta(days=50)
+    if previous_date < fruit_model_date and current_date > fruit_model_date:
+       current_date = fruit_model_date
   current_cycle = get_cycle(current_date)  
   if daystep > 1:
     current_temperatures = [get_temperature(cdate) for cdate in date_xrange(previous_date+timedelta(days=1),current_date+timedelta(days=1))]
@@ -213,7 +217,6 @@ def StartEach():
     current_temperatures = [get_temperature(current_date)]
     
   
-  global inflo_flush_start
   if current_date == flowering_cycle_begin(current_cycle):
     inflo_flush_start = None
   
@@ -917,7 +920,7 @@ def __initialiseContext__(context):
 	context.animation_timestep = 0.101
 	context.options.setSelection('Module declaration',1)
 	context.options.setSelection('Warning with sharp module',0)
-	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 1, 0, 2), ('Elasticity', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 3, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 1, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', True), ('Environment', 'Category'), ('TIMEBAR', 'Bool', True), ('BACKGROUND', 'Bool', False)]
+	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 1, 0, 2), ('Elasticity', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 3, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 30, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', True), ('Environment', 'Category'), ('TIMEBAR', 'Bool', True), ('BACKGROUND', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
