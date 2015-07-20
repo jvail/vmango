@@ -103,10 +103,10 @@ Res  = CROISSANCE_MF_TEMPERATURE (
                         )
 }  else {
 # Ouverture des fonctions nécessaires
-source(paste("fct synthese temperature et mf et ms_simp.r", sep=""))
-source(paste("fonction_croissance_ms_simp.r", sep=""))
+source("fct synthese temperature et mf et ms_simp.r")
+source("fonction_croissance_ms_simp.r")
 #source(paste(Repertoire_Fonction, "Fonction_Model_Ethylene.r", sep=""))
-source(paste("fonction_croissance_mf_simp.r", sep=""))
+source("fonction_croissance_mf_simp.r")
 
 #### attention les données sont celles de 2002 ####
 Meteo =   read.table ("rayostpierre2002.csv", sep=";", dec=".", header=T)
@@ -114,7 +114,6 @@ Meteo$Date = strptime(Meteo$Date, "%d/%m/%Y %H:%M")                             
 Meteo$DATE = as.Date(Meteo$Date, "%d/%m/%Y")
 Meteo_journalier <- read.table ("tempstpierre2002.csv", sep=";", dec=".", header=T)
 Meteo_journalier$DATE = as.Date(Meteo_journalier$DATE, "%d/%m/%Y")
-
 #essai_jour = as.Date("19/08/02", "%d/%m/%y")
 
 Res  = CROISSANCE_MF_TEMPERATURE (
