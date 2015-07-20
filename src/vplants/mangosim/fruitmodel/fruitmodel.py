@@ -46,6 +46,11 @@ def applymodel(mtg, cycle, fruit_distance = 3):
         bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/'+str(bloom_date.year)
         # call fruit model in r 
         result = fruitmodel(bloom_date, nb_fruits, leaf_nbs)
+
+        for inflo in inflos:
+            params[inflo].fruit_appearance_date = None
+            params[inflo].fruit_maturity_date   = None
+            params[inflo].fruit_mass            = None
         
     return fruiting_structures
 
