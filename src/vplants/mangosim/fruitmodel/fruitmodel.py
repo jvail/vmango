@@ -20,9 +20,9 @@ def test():
     print fruitdata
 
 def get_fruitmodel_function_test():
-    script = file(join(RScriptRepo,"fruitmodel.r"),'r').read()
+    script = file(join(RScriptRepo,"model_fruit_final.r"),'r').read()
     r.r(script)
-    return r.r('empty_fruit_model')
+    return r.r('fruitmodel')
 
 
 def applymodel(mtg, cycle, fruit_distance = 3):
@@ -46,7 +46,7 @@ def applymodel(mtg, cycle, fruit_distance = 3):
         bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/'+str(bloom_date.year)
         # call fruit model in r 
         result = fruitmodel(bloom_date, nb_fruits, leaf_nbs)
-
+        
     return fruiting_structures
 
 

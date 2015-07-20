@@ -150,7 +150,7 @@ don$LF = rep(LF,dim(don)[[1]])
 don$environ_lum = rep(sum(k1_fruit)/24,dim(don)[[1]])
 don$DAB = Res$DAB[1:length(Res$Croissance$Date)]
 
-
+print(don)
 return(don)
 }
 
