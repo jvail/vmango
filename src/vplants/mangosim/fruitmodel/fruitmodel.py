@@ -1,15 +1,20 @@
 import rpy2.robjects as r
 from os.path import join, abspath, dirname
+import os
 
 def execute_r_script(script, **params):
     R_HOME = os.environ["R_HOME"]
-    exe = os.path.join(R_HOME,'bin','Rscript')
+    exe = os.path.join(R_HOME,'bin','R.exe')
+    assert os.path.exists(exe)
     launchfile = 'myscript.R'
     launcher = file(launchfile,'w')
-    for var, value in params:
-        launcher.write(var," <- ", str(value),'\n')
-    launcher.write('source "'+launchfile+'"')
-    os.system(exe' 'launchfile)
+    for var, value in params.items():
+        launcher.write(var+" <- "+ str(value)+'\n')
+    launcher.write('source "'+launchfile+'"\n')
+    #exe = exe.replace(' ','\\ ')
+    command = '"'+exe +'" "'+launchfile+'"'
+    print command
+    os.system(command)
 
 RScriptRepo = dirname(abspath(__file__))
 
@@ -32,13 +37,14 @@ def test():
 def get_fruitmodel_function_test():
     script = file(join(RScriptRepo,"model_fruit_final.r"),'r').read()
     def fruitmodel(**params):
-        execute_r_script(script, params)
+        execute_r_script(script, **params)
     return fruitmodel
     #r.r(script)
     #return r.r('fruitmodel')
 
 
 def applymodel(mtg, cycle, fruit_distance = 3):
+    from pandas import read_csv
     print 'apply fruit model'
     print " * Load R function"
     fruitmodel = get_fruitmodel_function_test()
@@ -59,11 +65,18 @@ def applymodel(mtg, cycle, fruit_distance = 3):
         bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/'+str(bloom_date.year)
         # call fruit model in r 
         result = fruitmodel(bloom_date=bloom_date, nb_fruits=nb_fruits, leaf_nbs=leaf_nbs)
-
+        result = read_csv("resultats.csv")
+        #print result["Masse_Fruit"]
+        #print type(result)
+        #print dir(result)
+        #print result["Date"]
+        #print result["Masse_Fruit"]
+        fruit_growth = dict(zip(result["Date"],result["Masse_Fruit"]))
+        
         for inflo in inflos:
-            params[inflo].fruit_appearance_date = None
-            params[inflo].fruit_maturity_date   = None
-            params[inflo].fruit_mass            = None
+            params[inflo].fruit_appearance_date = min(result["Date"])
+            params[inflo].fruit_maturity_date   = max(result["Date"])
+            params[inflo].fruit_masses          = fruit_growth
         
     return fruiting_structures
 
@@ -103,7 +116,7 @@ if __name__ == '__main__':
     mtg = load_obj('fruitstructure.pkl','../shoot_growth')
     sc = Scene('../shoot_growth/fruitstructure.bgeom')
     fs = applymodel(mtg, 3, int(sys.argv[1]) if len(sys.argv) > 1 else 3) 
-    print len(fs)
-    for inflos, gus in fs:
-        print inflos, list(gus)    
-    Viewer.display(color_structures(fs, mtg, sc))
+    #print len(fs)
+    #for inflos, gus in fs:
+    #    print inflos, list(gus)    
+    #Viewer.display(color_structures(fs, mtg, sc))
