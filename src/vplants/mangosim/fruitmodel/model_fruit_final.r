@@ -148,6 +148,7 @@ don$environ_lum = rep(sum(k1_fruit)/24,dim(don)[[1]])
 don$DAB = Res$DAB[1:length(Res$Croissance$Date)]
 
 print(don)
+write.csv(don, file="resultats.csv")
 return(don)
 }
 
