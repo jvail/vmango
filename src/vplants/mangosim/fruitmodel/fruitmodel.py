@@ -10,8 +10,8 @@ def execute_r_script(script, **params):
         launcher.write(var+" <- "+ str(value)+'\n')
     launcher.write('source "'+launchfile+'"\n')
     launcher.write('fruitmodel(')
-    for var, value in params.items():
-        launcher.write(var+" = "+ str(value)+',')
+    launcher.write(','.join([var+" = "+ str(value) for var, value in params.items()])
+    launcher.write(')\n\n')
     command = 'python "'+__file__+'" --R'
     print command
     os.system(command)
