@@ -9,16 +9,22 @@ def execute_r_script(script, **params):
     for var, value in params.items():
         launcher.write(var+" <- "+ str(value)+'\n')
     launcher.write('source "'+launchfile+'"\n')
-    os.system('python '+repr(__file__)+' --R')
+    launcher.write('fruitmodel(')
+    for var, value in params.items():
+        launcher.write(var+" = "+ str(value)+',')
+    command = 'python "'+__file__+'" --R'
+    print command
+    os.system(command)
 
 def launch_r():
     R_HOME = os.environ["R_HOME"]
-    exe = os.path.join(R_HOME,'bin','R.exe')
+    exe = os.path.join(R_HOME,'bin','Rscript.exe')
     # exe = exe.replace(' ','\\ ')
     assert os.path.exists(exe)
-    command = '"'+exe +'" "'+launchfile+'"'
+    command = ''+exe +' '+launchfile+''
     print command
     os.system(command)
+    #raw_input()
 
 RScriptRepo = dirname(abspath(__file__))
 
