@@ -2,16 +2,20 @@ import rpy2.robjects as r
 from os.path import join, abspath, dirname
 import os
 
+launchfile = 'myscript.R'
+
 def execute_r_script(script, **params):
-    R_HOME = os.environ["R_HOME"]
-    exe = os.path.join(R_HOME,'bin','R.exe')
-    assert os.path.exists(exe)
-    launchfile = 'myscript.R'
     launcher = file(launchfile,'w')
     for var, value in params.items():
         launcher.write(var+" <- "+ str(value)+'\n')
     launcher.write('source "'+launchfile+'"\n')
-    #exe = exe.replace(' ','\\ ')
+    os.system('python '+repr(__file__)+' --R')
+
+def launch_r():
+    R_HOME = os.environ["R_HOME"]
+    exe = os.path.join(R_HOME,'bin','R.exe')
+    # exe = exe.replace(' ','\\ ')
+    assert os.path.exists(exe)
     command = '"'+exe +'" "'+launchfile+'"'
     print command
     os.system(command)
@@ -111,12 +115,15 @@ def color_structures(fruiting_structures, mtg, scene):
 
 if __name__ == '__main__':
     import sys
-    from vplants.mangosim.tools import load_obj
-    from openalea.plantgl.all import Scene, Viewer
-    mtg = load_obj('fruitstructure.pkl','../shoot_growth')
-    sc = Scene('../shoot_growth/fruitstructure.bgeom')
-    fs = applymodel(mtg, 3, int(sys.argv[1]) if len(sys.argv) > 1 else 3) 
-    #print len(fs)
-    #for inflos, gus in fs:
-    #    print inflos, list(gus)    
-    #Viewer.display(color_structures(fs, mtg, sc))
+    if '--R' in sys.argv:
+        launch_r()
+    else:
+        from vplants.mangosim.tools import load_obj
+        from openalea.plantgl.all import Scene, Viewer
+        mtg = load_obj('fruitstructure.pkl','../shoot_growth')
+        sc = Scene('../shoot_growth/fruitstructure.bgeom')
+        fs = applymodel(mtg, 3, int(sys.argv[1]) if len(sys.argv) > 1 else 3) 
+        #print len(fs)
+        #for inflos, gus in fs:
+        #    print inflos, list(gus)    
+        #Viewer.display(color_structures(fs, mtg, sc))
