@@ -1,6 +1,16 @@
 import rpy2.robjects as r
 from os.path import join, abspath, dirname
 
+def execute_r_script(script, **params):
+    R_HOME = os.environ["R_HOME"]
+    exe = os.path.join(R_HOME,'bin','Rscript')
+    launchfile = 'myscript.R'
+    launcher = file(launchfile,'w')
+    for var, value in params:
+        launcher.write(var," <- ", str(value),'\n')
+    launcher.write('source "'+launchfile+'"')
+    os.system(exe' 'launchfile)
+
 RScriptRepo = dirname(abspath(__file__))
 
 def runmodel():
@@ -21,8 +31,11 @@ def test():
 
 def get_fruitmodel_function_test():
     script = file(join(RScriptRepo,"model_fruit_final.r"),'r').read()
-    r.r(script)
-    return r.r('fruitmodel')
+    def fruitmodel(**params):
+        execute_r_script(script, params)
+    return fruitmodel
+    #r.r(script)
+    #return r.r('fruitmodel')
 
 
 def applymodel(mtg, cycle, fruit_distance = 3):
@@ -45,7 +58,7 @@ def applymodel(mtg, cycle, fruit_distance = 3):
         bloom_date  = bloom_dates[0]
         bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/'+str(bloom_date.year)
         # call fruit model in r 
-        result = fruitmodel(bloom_date, nb_fruits, leaf_nbs)
+        result = fruitmodel(bloom_date=bloom_date, nb_fruits=nb_fruits, leaf_nbs=leaf_nbs)
 
         for inflo in inflos:
             params[inflo].fruit_appearance_date = None
