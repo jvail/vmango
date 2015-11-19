@@ -29,14 +29,17 @@ CROISSANCE_MF = function(   Date,
   Masse_Fruit = MF_Init                                                                             # Masse fraiche du fruit
   Masse_Noyau = MF_Init - (MSpepu + Eaupepu)                                                        # Masse du noyau calculée avec relation empirique.
 
-Results_jour = data.frame( Potentiel_Hydrique = NA,
-                           P_Turgescence = NA,
-                           P_Osmotique = NA,
-                           Xyleme = NA,
-                           Phloeme = NA,
-                           Transpiration = NA,
-                           saccharose = NA
-                         )
+#Results_jour = data.frame( Potentiel_Hydrique = NA,
+#                           P_Turgescence = NA,
+#                           P_Osmotique = NA,
+#                           Xyleme = NA,
+#                           Phloeme = NA,
+#                           Transpiration = NA,
+#                           saccharose = NA
+  Results_jour = data.frame(saccharose = NA,
+                            sucres_solubles = NA,
+                            acides_organiques = NA 
+                            )
 
 Results_jour_suivant = data.frame( Date = NA,
                                    Masse_Fruit = NA,
@@ -145,15 +148,18 @@ Transpiration_Fruit = surfruit * transpi.alpha * ro * (0.996 - (mean(humirela) /
   Eaupepu_new      = Eaupepu + Flux_Xyleme + Flux_Phloeme - Transpiration_Fruit  # Bilan hydrique
   Masse_Noyau_new  = 0.1167 * (MSpepu_new + Eaupepu_new)
   Masse_Fruit_new  = MSpepu_new + Eaupepu_new + Masse_Noyau_new  
-
+#---------------------------------- Sorties qualité ------------------
+  Results_jour$sucres_solubles =                     (msa+mg+mf)/ Eaupu  # somme glucose, sacchrose, fructose
+  Results_jour$acides_organiques =                     (mmal + mcit)/Eaupu # somme acide citrique et malique  
+  
 #----------------------------------- Resultats ---------------------------------
 
-Results_jour$Potentiel_Hydrique=              Potentiel_Hydrique_Fruit
-Results_jour$P_Turgescence=                   P_Turgescence
-Results_jour$P_Osmotique =                    P_Osmotique
-Results_jour$Xyleme =                         Flux_Xyleme
-Results_jour$Phloeme =                        Flux_Phloeme
-Results_jour$Transpiration =                  Transpiration_Fruit
+#Results_jour$Potentiel_Hydrique=              Potentiel_Hydrique_Fruit
+#Results_jour$P_Turgescence=                   P_Turgescence
+#Results_jour$P_Osmotique =                    P_Osmotique
+#Results_jour$Xyleme =                         Flux_Xyleme
+#Results_jour$Phloeme =                        Flux_Phloeme
+#Results_jour$Transpiration =                  Transpiration_Fruit
 Results_jour$saccharose =                     msa / Eaupu
 
 Results_jour_suivant$Date =                 Date + 1

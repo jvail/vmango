@@ -281,6 +281,7 @@ nbdescendants = estimate_nb_descendants(mtg,first_uc)
 
 module Tree(p) : scale = 1
 module GU(p), Inflorescence(p): scale = 2
+module Fruit(p)
 module A(p), GUEnd, Internode, Leaf, Inflorescence_bud : scale = 3
 module Information : scale = 1 
 module Pedicel, Flower
@@ -388,8 +389,6 @@ def set_dimension_parameters_GU(params):
   return params
 
 def generate_parameters_Inflo(inflo, guparam):
-    
-    
     bloom_date = mm.get_bloom_dates(mtg,inflo)        
     if not bloom_date: 
       gu_cycle = get_cycle(guparam.burst_date) if guparam.burst_date else 3
@@ -402,7 +401,9 @@ def generate_parameters_Inflo(inflo, guparam):
     return ParameterSet( mtgid=inflo,
                          
                          bloom_date = bloom_date,
-                         nb_fruits = nb_fruits)
+                         nb_fruits = nb_fruits,
+                         
+                         fruiting = False)
     
     
 def set_dimension_parameters_Inflo(params):
@@ -585,6 +586,7 @@ Inflorescence_bud(p):
             tts.accumulate(daytemp)
      p.length = growth_function(eInflorescence, p.growth_tts.ttsum, p.final_length)
      produce Inflorescence(p)
+     
 
 production:
 
@@ -612,10 +614,28 @@ GU(p) :
   gu_develop(p)
   
   
-Inflorescence(param): 
-  new_param=param.copy()
-  inflo_growth(new_param)
-  produce Inflorescence(new_param) 
+#Inflorescence(param): 
+#  new_param=param.copy()
+#  inflo_growth(new_param)
+#  produce Inflorescence(new_param) 
+
+Inflorescence(p):
+  if not hasattr(p,'fruit_appearance_date') or current_date < p.fruit_appearance_date:
+    p=p.copy()
+    inflo_growth(p)
+    produce Inflorescence(p)
+  else:
+    nproduce Inflorescence(p)
+    if p.fruiting == False:
+      p.fruiting = True
+      for i in xrange(p.nb_fruits):
+        nproduce [Fruit(ParameterSet(growth=p.fruit_growth, 
+        maturity_date=p.fruit_maturity_date,
+        appearance_date=p.fruit_appearance_date,
+        weight_min=p.fruit_weight_min,
+        nb_fruits=p.nb_fruits))]
+        #maturity_date = datetime.datetime.strptime('str(p.fruit_maturity_date.day)'+'-'+'str(p.fruit_maturity_date.month)'+'-'+'str(current_date.year)', '%d-%m-%y').date()
+        #str(bloom_date.day)+'/'+str(bloom_date.month)+'/'+str(bloom_date.year)
 
 
 group 2: # Decomposition
@@ -675,6 +695,7 @@ Information :
 
 
 Inflorescence(param):
+  if param.fruiting == False:
    def myratio(x):
       from math import exp
       return (log(x+1))/(log(2))
@@ -700,7 +721,7 @@ Inflorescence(param):
           for k in xrange(0,NbAxe2):
             pos = k/float(NbAxe2)
             nproduce InterpolateColors(13, pheno_color_inflo[pheno_stage+1] , n_pheno * (1-pos)/(2.1-max(0, n_pheno-1)) ) 
-            # On choisi la couleur en fonction du stade et de son avancement
+            # On choisit la couleur en fonction du stade et de son avancement
             nproduce F(internode_length,internode_length/5.) \(param.phyloangles[k])
             axelength = max(length/10., length * 0.687 - 3.97)*myratio(1-pos)
             nbwhorl = 6 + int(8 * (1-pos))
@@ -708,8 +729,8 @@ Inflorescence(param):
       else:
           nproduce InterpolateColors(pheno_color_flower[pheno_stage],pheno_color_flower[pheno_stage+1],pheno_rank) _(length/10) F(length,0.1)
    produce ]
-   
-   
+
+
 Pedicel(pos, age, length, nbwhorl, pheno_stage, pheno_rank):
   if length <= 1e-3: return
   flowering_index = 0
@@ -850,7 +871,16 @@ Internode(param,p):
 
 Leaf(paramL, paramI) --> gLeaf(paramL.position,  paramL.length, paramL.length /  paramL.final_length, paramI.gu_pheno_tts.stage, paramI.gu_pheno_tts.rank_in_stage(), paramI.leaf_growth_tts.ttsum)
 
-
+Fruit(p):
+  if current_date <= p.maturity_date:
+    MF = p.growth[current_date][0]
+    ep = (9.8*pow(MF,0.3398))*0.06
+    larg = (12.5*pow(MF,0.3203))*0.06
+    long = (22.3*pow(MF,0.2896))*0.06   # facteur 0.06 choisit arbitrairement
+    for i in xrange(nb_fruits):
+      nproduce ,(10)[+(90+(120/p.nb_fruits)*i) _(0.5)@Tp(0,0,-1) Elasticity(0.015) nF(long**2,0.1),(6) @g(Scaled(ep,larg,long, Sphere(1,32,32)))]
+  else:
+    nproduce ,(11) F(8,1)
 endlsystem
 
 ###### INITIALISATION ######
@@ -990,7 +1020,7 @@ def __initialiseContext__(context):
 	    ctrlPointList = pgl.Point3Array([(0, 0.107326, 1),(0.192635, 0.0975655, 1),(0.457142, 0.000244746, 1),(1, 0.026087, 1)]) , 
 	    )
 	radius.name = "radius"
-	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel 2'},[('Function',leafsize),('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5),('Function',leaflength),('Curve2D',petioleCurve),('Function',leafwidth),('Curve2D',leafpath),('Function',inflo_elasticity),('Curve2D',leafsection),('Function',leafdiam),('Function',inflo_radius),('Function',radius_base03),('Function',radius)])
+	panel_0 = ({'active': True, 'visible': False, 'name': 'Panel 2'},[('Function',leafsize),('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5),('Function',leaflength),('Curve2D',petioleCurve),('Function',leafwidth),('Curve2D',leafpath),('Function',inflo_elasticity),('Curve2D',leafsection),('Function',leafdiam),('Function',inflo_radius),('Function',radius_base03),('Function',radius)])
 	parameterset = [panel_0,]
 	context["__functions__"] = [('leafsize',leafsize),('leaflength',leaflength),('leafwidth',leafwidth),('inflo_elasticity',inflo_elasticity),('leafdiam',leafdiam),('inflo_radius',inflo_radius),('radius_base03',radius_base03),('radius',radius),]
 	context["__curves__"] = [('axis1',axis1),('axis2',axis2),('axis3',axis3),('axis4',axis4),('axis5',axis5),('petioleCurve',petioleCurve),('leafpath',leafpath),('leafsection',leafsection),]

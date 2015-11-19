@@ -54,7 +54,8 @@ DAB_sim = unique(Tab_horaire_fruit$DAB)
 
 Croissance = data.frame(Date = DATE[1], Masse_Fruit = MF_Init, MS_Fruit = MS_Debut_Sim,
                         Eaupepu = 0.4086 * (MF_Init - MS_Debut_Sim)^0.7428 + 0.5874 * (MF_Init - MS_Debut_Sim)^1.0584, Potentiel_Hydrique = NA,
-                        P_Turgescence = NA, P_Osmotique = NA, Xyleme = NA, Phloeme = NA, Transpiration = NA, Saccharose = NA)
+                        P_Turgescence = NA, P_Osmotique = NA, Xyleme = NA, Phloeme = NA, Transpiration = NA, Saccharose = NA, sucres_solubles = NA,
+                        acides_organiques = NA)
                         
 MS =          list( MS_Fruit =        MS_Debut_Sim,
                     Reserve_Feuille = 0.1 * 0.4387 * (41.83 + 77.41)/2,
@@ -100,7 +101,7 @@ MF = CROISSANCE_MF  ( Date =              unique(Table_Croissance$DATE),
                       aLf = 0.3732                                              # Parametres pour calculer la conductivité hydraulique (param papier 2007 * 24)
                      )
 
-  Croissance[i,5:11]  = MF[["Results_jour"]]
+  Croissance[i,5:13]  = MF[["Results_jour"]]
   Croissance[i+1,1:4] = MF[["Results_jour_suivant"]]
 
 if ( Croissance[i,"Saccharose"] >= 0.04)

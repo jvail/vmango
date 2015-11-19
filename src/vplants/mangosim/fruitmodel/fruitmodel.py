@@ -1,63 +1,57 @@
 import rpy2.robjects as r
 from os.path import join, abspath, dirname
 import os
-
-launchfile = 'myscript.R'
-
-def execute_r_script(script, **params):
-    launcher = file(launchfile,'w')
-    for var, value in params.items():
-        launcher.write(var+" <- "+ str(value)+'\n')
-    launcher.write('source "'+launchfile+'"\n')
-    launcher.write('fruitmodel(')
-    launcher.write(','.join([var+" = "+ str(value) for var, value in params.items()])
-    launcher.write(')\n\n')
-    command = 'python "'+__file__+'" --R'
-    print command
-    os.system(command)
-
-def launch_r():
-    R_HOME = os.environ["R_HOME"]
-    exe = os.path.join(R_HOME,'bin','Rscript.exe')
-    # exe = exe.replace(' ','\\ ')
-    assert os.path.exists(exe)
-    command = ''+exe +' '+launchfile+''
-    print command
-    os.system(command)
-    #raw_input()
+from datetime import *
+import os.path
 
 RScriptRepo = dirname(abspath(__file__))
 
-def runmodel():
-    script = file(U"sim.r",'r').read()
-    r.r(script)
+EXTERNALPROCESS = True
 
-def get_fruitmodel_functions():
-    script = file(join(RScriptRepo,"fruitmodel.r"),'r').read()
-    r.r(script)
-    return r.r('fruitmodel'), r.r('fruitgrowth')
+def execute_r_script(**params):
+    #for var, value in params.items():
+    #    launcher.write(var+" <- "+ repr(value)+'\n')
+    script = 'source("model_fruit_final.r")\n'
+    script += 'fruitmodel('
+    script += ','.join([var+" = "+ repr(value).replace("'",'"') for var, value in params.items()])
+    script += ')\n\n'
+    if EXTERNALPROCESS:
+      launch_r(script)
+    else:
+      launch_rpy(script)
 
-def test():
-    fruitmodel, fruitgrowth = get_fruitmodel_functions()
-    fruitdata = fruitmodel(1, '10/8/03', 0.2, 0.5)
-    for t in xrange(100):
-        fruitdata = fruitgrowth(fruitdata)
-    print fruitdata
+def launch_r(script):
+    launchfile = 'myscript2.R'
+    launcher = file(launchfile,'w')
+    launcher.write(script)
+    launcher.close()
+    
+    cwd = os.getcwd()
+    os.chdir(RScriptRepo)
+    R_HOME = os.environ["R_USER"]
+    exe = os.path.join(R_HOME,'bin','Rscript.exe')
+    assert os.path.exists(exe)
+    command = '"'+exe +'" '+launchfile+''
+    print command
+    os.system(command)
+    os.chdir(cwd)
 
-def get_fruitmodel_function_test():
-    script = file(join(RScriptRepo,"model_fruit_final.r"),'r').read()
+def launch_rpy(script):
+    return r.r(script)
+
+def get_fruitmodel_function():
     def fruitmodel(**params):
-        execute_r_script(script, **params)
+        execute_r_script(**params)
     return fruitmodel
-    #r.r(script)
-    #return r.r('fruitmodel')
 
 
-def applymodel(mtg, cycle, fruit_distance = 3):
+from vplants.mangosim.tools import *
+
+def applymodel(mtg, cycle, fruit_distance = 4, dump = True):
     from pandas import read_csv
     print 'apply fruit model'
     print " * Load R function"
-    fruitmodel = get_fruitmodel_function_test()
+    fruitmodel = get_fruitmodel_function()
 
     print " * Compute fruiting structures"
     import fruitingstructure as fs; reload(fs)
@@ -65,31 +59,62 @@ def applymodel(mtg, cycle, fruit_distance = 3):
 
     print " * Compute property of the structures"
     params = mtg.property('p')
+    somme_nb_fruits = 0
+    somme_masse_fruit = 0
+    somme_sucres_solubles = 0
+    somme_acides_organiques = 0
+
+    if dump:
+        outdir = 'fruitmodel-output-cycle-'+str(cycle)+'-fdist-'+str(fruit_distance)
+        if not os.path.exists(outdir) : os.makedirs(outdir)
+        dump_obj(mtg, 'fruitingtree.pkl', outdir) 
+        dump_obj(fruiting_structures, 'fruitingbranches.pkl', outdir)
     for inflos, gus in fruiting_structures:
         bloom_dates = [params[inflo].bloom_date for inflo in inflos]
         leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus])
         nb_fruits   = sum([params[inflo].nb_fruits for inflo in inflos])
         print nb_fruits
-
-        bloom_date  = bloom_dates[0]
+        somme_nb_fruits += nb_fruits
+        bloom_date  = bloom_dates[0] 
+        bloom_date_date = bloom_date 
         bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/'+str(bloom_date.year)
         # call fruit model in r 
+        tempfile = os.path.join(RScriptRepo,"resultats.csv")
+        if os.path.exists(tempfile): os.remove(tempfile)
         result = fruitmodel(bloom_date=bloom_date, nb_fruits=nb_fruits, leaf_nbs=leaf_nbs)
-        result = read_csv("resultats.csv")
-        #print result["Masse_Fruit"]
-        #print type(result)
-        #print dir(result)
-        #print result["Date"]
-        #print result["Masse_Fruit"]
-        fruit_growth = dict(zip(result["Date"],result["Masse_Fruit"]))
+        
+        def wait_for_file(fname, timeout = 5):
+          import time
+          t = time.time()
+          while abs(t - time.time()) < timeout and not os.path.exists(fname) : pass
+          return os.path.exists(fname)
+         
+        assert wait_for_file(tempfile)
+        date_parser = lambda d : datetime.strptime(d, '%Y-%m-%d')
+        result = read_csv(os.path.join(RScriptRepo,"resultats.csv"), parse_dates=['Date'], date_parser=date_parser)
+        if dump:
+          import shutil
+          shutil.copy(tempfile,os.path.join(outdir, 'meanfruit-'+'-'.join(map(str,inflos)))+'.csv')
+        
+        dates = result["Date"]
+        dates = map(lambda d:d.to_datetime(),dates)
+        newyear = bloom_date_date.year
+        #dates = [datetime(newyear, d.month, d.day) for d in dates]
+        dates = [date(d.year+1, d.month, d.day) for d in dates]
+        property = zip(result["Masse_Fruit"], result["sucres_solubles"],  result["acides_organiques"])
+        fruit_growth = dict(zip(dates,property))
+        #print type(fruit_growth.keys()[0])
+        #assert type(fruit_growth.keys()[0])==datetime
         
         for inflo in inflos:
-            params[inflo].fruit_appearance_date = min(result["Date"])
-            params[inflo].fruit_maturity_date   = max(result["Date"])
-            params[inflo].fruit_masses          = fruit_growth
-        
+            params[inflo].fruit_appearance_date = min(dates)
+            params[inflo].fruit_maturity_date   = max(dates)
+            params[inflo].fruit_weight_min      = min(result["Masse_Fruit"])
+            params[inflo].sucres_solubles      = max(result["sucres_solubles"])
+            params[inflo].acides_organiques    = max(result["acides_organiques"])
+            params[inflo].fruit_growth          = fruit_growth
+             
     return fruiting_structures
-
 
 def color_structures(fruiting_structures, mtg, scene):
     import matplotlib.pyplot as plt

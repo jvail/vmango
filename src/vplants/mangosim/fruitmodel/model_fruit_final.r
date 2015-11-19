@@ -7,7 +7,7 @@ fruitmodel = function(bloom_date, nb_fruits, leaf_nbs)
 {
                                                           
 #********************
-
+setwd(dir="C:/Users/Severine/Documents/mangosim/src/vplants/mangosim/fruitmodel")
 LF = leaf_nbs/nb_fruits
 MS_Init = 0.97 * rnorm(1,mean=13.9,sd=4.1) + 0.03 * rnorm(1,mean=29.2,sd=0.66)   # bimodale de ML
 k1runquant = read.table("k1runquant.txt", header=T, sep="\t")
@@ -104,9 +104,9 @@ Res  = CROISSANCE_MF_TEMPERATURE (
 }  else {
 # Ouverture des fonctions nécessaires
 source("fct synthese temperature et mf et ms_simp.r")
-source("fonction_croissance_ms_simp.r")
+source("Fonction_Croissance_MS_simp.r")
 #source(paste(Repertoire_Fonction, "Fonction_Model_Ethylene.r", sep=""))
-source("fonction_croissance_mf_simp.r")
+source("Fonction_Croissance_MF_simp.r")
 
 #### attention les données sont celles de 2002 ####
 Meteo =   read.table ("rayostpierre2002.csv", sep=";", dec=".", header=T)
