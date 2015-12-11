@@ -3,8 +3,8 @@ from datetime import datetime, date
 __temperatures = None
 __first_day = None
 
-def init_temperatures(filename = 'meteo-BMA.csv'):
-    from vplants.mangosim.util_path import djoin
+def init_temperatures(filename = 'environment/meteo-BMA.csv'):
+    from vplants.mangosim.util_path import data
     from pandas import read_csv
 
     global  __temperatures, __first_day
