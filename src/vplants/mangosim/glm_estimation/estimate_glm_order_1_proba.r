@@ -21,6 +21,61 @@ get_vglm_AIC = function(myglm){
     return(AIC)
 }
 
+# Fonction qui donne les effectifs par combinaison de modalités de facteurs dans les données initiales
+ effectifs = function(myglm, data, subset){
+    factor_signif <- colnames(myglm$model)[2:length(colnames(myglm$model))]      # facteurs significatifs retenus
+    combin <- data[subset, factor_signif]                            # fichier des combinaisons de modalités des facteurs signifs pour les observations
+    nb <- as.data.frame(ftable(combin))
+    return (nb)
+}
+    
+ 
+# Fonction qui change les valeurs des modalités des facteurs dans un tableau d'effectifs en caractères 
+# et construit une variable code (combcode) qui est la combinaison des modalités des facteurs pour chaque ligne
+ chgt_character = function(mydata){
+     mydata[,1:(ncol(mydata)-1)] <- lapply(mydata[,1:(ncol(mydata)-1)], function(x) {             
+                           x <- as.character(x)              # transformation des valeurs en caractères (sinon il prend les niveaux de facteurs et non les valeurs)
+                           x
+                                                                                    })
+                           
+     if(ncol(mydata)-1 == 1){
+                       mydata$codecomb <- mydata[,1]
+                            }
+     else if(ncol(mydata)-1 == 2){
+                       mydata$codecomb <- paste(mydata[,1], mydata[,2], sep="-")
+                            }
+     else if(ncol(mydata)-1 == 3){
+                       mydata$codecomb <- paste(mydata[,1], mydata[,2], mydata[,3], sep="-")
+                            }
+     else if(ncol(mydata)-1 == 4){
+                       mydata$codecomb <- paste(mydata[,1], mydata[,2], mydata[,3], mydata[,4], sep="-")
+                            }
+     else if(ncol(mydata)-1 == 5){
+                       mydata$codecomb <- paste(mydata[,1], mydata[,2], mydata[,3], mydata[,4], mydata[,5], sep="-")
+                            }
+     else if(ncol(mydata)-1 == 6){
+                       mydata$codecomb <- paste(mydata[,1], mydata[,2], mydata[,3], mydata[,4], mydata[,5], mydata[,6], sep="-")
+                            }
+     
+    return (mydata)
+}
+
+
+determine_proba_and_effectifs = function(myglm, data, subset){
+   # probas estimées par combinaison de modalités des facteurs retenus
+   probtable <- determine_table_prob_from_glm(myglm)
+   probtable <- chgt_character(probtable)
+ 
+   # effectifs des données dans chaque modalité croisée des facteurs retenus
+   nbelements <- effectifs(myglm, data=data, subset=subset)
+   nbelements <- chgt_character(nbelements)
+ 
+   # rajout des effectifs dans la table des probas estimées par le glm
+   ind <- match(probtable$codecomb, nbelements$codecomb, nomatch=NA)
+   probtable$nb <- nbelements$Freq[ind]
+
+   return (probtable)
+}
 
 determine_table_prob_from_glm = function(myglm){
 
@@ -103,31 +158,10 @@ determine_table_prob_from_glm = function(myglm){
         }
     }
 
-    # pour completer en fonction de la date de la mere. on rajoute des lignes
-    # if("Burst_Date" %in% variables){
-    #     other_level_Burst_Date = level_all_Burst_Date[!level_all_Burst_Date %in% level_Burst_Date]
-    #     if (length(other_level_Burst_Date) > 0) {
-    #         print("other_level_Burst_Date")
-    #         print(other_level_Burst_Date)
-    #         other_produit_cartesien = expand.grid(level_Tree_Fruit_Load, other_level_Burst_Date,level_Position_A,level_Position_Ancestor_A,level_Nature_Ancestor_F,level_Nature_F)
-    #         names(other_produit_cartesien) = c("Tree_Fruit_Load","Burst_Date","Position_A","Position_Ancestor_A","Nature_Ancestor_F","Nature_F")
-    #         other_data_probs = unique(other_produit_cartesien[variables])
-    #         probs_null = rep(0,length(other_data_probs[,1]))
-    #         if( class(myglm)[1]=="vglm"){
-    #             for(i in 1:length(colnames(probs)) ){
-    #                 other_data_probs[colnames(probs)[i] ] = 0 #1./length(colnames(probs))
-    #             }
-    #         }
-    #         else
-    #         {
-    #             other_data_probs$probas = probs_null
-    #         }
-    #         data_probs = rbind(data_probs,other_data_probs)
-    #     }
-    # }
-
     return(data_probs)
 }
+
+
 
 writing_glm_tables = function(vegetative_burst,
                               has_apical_gu, 
@@ -466,7 +500,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                                                                         Position_A + 
                                                                         Position_Ancestor_A + 
                                                                         Nature_Ancestor_F,
-                                                  family = cumulative(parallel=T) ,data=data, subset = index_bursted.all)
+                                                  family = cumulative(parallel=TRUE) ,data=data, subset = index_bursted.all)
     if (verbose >= 3) {
         summary(complete_vglm.burst_date_children.all) # Log-likelihood: 
         print(paste("AIC:",get_vglm_AIC(complete_vglm.burst_date_children.all)))
@@ -482,7 +516,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                                                                                              Position_A + 
                                                                                              Position_Ancestor_A + 
                                                                                              Nature_Ancestor_F,
-                                                family = cumulative(parallel=T), data=data, subset=index_bursted.trees[[tree_name]])
+                                                family = cumulative(parallel=TRUE), data=data, subset=index_bursted.trees[[tree_name]])
             #AIC.vglm.burst_date_children.tree[[tree_name]] = get_vglm_AIC(complete_vglm.burst_date_children.tree[[tree_name]])
         }
     }
@@ -511,7 +545,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                                                                         Position_A + 
                                                                         Position_Ancestor_A + 
                                                                         Nature_Ancestor_F,
-                                                  family = cumulative(parallel=T) ,data=data, subset = index_bursted.all)
+                                                  family = cumulative(parallel=TRUE) ,data=data, subset = index_bursted.all)
     if (verbose >= 3) {
         summary(complete_vglm.burst_delta_date_children.all) # Log-likelihood: 
         print(paste("AIC:",get_vglm_AIC(complete_vglm.burst_delta_date_children.all)))
@@ -527,7 +561,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                                                                                              Position_A + 
                                                                                              Position_Ancestor_A + 
                                                                                              Nature_Ancestor_F,
-                                                family = cumulative(parallel=T), data=data, subset=index_bursted.trees[[tree_name]])
+                                                family = cumulative(parallel=TRUE), data=data, subset=index_bursted.trees[[tree_name]])
             #AIC.vglm.burst_date_children.tree[[tree_name]] = get_vglm_AIC(complete_vglm.burst_date_children.tree[[tree_name]])
         }
     }
@@ -697,7 +731,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                                                                   Position_A + 
                                                                   Position_Ancestor_A + 
                                                                   Nature_Ancestor_F,
-            family = cumulative(parallel=T) ,data=data, subset = index_flowering.all)
+            family = cumulative(parallel=TRUE) ,data=data, subset = index_flowering.all)
         if (verbose >= 3) {
             summary(complete_vglm.flowering_week.all) # Log-likelihood: 
             print(paste("AIC:",get_vglm_AIC(complete_vglm.flowering_week.all)))
@@ -712,7 +746,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
                                                                                         Position_A + 
                                                                                         Position_Ancestor_A + 
                                                                                         Nature_Ancestor_F,
-                            family = cumulative(parallel=T), data=data, subset=index_flowering.trees[[tree_name]])
+                            family = cumulative(parallel=TRUE), data=data, subset=index_flowering.trees[[tree_name]])
                 AIC.vglm.flowering_week.trees[[tree_name]] = get_vglm_AIC(complete_vglm.flowering_week.trees[[tree_name]])
             }
         }
@@ -1212,12 +1246,12 @@ determining_glm_tables_between_cycle = function(data, year, with_burstdate = FAL
                                                                             Burst_Date + 
                                                                             Position_A + 
                                                                             Nature_F,
-                                                      family = cumulative(parallel=T) ,data=data, subset = index_bursted.all)
+                                                      family = cumulative(parallel=TRUE) ,data=data, subset = index_bursted.all)
     else
         complete_vglm.burst_date_children.all = vglm( Burst_Date_Children ~ Tree_Fruit_Load + 
                                                                             Position_A + 
                                                                             Nature_F,
-                                                      family = cumulative(parallel=T) ,data=data, subset = index_bursted.all)
+                                                      family = cumulative(parallel=TRUE) ,data=data, subset = index_bursted.all)
 
     if (verbose >= 3) {
         summary(complete_vglm.burst_date_children.all) # Log-likelihood: 
@@ -1234,11 +1268,11 @@ determining_glm_tables_between_cycle = function(data, year, with_burstdate = FAL
                 complete_vglm.burst_date_children.tree[[tree_name]] = vglm(Burst_Date_Children ~ Burst_Date + 
                                                                                                  Position_A + 
                                                                                                  Nature_F,
-                                                        family = cumulative(parallel=T), data=data, subset=index_bursted.trees[[tree_name]])
+                                                        family = cumulative(parallel=TRUE), data=data, subset=index_bursted.trees[[tree_name]])
             else
                 complete_vglm.burst_date_children.tree[[tree_name]] = vglm(Burst_Date_Children ~ Position_A + 
                                                                                                  Nature_F,
-                                                        family = cumulative(parallel=T), data=data, subset=index_bursted.trees[[tree_name]])
+                                                        family = cumulative(parallel=TRUE), data=data, subset=index_bursted.trees[[tree_name]])
             #AIC.vglm.burst_date_children.tree[[tree_name]] = get_vglm_AIC(complete_vglm.burst_date_children.tree[[tree_name]])
         }
     }
