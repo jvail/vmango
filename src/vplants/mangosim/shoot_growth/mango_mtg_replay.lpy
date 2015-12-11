@@ -629,11 +629,10 @@ Inflorescence(p):
     if p.fruiting == False:
       p.fruiting = True
       for i in xrange(p.nb_fruits):
-        nproduce [Fruit(ParameterSet(growth=p.fruit_growth, 
+        nproduce [+(90+(120/p.nb_fruits)*i) _(0.5)Fruit(ParameterSet(growth=p.fruit_growth, 
         maturity_date=p.fruit_maturity_date,
         appearance_date=p.fruit_appearance_date,
-        weight_min=p.fruit_weight_min,
-        nb_fruits=p.nb_fruits))]
+        weight_min=p.fruit_weight_min))]
         #maturity_date = datetime.datetime.strptime('str(p.fruit_maturity_date.day)'+'-'+'str(p.fruit_maturity_date.month)'+'-'+'str(current_date.year)', '%d-%m-%y').date()
         #str(bloom_date.day)+'/'+str(bloom_date.month)+'/'+str(bloom_date.year)
 
@@ -729,6 +728,8 @@ Inflorescence(param):
       else:
           nproduce InterpolateColors(pheno_color_flower[pheno_stage],pheno_color_flower[pheno_stage+1],pheno_rank) _(length/10) F(length,0.1)
    produce ]
+  elif param.fruiting == True:
+    nproduce ,(11) F(8,1)
 
 
 Pedicel(pos, age, length, nbwhorl, pheno_stage, pheno_rank):
@@ -877,8 +878,7 @@ Fruit(p):
     ep = (9.8*pow(MF,0.3398))*0.06
     larg = (12.5*pow(MF,0.3203))*0.06
     long = (22.3*pow(MF,0.2896))*0.06   # facteur 0.06 choisit arbitrairement
-    for i in xrange(nb_fruits):
-      nproduce ,(10)[+(90+(120/p.nb_fruits)*i) _(0.5)@Tp(0,0,-1) Elasticity(0.015) nF(long**2,0.1),(6) @g(Scaled(ep,larg,long, Sphere(1,32,32)))]
+    nproduce ,(10)[@Tp(0,0,-1) Elasticity(0.01) nF(long**2,0.1),(6) @g(Scaled(ep,larg,long, Sphere(1,32,32)))]
   else:
     nproduce ,(11) F(8,1)
 endlsystem
