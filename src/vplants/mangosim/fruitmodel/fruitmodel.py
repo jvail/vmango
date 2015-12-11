@@ -14,7 +14,7 @@ def execute_r_script(**params):
 out = file("fruitmodel.log",open="wt")
 sink(file = out, split = FALSE)
 
-source("model_fruit_final.r")
+source("fruit_model_main.r")
 fruitmodel({})
 
 sink()
@@ -30,7 +30,7 @@ def launch_r(script):
     cwd = os.getcwd()
     os.chdir(RScriptRepo)
     
-    launchfile = 'myscript2.R'
+    launchfile = 'modellauncher.r'
     launcher = file(launchfile,'w')
     launcher.write(script)
     launcher.close()

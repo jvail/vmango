@@ -10,7 +10,7 @@ fruitmodel = function(bloom_date, nb_fruits, leaf_nbs)
 #setwd(dir="C:/Users/Severine/Documents/Develop/mangosim/src/vplants/mangosim/fruitmodel")
 LF = leaf_nbs/nb_fruits
 MS_Init = 0.97 * rnorm(1,mean=13.9,sd=4.1) + 0.03 * rnorm(1,mean=29.2,sd=0.66)   # bimodale de ML
-k1runquant = read.table("k1runquant.txt", header=T, sep="\t")
+k1runquant = read.table("../../../../share/environment/k1runquant.txt", header=T, sep="\t")
 envirlum <- cbind(k1runquant[,"q10"],k1runquant[,"q25"],k1runquant[,"q50"],k1runquant[,"q75"],k1runquant[,"q90"])
 k1_fruit <- envirlum[,sample(5,1,T)]                                            # indice pour choisir un des 5 environnements lumineux à chaque tour
 
@@ -103,16 +103,16 @@ Res  = CROISSANCE_MF_TEMPERATURE (
                         )
 }  else {
 # Ouverture des fonctions nécessaires
-source("fct synthese temperature et mf et ms_simp.r")
-source("Fonction_Croissance_MS_simp.r")
+source("fruit_growth.r")
+source("fruit_dry_mass_growth.r")
 #source(paste(Repertoire_Fonction, "Fonction_Model_Ethylene.r", sep=""))
-source("Fonction_Croissance_MF_simp.r")
+source("fruit_fresh_mass_growth.r")
 
 #### attention les données sont celles de 2002 ####
 Meteo =   read.table ("../../../../share/environment/rayostpierre2002.csv", sep=";", dec=".", header=T)
 Meteo$Date = strptime(Meteo$Date, "%d/%m/%Y %H:%M")                             #rayonnement station météo Ligne Paradis en J cm-2 
 Meteo$DATE = as.Date(Meteo$Date, "%d/%m/%Y")
-Meteo_journalier <- read.table ("tempstpierre2002.csv", sep=";", dec=".", header=T)
+Meteo_journalier <- read.table ("../../../../share/environment/tempstpierre2002.csv", sep=";", dec=".", header=T)
 Meteo_journalier$DATE = as.Date(Meteo_journalier$DATE, "%d/%m/%Y")
 #essai_jour = as.Date("19/08/02", "%d/%m/%y")
 
