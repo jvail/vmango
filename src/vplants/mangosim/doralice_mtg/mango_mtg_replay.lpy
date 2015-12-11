@@ -50,6 +50,34 @@ def EndEach():
   current_cycle = get_cycle(current_date)
 
 
+export_fname = 'replay_mango.bmtg'
+resultmtg = None
+
+def End(lstring,lscene):
+  from cPickle import dump,HIGHEST_PROTOCOL
+  global resultmtg
+  if EXPORT_TO_MTG:
+    resultmtg = export_to_mtg(lstring, lscene)
+    if SAVE_MTG:
+      # write it in the file
+      print 'Export result in',repr(export_fname)
+      dump(resultmtg,open(export_fname,'wb'),HIGHEST_PROTOCOL)
+
+
+def export_to_mtg(lstring, lscene):
+  from openalea.mtg.io import axialtree2mtg
+  parameters = {}
+  scales = {}
+  # Name of the modules to export
+  modules_to_export = ['Tree', 'GU','Inflorescence']
+  params_to_export = [['treename','method','estimation','loading','variety','within_delay_method','seed'],['burst_date','cycle'],['bloom_date','cycle']]
+  scales = [1,2,2,2]
+  # Convert lstring into mtg
+  mtg = axialtree2mtg(lstring,
+                      scale = dict(zip(modules_to_export,scales)),
+                      scene = None,
+                      parameters = dict(zip(modules_to_export,params_to_export)))
+  return mtg
 
 def estimate_radius(nbdescendants):
   return 0.02*pow(nbdescendants, 0.35)
@@ -166,7 +194,7 @@ A( p ):
 
 Inflorescence(param):
   if param.nb_fruits > 0 and  (current_date - param.bloom_date).days >= 60:
-    print 'change inflo to fruit',param.mtgid, param.bloom_date, (current_date - param.bloom_date).days
+    #print 'change inflo to fruit',param.mtgid, param.bloom_date, (current_date - param.bloom_date).days
     for i in xrange(param.nb_fruits):
       nproduce [Fruit(ParameterSet(inflo_bloom_date= param.bloom_date))]
     produce
@@ -272,7 +300,7 @@ def __initialiseContext__(context):
 	Color_7 = pgl.Material("Color_7" , ambient = (57,65,12) , diffuse = 1.66154 , )
 	Color_7.name = "Color_7"
 	context.turtle.setMaterial(7,Color_7)
-	scalars = [('TREE', 'Integer', 4, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True)]
+	scalars = [('TREE', 'Integer', 4, 0, 4), ('Geometry', 'Category'), ('LEAFY', 'Bool', False), ('Elasticity', 'Float', 0.03, 0.0, 1.0, 2), ('TIMEBAR', 'Bool', True), ('EXPORT_TO_MTG', 'Bool', True), ('SAVE_MTG', 'Bool', True)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]

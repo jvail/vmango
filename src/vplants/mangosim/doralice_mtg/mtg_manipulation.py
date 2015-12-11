@@ -337,12 +337,12 @@ def select_trees(mtg, loaded= None, variety = "cogshall"):
             'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
   """
   if loaded is None:
-      if variety == "all": return get_all_trees(mtg)
+      if variety == "all" or variety is None: return get_all_trees(mtg)
       else: return [i for i,v in mtg.property(VarietyPropertyName).items() if v == variety]
   else : 
       load = mtg.property(LoadingPropertyName)
       loaded_propvalue = LoadedValue if loaded == eLoaded else NotLoadedValue
-      if variety == "all": 
+      if variety == "all" or variety is None: 
             return [i for i in get_all_trees(mtg) if load[i] == loaded_propvalue]
       else: 
             return [i for i,v in mtg.property(VarietyPropertyName).items() if v == variety and load[i] == loaded_propvalue]
@@ -402,12 +402,12 @@ def get_all_gus_of_variety(mtg, variety = "cogshall", loaded = None):
     variety : a string, the choice of variety is : 
             'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
   """
-  gus_of_cycle = []
+  assert loaded in [None, eLoaded, eNotLoaded]
+  gus = []
   trees = select_trees(mtg, loaded, variety)
   for tree in trees :
-    for cycle in [3,4,5]:
-        gus_of_cycle += get_all_gus_of_tree_at_cycle(mtg, tree, cycle)
-  return gus_of_cycle
+        gus += get_all_gus_of_tree(mtg, tree)
+  return gus
 
 @use_global_mtg
 def get_sorted_gus(mtg, cycles = [4,5], loaded = [eLoaded,eNotLoaded], varieties = ['cogshall']):
@@ -682,129 +682,12 @@ def check_burst_dates(mtg, cycles = [4,5], variety = 'cogshall'):
         plot_histo([Month[m] for m in histo_date[0].keys()],list(reversed([hd.values() for hd in histo_date])),'Burst date of gu of order '+str(order))
 
 
-def __strip_histo(histo):
-    # We remove the first and last part of the histo if it is equal to 0.
-    keyvalues = histo.keys()
-    for d in keyvalues:
-        if histo[d] == 0:
-            del histo[d]
-        else : break
-    if len(histo) > 0:
-        for d in reversed(keyvalues):
-            if histo[d] == 0:
-                del histo[d]
-            else : break
-
-def burst_date_cycle_distribution(mtg, ucs, strip = True):
-    from vplants.mangosim.util_date import Month
-    Month = dict([(i,v) for v,i in Month.items()])
-    from collections import OrderedDict
-    histo_date = OrderedDict([(i,0) for i in xrange(3,6)])
-    for uc in ucs:
-        if has_burst_date(mtg,uc):
-            c = get_cycle(get_burst_date(mtg,uc))
-            histo_date[c] += 1
-    if strip : __strip_histo(histo_date)
-    return histo_date
-
-def date_month_distribution(mtg, ucs, strip = True, date_accessor = get_burst_date):
-    from vplants.mangosim.util_date import Month
-    Month = dict([(i,v) for v,i in Month.items()])
-    from collections import OrderedDict
-    daterange = monthdate_range(cycle_end(3),cycle_begin(6))
-    histo_date = OrderedDict([(d,0) for d in daterange])
-    for uc in ucs:
-        try:
-            d = date_accessor(mtg,uc)
-            m = d.month
-            y = d.year
-            histo_date[(m,y)] += 1
-        except : pass
-    if strip : __strip_histo(histo_date)
-    return histo_date
-
-def date_week_distribution(mtg, ucs, strip = True, date_accessor = get_burst_date):
-    from vplants.mangosim.util_date import Month
-    from collections import OrderedDict
-    histo_date = dict()
-    for uc in ucs:
-        try:
-            d = date_accessor(mtg,uc).isocalendar()
-            w = d[1]
-            y = d[0]
-            histo_date[(w,y)] = histo_date.get((w,y),0) + 1
-        except : pass
-    dates = histo_date.keys()
-    dates.sort(cmp=lambda a,b: cmp((a[1],a[0]),(b[1],b[0])))
-    sorted_histo_date = OrderedDict([(d,histo_date[d]) for d in dates])
-    return sorted_histo_date
-
-
-#@use_global_mtg
-def estimate_burst_date_distribution(mtgs = None, variety = 'cogshall', reference = True, exclude = None, consider = None):
-    from vplants.mangosim.util_date import Month
-    Month = dict([(i,v) for v,i in Month.items()])
-    histo_date = []
-    if type(mtgs) == MTG: mtgs = [mtgs] 
-    for mtg in mtgs:
-        ucs =  get_all_gus_of_variety(mtg, None, variety)
-        if exclude: ucs = [uc for uc in ucs if not exclude(mtg,uc)]
-        if consider: ucs = [uc for uc in ucs if consider(mtg,uc)]
-        histo_date.append(date_month_distribution(mtg, ucs, False ))
-    if reference:
-        currentmtgstyle = __MtgStyle
-        setMtgStyle(eMeasuredMtg)
-        mtg = get_mtg()
-        ucs =  get_all_gus_of_variety(mtg, None, variety)
-        if exclude: ucs = [uc for uc in ucs if not exclude(uc)]
-        if consider: ucs = [uc for uc in ucs if consider(uc)]
-        ref_histo_date = date_month_distribution(mtg, ucs, False )
-        setMtgStyle(currentmtgstyle)
-
-        return [Month[m]+'-'+str(y) for m,y in histo_date[0].keys()],[h.values() for h in histo_date], ref_histo_date.values()
-    else:
-        return [Month[m]+'-'+str(y) for m,y in histo_date[0].keys()],[h.values() for h in histo_date]
-
-
-def estimate_bloom_date_distribution(mtgs = None, variety = 'cogshall', reference = True, showallweeks = False):
-    from vplants.mangosim.util_date import Month
-    Month = dict([(i,v) for v,i in Month.items()])
-    histo_date = []
-    if variety is None:
-        inflo_selector = lambda mtg : mtg.property(BloomPropertyName).keys()
-    else:
-        inflo_selector = lambda mtg : get_all_inflo_of_variety(mtg, None, variety)
-
-    if type(mtgs) == MTG: mtgs = [mtgs] 
-    def strdate(w,y) : 
-        from datetime import datetime
-        d = datetime.strptime(str(y)+' '+str(w)+' 1', '%Y %W %w')
-        return str(d.day)+'-'+str(d.month)+'-'+str(y)
-    for mtg in mtgs:
-        histo_date.append(date_week_distribution(mtg,inflo_selector(mtg), False, get_bloom_date ))
-    if reference:
-        currentmtgstyle = __MtgStyle
-        setMtgStyle(eMeasuredMtg)
-        mtg = get_mtg()
-        if variety is None:
-            inflo_selector = lambda mtg : mtg.property(BloomPropertyName).keys()
-        ref_histo_date = date_week_distribution(mtg, inflo_selector(mtg), False, get_bloom_date )
-        setMtgStyle(currentmtgstyle)
-
-        return [str(w)+'/'+strdate(w,y) for w,y in histo_date[0].keys()],[h.values() for h in histo_date], ref_histo_date.values()
-    else:
-        return [str(w)+'/'+strdate(w,y) for w,y in histo_date[0].keys()],[h.values() for h in histo_date]
-
 if __name__ == '__main__' :
-    setMtgStyle(eMeasuredMtg)
-    months,values = estimate_bloom_date_distribution([get_mtg()], 'cogshall', reference = False)
-    from vplants.mangosim.glm_simulation.plot_distribution import plot_histo
-    plot_histo(months,values,'Distribution of bloom date of inflorescences')
     # check_cycle_and_burst_date_coherence()
     # check_terminal3_producing_at_cycle5()
     # check_terminal_flowering_has_no_apical()
     # check_if_has_lateral_has_apical()
-    # check_apical_ratio_in_first_layer()
+    check_apical_ratio_in_first_layer()
     pass
 
 
