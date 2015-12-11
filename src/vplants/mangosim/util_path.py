@@ -7,6 +7,9 @@ except:
     share_dir = join(dirname(__file__),'..','..','..','share')
 share_dir = abspath(share_dir)
 
+def data(fname): 
+    return join(share_dir, fname)
+
 from vplants.mangosim.state import *
 
 
