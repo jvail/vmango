@@ -1,4 +1,3 @@
-import rpy2.robjects as r
 from os.path import join, abspath, dirname
 import os
 from datetime import *
@@ -11,33 +10,43 @@ EXTERNALPROCESS = True
 def execute_r_script(**params):
     #for var, value in params.items():
     #    launcher.write(var+" <- "+ repr(value)+'\n')
-    script = 'source("model_fruit_final.r")\n'
-    script += 'fruitmodel('
-    script += ','.join([var+" = "+ repr(value).replace("'",'"') for var, value in params.items()])
-    script += ')\n\n'
+    script = '''
+out = file("fruitmodel.log",open="wt")
+sink(file = out, split = FALSE)
+
+source("model_fruit_final.r")
+fruitmodel({})
+
+sink()
+close(out)
+'''.format(','.join([var+" = "+ repr(value).replace("'",'"') for var, value in params.items()]))
+    #print script
     if EXTERNALPROCESS:
       launch_r(script)
     else:
       launch_rpy(script)
 
 def launch_r(script):
+    cwd = os.getcwd()
+    os.chdir(RScriptRepo)
+    
     launchfile = 'myscript2.R'
     launcher = file(launchfile,'w')
     launcher.write(script)
     launcher.close()
     
-    cwd = os.getcwd()
-    os.chdir(RScriptRepo)
     R_HOME = os.environ["R_USER"]
     exe = os.path.join(R_HOME,'bin','Rscript.exe')
     assert os.path.exists(exe)
+    #print os.getcwd()
     command = '"'+exe +'" '+launchfile+''
-    print command
+    #print command
     os.system(command)
     os.chdir(cwd)
 
 def launch_rpy(script):
-    return r.r(script)
+  import rpy2.robjects as r
+  return r.r(script)
 
 def get_fruitmodel_function():
     def fruitmodel(**params):
@@ -69,11 +78,14 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True):
         if not os.path.exists(outdir) : os.makedirs(outdir)
         dump_obj(mtg, 'fruitingtree.pkl', outdir) 
         dump_obj(fruiting_structures, 'fruitingbranches.pkl', outdir)
+
+    fruit_structures = []
     for inflos, gus in fruiting_structures:
         bloom_dates = [params[inflo].bloom_date for inflo in inflos]
         leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus])
         nb_fruits   = sum([params[inflo].nb_fruits for inflo in inflos])
         print nb_fruits
+        fruit_structures.append((len(inflos),nb_fruits, inflos, [params[inflo].nb_fruits for inflo in inflos] ))
         somme_nb_fruits += nb_fruits
         bloom_date  = bloom_dates[0] 
         bloom_date_date = bloom_date 
@@ -114,6 +126,13 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True):
             params[inflo].acides_organiques    = max(result["acides_organiques"])
             params[inflo].fruit_growth          = fruit_growth
              
+    if dump:
+        fstream = open(os.path.join(outdir,'fruitstructure.csv'),'w')
+        fstream.write('NbInflos\tNbFruits\tFilename\tIdsInflos_NbFruitsPerInflos\n')
+        for nbinflos, nbfruits, inflos, nbfruitsperinflo in fruit_structures:
+            fstream.write(str(nbinflos)+'\t'+str(nbfruits)+'\t'+'meanfruit-'+'-'.join(map(str,inflos))+'\t'+'\t'.join(map(str,inflos))+'\t'+'\t'.join(map(str,nbfruitsperinflo))+'\n' )
+        fstream.close()
+
     return fruiting_structures
 
 def color_structures(fruiting_structures, mtg, scene):

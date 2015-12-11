@@ -7,7 +7,7 @@ fruitmodel = function(bloom_date, nb_fruits, leaf_nbs)
 {
                                                           
 #********************
-setwd(dir="C:/Users/Severine/Documents/mangosim/src/vplants/mangosim/fruitmodel")
+#setwd(dir="C:/Users/Severine/Documents/Develop/mangosim/src/vplants/mangosim/fruitmodel")
 LF = leaf_nbs/nb_fruits
 MS_Init = 0.97 * rnorm(1,mean=13.9,sd=4.1) + 0.03 * rnorm(1,mean=29.2,sd=0.66)   # bimodale de ML
 k1runquant = read.table("k1runquant.txt", header=T, sep="\t")
@@ -109,7 +109,7 @@ source("Fonction_Croissance_MS_simp.r")
 source("Fonction_Croissance_MF_simp.r")
 
 #### attention les données sont celles de 2002 ####
-Meteo =   read.table ("rayostpierre2002.csv", sep=";", dec=".", header=T)
+Meteo =   read.table ("../../../../share/environment/rayostpierre2002.csv", sep=";", dec=".", header=T)
 Meteo$Date = strptime(Meteo$Date, "%d/%m/%Y %H:%M")                             #rayonnement station météo Ligne Paradis en J cm-2 
 Meteo$DATE = as.Date(Meteo$Date, "%d/%m/%Y")
 Meteo_journalier <- read.table ("tempstpierre2002.csv", sep=";", dec=".", header=T)
