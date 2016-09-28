@@ -19,11 +19,11 @@ NotAvailable = 'NA'
 
 
 def add_id_variables(dict_gu_prop, mtg, gu):
-    dict_gu_prop["gu"] = gu
+    dict_gu_prop["GU"] = gu
     # tree name
-    dict_gu_prop["tree"] = get_tree_name(mtg,get_tree_of_gu(mtg,gu))
-    dict_gu_prop["code"] = mtg.property('code')[gu]
-    dict_gu_prop["cycle"] = get_unit_cycle(mtg,gu)
+    dict_gu_prop["Tree"] = get_tree_name(mtg,get_tree_of_gu(mtg,gu))
+    dict_gu_prop["Code"] = mtg.property('code')[gu]
+    dict_gu_prop["Cycle"] = get_unit_cycle(mtg,gu)
 
 
 def vegetative_dev_variables(mtg, gu, cycle = None):
@@ -102,7 +102,7 @@ def flowering_dev_variables(mtg, gu, cycle = None):
         icycle = cycle if not cycle is None else get_unit_cycle(mtg,inflo)
         if mtg.property('nb_inflo_l').get(inflo,'') != '':
             # The number of inflorescence apical and lateral are stored into the two properties
-            Nb_Inflorescence = int( mtg.property('nb_inflo_t')[inflo] ) + int( mtg.property('nb_inflo_l')[inflo] )
+            Nb_Inflorescence = nb_of_inflorescences(mtg, inflo)
         else : 
             Nb_Inflorescence = NotAvailable
 
@@ -132,7 +132,9 @@ def explicative_variables_inside(mtg, gu):
     # get position feature (as mother)
     Position_A   = get_position_gu(mtg,gu)
     # get burst date feature (as mother)
-    Burst_Date = get_burst_date(mtg,gu).month
+    bdate = get_burst_date(mtg,gu)
+    Burst_Month = bdate.month
+    Burst_Semester = get_semester(bdate)
 
     # get nature and position of ancestor
     ancestor = get_ancestor_of_previous_cycle(mtg, gu)
@@ -146,16 +148,24 @@ def explicative_variables_inside(mtg, gu):
 
     # get loaded feature
     Tree_Fruit_Load = load_state(mtg, get_tree_of_gu(mtg,gu))
-    return Position_A, Burst_Date, Nature_Ancestor_F, Position_Ancestor_A, Tree_Fruit_Load
+
+    Mixed_Inflo = 1 if is_gu_mixed_inflorescence(mtg, gu) else 0
+
+    Reiteration = 1 if is_reiteration(mtg, gu) else 0
+
+    return Position_A, Burst_Month, Burst_Semester, Nature_Ancestor_F, Position_Ancestor_A, Tree_Fruit_Load, Mixed_Inflo, Reiteration
 
 
 def add_explicative_variables_inside(dict_gu_prop, mtg, gu):
-    Position_A, Burst_Date, Nature_Ancestor_F, Position_Ancestor_A, Tree_Fruit_Load = explicative_variables_inside(mtg, gu)
+    Position_A, Burst_Month, Burst_Semester, Nature_Ancestor_F, Position_Ancestor_A, Tree_Fruit_Load, Mixed_Inflo, Reiteration = explicative_variables_inside(mtg, gu)
     dict_gu_prop["Position_A"] = Position_A
-    dict_gu_prop["Burst_Date"] = Burst_Date
+    dict_gu_prop["Burst_Month"] = Burst_Month
+    dict_gu_prop["Burst_Semester"] = Burst_Semester
     dict_gu_prop["Nature_Ancestor_F"] = Nature_Ancestor_F
     dict_gu_prop["Position_Ancestor_A"] = Position_Ancestor_A
     dict_gu_prop["Tree_Fruit_Load"] = Tree_Fruit_Load
+    dict_gu_prop["Mixed_Inflo"] = Mixed_Inflo
+    dict_gu_prop["Reiteration"] = Reiteration
 
 def explicative_variables_transition(mtg, gu):
     # get position feature (as mother)
@@ -164,21 +174,28 @@ def explicative_variables_transition(mtg, gu):
 
     # get burst date feature (as mother)
     if get_unit_cycle(mtg,gu) == 3:
-        Burst_Date = NotAvailable
+        Burst_Month = NotAvailable
     else:
-        Burst_Date =  get_burst_date(mtg,gu).month
+        Burst_Month =  get_burst_date(mtg,gu).month
 
     # get loaded feature
     Tree_Fruit_Load = load_state(mtg, get_tree_of_gu(mtg,gu))
-    return Position_A, Nature_F, Burst_Date, Tree_Fruit_Load
+
+    Mixed_Inflo = 1 if is_gu_mixed_inflorescence(mtg, gu) else 0
+
+    Reiteration = 1 if is_reiteration(mtg, gu) else 0
+
+    return Position_A, Nature_F, Burst_Month, Tree_Fruit_Load, Mixed_Inflo, Reiteration
 
 
 def add_explicative_variables_transition(dict_gu_prop, mtg, gu):
-    Position_A, Nature_F, Burst_Date, Tree_Fruit_Load = explicative_variables_transition(mtg, gu)
+    Position_A, Nature_F, Burst_Month, Tree_Fruit_Load, Mixed_Inflo, Reiteration = explicative_variables_transition(mtg, gu)
     dict_gu_prop["Position_A"] = Position_A
     dict_gu_prop["Nature_F"] = Nature_F 
-    dict_gu_prop["Burst_Date"] = Burst_Date
+    dict_gu_prop["Burst_Month"] = Burst_Month
     dict_gu_prop["Tree_Fruit_Load"] = Tree_Fruit_Load
+    dict_gu_prop["Mixed_Inflo"] = Mixed_Inflo
+    dict_gu_prop["Reiteration"] = Reiteration
 
 def explicative_variables_null_model(mtg, gu):
     # get loaded feature
@@ -191,29 +208,38 @@ def add_explicative_variables_null_model(dict_gu_prop, mtg, gu):
     dict_gu_prop["Tree_Fruit_Load"] = Tree_Fruit_Load
 
 def get_table_within_cycle_for_glm(mtg, cycle=4, loaded = None, variety="cogshall"):
-  """ 
-  Parameters :
-    cycle : an integer 4 or 5
-    loaded : a booleen, if True gus are from loaded trees, else they are from not loaded trees
-    variety : a string, the choice of variety is : 
-             'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
-  """
-  table_within_cycle_for_glm = []
+    """ 
+    Parameters :
+        cycle : an integer 4 or 5
+        loaded : a booleen, if True gus are from loaded trees, else they are from not loaded trees
+        variety : a string, the choice of variety is : 
+                 'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
+    """
+    table_within_cycle_for_glm = []
 
-  gus_cycle_variety = get_all_gus_of_cycle(mtg, cycle, loaded, variety)
+    if type(cycle) == int:
+        gus_cycle_variety = [(cycle, get_all_gus_of_cycle(mtg, cycle, loaded, variety))]
+    else:
+        gus_cycle_variety = []
+        for c in cycle: gus_cycle_variety.append( (c, get_all_gus_of_cycle(mtg, c, loaded, variety)))
 
-  for gu in gus_cycle_variety:
-    dict_gu = {}
+      
 
-    add_id_variables(dict_gu, mtg, gu)
-    add_vegetative_dev_variables(dict_gu, mtg, gu, cycle)
-    add_flowering_dev_variables(dict_gu, mtg, gu, cycle)
-    add_explicative_variables_inside(dict_gu, mtg, gu)
+    for cycle, gus in gus_cycle_variety:
+        gus = filter_reiterations_and_descendants(mtg, gus)
+        for gu in gus:
+            if not is_reiteration(mtg,gu):
+                dict_gu = {}
 
-    # put the dictionnary on the list
-    table_within_cycle_for_glm.append(dict_gu)
+                add_id_variables(dict_gu, mtg, gu)
+                add_vegetative_dev_variables(dict_gu, mtg, gu, cycle)
+                add_flowering_dev_variables(dict_gu, mtg, gu, cycle)
+                add_explicative_variables_inside(dict_gu, mtg, gu)
 
-  return table_within_cycle_for_glm
+            # put the dictionnary on the list
+            table_within_cycle_for_glm.append(dict_gu)
+
+    return table_within_cycle_for_glm
 
 
 def get_table_between_cycle_for_glm(mtg, cycle=3, loaded=None, variety="cogshall"):
@@ -246,7 +272,8 @@ def get_table_for_null_model(mtg, loaded=None, variety="cogshall"):
     variety : a string, the choice of variety is : 
              'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety. """
   table_for_null_model = []
-  gus_cycle_variety = get_all_gus_of_variety(mtg, loaded, variety)
+  assert loaded in [None, eLoaded, eNotLoaded]
+  gus_cycle_variety = get_all_gus_of_variety(mtg, loaded=loaded, variety=variety)
 
   for gu in gus_cycle_variety:
     dict_gu = {}
@@ -270,10 +297,12 @@ def export_tables(mtg, variety, outputpath):
 
     table_within_cycle_for_glm_04 = DataFrame( get_table_within_cycle_for_glm(mtg, cycle=4, loaded=None, variety=variety) )
     table_within_cycle_for_glm_05 = DataFrame( get_table_within_cycle_for_glm(mtg, cycle=5, loaded=None, variety=variety) )
+    table_within_cycle_for_glm_0405 = DataFrame( get_table_within_cycle_for_glm(mtg, cycle=[4,5], loaded=None, variety=variety) )
     column_names = list( table_within_cycle_for_glm_04.columns )
     #
     table_within_cycle_for_glm_04.to_csv(join(outputpath,"table_within_cycle_04.csv"),header=column_names, index=False)
     table_within_cycle_for_glm_05.to_csv(join(outputpath,"table_within_cycle_05.csv"),header=column_names, index=False)
+    table_within_cycle_for_glm_0405.to_csv(join(outputpath,"table_within_cycle_0405.csv"),header=column_names, index=False)
 
     table_between_cycle_for_glm_03to04 = DataFrame( get_table_between_cycle_for_glm(mtg, cycle=3, loaded=None, variety=variety) )
     table_between_cycle_for_glm_04to05 = DataFrame( get_table_between_cycle_for_glm(mtg, cycle=4, loaded=None, variety=variety) )

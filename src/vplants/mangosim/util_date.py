@@ -11,6 +11,10 @@ MonthEn = {'jan' : 1, 'feb' : 2, 'march' : 3,
          'july' : 7, 'august' : 8, 'sept' : 9,
          'oct' : 10, 'nov' : 11, 'dec' : 12 }
 
+
+MonthName = dict([(v,k) for k,v in Month.items()])
+MonthEnName = dict([(v,k) for k,v in MonthEn.items()])
+
 def date_from_string(string):
     """From string = 'month.year', it return a date
     """
@@ -45,6 +49,12 @@ def get_cycle(cdate):
     if cdate < cycle_begin(4) : return 3
     elif cdate < cycle_begin(5) : return 4
     else : return 5
+
+def get_semester(cdate):
+    if cdate.month >= cycle_begin(4).month : return 1
+    else : return 2
+
+
 
 def flowering_cycle_begin(cycle):
     return date(2000+cycle, 6, 15)

@@ -20,3 +20,8 @@ def dump_obj(obj,filename, dirname = '.'):
 
 
 
+def isiterable(obj):
+    try: 
+        return iter(obj) != None
+    except:
+        return False

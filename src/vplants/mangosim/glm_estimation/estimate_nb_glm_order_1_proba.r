@@ -10,32 +10,38 @@ setwd(localdir)
 share_dir = '../../../../share/'
 input_dir = paste(share_dir,'glm_estimate_input/cogshall/', sep="")
 output_dir = paste(share_dir,'glm_output_proba2/cogshall/', sep="")
-if (file.exists(output_dir)){
+if (file.exists(output_dir) == FALSE){
     dir.create(output_dir,recursive=TRUE)
 }
 
 source("util_glm.r")
 
 
+########################################################################################################################################################################################
 
 
 vsummary_output = function(glm, data, outfile, subset = NULL, verbose = FALSE){
 
-  out = file(outfile,open="wt")
-  
-  split = FALSE #(verbose >=3)
-  sink(file = out, split = split)
-  
-  print("******** DATA *************")
-  if(length(subset) > 0)
-    ndata = data[subset,]
+  if(length(subset) > 0)  ndata = data[subset,]
   else ndata = data
-  print(summary(ndata))
   
-  print("******** GLM  *************")
-  print(paste("Formula :",glm.formula.text(glm),sep=''))
-  print(summary(glm))
-
+  mdebug = FALSE
+  if (mdebug == FALSE) {
+    out = file(outfile,open="wt")
+    split = FALSE #(verbose >=3)
+    sink(file = out, split = split)
+  
+    print("******** DATA *************")
+    print(summary(ndata))
+  }
+  
+    print("******** GLM  *************")
+    print(paste("Formula :",glm.formula.text(glm),sep=''))
+    
+  if (mdebug == FALSE) {
+    print(summary(glm))
+  }
+    
   
   if (is.vglm(glm)){
     print("******** Likelihood  *************")
@@ -43,12 +49,15 @@ vsummary_output = function(glm, data, outfile, subset = NULL, verbose = FALSE){
     print(paste('Estimated',vglm.logLik(glm, ndata)))
   }
 
-  sink()
-  close(out)
+  if (mdebug == FALSE) {
+    sink()
+    close(out)
+  }
 }
 
+########################################################################################################################################################################################
 
-generate_glm = function(variable, family, data, subset, year, verbose, factors = c("Burst_Date","Position_A","Position_Ancestor_A","Nature_Ancestor_F"))
+generate_glm = function(variable, family, data, subset, year, verbose = 0, factors = c("Burst_Month","Position_A","Position_Ancestor_A","Nature_Ancestor_F"), tag = NULL)
 {
     tracestep = 0
     # if (verbose >= 3) tracestep = 0
@@ -56,43 +65,48 @@ generate_glm = function(variable, family, data, subset, year, verbose, factors =
     path_complete_glm = paste(output_dir,"complete_glm/",sep="")
     path_selected_glm = paste(output_dir,"selected_glm/",sep="")
 
-    if (file.exists(path_complete_glm) == FALSE) dir.create(path_complete_glm,recursive=TRUE)
-    if (file.exists(path_selected_glm) == FALSE) dir.create(path_selected_glm,recursive=TRUE)
+    if (file.exists(path_complete_glm) == FALSE) dir.create(path_complete_glm, recursive=TRUE)
+    if (file.exists(path_selected_glm) == FALSE) dir.create(path_selected_glm, recursive=TRUE)
 
     fname = tolower(variable)
-
-    formula = as.formula(paste(variable," ~ ", paste(factors,collapse=" + "),sep=""))
+    if (!is.null(tag)) fname = paste(fname, '_', tag)
+    basefname = paste(fname, "_", year, sep="")
+    
+    formula = as.formula(paste(variable," ~ ", paste(factors,collapse=" + "), sep=""))
     
     #print("complete glm")
     complete_glm.all = glm( formula , family = family, data = data, subset = subset)
 
     #print("complete glm summary")
-    vsummary_output(complete_glm.all, data, paste(path_complete_glm,fname,"_",year,"_summary.txt",sep=""), subset = subset, verbose)
+    vsummary_output(complete_glm.all, data, paste(path_complete_glm,basefname,"_summary.txt",sep=""), subset = subset, verbose)
 
     #print("complete glm proba")
     proba.complete_glm.all = glm.proba_and_counts(complete_glm.all, data, subset)
 
     #print("complete glm proba writting")
-    write.csv(proba.complete_glm.all,file=paste(path_complete_glm, fname, "_", year,".csv", sep=""), row.names = FALSE)
+    write.csv(proba.complete_glm.all,file=paste(path_complete_glm, basefname,".csv", sep=""), row.names = FALSE)
 
     ### selected GLM ###
     #print("selected glm")
     selected_glm.all = step(complete_glm.all, trace = tracestep)   
 
     #print("selected glm summary")
-    vsummary_output(selected_glm.all, data, paste(path_selected_glm,fname,"_",year,"_summary.txt",sep=""), subset, verbose)
+    vsummary_output(selected_glm.all, data, paste(path_selected_glm,basefname,"_summary.txt",sep=""), subset, verbose)
 
     #print("selected glm proba")
     proba.selected_glm.all = glm.proba_and_counts(selected_glm.all, data, subset)
 
     #print("selected glm proba writting")
-    write.csv(proba.selected_glm.all,file=paste(path_selected_glm, fname, "_", year,".csv", sep=""), row.names = FALSE)
+    write.csv(proba.selected_glm.all,file=paste(path_selected_glm, basefname,".csv", sep=""), row.names = FALSE)
 
 }
 
+########################################################################################################################################################################################
 
-
-generate_vglm = function(variable, data, subset, year, verbose, factors = c("Burst_Date","Position_A","Position_Ancestor_A","Nature_Ancestor_F"))
+#
+#' Generate the multinomial glm for a process
+#
+generate_vglm = function(variable, data, subset, year, verbose, factors = c("Burst_Month","Position_A","Position_Ancestor_A","Nature_Ancestor_F"), tag = NULL)
 {
     tracestep = 0
     # if (verbose >= 3) tracestep = 0
@@ -104,738 +118,348 @@ generate_vglm = function(variable, data, subset, year, verbose, factors = c("Bur
     if (file.exists(path_selected_glm) == FALSE) dir.create(path_selected_glm,recursive=TRUE)
 
     fname = tolower(variable)
-
-    formula = as.formula(paste(variable," ~ ", paste(factors,collapse=" + "),sep=""))
+    if (!is.null(tag)) fname = paste(fname, '_', tag)
+    basefname = paste(fname, "_", year)
     
+    formula = as.formula(paste(variable," ~ ", paste(factors,collapse=" + "),sep=""))
     
     ndata = data[subset,]
     
-    print("complete glm")
+    if (verbose >= 2) print("complete glm")
     complete_glm.all = vglm( formula , family = cumulative(parallel=TRUE), data = ndata)
 
-    print("complete glm proba")    
+    if (verbose >= 2) print("complete glm proba")
     res = vglm.proba_and_counts (complete_glm.all, ndata)
     proba.complete_glm.all = res[[1]]
     nbelement.complete_glm.all = res[[2]]
 
-    print("complete glm proba writting")
-    write.csv(proba.complete_glm.all,file=paste(path_complete_glm, fname, "_", year,".csv", sep=""), row.names = FALSE)
-    write.csv(nbelement.complete_glm.all,file=paste(path_complete_glm, fname, "_", year,"_nbelements.csv", sep=""), row.names = FALSE)
-    #write.ftable(nbelement.complete_glm.all,file=paste(path_complete_glm, fname, "_", year,"_nbelements.csv", sep=""))
+    if (verbose >= 2) print("complete glm proba writting")
+    write.csv(proba.complete_glm.all,file=paste(path_complete_glm, basefname,".csv", sep=""), row.names = FALSE)
+    write.csv(nbelement.complete_glm.all,file=paste(path_complete_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
 
-    print("complete glm summary")
-    vsummary_output(complete_glm.all, ndata, paste(path_complete_glm,fname,"_",year,"_summary.txt",sep=""), verbose=verbose)
+    if (verbose >= 2) print("complete glm summary")
+    vsummary_output(complete_glm.all, ndata, paste(path_complete_glm,basefname,"_summary.txt",sep=""), verbose=verbose)
     
     ### selected GLM ###
-    
-    # la fonction step ne s applique pas a la classe des vglm
-    # ===>> selectioner le model a la main, AIC = 2k - 2ln(L)
 
-    print("selected glm")
+    if (verbose >= 2) print("selected glm")
     #selected_glm.all = complete_glm.all
     selected_glm.all = vglm.step(complete_glm.all, data = ndata)
 
-    print("selected glm proba")
+    if (verbose >= 2) print("selected glm proba")
     res = vglm.proba_and_counts (selected_glm.all, ndata)
     proba.selected_glm.all = res[[1]]
     nbelement.selected_glm.all = res[[2]]
     
-    print("selected glm proba writting")
-    write.csv(proba.selected_glm.all,file=paste(path_selected_glm, fname, "_", year,".csv", sep=""), row.names = FALSE)
-    write.csv(nbelement.selected_glm.all,file=paste(path_selected_glm, fname, "_", year,"_nbelements.csv", sep=""), row.names = FALSE)
+    if (verbose >= 2) print("selected glm proba writting")
+    write.csv(proba.selected_glm.all,file=paste(path_selected_glm, basefname,".csv", sep=""), row.names = FALSE)
+    write.csv(nbelement.selected_glm.all,file=paste(path_selected_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
 
-    print("selected glm summary")
-    vsummary_output(selected_glm.all, ndata,  paste(path_selected_glm,fname,"_",year,"_summary.txt",sep=""), verbose=verbose)
+    if (verbose >= 2) print("selected glm summary")
+    vsummary_output(selected_glm.all, ndata,  paste(path_selected_glm,basefname,"_summary.txt",sep=""), verbose=verbose)
     
 }
 
-determining_glm_tables_within_cycle = function(data, year, verbose = 0) {
+########################################################################################################################################################################################
 
+set_factor = function(data, name) {
+  if (name %in% colnames(data))
+    data[[name]] = as.factor(data[[name]])
+  return (data)
+}
 
-    year = paste("within_",year,sep="")
+prepare_data_factors = function(data,  children_burst_date_level = month_cycle_order) {
+  # Assign covariables as factors
+  
+  if ("Burst_Month" %in% colnames(data)) {
+    data$Burst_Month = ordered(data$Burst_Month, levels = month_cycle_order)
+    data$Burst_Month = as.factor(data$Burst_Month)
+  }
+  
+  for (name in c('Burst_Semester', 'Position_A', 'Position_Ancestor_A', 'Nature_F', 'Nature_Ancestor_F', 'Mixed_Inflo', 'Tree_Fruit_Load', 'Cycle')){
+    if (name %in% colnames(data)) data[[name]] = as.factor(data[[name]])
+  }
 
-    # Removing of GU born in a month with less than 4 GUs born in this month
-    # for( month in 1:12){
-    #     nb_month = which(data$Burst_Date==month)
-    #     if(0 < length(nb_month) & length(nb_month) <= 4){
-    #         data = data[-nb_month,]
-    #     }
-    # }
-    MinNbGUForGLM = 30
-
-
-    # Assign covariables as factors
-    data$Burst_Date=as.factor(data$Burst_Date)
-    data$Tree_Fruit_Load = as.factor(data$Tree_Fruit_Load)
-    data$Position_Ancestor_A = as.factor(data$Position_Ancestor_A)
-    data$Position_A = as.factor(data$Position_A)
-    data$Nature_Ancestor_F = as.factor(data$Nature_Ancestor_F)
-
-    ## Assign delta date as ordered factor
-    # Delta_Burst_date_child = as.factor(data$Delta_Burst_date_child)
-    # Delta_burst_date_child = ordered(Delta_Burst_date_child)
-
-    # Assign date as ordered factor
-    level_order = c("6","7","8","9","10","11","12","1","2","3","4","5")
-    data$Burst_Date_Children = ordered(data$Burst_Date_Children, levels = level_order)
+  if ("Burst_Date_Children" %in% colnames(data)) {
+    data$Burst_Date_Children = ordered(data$Burst_Date_Children, levels = children_burst_date_level)
     data$Burst_Date_Children = factor(data$Burst_Date_Children)
+  }
+  
+  return(data)
+  
+}
 
-    
-    #attach(data)
-    summary(data)
 
+########################################################################################################################################################################################
 
-    if (verbose >= 1) print(paste("Cycle ",year)) 
-
+#
+#' Determine the different probabilities for the vegetative development processes 
+#
+determine_vegetative_development = function(data, subset_selection, year, yeartag, tag, verbose, factors, children_date_test = FALSE) {
     ##############################################
     #### Vegetative Burst
     ##############################################
-    if (verbose >= 1) print("Estimate Vegetative Burst") 
-    index_loaded.all = which(data$Tree_Fruit_Load == 1)
-
-    generate_glm("Vegetative_Burst", family = binomial, data=data, subset= index_loaded.all, year= year, verbose = verbose)
-
-
+    if (verbose >= 1) print("########### Estimate Vegetative Burst") 
+    index_loaded.all = which(subset_selection)
+    
+    generate_glm("Vegetative_Burst", family = binomial, data=data, subset= index_loaded.all, year= yeartag, verbose = verbose, factors = factors, tag = tag)
+    
+    
     ##############################################
     #### Has_Apical_GU_Child
     ##############################################
-    if (verbose >= 1) print("Estimate Has_Apical_GU_Child") 
-    index_bursted.all = which(data$Tree_Fruit_Load == 1 & data$Vegetative_Burst == 1)
-
-    generate_glm("Has_Apical_GU_Child", family = binomial, data=data, subset= index_bursted.all, year= year, verbose = verbose)
-
-
+    if (verbose >= 1) print("########### Estimate Has_Apical_GU_Child")
+    
+    bursted_selection = subset_selection & data$Vegetative_Burst == 1
+    index_bursted.all = which(bursted_selection)
+    
+    generate_glm("Has_Apical_GU_Child", family = binomial, data=data, subset= index_bursted.all, year= yeartag, verbose = verbose, factors = factors, tag = tag)
+    
+    
     ##############################################
     #### Has_Lateral_GU_Children
     ##############################################
-    if (verbose >= 1) print("Estimate Has_Lateral_GU_Children") 
-
-
-    generate_glm("Has_Lateral_GU_Children", family = binomial, data=data, subset= index_bursted.all, year= year, verbose = verbose)
-
-        
+    if (verbose >= 1) print("########### Estimate Has_Lateral_GU_Children") 
+    
+    generate_glm("Has_Lateral_GU_Children", family = binomial, data=data, subset= index_bursted.all, year= yeartag, verbose = verbose, factors = factors, tag = tag)
+    
+    
     ##############################################
     #### Number of lateral GU
     ##############################################
-    if (verbose >= 1) print("Estimate Number of lateral GU") 
-    index_lateral.all = which(data$Tree_Fruit_Load == 1 & data$Vegetative_Burst == 1 & data$Has_Lateral_GU_Children == 1)
-
+    if (verbose >= 1) print("########### Estimate Number of lateral GU") 
+    
+    lateral_selection = bursted_selection & data$Has_Lateral_GU_Children == 1
+    index_lateral.all = which(lateral_selection)
+    
     #On choisi une loi de poisson. Néanmoins, pour Poisson la distribution doit commencer à 0 et pas à 1.
     #On enlève donc 1 au nombre de latérales afin de commencer à 0.
     ####Attention!!!Il ne faudra pas oublier de rajouter 1 ensuite lors de la simulation!!!
     data$Nb_Lateral_GU_Children = data$Nb_Lateral_GU_Children -1
-
-    generate_glm("Nb_Lateral_GU_Children", family = poisson, data=data, subset= index_lateral.all, year= year, verbose = verbose)
-
-
+    
+    generate_glm("Nb_Lateral_GU_Children", family = poisson, data=data, subset= index_lateral.all, year= yeartag, verbose = verbose, factors = factors, tag = tag)
+    
+    
     ##############################################
     #### Burst date of children    
     ##############################################
-    if (verbose >= 1) print("Estimate Burst date of children") 
+    if (verbose >= 1) print("########### Estimate Burst date of children") 
+    
+    generate_vglm("Burst_Date_Children",  data=data, subset= index_bursted.all, year= yeartag, verbose = verbose, factors = factors, tag = tag)
+    
+    if (children_date_test) {
+    
+      ##############################################
+      #### Delta Burst date of children    
+      ##############################################
+      #if (verbose >= 1) print("############################################## Estimate Burst delta date of children with vglm") 
+      
+      generate_vglm("Burst_Delta_Date_Children",  data=data, subset= index_bursted.all, year= yeartag, verbose = verbose, factors = factors, tag = tag)
+      
+      
+      ##############################################
+      #### Delta Burst date of children  with poisson  
+      ##############################################
+      if (verbose >= 1) print("########### Estimate Burst delta date of children with poisson") 
+      
+      data$Burst_Delta_Date_Children_Poisson = data$Burst_Delta_Date_Children - 1
+      
+      generate_glm("Burst_Delta_Date_Children_Poisson", family = poisson, data=data, subset= index_bursted.all, year= yeartag, verbose = verbose, factors = factors, tag = tag)
+    }
+}
 
+########################################################################################################################################################################################
 
-    generate_vglm("Burst_Date_Children",  data=data, subset= index_bursted.all, year= year, verbose = verbose)
-        
-
-
-    ##############################################
-    #### Delta Burst date of children    
-    ##############################################
-    if (verbose >= 1) print("Estimate Burst delta date of children with vglm") 
-
-    generate_vglm("Burst_Delta_Date_Children",  data=data, subset= index_bursted.all, year= year, verbose = verbose)
-
-
-    ##############################################
-    #### Delta Burst date of children  with poisson  
-    ##############################################
-    if (verbose >= 1) print("Estimate Burst delta date of children with poisson") 
-
-    data$Burst_Delta_Date_Children_Poisson = data$Burst_Delta_Date_Children - 1
-
-    generate_glm("Burst_Delta_Date_Children_Poisson", family = poisson, data=data, subset= index_bursted.all, year= year, verbose = verbose)
-
-
+#
+#' Determine the different probabilities for the reproductive development processes 
+#
+determine_reproductive_development = function(data, subset_selection, year, yeartag, tag, verbose, factors) {
+    MinNbGUForGLM = 30
+  
     ##############################################
     #### Flowering 
     ##############################################
-    if (verbose >= 1) print("Estimate Flowering") 
-    index_extremity.all = which(data$Tree_Fruit_Load == 1 & data$is_terminal == 1)
-
-    generate_glm("Flowering", family = binomial, data=data, subset= index_extremity.all, year= year, verbose = verbose)
-
-
+    if (verbose >= 1) print("########### Estimate Flowering") 
+    
+    terminal_selection = subset_selection & data$is_terminal == 1
+    index_extremity.all = which(terminal_selection)
+    
+    generate_glm("Flowering", family = binomial, data=data, subset= index_extremity.all, year= yeartag, verbose = verbose, factors = factors, tag = tag)
+    
+    
     ##############################################
     #### Number of inflorescences 
     ##############################################
-    if (verbose >= 1) print("Estimate Number of inflorescences") 
-    index_flowering.all = which(data$Tree_Fruit_Load == 1 & data$Flowering == 1)
+    if (verbose >= 1) print("########### Estimate Number of inflorescences") 
+    
+    flowering_selection = subset_selection & data$Flowering == 1
+    index_flowering.all = which(flowering_selection)
     data$Nb_Inflorescences = data$Nb_Inflorescence -1
-
-    generate_glm("Nb_Inflorescences", family = poisson, data=data, subset= index_flowering.all, year= year, verbose = verbose)
-
-
+    
+    generate_glm("Nb_Inflorescences", family = poisson, data=data, subset= index_flowering.all, year= yeartag, verbose = verbose, factors = factors, tag = tag)
+    
+    
     ##############################################
     #### Date of inflorescences
     ##############################################
-    if (verbose >= 1) print("Estimate Date of inflorescences") 
-
-    has_flowering_week.all = which(data$Flowering_Week > 0)
-    if(length(has_flowering_week.all) > MinNbGUForGLM){
-        generate_vglm("Flowering_Week",  data=data, subset= index_flowering.all, year= year, verbose = verbose)
-
+    if (year != '0405') {
+      if (verbose >= 1) print("########### Estimate Date of inflorescences") 
+      
+      has_flowering_week_selection = flowering_selection & data$Flowering_Week > 0
+      index_has_flowering_week.all = which(has_flowering_week_selection)
+      
+      if(length(index_has_flowering_week.all) > MinNbGUForGLM){
+        generate_vglm("Flowering_Week",  data=data, subset= index_has_flowering_week.all, year= yeartag, verbose = verbose, factors = factors, tag = tag)
+      }
+      else {
+        print(paste("Not enougth flowering week specified for year",year,":",length(index_has_flowering_week.all)))
+      }
     }
-    else {
-        print(paste("Not enougth flowering week specified for year",year,":",length(has_flowering_week.all)))
-    }
-       
-       
+    
+    
     ##############################################
     #### Fruiting 
     ##############################################
-    if (verbose >= 1) print("Estimate Fruiting") 
-    generate_glm("Fruiting", family = binomial, data=data, subset= index_flowering.all, year= year, verbose = verbose)
-
-
-   ##############################################
+    if (verbose >= 1) print("########### Estimate Fruiting") 
+    generate_glm("Fruiting", family = binomial, data=data, subset= index_flowering.all, year= yeartag, verbose = verbose, factors = factors, tag = tag)
+    
+    
+    ##############################################
     #### Number of fruits 
     ##############################################
-    if (verbose >= 1) print("Estimate Number of fruits") 
-    index_fruiting.all = which(data$Tree_Fruit_Load == 1 & data$Fruiting == 1)
+    if (verbose >= 1) print("########### Estimate Number of fruits") 
+    
+    fruiting_selection = subset_selection & data$Fruiting == 1
+    index_fruiting.all = which(fruiting_selection)
     data$Nb_Fruits = data$Nb_Fruits -1
-
-    generate_glm("Nb_Fruits", family = poisson, data=data, subset= index_fruiting.all, year= year, verbose = verbose)
-
-
-
-    #detach(data)
-
-
-}
-
-determining_glm_tables_within_cycle_for_year = function(input_dir, year, verbose = 0) {
-    table_gu_within_cycle = read.csv(paste(input_dir,"table_within_cycle_",year,".csv",sep=""),header = TRUE)
-    determining_glm_tables_within_cycle(table_gu_within_cycle, year, verbose = verbose)
+    
+    if(length(index_fruiting.all) > MinNbGUForGLM){
+      generate_glm("Nb_Fruits", family = poisson, data=data, subset= index_fruiting.all, year= yeartag, verbose = verbose, factors = factors, tag = tag)
+    }
+    else {
+      print(paste("Not enougth fruits specified for year",year,":",length(index_fruiting.all)))
+    }
+    if (verbose >= 1) print("Done")
 }
 
 
+########################################################################################################################################################################################
 
-determining_glm_tables_between_cycle = function(data, year, with_burstdate = FALSE, verbose = FALSE) {
 
-    # Removing of GU born in a month with less than 4 GUs born in this month
-    # for( month in 1:12){
-    #     nb_month = which(data$Burst_Date==month)
-    #     if(0 < length(nb_month) & length(nb_month) <= 4){
-    #         data = data[-nb_month,]
-    #     }
-    # }
-    MinNbGUForGLM = 30
+month_cycle_order = c("6","7","8","9","10","11","12","1","2","3","4","5")
 
-    # Assign covariables as factors
-    if (with_burstdate == TRUE)
-        data$Burst_Date=as.factor(data$Burst_Date)    
-    data$Tree_Fruit_Load = as.factor(data$Tree_Fruit_Load)
-    data$Position_A = as.factor(data$Position_A)
-    data$Nature_F = as.factor(data$Nature_F)
+determining_glm_tables_within_cycle = function(data, year, verbose = 0, selection = NULL, tag = NULL, factors = c("Burst_Month", "Position_A","Position_Ancestor_A","Nature_Ancestor_F")) {
 
-    ## Assign delta date as ordered factor
-    # Delta_Burst_date_child = as.factor(data$Delta_Burst_date_child)
-    # Delta_burst_date_child = ordered(Delta_Burst_date_child)
+    yeartag = paste("within_",year,sep="")
 
+    data = prepare_data_factors(data)
+    
+    data$Flowering_Week = factor(data$Flowering_Week)
+    
+    # summary(data)
+    if (is.null(selection)) { subset_selection = data$Tree_Fruit_Load == 1 }
+    else {                    subset_selection = selection & data$Tree_Fruit_Load == 1 }
+    
+    totfactors = factors
+
+    if (verbose >= 1) print(paste("*** Cycle : ",year,"***")) 
+    if (verbose >= 1) print(paste("*** Factors : ",paste(factors,collapse=" , "),"***"))
+    
+    determine_vegetative_development(data=data, subset_selection= subset_selection, year=year, yeartag= yeartag, tag = tag, verbose = verbose, factors = totfactors)
+    determine_reproductive_development(data=data, subset_selection= subset_selection, year=year, yeartag= yeartag, tag = tag, verbose = verbose, factors = totfactors)    
+    
+}
+
+########################################################################################################################################################################################
+
+determining_glm_tables_between_cycle = function(data, year, verbose = FALSE, selection = NULL, tag = NULL) {
+
+    yeartag = paste("between_",year,sep="")
+    
     # Assign date as ordered factor
     level_order = c("106","107","108","109","110","111","112","101","102","103","104","105",
                     "206","207","208","209","210","211","212","201","202","203","204","205")
 
-    data$Burst_Date_Children = ordered(data$Burst_Date_Children, levels = level_order)
-    data$Burst_Date_Children = factor(data$Burst_Date_Children)
+    data = prepare_data_factors(data, level_order)
+    
 
-
-    attach(data)
+    factors = c("Position_A","Nature_F")  # "Tree_Fruit_Load"
+    if ("Burst_Month" %in% colnames(data)) factors = c("Burst_Month", factors)
+    
     summary(data)
-
-    # To make glm for each tree :
-    trees = levels(tree)
-    trees = c(trees, "loaded", "notloaded")
-
 
     tracestep = 0
     if (verbose >= 3) tracestep = 1
 
+    if (is.null(selection)) { subset_selection = data$Tree_Fruit_Load == 1 }
+    else {                    subset_selection = selection & data$Tree_Fruit_Load == 1 }
 
-    ##############################################
-    #### Vegetative Burst
-    ##############################################
-    if (verbose >= 1) print("Estimate Vegetative Burst") 
-    index_trees = list()
-    for(tree_name in trees){
-        if(tree_name=="loaded"){
-            index_trees[[tree_name]] = which(Tree_Fruit_Load == 1)
-        }
-        else if(tree_name=="notloaded"){
-            index_trees[[tree_name]] = which(Tree_Fruit_Load == 0)
-        }
-        else{
-            index_trees[[tree_name]] = which(tree == tree_name)
-        }
-    }
-
-
-
-    ### complete GLM ###
-    # For all trees
-    if (with_burstdate == TRUE)
-        complete_glm.vegetative_burst.all = glm( Vegetative_Burst ~ Tree_Fruit_Load + Burst_Date + Position_A  +  Nature_F,
-                                                family = binomial, data=data)
-    else 
-        complete_glm.vegetative_burst.all = glm( Vegetative_Burst ~ Tree_Fruit_Load + Position_A  +  Nature_F,
-                                                family = binomial, data=data)
-    if (verbose >= 3) summary(complete_glm.vegetative_burst.all) # AIC : 1711
-        
-    # For each tree, loaded trees and not loaded trees
-    complete_glm.vegetative_burst.trees = list()
-    for(tree_name in trees){
-        if (with_burstdate == TRUE)
-            complete_glm.vegetative_burst.trees[[tree_name]] = glm(Vegetative_Burst ~ Burst_Date + Position_A + Nature_F,
-                                                                   family = binomial, data=data, subset=index_trees[[tree_name]])
-        else
-            complete_glm.vegetative_burst.trees[[tree_name]] = glm(Vegetative_Burst ~ Position_A + Nature_F,
-                                                                   family = binomial, data=data, subset=index_trees[[tree_name]])
-    }
-
-
-    ### selected GLM ###
-    # For all trees
-    selected_glm.vegetative_burst.all = step(complete_glm.vegetative_burst.all, trace = tracestep)   
-    if (verbose >= 3) summary(selected_glm.vegetative_burst.all) # AIC : 
-
-    # For each tree, loaded trees and not loaded trees
-    selected_glm.vegetative_burst.trees = list()
-    for(tree_name in trees){
-        selected_glm.vegetative_burst.trees[[tree_name]] = step(complete_glm.vegetative_burst.trees[[tree_name]], trace = tracestep)
-    }
-
-    index_bursted.all = which(Vegetative_Burst == 1)
-
-    index_bursted.trees = list()
-    for(tree_name in trees){
-        if(tree_name=="loaded"){
-            index_bursted.trees[[tree_name]] = which(Tree_Fruit_Load == 1 & Vegetative_Burst == 1)
-        }
-        else if(tree_name=="notloaded"){
-            index_bursted.trees[[tree_name]] = which(Tree_Fruit_Load == 0 & Vegetative_Burst == 1)
-        }
-        else{
-            index_bursted.trees[[tree_name]] = which(tree == tree_name & Vegetative_Burst == 1)
-        }
-    }
-
-
-    ##############################################
-    #### Has_Apical_GU_Child
-    ##############################################
-    if (verbose >= 1) print("Estimate Has_Apical_GU_Child") 
-
-    ### complete GLM ###
-    # For all trees
-    if (with_burstdate == TRUE)
-        complete_glm.has_apical_gu_child.all = glm( Has_Apical_GU_Child ~ Tree_Fruit_Load + 
-                                                                              Burst_Date + 
-                                                                              Position_A + 
-                                                                              Nature_F,
-                                                        family = binomial, data=data, subset = index_bursted.all)
-    else
-        complete_glm.has_apical_gu_child.all = glm( Has_Apical_GU_Child ~ Tree_Fruit_Load + 
-                                                                              Position_A + 
-                                                                              Nature_F,
-                                                        family = binomial, data=data, subset = index_bursted.all)
+    if (verbose >= 1) print(paste("*** Between Cycles",year,"***")) 
+    if (verbose >= 1) print(paste("*** Factors : ",paste(factors,collapse=" , "),"***"))
     
-    if (verbose >= 3) summary(complete_glm.has_apical_gu_child.all) # AIC : 
-
-    # For each tree, loaded trees and not loaded trees
-    complete_glm.has_apical_gu_child.trees = list()
-    for(tree_name in trees){
-        if (with_burstdate == TRUE)
-            complete_glm.has_apical_gu_child.trees[[tree_name]] = glm(Has_Apical_GU_Child ~ Burst_Date + 
-                                                                                                Position_A + 
-                                                                                                Nature_F,
-                                                    family = binomial, data=data, subset=index_bursted.trees[[tree_name]])
-        else
-            complete_glm.has_apical_gu_child.trees[[tree_name]] = glm(Has_Apical_GU_Child ~ Position_A + 
-                                                                                                    Nature_F,
-                                                    family = binomial, data=data, subset=index_bursted.trees[[tree_name]])
-    }
- 
-    ### selected GLM ###
-    # For all trees
-    selected_glm.has_apical_gu_child.all = step(complete_glm.has_apical_gu_child.all, trace = tracestep)
-    if (verbose >= 3) summary(selected_glm.has_lateral_gu_children.all) # AIC : 
-
-    # For each tree, loaded trees and not loaded trees
-    selected_glm.has_apical_gu_child.trees = list()
-    for(tree_name in trees){
-         selected_glm.has_apical_gu_child.trees[[tree_name]] = step(complete_glm.has_apical_gu_child.trees[[tree_name]], trace = tracestep)
-    }
-
-
-        
-    ##############################################
-    #### Has_Lateral_GU_Children
-    ##############################################
-    if (verbose >= 1) print("Estimate Has_Lateral_GU_Children") 
-
-    ### complete GLM ###
-    # For all trees
-    if (with_burstdate == TRUE)
-        complete_glm.has_lateral_gu_children.all = glm( Has_Lateral_GU_Children ~ Tree_Fruit_Load + 
-                                                                              Burst_Date + 
-                                                                              Position_A + 
-                                                                              Nature_F,
-                                                        family = binomial, data=data, subset = index_bursted.all)
-    else
-        complete_glm.has_lateral_gu_children.all = glm( Has_Lateral_GU_Children ~ Tree_Fruit_Load + 
-                                                                              Position_A + 
-                                                                              Nature_F,
-                                                        family = binomial, data=data, subset = index_bursted.all)
-    
-    if (verbose >= 3) summary(complete_glm.has_lateral_gu_children.all) # AIC : 
-
-    # For each tree, loaded trees and not loaded trees
-    complete_glm.has_lateral_gu_children.trees = list()
-    for(tree_name in trees){
-        if (with_burstdate == TRUE)
-            complete_glm.has_lateral_gu_children.trees[[tree_name]] = glm(Has_Lateral_GU_Children ~ Burst_Date + 
-                                                                                                Position_A + 
-                                                                                                Nature_F,
-                                                    family = binomial, data=data, subset=index_bursted.trees[[tree_name]])
-        else
-            complete_glm.has_lateral_gu_children.trees[[tree_name]] = glm(Has_Lateral_GU_Children ~ Position_A + 
-                                                                                                    Nature_F,
-                                                    family = binomial, data=data, subset=index_bursted.trees[[tree_name]])
-    }
- 
-    ### selected GLM ###
-    # For all trees
-    selected_glm.has_lateral_gu_children.all = step(complete_glm.has_lateral_gu_children.all, trace = tracestep)
-    if (verbose >= 3) summary(selected_glm.has_lateral_gu_children.all) # AIC : 
-
-    # For each tree, loaded trees and not loaded trees
-    selected_glm.has_lateral_gu_children.trees = list()
-    for(tree_name in trees){
-         selected_glm.has_lateral_gu_children.trees[[tree_name]] = step(complete_glm.has_lateral_gu_children.trees[[tree_name]], trace = tracestep)
-    }
-
-
-        
-    ##############################################
-    #### Number of lateral GU
-    ##############################################
-    if (verbose >= 1) print("Estimate Number of lateral GU") 
-    index_lateral.all = which(Vegetative_Burst == 1 & Has_Lateral_GU_Children == 1)
-
-    #On choisi une loi de poisson. Néanmoins, pour Poisson la distribution doit commencer à 0 et pas à 1.
-    #On enlève donc 1 au nombre de latérales afin de commencer à 0.
-    ####Attention!!!Il ne faudra pas oublier de rajouter 1 ensuite lors de la simulation!!!
-    Nb_lateral_gu = Nb_Lateral_GU_Children -1
-
-    index_lateral.trees = list()
-    for(tree_name in trees){
-        if(tree_name=="loaded"){
-            index_lateral.trees[[tree_name]] = which(Tree_Fruit_Load == 1 & Vegetative_Burst == 1 & Has_Lateral_GU_Children == 1)
-        }
-        else if(tree_name=="notloaded"){
-            index_lateral.trees[[tree_name]] = which(Tree_Fruit_Load == 0 & Vegetative_Burst == 1 & Has_Lateral_GU_Children == 1)
-        }
-        else{
-            index_lateral.trees[[tree_name]] = which(tree == tree_name & Vegetative_Burst == 1 & Has_Lateral_GU_Children == 1)
-        }
-    }
-
-
-    ### complete GLM ###
-    # For all trees
-    if (with_burstdate == TRUE)
-        complete_glm.nb_lateral_gu.all = glm( Nb_lateral_gu  ~ Tree_Fruit_Load + 
-                                                           Burst_Date + 
-                                                           Position_A + 
-                                                           Nature_F,
-                     family = poisson, data=data, subset = index_lateral.all)
-    else
-        complete_glm.nb_lateral_gu.all = glm( Nb_lateral_gu  ~ Tree_Fruit_Load + 
-                                                           Position_A + 
-                                                           Nature_F,
-                     family = poisson, data=data, subset = index_lateral.all)
-
-    if (verbose >= 3) summary(complete_glm.nb_lateral_gu.all)  # AIC : 
-
-    # For each tree, loaded trees and not loaded trees
-    complete_glm.nb_lateral_gu.trees = list()
-    for(tree_name in trees){
-        if (with_burstdate == TRUE)
-            complete_glm.nb_lateral_gu.trees[[tree_name]] = glm(Nb_lateral_gu ~ Burst_Date + 
-                                                                                Position_A +
-                                                                                Nature_F,
-                family = poisson, data=data, subset=index_lateral.trees[[tree_name]])
-        else
-            complete_glm.nb_lateral_gu.trees[[tree_name]] = glm(Nb_lateral_gu ~ Position_A +
-                                                                                Nature_F,
-                family = poisson, data=data, subset=index_lateral.trees[[tree_name]])
-    }
-
-
-    ### selected GLM ###
-    # For all trees
-    selected_glm.nb_lateral_gu.all = step(complete_glm.nb_lateral_gu.all, trace = tracestep)
-    if (verbose >= 3) summary(selected_glm.nb_lateral_gu.all)  # AIC : 
-
-    # For each tree, loaded trees and not loaded trees
-    selected_glm.nb_lateral_gu.trees = list()
-    for(tree_name in trees){
-        selected_glm.nb_lateral_gu.trees[[tree_name]] = step(complete_glm.nb_lateral_gu.trees[[tree_name]], trace = tracestep)
-    }
-
-
-
-
-    ##############################################
-    #### Burst date of children    
-    ##############################################
-    if (verbose >= 1) print("Estimate Burst date of children") 
-
-        
-    ### complete GLM ###
-    # For all trees  
-    if (with_burstdate == TRUE)
-        complete_vglm.burst_date_children.all = vglm( Burst_Date_Children ~ Tree_Fruit_Load + 
-                                                                            Burst_Date + 
-                                                                            Position_A + 
-                                                                            Nature_F,
-                                                      family = cumulative(parallel=TRUE) ,data=data, subset = index_bursted.all)
-    else
-        complete_vglm.burst_date_children.all = vglm( Burst_Date_Children ~ Tree_Fruit_Load + 
-                                                                            Position_A + 
-                                                                            Nature_F,
-                                                      family = cumulative(parallel=TRUE) ,data=data, subset = index_bursted.all)
-
-    if (verbose >= 3) {
-        summary(complete_vglm.burst_date_children.all) # Log-likelihood: 
-        print(paste("AIC:",get_vglm_AIC(complete_vglm.burst_date_children.all)))
-    }
-
-    # For each tree, loaded trees and not loaded trees
-    complete_vglm.burst_date_children.tree = list()
-    #AIC.vglm.burst_date_children.tree = list()
-    for(tree_name in trees){
-        if(length(index_bursted.trees[[tree_name]])>MinNbGUForGLM){
-
-            if (with_burstdate == TRUE)
-                complete_vglm.burst_date_children.tree[[tree_name]] = vglm(Burst_Date_Children ~ Burst_Date + 
-                                                                                                 Position_A + 
-                                                                                                 Nature_F,
-                                                        family = cumulative(parallel=TRUE), data=data, subset=index_bursted.trees[[tree_name]])
-            else
-                complete_vglm.burst_date_children.tree[[tree_name]] = vglm(Burst_Date_Children ~ Position_A + 
-                                                                                                 Nature_F,
-                                                        family = cumulative(parallel=TRUE), data=data, subset=index_bursted.trees[[tree_name]])
-            #AIC.vglm.burst_date_children.tree[[tree_name]] = get_vglm_AIC(complete_vglm.burst_date_children.tree[[tree_name]])
-        }
-    }
-
-
-    ### selected GLM ###
-    # For all trees
-
-
-    # la fonction step ne s applique pas a la classe des vglm
-    # ===>> selectioner le model a la main, AIC = 2k - 2ln(L)
-
-    #............ TODO
-
-
-
-
-
-    detach(data)
-
-    ##############################################
-    #### Writing probabilities
-    ##############################################
-
-
-    path_complete_glm = paste(output_dir,"complete_glm/",sep="")
-    path_complete_glm_all_trees = paste(path_complete_glm,"all_trees/",sep="")
-
-    year = paste("between_",year,sep="")
-
-    if(verbose >= 1) print(paste("Write complete glm proba tables from all trees of year",year))
-    writing_glm_tables(complete_glm.vegetative_burst.all, 
-                       complete_glm.has_apical_gu_child.all, 
-                       complete_glm.has_lateral_gu_children.all, 
-                       complete_glm.nb_lateral_gu.all, 
-                       complete_vglm.burst_date_children.all, 
-                       NULL, 
-                       NULL, 
-                       NULL, 
-                       NULL, 
-                       NULL, 
-                       NULL, 
-                       NULL, 
-                       path_complete_glm_all_trees, year, verbose >= 2)
-
-    for(tree_name in trees){
-        if(verbose >= 1) print(paste("Write complete glm proba tables from tree",tree_name))
-        path_complete_glm_tree = paste(path_complete_glm,tree_name,"/",sep="")
-        writing_glm_tables(complete_glm.vegetative_burst.trees[[tree_name]], 
-                           complete_glm.has_apical_gu_child.trees[[tree_name]], 
-                           complete_glm.has_lateral_gu_children.trees[[tree_name]], 
-                           complete_glm.nb_lateral_gu.trees[[tree_name]], 
-                           complete_vglm.burst_date_children.tree[[tree_name]], 
-                           NULL, 
-                           NULL, 
-                           NULL, 
-                           NULL, 
-                           NULL, 
-                           NULL, 
-                           NULL, 
-                           path_complete_glm_tree, year, verbose >= 2)
-    }
-
-    path_selected_glm = paste(output_dir,"selected_glm/",sep="")
-    path_selected_glm_all_trees = paste(path_selected_glm,"all_trees/",sep="")
-
-    if(verbose >= 1) print("Write selected glm proba tables from all trees")
-    writing_glm_tables(selected_glm.vegetative_burst.all, 
-                       selected_glm.has_apical_gu_child.all, 
-                       selected_glm.has_lateral_gu_children.all, 
-                       selected_glm.nb_lateral_gu.all, 
-                       complete_vglm.burst_date_children.all, 
-                       NULL, 
-                       NULL, 
-                       NULL, 
-                       NULL, 
-                       NULL, 
-                       NULL, 
-                       NULL, 
-                       path_selected_glm_all_trees, year, verbose >= 2)
-
-    for(tree_name in trees){
-        if(verbose >= 1) print(paste("Write selected glm proba tables from tree",tree_name))
-        path_selected_glm_tree = paste(path_selected_glm,tree_name,"/",sep="")
-        writing_glm_tables(selected_glm.vegetative_burst.trees[[tree_name]], 
-                           selected_glm.has_apical_gu_child.trees[[tree_name]], 
-                           selected_glm.has_lateral_gu_children.trees[[tree_name]], 
-                           selected_glm.nb_lateral_gu.trees[[tree_name]], 
-                           complete_vglm.burst_date_children.tree[[tree_name]], 
-                           NULL, 
-                           NULL, 
-                           NULL, 
-                           NULL, 
-                           NULL, 
-                           NULL, 
-                           NULL, 
-                           path_selected_glm_tree, year, verbose >= 2)
-    }
+    determine_vegetative_development(data=data, subset_selection= subset_selection, year=year, yeartag= yeartag, tag = tag, verbose = verbose, factors = factors)
 
 }
 
-determining_glm_tables_between_cycle_for_year = function(input_dir, year, with_burstdate = FALSE, verbose = 0) {
-    table_gu_within_cycle = read.csv(paste(input_dir,"table_between_cycle_",year,".csv",sep=""),header = TRUE)
-    summary(table_gu_within_cycle)
-    determining_glm_tables_between_cycle(table_gu_within_cycle, year,with_burstdate, verbose)
+
+########################################################################################################################################################################################
+
+determining_glm_tables_within_cycle_for_year = function(input_dir, year = NULL, verbose = 0) {
+  data = read.csv(paste(input_dir,"table_within_cycle_",year,".csv",sep=""), header = TRUE)
+  determining_glm_tables_within_cycle(data, year, verbose = verbose, selection=data$Mixed_Inflo == FALSE)
+  #determining_glm_tables_within_cycle(data, year, verbose = verbose, selection=data$Mixed_Inflo == TRUE, tag='mixedinflo', factors = c("Position_Ancestor_A"))
 }
 
-print("start")
-verbose = 3
-determining_glm_tables_within_cycle_for_year(input_dir, "04", verbose)
-#determining_glm_tables_within_cycle_for_year(input_dir, "05", verbose)
-
-#determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", FALSE, verbose)
-#determining_glm_tables_between_cycle_for_year(input_dir, "04to05", TRUE, verbose)
 
 
-
-
-writing_glm_tables = function(vegetative_burst,
-                              has_apical_gu, 
-                              has_lateral_gu, 
-                              nb_lateral_gu, 
-                              burst_date_children, 
-                              burst_delta_date_children, 
-                              burst_delta_date_children_poisson,
-                              flowering, 
-                              nb_inflo, 
-                              flowering_week, 
-                              fruiting,
-                              nb_fruits,
-                              output_dir, 
-                              year, 
-                              verbose = TRUE){
-
-    if (file.exists(output_dir) == FALSE){
-        dir.create(output_dir,recursive=TRUE)
-    }
-    if (verbose) print("Write probas of vegetative_burst")
-    table_prob_vegetative_burst = determine_table_prob_from_glm(vegetative_burst)
-    write.csv(table_prob_vegetative_burst,file=paste(output_dir,"vegetative_burst_",year,".csv", sep=""), row.names = FALSE)
-
-    if (verbose) print("Write probas of has_apical_gu_child")
-    table_prob_has_apical_gu = determine_table_prob_from_glm(has_apical_gu)
-    write.csv(table_prob_has_apical_gu,file=paste(output_dir,"has_apical_gu_child_",year,".csv",sep=""), row.names = FALSE)
-
-     if (verbose) print("Write probas of has_lateral_gu_children")
-    table_prob_has_lateral_gu = determine_table_prob_from_glm(has_lateral_gu)
-    write.csv(table_prob_has_lateral_gu,file=paste(output_dir,"has_lateral_gu_children_",year,".csv",sep=""), row.names = FALSE)
-
-    if (verbose) print("Write probas of nb_lateral_gu_children")
-    table_prob_nb_lateral_gu = determine_table_prob_from_glm(nb_lateral_gu)
-    write.csv(table_prob_nb_lateral_gu,file=paste(output_dir,"nb_lateral_gu_children_",year,".csv",sep=""), row.names = FALSE)
-
-    if( !is.null(burst_date_children) ){
-        if (verbose) print("Write probas of burst_date_children")
-        table_prob_burst_date_children = determine_table_prob_from_glm(burst_date_children)
-        write.csv(table_prob_burst_date_children,file=paste(output_dir,"burst_date_children_",year,".csv",sep=""), row.names = FALSE)
-    }
-
-    if( !is.null(burst_delta_date_children) ){
-        if (verbose) print("Write probas of burst_delta_date_children")
-        table_prob_burst_delta_date_children = determine_table_prob_from_glm(burst_delta_date_children)
-        write.csv(table_prob_burst_delta_date_children,file=paste(output_dir,"burst_delta_date_children_",year,".csv",sep=""), row.names = FALSE)
-    }
-
-    if( !is.null(burst_delta_date_children_poisson) ){
-        if (verbose) print("Write probas of burst_delta_date_children_poisson")
-        table_prob_burst_delta_date_children_poisson = determine_table_prob_from_glm(burst_delta_date_children_poisson)
-        write.csv(table_prob_burst_delta_date_children_poisson,file=paste(output_dir,"burst_delta_date_children_poisson_",year,".csv",sep=""), row.names = FALSE)
-    }
-
-    if( !is.null(flowering) ){
-        if (verbose) print("Write probas of flowering")
-        table_prob_flowering = determine_table_prob_from_glm(flowering)
-        write.csv(table_prob_flowering,file=paste(output_dir,"flowering_",year,".csv",sep=""), row.names = FALSE)
-    }
-
-    if( !is.null(nb_inflo) ){
-        if (verbose) print("Write probas of nb_inflorescences")
-        table_prob_nb_inflo = determine_table_prob_from_glm(nb_inflo)
-        write.csv(table_prob_nb_inflo,file=paste(output_dir,"nb_inflorescences_",year,".csv",sep=""), row.names = FALSE)
-    }
-    if( !is.null(flowering_week) ){
-        if (verbose) print("Write probas of flowering_week")
-        table_prob_flowering_week = determine_table_prob_from_glm(flowering_week)
-        write.csv(table_prob_flowering_week,file=paste(output_dir,"flowering_week_",year,".csv",sep=""), row.names = FALSE)
-    }
-
-    if( !is.null(fruiting) ){
-        if (verbose) print("Write probas of fruiting")
-        table_prob_fruiting = determine_table_prob_from_glm(fruiting)
-        write.csv(table_prob_fruiting,file=paste(output_dir,"fruiting_",year,".csv",sep=""), row.names = FALSE)
-    }
-
-    if( !is.null(nb_fruits) ){
-        if (verbose) print("Write probas of nb_fruits")
-        table_prob_nb_fruits = determine_table_prob_from_glm(nb_fruits)
-        write.csv(table_prob_nb_fruits,file=paste(output_dir,"nb_fruits_",year,".csv",sep=""), row.names = FALSE)
-    }
-
-
+determining_glm_tables_between_cycle_for_year = function(input_dir, year, verbose = 0) {
+    data = read.csv(paste(input_dir,"table_between_cycle_",year,".csv",sep=""), header = TRUE)
+    if (length(which(is.na(data$Burst_Month))) == length(data$Burst_Month)) data$Burst_Month = NULL
+    determining_glm_tables_between_cycle(data, year, verbose, selection=data$Mixed_Inflo == FALSE)
+    #determining_glm_tables_between_cycle(data, year, verbose, selection=data$Mixed_Inflo == TRUE, tag='mixedinflo')
 }
 
+#print("start")
+verbose = 1
+determining_glm_tables_within_cycle_for_year(input_dir, "04",   verbose)
+determining_glm_tables_within_cycle_for_year(input_dir, "05",   verbose)
+#determining_glm_tables_within_cycle_for_year(input_dir, "0405", verbose)
+
+determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", verbose)
+determining_glm_tables_between_cycle_for_year(input_dir, "04to05",   verbose)
+
+
+test = function() {
+  data = read.csv(paste(input_dir,"table_within_cycle_04.csv",sep=""),header = TRUE)
+
+  data = prepare_data_factors(data, month_cycle_order)
+
+  subset_selection = data$Tree_Fruit_Load == 1
+  subset= which(subset_selection)
+  
+  factors = c("Burst_Month" , "Position_A" , "Position_Ancestor_A" , "Nature_Ancestor_F")
+  
+  #generate_glm("Vegetative_Burst", family = binomial, data=data, subset= subset, year= "04", verbose = 1, factors = factors)
+
+  ndata = data[subset,]
+  
+  formula = as.formula("Vegetative_Burst ~ Burst_Month + Position_A + Position_Ancestor_A + Nature_Ancestor_F")
+  myglm = glm( formula , family = binomial, data = ndata)
+  res = vglm.proba_and_counts (myglm, ndata)
+  
+  
+  #generate_vglm("Burst_Delta_Date_Children",  data=data, subset= index_bursted.all, year= "04", verbose = verbose, factors = totfactors)
+  
+  bursted_selection = subset_selection & data$Vegetative_Burst == 1
+  index_bursted.all = which(bursted_selection)
+  subset= index_bursted.all
+  ndata = data[subset,]
+  
+  formula = as.formula("Burst_Delta_Date_Children ~ Burst_Month")
+  myglm2 = vglm( formula , family = cumulative(parallel=TRUE), data = ndata)
+  res = vglm.proba_and_counts (myglm, ndata)
+
+  formula2 = as.formula("Burst_Delta_Date_Children ~ Burst_Month")
+  myglm2 = vglm( formula2 , family = cumulative(parallel=TRUE), data = ndata)
+  res2 = vglm.proba_and_counts (myglm2, ndata)
+}

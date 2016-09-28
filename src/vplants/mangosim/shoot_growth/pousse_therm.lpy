@@ -662,7 +662,7 @@ def __initialiseContext__(context):
 	Color_20.name = "Color_20"
 	context.turtle.setMaterial(20,Color_20)
 	context.animation_timestep = 0.0
-	scalars = [('DAILY', 'Bool', False), ('mean_temperature', 'Float', 35.91, 20.0, 40.0, 2), ('D_EF_G', 'Bool', True), ('SEED', 'Integer', 86, 0, 100), ('Vegetative', 'Bool', False)]
+	scalars = [('DAILY', 'Bool', False), ('mean_temperature', 'Float', 35.91, 20.0, 40.0, 2), ('D_EF_G', 'Bool', True), ('SEED', 'Integer', 86, 0, 100), ('Vegetative', 'Bool', True)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]

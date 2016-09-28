@@ -129,8 +129,8 @@ def get_bloom_date(mtg, inflo, default=None):
 
 
 @use_global_mtg
-def get_nb_fruits(mtg, inflo, default=None):
-    return mtg.property(NbFruitPropertyName).get(inflo,0)
+def get_nb_fruits(mtg, inflo, default=0):
+    return mtg.property(NbFruitPropertyName).get(inflo,default)
 
 
 
@@ -141,7 +141,7 @@ def is_gu_dead_before_cycle_end(mtg, gu, cycle):
     return False
   else : 
     # We check if the death is in the cycle
-    date_dead = date_from_string(mtg.property('dead')[gu])
+    date_dead = mtg.property('dead')[gu]
     date_end_cycle = date(2000+cycle, 7, 15)
     return date_dead < date_end_cycle
 
@@ -155,12 +155,12 @@ def is_fruit(mtg, unit):
 
 @use_global_mtg
 def is_gu(mtg, unit):
-    return not mtg.label(unit) in [InfloLabel,FruitLabel]
+    return not (mtg.label(unit) in [InfloLabel,FruitLabel])
 
 @use_global_mtg
 def is_gu_flowering(mtg, gu, inflocycle = None):
     for ch in mtg.children(gu):
-        if is_inflorescence(mtg, ch):
+        if is_inflorescence(mtg, ch) or is_gu_mixed_inflorescence(mtg,ch):
             if inflocycle is None or get_unit_cycle(mtg,ch) == inflocycle:
                 return True
             else : return False
@@ -178,6 +178,17 @@ def is_gu_mixed_inflorescence(mtg, gu):
     return gu in mtg.property(MixedInfloPropertyName)
 
 @use_global_mtg
+def nb_of_inflorescences(mtg, gu):
+    nbinflo = 0
+    if is_gu(mtg, gu):
+        for ch in mtg.children(gu):
+            if is_inflorescence(mtg, ch):
+                nbinflo += nb_of_inflorescences(mtg, ch)
+    elif is_inflorescence(mtg, gu):
+        nbinflo = mtg.property('nb_inflo_t').get(gu,0) + mtg.property('nb_inflo_l').get(gu,0)
+    return nbinflo
+
+@use_global_mtg
 def is_terminal_at_cycle(mtg, gu, cycle):
     # we consider gu borned in cycle or before and not dead before end of cycle.
     if get_unit_cycle(mtg,gu) <= cycle and not is_gu_dead_before_cycle_end(mtg,gu,cycle):
@@ -188,6 +199,20 @@ def is_terminal_at_cycle(mtg, gu, cycle):
         return True
     return False
 
+@use_global_mtg
+def is_terminal(mtg, gu):
+    return is_terminal_at_cycle(mtg, gu, get_unit_cycle(mtg,gu))
+ 
+@use_global_mtg
+def is_reiteration(mtg, gu):
+    if not is_gu(mtg,gu): return False
+    cycle = get_unit_cycle(mtg,gu)
+    parent = mtg.parent(gu)
+    if get_unit_cycle(parent) == cycle: return False
+    for child in  mtg.children(parent):
+        if is_gu(mtg,child) and get_unit_cycle(mtg,child) < cycle:
+            return True
+    return False
 
 @use_global_mtg
 def get_nature_gu(mtg, gu):
@@ -266,21 +291,28 @@ def get_tree_of_gu(mtg, gu):
 
 
 @use_global_mtg
-def vegetative_children(mtg,gu):
-    return [child for child in mtg.children(gu) if is_gu(mtg,child) ]
+def vegetative_children(mtg, gu, purevegetative = False):
+    return [child for child in mtg.children(gu) if is_gu(mtg,child) and (not purevegetative or not is_gu_mixed_inflorescence(mtg, child))]
 
 @use_global_mtg
-def vegetative_children_at_cycle(mtg,gu,cycle):
-    return [child for child in mtg.children(gu) if is_gu(mtg,child) and get_unit_cycle(mtg,child) == cycle]
-
+def vegetative_children_at_cycle(mtg, gu, cycle, purevegetative = False):
+    return [child for child in mtg.children(gu) if is_gu(mtg,child) and get_unit_cycle(mtg,child) == cycle and (not purevegetative or not is_gu_mixed_inflorescence(mtg, child))]
 
 @use_global_mtg
-def inflorescence_children(mtg,gu):
+def inflorescence_children(mtg, gu):
     return [child for child in mtg.children(gu) if is_inflorescence(mtg, child)]
 
 @use_global_mtg
-def inflorescence_children_at_cycle(mtg,gu,cycle):
+def inflorescence_children_at_cycle(mtg, gu, cycle):
     return [child for child in mtg.children(gu) if is_inflorescence(mtg, child) and get_unit_cycle(mtg,child) == cycle]
+
+@use_global_mtg
+def mixed_inflorescence_children(mtg, gu):
+    return [child for child in mtg.children(gu) if is_gu_mixed_inflorescence(mtg, child)]
+
+@use_global_mtg
+def mixed_inflorescence_children_at_cycle(mtg, gu, cycle):
+    return [child for child in mtg.children(gu) if is_gu_mixed_inflorescence(mtg, child) and get_unit_cycle(mtg,child) == cycle]
 
 
 
@@ -395,7 +427,7 @@ def get_all_gus_of_cycle(mtg, cycle = 4, loaded = None, variety = "cogshall"):
   return gus_of_cycle
 
 @use_global_mtg
-def get_all_gus_of_variety(mtg, variety = "cogshall", loaded = None):
+def get_all_gus_of_variety(mtg, loaded = None, variety = "cogshall"):
   """ 
   Parameters : 
     loaded : a booleen, if true, return trees which are loaded, if false, return trees which are not loaded.
@@ -542,6 +574,34 @@ def get_sorted_terminal_gu_per_nb_ancestor_within_cycle(mtg, cycles = [4,5], var
             ancestor_rank[nba].append(gu)
     return ancestor_rank
 
+
+@use_global_mtg
+def filter_reiterations_and_descendants(mtg, units):
+    reiterations = {}
+    sunit = set(units)
+    for gu in units:
+        if gu in reiterations: pass
+        elif is_reiteration(mtg, gu):
+            reiterations[gu] = True
+        else:
+            ancestors = [gu]
+            reit = False
+            while True:
+                parent = mtg.parent(ancestors[-1])
+                if not parent in units: break
+                elif parent in reiterations:
+                        reit = reiterations[parent]
+                        break
+                else:
+                    ancestors.append(parent)
+                    if is_reiteration(mtg, parent):
+                        reit = True
+                        break
+            for a in ancestors : reiterations[a] = reit
+    return [gu for gu,reit in reiterations.items() if reit is False]
+
+
+
 #### test #####
 
 @use_global_mtg
@@ -602,20 +662,28 @@ def check_apical_ratio_in_first_layer(mtg, variety = 'cogshall'):
 @use_global_mtg
 def check_terminal_flowering_has_no_apical(mtg, variety = 'cogshall'):
     flowering_with_apical = []
+    apical_children = []
     for cycle in range(3,6):
         for gu in get_terminal_gus_of_variety_at_cycle(mtg, cycle, None, variety):
             has_inflo, has_apical = False, False
+            capical = []
             for ch in mtg.children(gu):
                 if is_inflorescence(mtg, ch):
                     has_inflo = True
                 elif is_apical(mtg, ch):
                     has_apical = True
+                    capical.append(ch)
             if has_inflo and has_apical:
                 flowering_with_apical.append(gu)
-
+                if len(capical) == 1:  apical_children += capical
+                else: apical_children.append(capical)
     print "It exists",len(flowering_with_apical),"terminal gu with both inflorescence and apical vegetative children :",flowering_with_apical
     nbterminalgus = sum([len(get_terminal_gus_of_variety_at_cycle(mtg, cycle, None, variety)) for cycle in xrange(3,6)])
     print "It represents",100.*len(flowering_with_apical)/nbterminalgus,"% of the terminal gus."
+    print "The apical children are :",apical_children
+    mixed_inflo = filter(is_gu_mixed_inflorescence, apical_children)
+    print "The number of gu marked as mixed inflo from this set is",len(mixed_inflo),':',mixed_inflo
+    print "The others are",list(set(apical_children) - set(mixed_inflo))
 
 @use_global_mtg
 def check_if_has_lateral_has_apical(mtg, variety = 'cogshall'):
@@ -634,6 +702,29 @@ def check_if_has_lateral_has_apical(mtg, variety = 'cogshall'):
     print "It represents",100.*len(children_with_no_apical)/len(get_all_gus_of_variety(mtg, None, variety)),"% of the gus."
 
 @use_global_mtg
+def check_if_within_has_lateral_has_apical(mtg, variety = 'cogshall'):
+    import numpy as np
+    children_with_no_apical = []
+    for gu in get_all_gus_of_variety(mtg, None, variety):
+        if not is_terminal(mtg, gu):
+            children = vegetative_children(mtg, gu)
+            has_apical, nb_children = False, len(children)
+            for ch in children:
+                if is_apical(mtg, ch):
+                        has_apical = True
+            if nb_children > 0 and not has_apical:
+                    children_with_no_apical.append(gu)
+
+    print "It exists",len(children_with_no_apical)," gu with only vegetative lateral children and no apical and no inflorescences:",children_with_no_apical
+    print "It represents",100.*len(children_with_no_apical)/len(get_all_gus_of_variety(mtg, None, variety)),"% of the gus."
+    cycles = map(get_unit_cycle, children_with_no_apical)
+    print "Cycle:", cycles
+    print 'Hist cycle:', np.histogram(cycles, range(3,7))
+    ranks = map(rank_within_cycle, children_with_no_apical)
+    print "Rank:", ranks
+    print 'Hist rank:', np.histogram(ranks, range(5))
+
+@use_global_mtg
 def check_apical_strength(mtg, cycles = [4,5], variety = 'cogshall'):
     sorted_gus = get_sorted_terminal_gu_per_nb_ancestor_within_cycle(mtg, cycles=cycles, variety = variety)
     maxorder = max(sorted_gus.keys())
@@ -643,7 +734,7 @@ def check_apical_strength(mtg, cycles = [4,5], variety = 'cogshall'):
         histonl = dict([(True,0),(False,0)])
         for uc in ucs:
             ancestors = get_ancestors_within_cycle(mtg,uc)
-            apstrength = tuple(reversed([is_apical(uc)]+[is_apical(auc) for auc in ancestors]))
+            apstrength = tuple(reversed([is_apical(mtg, uc)]+[is_apical(auc) for auc in ancestors]))
             histo[apstrength] = histo.get(apstrength,0) + 1
             histol[is_apical(uc)] += 1
         for o in range(order+1,maxorder+1):
@@ -681,14 +772,206 @@ def check_burst_dates(mtg, cycles = [4,5], variety = 'cogshall'):
         #plot_histo([Month[m] for m in histo_date[0].keys()],list(reversed([hd.values() for hd in histo_date])),'Burst date of gu of order '+str(order))
         plot_histo([Month[m] for m in histo_date[0].keys()],list(reversed([hd.values() for hd in histo_date])),'Burst date of gu of order '+str(order))
 
+@use_global_mtg
+def check_produce_within_and_next_cycle(mtg, variety = 'cogshall'):
+    import numpy as np
+    within_and_next = {}
+    for gu in get_all_gus_of_variety(mtg, None, variety):
+        gucycle = get_unit_cycle(mtg,gu)
+        whithinc, nextc = False, False
+        reit = []
+        within = []
+        for child in mtg.children(gu):
+            if is_gu(mtg,child) :
+                chcycle = get_unit_cycle(mtg,child)
+                assert chcycle >= gucycle 
+                if chcycle == gucycle: 
+                    whithinc = True
+                    within.append(child)
+                else:
+                    nextc = True
+                    reit.append(child)
+        if whithinc and nextc : 
+            within_and_next[gu] = within, reit
+    print "It exists", sum([len(reit) for w, reit in within_and_next.values()]), " gu that produce both within and in the next cycles."
+    if len(within_and_next) > 0:
+        print 'The reiteration parent units are', within_and_next.keys()
+        code = mtg.property('code')
+        pgu = lambda gu : str(get_burst_date(mtg,gu))+'('+str(get_unit_cycle(mtg,gu))+'):'+code[gu]
+        for gu, children  in within_and_next.items():
+            within, reit = children
+            print  pgu(gu), '-->', [pgu(g) for g in reit],[pgu(g) for g in within]
+        nbdescendants = { 3 : [], 4 : [], 5 : []}
+        for gu, children  in within_and_next.items():
+            within, reit = children
+            for gur in reit:
+                nbdescendants[get_unit_cycle(mtg,gur)] += [len(mtg.Descendants(gur))]
+        for i in xrange(3,6):
+            print np.histogram(nbdescendants[i], range(0,10))
+
+@use_global_mtg
+def check_mixed_inflo(mtg, variety = 'cogshall'):
+    from vplants.mangosim.util_date import MonthName
+    import numpy as np
+    nbchild_mi = {}
+    for gu in get_all_gus_of_variety(mtg, True, variety):
+        if is_gu_mixed_inflorescence(mtg, gu):
+            nbchild_mi[gu] = mtg.nb_children(gu)
+    print 'Nb of mixed inflorescences :',len(nbchild_mi)
+
+    inflos = get_all_inflo_of_variety(mtg, True, variety)
+    potentialmixedinflo = [inflo for inflo in inflos if mtg.property('type_inflo').get(inflo) in ['I/M', 'IM', 'M', 'M/I']]
+    print 'Nb of other potential inflos (I/M, IM, M, M/I):', len(potentialmixedinflo)
+    print 'Ids : ',nbchild_mi.keys()
+    print 'Histogram of mixed inflorescences children :', np.histogram(nbchild_mi.values(), range(0,10))
+    forbetween = []
+    for gu in nbchild_mi.keys():
+        gcycle = get_unit_cycle(mtg, gu)
+        for ch in mtg.children(gu):
+            if gcycle < get_unit_cycle(mtg, gu):
+                forbetween.append(gu)
+                break
+
+    print 'Nb of MI that has children in next cycles :', len(forbetween)
+    hasflowering = []
+    for gu in nbchild_mi.keys():
+        for ch in mtg.children(gu):
+            if is_inflorescence(mtg, gu):
+                hasflowering.append(gu)
+                break
+    print 'Nb of MI that has inflorescence children :', len(hasflowering)
+
+    isapical = [is_apical(mtg, gu) for gu in nbchild_mi.keys()]
+    print 'Nb of apical MI  :', len(isapical), ' from ',len(nbchild_mi.keys())
+
+    parents = set([])
+    nbmixedinflo = {}
+    for gu in nbchild_mi.keys(): parents.add(mtg.parent(gu))
+    for par in parents:
+        nbmixedinflo[par] = len([ch for ch in mtg.children(par) if is_gu_mixed_inflorescence(mtg, ch)])
+
+    print 'Nb of MI in siblings  :', np.histogram(nbmixedinflo.values(), range(0,10))
+
+    isterminal = [is_terminal(mtg, gu) for gu in parents]
+    print 'Terminal parents  :', len(isterminal), ' from ',len(parents)
+
+    isapicalparent = [is_apical(mtg, gu) for gu in parents]
+    print 'Apical parents  :', len(isapicalparent), ' from ',len(parents)
+
+    isloadedtree = [gu for gu in nbchild_mi.keys() if is_loaded(mtg,get_tree_of_gu(mtg, gu))]
+    print 'From loaded trees  :', len(isloadedtree), ' from ',len(nbchild_mi)
+
+
+    hasflowering = {}
+    for par in parents:
+        nbinflo = 0
+        for ch in mtg.children(par):
+            if is_inflorescence(mtg, ch):
+                nbinflo += 1
+        hasflowering[par] = nbinflo
+    print 'Flowering parents  :', len([gu for gu, nbinflo in hasflowering.items() if nbinflo > 0]), ' from ',len(parents)
+
+    print "Considering property 'nb_inflo_t' and 'nb_inflo_l'"
+    print "Note that some inflorescences has no inflo (?) :", len([inflo for inflo in get_all_inflo_of_variety(mtg,True) if nb_of_inflorescences(mtg,inflo) == 0])
+    hasflowering = {}
+    for par in parents:
+        nbinflo = 0
+        for ch in mtg.children(par):
+            if is_inflorescence(mtg, ch):
+                nbinflo += nb_of_inflorescences(mtg, ch)
+        hasflowering[par] = nbinflo
+    print 'Flowering parents  :', len([gu for gu, nbinflo in hasflowering.items() if nbinflo > 0]), ' from ',len(parents)
+    print 'Histogram of nb of inflo of parents :', np.histogram(hasflowering.values(), range(0,10))
+
+    isfruiting =  [par  for par in parents if is_gu_fruiting(mtg,par)]
+    print 'Fruiting parents  :', len(isfruiting), ' from ',len(parents)
+
+    hasvegdev = {}
+    for par in parents:
+        nbguchild = 0
+        for ch in mtg.children(par):
+            if is_gu(mtg, ch) and not is_gu_mixed_inflorescence(mtg,ch):
+                nbguchild +=1
+        hasvegdev[par] = nbguchild
+    print 'Vegetative parents  :', len([gu for gu, nbguchild in hasvegdev.items() if nbguchild > 0]), ' from ',len(parents)
+    print 'Histogram of nb of gu of parents :', np.histogram(hasvegdev.values(), range(0,12))
+
+    production = {}
+    for par in parents: 
+        production[par] = mtg.nb_children(par)
+    print 'Producing parents  :', len([gu for gu, nbchild in production.items() if nbchild > 0]), ' from ',len(parents)
+    print 'Histogram of nb of child of parents :', np.histogram(production.values(), range(0,14))
+
+    potentialparents = [gu for gu in get_all_gus_of_variety(mtg, None, variety) if is_terminal(mtg, gu) and get_unit_cycle(mtg,gu) < 5]
+    potentialapifloparents = [gu for gu in potentialparents if is_apical(mtg,gu) and is_gu_flowering(mtg, gu)]
+    nbparentmiinflo = len(parents)
+    print 'Parent burst rate :', nbparentmiinflo/float(len(potentialparents)),'(terminal)', nbparentmiinflo/float(len(potentialapifloparents)),'(flowering apical)'
+
+
+    def monthhisto(val):
+        values, ranges = np.histogram(val, range(1,14))
+        ranges = list(ranges)
+        return ' , '.join([str(values[ranges.index(r)]) for r in range(6,13)+range(1,6)]) + " -> "+ ' , '.join([MonthEnName[r] for r in range(6,13)+range(1,6)])
+
+
+    for cycle in [4,5]:
+        print "* Cycle",cycle,':'
+        print 'Number of mixed inflos :', len([v for k,v in nbchild_mi.items() if get_unit_cycle(mtg,k) == cycle])
+        potentialparents = [gu for gu in get_all_gus_of_variety(mtg, True, variety) if is_terminal(mtg, gu) and get_unit_cycle(mtg,gu) == cycle-1]
+        potentialapifloparents = [gu for gu in potentialparents if is_apical(mtg,gu) and is_gu_flowering(mtg, gu)]
+        nbparentmiinflo = len([p for p in parents if get_unit_cycle(mtg,p) == cycle-1])
+        print 'Parent burst rate :', nbparentmiinflo/float(len(potentialparents)),'(terminal)', nbparentmiinflo/float(len(potentialapifloparents)),'(flowering apical)'
+
+        print 'Histogram of children :', np.histogram([v for k,v in nbchild_mi.items() if get_unit_cycle(mtg,k) == cycle], range(0,10))
+        print "Burst rate :", len([v for k,v in nbchild_mi.items() if get_unit_cycle(mtg,k) == cycle and v > 0])/float(len([v for k,v in nbchild_mi.items() if get_unit_cycle(mtg,k) == cycle]))
+        print "Mean nb child :", np.mean([v for k,v in nbchild_mi.items() if get_unit_cycle(mtg,k) == cycle and v > 0])
+        mi_month = []
+        for gu in nbchild_mi.keys():
+          if get_unit_cycle(mtg,gu) == cycle:
+            if get_burst_date(mtg,gu):
+                mi_month.append(get_burst_date(mtg,gu).month)
+        print 'Month of MI       :', monthhisto(mi_month)
+        children_month = []
+        for gu in nbchild_mi.keys():
+          if get_unit_cycle(mtg,gu) == cycle:
+            for ch in mtg.children(gu):
+                if get_burst_date(mtg,ch):
+                    children_month.append(get_burst_date(mtg,ch).month)
+        print 'Month of children :', monthhisto(children_month)
+        children_deltamonth = []
+        for gu in nbchild_mi.keys():
+          if get_unit_cycle(mtg,gu) == cycle:
+            gdate =  get_burst_date(mtg,gu)
+            for ch in mtg.children(gu):
+                if get_burst_date(mtg,ch):
+                    children_deltamonth.append(month_difference(get_burst_date(mtg,ch), gdate))
+        print 'Delta Month of children :', np.histogram(children_deltamonth, range(1,8))
+
+
+
+@use_global_mtg
+def check_inflo(mtg, variety = 'cogshall'):
+    import numpy as np
+    inflo = []
+    code = mtg.property('code')
+    for gu in get_all_inflo_of_variety(mtg, None, variety):
+        if is_inflorescence(mtg, gu):
+            print gu, code[gu], code[mtg.parent(gu)]
+
+
 
 if __name__ == '__main__' :
     # check_cycle_and_burst_date_coherence()
+    #check_produce_within_and_next_cycle()
     # check_terminal3_producing_at_cycle5()
-    # check_terminal_flowering_has_no_apical()
-    # check_if_has_lateral_has_apical()
-    check_apical_ratio_in_first_layer()
+    #check_terminal_flowering_has_no_apical()
+    #check_if_has_lateral_has_apical()
+    #check_if_within_has_lateral_has_apical()
+    #check_apical_ratio_in_first_layer()
+    check_mixed_inflo()
+    #check_inflo()
     pass
 
+# check reiteration
 
 

@@ -2,6 +2,7 @@ from os.path import join, exists, abspath, dirname
 
 import vplants.mangosim
 try:
+    from openalea.deploy.shared_data import shared_data
     share_dir = shared_data(vplants.mangosim, share_path = "share")
 except:
     share_dir = join(dirname(__file__),'..','..','..','share')
