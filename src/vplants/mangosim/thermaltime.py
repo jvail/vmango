@@ -7,6 +7,23 @@ class ThermalTimeAccumulator:
     def accumulate(self, temperature, duration = 1):
         self.ttsum += max(0,temperature - self.basetemperature) * duration
 
+    def find_date_of_accumulation(self, targetttsum, initialdate, get_temperature):
+        from datetime import timedelta
+
+        initialtsum = self.ttsum
+        
+        temp = get_temperature(initialdate)
+        self.accumulate(temp)
+        cdate = initialdate
+
+        while self.ttsum < targetttsum:
+            cdate += timedelta(days=1)
+            temp = get_temperature(cdate)
+            self.accumulate(temp)
+
+        self.ttsum = initialtsum
+
+        return cdate
 
 class MultiPhaseThermalTimeAccumulator:
     def __init__(self, basetemperatures, stagechangetempsum, initsum = 0):

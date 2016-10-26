@@ -29,6 +29,8 @@ def determine_fruiting_structure(mtg, cycle, fruit_distance):
     def merge(supporti, supportj):
         return supporti[0]+supportj[0], supporti[1] | supportj[1]
     
+    if len(mtg.vertices(scale=mtg.max_scale())) == 1:
+      return [(mtg.vertices(scale=mtg.max_scale()),[])]
     mtgstyle = getMtgStyle()
     setMtgStyle(eSimulatedMtg)
     tree = get_all_trees(mtg)[0]

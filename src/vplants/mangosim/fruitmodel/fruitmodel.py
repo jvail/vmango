@@ -91,7 +91,10 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True):
     fruit_structures = []
     for inflos, gus in fruiting_structures:
         bloom_dates = [params[inflo].bloom_date for inflo in inflos]
-        leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus])
+        if len(gus) == 0 and len(mtg.vertices(scale=mtg.max_scale())) == 1:
+          leaf_nbs    = 100
+        else:
+          leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus])
         nb_fruits   = sum([params[inflo].nb_fruits for inflo in inflos])
         print nb_fruits
         fruit_structures.append((len(inflos),nb_fruits, inflos, [params[inflo].nb_fruits for inflo in inflos] ))
