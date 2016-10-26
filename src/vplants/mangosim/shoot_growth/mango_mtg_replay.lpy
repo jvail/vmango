@@ -51,7 +51,7 @@ else:
 init_date  = cycle_end(3)-timedelta(days=1)
 final_date = cycle_end(5)
 
-first_date =    init_date # date(2003,10,8) #
+first_date =  init_date 
 last_date  = todatetime(final_date) # date(2003,10,17)
 
 total_weeks = week_difference(last_date,first_date)

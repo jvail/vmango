@@ -81,7 +81,10 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True):
 
     if dump:
         outdir = 'fruitmodel-output-cycle-'+str(cycle)+'-fdist-'+str(fruit_distance)
-        if not os.path.exists(outdir) : os.makedirs(outdir)
+        if os.path.exists(outdir) : 
+            import shutil
+            shutil.rmtree(outdir)
+        os.makedirs(outdir)
         dump_obj(mtg, 'fruitingtree.pkl', outdir) 
         dump_obj(fruiting_structures, 'fruitingbranches.pkl', outdir)
 
@@ -135,8 +138,9 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True):
     if dump:
         fstream = open(os.path.join(outdir,'fruitstructure.csv'),'w')
         fstream.write('NbInflos\tNbFruits\tFilename\tIdsInflos_NbFruitsPerInflos\n')
+        maxbranch = max([len(inflos) for nbinflos, nbfruits, inflos, nbfruitsperinflo in fruit_structures])
         for nbinflos, nbfruits, inflos, nbfruitsperinflo in fruit_structures:
-            fstream.write(str(nbinflos)+'\t'+str(nbfruits)+'\t'+'meanfruit-'+'-'.join(map(str,inflos))+'\t'+'\t'.join(map(str,inflos))+'\t'+'\t'.join(map(str,nbfruitsperinflo))+'\n' )
+            fstream.write(str(nbinflos)+'\t'+str(nbfruits)+'\t'+'meanfruit-'+'-'.join(map(str,inflos))+'\t'+'\t'.join(map(str,inflos))+'\t'*(1+maxbranch-len(inflos))+'\t'.join(map(str,nbfruitsperinflo))+'\t'*(maxbranch-len(inflos))+'\n' )
         fstream.close()
 
     return fruiting_structures
@@ -179,7 +183,7 @@ if __name__ == '__main__':
         mtg = load_obj('fruitstructure.pkl','../shoot_growth')
         sc = Scene('../shoot_growth/fruitstructure.bgeom')
         fs = applymodel(mtg, 3, int(sys.argv[1]) if len(sys.argv) > 1 else 3) 
-        #print len(fs)
-        #for inflos, gus in fs:
-        #    print inflos, list(gus)    
-        #Viewer.display(color_structures(fs, mtg, sc))
+        print len(fs)
+        for inflos, gus in fs:
+            print inflos, list(gus)    
+        Viewer.display(color_structures(fs, mtg, sc))
