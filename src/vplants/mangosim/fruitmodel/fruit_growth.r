@@ -106,7 +106,7 @@ MF = CROISSANCE_MF  ( Date =              unique(Table_Croissance$DATE),
 
 if ( Croissance[i,"Saccharose"] >= 0.04)
 {
-	cat("Le fruit est mûr \n")
+	cat("Le fruit est mur \n")
 	break                         # sort de la boucle et arrête les simulations 
 }  
 setTxtProgressBar(pb,i)

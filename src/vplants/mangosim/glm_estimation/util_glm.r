@@ -1,5 +1,6 @@
 
 library(VGAM)
+library(multcomp)
 
 #' Check whether the glm is a vglm (from VGAM) or not
 is.vglm = function(glm){
@@ -24,34 +25,34 @@ glm.factors = function(glm){
 }
 
 #' Retrieve the variable to explain from the GLM
-glm.variable = function(glm){
+glm.variable = function(myglm){
   variable = NULL
   
-  if (is.vglm(glm))
+  if (is.vglm(myglm))
   {
-    if(length(glm@xlevels)>0){ variable = rownames(slot(glm@terms[[1]],"factors"))[1]  }
+    if(length(myglm@xlevels)>0){ variable = rownames(slot(myglm@terms[[1]],"factors"))[1]  }
     else {                     variable = attr(attr(myglm@terms[[1]],"dataClasses"),"names")  }
   }
   else
   {
-    if(!is.null(glm$xlevels)){ variable = colnames(glm$model)[[1]] }
+    if(!is.null(myglm$xlevels)){ variable = colnames(myglm$model)[[1]] }
     # else {    missing this   }
   }
   return (variable)
 }
 
 #' Retrieve the set of variable involved from the GLM, i.e. the 
-glm.all.variables = function(glm){
+glm.all.variables = function(myglm){
   variables = NULL
   
-  if (is.vglm(glm))
+  if (is.vglm(myglm))
   {
-    if(length(glm@xlevels)>0){  variables = rownames(slot(glm@terms[[1]],"factors"))    }
-    else {                      variables = attr(attr(myglm@terms[[1]],"dataClasses"),"names")     }
+    if(length(myglm@xlevels)>0){  variables = rownames(slot(myglm@terms[[1]],"factors"))    }
+    else {                        variables = attr(attr(myglm@terms[[1]],"dataClasses"),"names")     }
   }
   else
   {
-    if(!is.null(glm$xlevels)){   variables = colnames(glm$model)     }
+    if(!is.null(myglm$xlevels)){   variables = colnames(myglm$model)     }
   }
   return (variables)
 }
@@ -96,7 +97,7 @@ glm.counts = function(myglm, data, subset = NULL){
       colnames(nb) = mnames
     }
     else {
-      nb = ftable(subdata)
+      nb = ftable(data[variables[1]])
       colval = attr(nb, "col.vars")
       nb = data.frame(unclass(nb))
       colnames(nb) = colval[[1]]
@@ -266,6 +267,8 @@ library(combinat)
 vglm.step = function(glm, data, subset = NULL) {
   factors = glm.factors(glm)
   variable = glm.variable(glm)
+  
+  if(length(factors) == 0) { return (glm)}
 
   bestvglm = glm
   bestaic = glm.AIC(bestvglm, data, subset)
@@ -279,19 +282,23 @@ vglm.step = function(glm, data, subset = NULL) {
      bestvglm = candidatvglm
      bestaic = candidataic
   }
-  for(nbfactors in 1:(length(factors)-1)){
-      factorcombini = combn(factors,nbfactors)
-      for (lindex in 1:ncol(factorcombini)){
-          lfactors = factorcombini[,lindex]
-          ftext = paste(variable," ~ ", paste(lfactors,collapse=" + "),sep="")
-          formula = as.formula(ftext)
-          candidatvglm = vglm(formula = formula, family = glm@family, data = data, subset = subset)
-          candidataic = glm.AIC(candidatvglm, data, subset)
-          if (candidataic < bestaic) {
-              bestvglm = candidatvglm
-              bestaic = candidataic
-          }
+
+  if (length(factors) > 1) { 
+    for(nbfactors in 1:(length(factors)-1)){
+        factorcombini = combn(factors,nbfactors)
+        for (lindex in 1:ncol(factorcombini)){
+            lfactors = factorcombini[,lindex]
+            ftext = paste(variable," ~ ", paste(lfactors,collapse=" + "),sep="")
+            formula = as.formula(ftext)
+            candidatvglm = vglm(formula = formula, family = glm@family, data = data, subset = subset)
+            candidataic = glm.AIC(candidatvglm, data, subset)
+            if (candidataic < bestaic) {
+                bestvglm = candidatvglm
+                bestaic = candidataic
+            }
+        }
     }
   }
+  
   return (bestvglm)
 }

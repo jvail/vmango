@@ -11,6 +11,8 @@ An download last version of the module.
 In a shell, type:
 R CMD INSTALL VGAM_X.X.X.tar.gz
 
+On Ubuntu, you can also install the ditrib package:
+sudo apt-get install r-cran-vgam
 
 Executing the R script. 
 -----------------------

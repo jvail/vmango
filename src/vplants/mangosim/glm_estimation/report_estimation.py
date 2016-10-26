@@ -15,14 +15,18 @@ from vplants.mangosim.devlaw_description import *
 share_dir = '../../../../share/'
 data_dir = join(share_dir,'glm_output_proba2/cogshall/selected_glm')
 periodtags = [ 'within_04', 'within_05','within_0405',]  
-periodtags2 = ["04to05", "03to0405"]
+periodtags2 = ["between_03to0405", "between_04to05"]
+periodtags3 = [ 'mixedinflo_within_04', 'mixedinflo_within_05','mixedinflo_within_0405',]  
 name = 'vegetative_burst_within_04' # 'burst_date_children_within_05' 
 names1 = ['Vegetative_Burst',  
          "Has_Apical_GU_Child", "Has_Lateral_GU_Children", 'Nb_Lateral_GU_Children', 
-         'Burst_Date_Children'] 
-names2 = ['Burst_Delta_Date_Children', 'Burst_Delta_Date_Children_Poisson', 
+         'Burst_Date_GU_Children'] 
+names2 = ['Burst_Delta_Date_GU_Children', 'Burst_Delta_Date_GU_Children_Poisson', 
          'Flowering', 'Nb_Inflorescences', 'Flowering_Week', 'Fruiting', 'Nb_Fruits'
          ]
+names3 = [n.replace('GU','MI').replace('Vegetative','MixedInflo') for n in names1]
+
+
 names = names1+names2
 
 tmprep = 'tmp'
@@ -39,11 +43,26 @@ def get_factors_values(factors):
 
 monthnamemap = { 1 : 'Jan', 2 : 'Feb', 3 : 'Mar', 4 : 'Apr', 5 : 'May', 6 : 'Jun' , 7 : 'Jul', 8 : 'Aug', 9 : 'Sep' , 10 : 'Oct', 11 : 'Nov', 12 : 'Dec'}
 
+def convertmonth(mvalue):
+    if type(mvalue) == str:
+        if '-' in mvalue: # multiple value
+            return '-'.join(map(convertmonth,mvalue.split('-')))
+    return monthnamemap.get(int(mvalue), mvalue)
+
+
 import util_report as ur ; reload(ur)
 
 def sort_burst_date(data):
     if data.Burst_Month.dtype.name != 'category':
-        monthids = range(6,13)+range(6)
+        gmonthids = range(6,13)+range(6)
+        monthids = np.unique(data.Burst_Month)
+        if  monthids.dtype == object:
+            def mcmp(a, b) : return cmp(gmonthids.index(int(a.split('-')[0])), gmonthids.index(int(b.split('-')[0])))
+            monthids = list(monthids)
+            monthids.sort(cmp = mcmp) 
+            print 'monthids :', monthids
+        else:
+            monthids = gmonthids
         data.Burst_Month = data.Burst_Month.astype("category", categories=monthids)
 
     factors = get_factors(data)
@@ -132,7 +151,7 @@ def barplot_from_date_matrix(data, name = name, valuename = 'Probability'):
 
     if 'burst_date' in name:
         ax.set_xlabel('Month')
-        ax.set_xticklabels( [monthnamemap.get(int(v),str(v)) for v in data.columns.values[nbfactors:]] )
+        ax.set_xticklabels( [convertmonth(v) for v in data.columns.values[nbfactors:]] )
     elif 'week' in name:
         ax.set_xlabel('Week')
         ax.set_xticklabels( data.columns.values[nbfactors:] )
@@ -141,7 +160,7 @@ def barplot_from_date_matrix(data, name = name, valuename = 'Probability'):
 
 
     ax.set_ylabel('Burst_Month')
-    ax.set_yticklabels( reversed([monthnamemap[int(v)] for v in data.values[:,0]]) )
+    ax.set_yticklabels( reversed([convertmonth(v) for v in data.values[:,0]]) )
     ax.set_zlabel(valuename)
     ax.view_init(elev=40,azim=-75)
     plt.title(name)
@@ -159,8 +178,8 @@ def heat_map(data, name = name):
     view = ax.matshow(data.values[:,nbfactors:].astype(float))  
     fig.colorbar(view)
     plt.title(name)
-    ax.set_xticklabels( [0]+[monthnamemap.get(int(v),str(v)) for v in data.columns[nbfactors:]] )
-    ax.set_yticklabels( [0]+[monthnamemap[int(v)] for v in data.values[:,0]] )
+    ax.set_xticklabels( [0]+[convertmonth(v) for v in data.columns[nbfactors:]] )
+    ax.set_yticklabels( [0]+[convertmonth(v) for v in data.values[:,0]] )
 
 
 def curves_of_date(data, name = name, type = 'probability'):
@@ -197,7 +216,7 @@ def curves_of_date(data, name = name, type = 'probability'):
     if plotset:
         plt.xticks(range(len(data.columns[nbfactors:])), data.columns[nbfactors:]) #, [monthnamemap[int(v)] for v in data.columns[nbfactors:]] )
     else:
-        plt.xticks(range(len(mdata['Burst_Month'])), [monthnamemap[int(v)] for v in mdata['Burst_Month']] )
+        plt.xticks(range(len(mdata['Burst_Month'])), [convertmonth(v) for v in mdata['Burst_Month']] )
 
     import numpy as np
 
@@ -227,9 +246,15 @@ def savefig(fname):
     print 'Save', repr(fname)
   
 
-def exists_files(fname):
+def exists_files(fname, timestamp = None):
     from glob import glob
-    return len(glob(fname.replace('%s','*'))) > 0
+    existingfiles = glob(fname.replace('%s','*'))
+    if len(existingfiles) > 0:
+        if timestamp is None: return True
+        return timestamp < os.stat(existingfiles[0]).st_mtime
+    else:
+        return False
+
 
 class MyReportGenerator(ur.TexReportGenerator):
     def __init__(self, projectrep, fname):
@@ -240,6 +265,10 @@ class MyReportGenerator(ur.TexReportGenerator):
     def make_section(self, name):
         secname = ' '.join(map(str.capitalize,name.split('_')))
         self.add_section(secname)
+
+    def make_subsection(self, name):
+        secname = ' '.join(map(str.capitalize,name.split('_')))
+        self.add_subsection(secname)
 
     def write_factors(self, data):
         factors = ' , '.join(get_factors(data))
@@ -282,7 +311,7 @@ class MyReportGenerator(ur.TexReportGenerator):
             else :
                 self.add_subsection('Data')
             self.add_figure([improb1,improb2], 'Probabilities')
-            self.add_figure([improb1,improb2], 'Number of elements')
+            self.add_figure([imnb1,imnb2], 'Number of elements')
             self.add_table(mdataprob, 'Probabilities')
             self.add_table(mdatanb,   'Number of elements')
             self.clear_page()
@@ -321,7 +350,9 @@ class MyReportGenerator(ur.TexReportGenerator):
         if summary : 
             datasummary, glmsummary = summary.split('[1] "******** GLM  *************"\n')
             gs = glmsummary.splitlines()
-            del gs[1];del gs[1];del gs[1];del gs[1]
+            init = 1
+            if '[1] "Initial' in gs[1] : init+=1
+            del gs[init:init+4];
             glmsummary = '\n'.join(gs)
             # self.add_subsection('Data Summary')
             # self.write('{\\small\n')
@@ -337,12 +368,11 @@ class MyReportGenerator(ur.TexReportGenerator):
             self.write('}\n')
 
     def make_dev_date_section(self, name, dataprob, regenerateall = False):
+        fname = join(data_dir, name+'.csv')
         if dataprob is None:
-            dataprob = pd.read_csv(join(data_dir, name+'.csv'))
+            dataprob = pd.read_csv(fname)
+        timestamp = os.stat(fname).st_mtime
         datanb = pd.read_csv(join(data_dir, name+'_nbelements.csv'))
-        #if 'Burst_Month' in dataprob.columns:
-        #    dataprob = sort_burst_date(dataprob)
-        #    datanb = sort_burst_date(datanb)
 
         def gen_img(data, type = 'prob', title = 'Probability'):            
             img = []
@@ -352,11 +382,11 @@ class MyReportGenerator(ur.TexReportGenerator):
             for label, mdata in decompose_dataframe(data):
                 labelstr = str(i).zfill(3) #('_'.join([l+'='+str(v) for l,v in label]))
                 lbarplotfname = barplotfname % labelstr
-                if not exists_files(lbarplotfname) or regenerateall:
+                if not exists_files(lbarplotfname, timestamp) or regenerateall:
                     barplot_from_date_matrix(mdata, name, title)
                     savefig( lbarplotfname )
                 lheatmapfname = heatmapfname % labelstr
-                if not exists_files(lheatmapfname) or regenerateall:
+                if not exists_files(lheatmapfname, timestamp) or regenerateall:
                     heat_map(mdata, name)
                     savefig( lheatmapfname )
                 img.append(( os.path.basename(lbarplotfname),
@@ -376,13 +406,13 @@ class MyReportGenerator(ur.TexReportGenerator):
         else:
             imgs = []
             probcurvefname = join(self.projectrep,name+'_prob.png')
-            if not exists_files(probcurvefname) or regenerateall:
+            if not exists_files(probcurvefname, timestamp) or regenerateall:
                 curves_of_date(dataprob, name, 'probabilityset')
                 savefig(probcurvefname)
             imgs.append(os.path.basename(probcurvefname))
 
             nbcurvefname = join(self.projectrep,name+'_nbelem.png')
-            if not exists_files(nbcurvefname) or regenerateall:
+            if not exists_files(nbcurvefname, timestamp) or regenerateall:
                 curves_of_date(datanb, name, 'numberset')
                 savefig(nbcurvefname)
             imgs.append(os.path.basename(nbcurvefname))
@@ -395,8 +425,11 @@ class MyReportGenerator(ur.TexReportGenerator):
         self.clear_page()
 
     def make_dev_proba_section(self, name, dataprob = None, regenerateall = False):
+        fname = join(data_dir, name+'.csv')
         if dataprob is None:
-            dataprob = pd.read_csv(join(data_dir, name+'.csv'))
+            dataprob = pd.read_csv(fname)
+        timestamp = os.stat(fname).st_mtime
+
         if 'Burst_Month' in dataprob.columns:
             dataprob = sort_burst_date(dataprob)
 
@@ -406,7 +439,7 @@ class MyReportGenerator(ur.TexReportGenerator):
         print 'make_dev_proba_section'
         imgs = []
         probcurvefname = join(self.projectrep,name+'_prob.png')
-        if not exists_files(probcurvefname) or regenerateall:
+        if not exists_files(probcurvefname, timestamp) or regenerateall :
             if curves_of_date(dataprob, name, 'probability'):
                 savefig(probcurvefname)
                 imgs.append(os.path.basename(probcurvefname))
@@ -414,7 +447,7 @@ class MyReportGenerator(ur.TexReportGenerator):
             imgs.append(os.path.basename(probcurvefname))
 
         nbcurvefname = join(self.projectrep,name+'_nbelem.png')
-        if not exists_files(nbcurvefname) or regenerateall:
+        if not exists_files(nbcurvefname, timestamp) or regenerateall :
             if curves_of_date(dataprob, name, 'number'):
                 savefig(nbcurvefname)
                 imgs.append(os.path.basename(nbcurvefname))
@@ -437,6 +470,7 @@ class MyReportGenerator(ur.TexReportGenerator):
             else:
                 self.make_dev_proba_section(name, dataprob, regenerateall)
         else:
+            print "File '"+fname+"' does not exist."
             self.make_section(name)
             self.write('No data\n\n')
 
@@ -451,11 +485,42 @@ class MyReportGenerator(ur.TexReportGenerator):
             self.write(simplify_factor_name(factor).replace('_','\\_')+' : '+factor.replace('_','\\_')+'\n\n')
         self.clear_page()
 
+    def make_intro(self, periodtags):
+        self.add_section('Data Summary')
+        for tag in periodtags:            
+            fname = join(data_dir, pardir, 'info_table_'+tag+'.txt')
+            if os.path.exists(fname):
+                summary = file(fname,'r').read()
+                self.make_subsection(tag)
+                self.write('{\\footnotesize\n')
+                self.write('\\begin{verbatim}\n')
+                self.write(summary)
+                self.write('\n\\end{verbatim}\n')
+                self.write('}\n')
+            else:
+                print 'Cannot find',repr(fname)
+
     def make_sections(self,names, regenerateall= False):
         self.make_factor_summary_section(names)
+
         for name in names:
             print 'process', name
             self.make_dev_section(name, regenerateall = regenerateall)
+
+    def make_sections_parallel(self,names, regenerateall= False):
+        self.make_factor_summary_section(names)
+        import multiprocessing
+        num_cores = multiprocessing.cpu_count()
+        pool = multiprocessing.Pool(num_cores)
+
+        def makesection(regenerateall= False):
+            def msection(name):
+                return self.make_dev_section(name, regenerateall = regenerateall)
+            return msection
+        msect = makesection(regenerateall = regenerateall)
+
+        pool.map(msect, names)
+
 
     def clear_tmpfiles(self):
         assert self.texstream is None
@@ -463,23 +528,28 @@ class MyReportGenerator(ur.TexReportGenerator):
             import shutil
             shutil.rmtree(self.projectrep)        
 
-def process(regenerateall = False):
+def process(regenerateall = False, fastcompilation = False):
     if regenerateall and exists(tmprep):
         import shutil
         shutil.rmtree(tmprep)
 
     texstream = MyReportGenerator(tmprep, 'mango_development_report.tex')
 
+    texstream.make_intro(periodtags+periodtags2)
+
     mnames = []
     mnames += list(itertools.product(periodtags,[n.lower() for n in names]))
     mnames += list(itertools.product(periodtags2,[n.lower() for n in names1]))
+    mnames += list(itertools.product(periodtags3,[n.lower() for n in names1]))
+    mnames += list(itertools.product(periodtags2,[n.lower() for n in names3]))
     mnames = [n+'_'+y for y,n in mnames]
 
     texstream.make_sections(mnames, regenerateall)
 
+
     texstream.close()
     #texstream.viewtex()
-    texstream.compile()
+    texstream.compile(fastcompilation)
     texstream.view()
     return texstream
 
@@ -493,4 +563,4 @@ if __name__ == '__main__':
     # plt.show()
     # plt.close()
 
-    texstream = process(False)
+    texstream = process(False, True)

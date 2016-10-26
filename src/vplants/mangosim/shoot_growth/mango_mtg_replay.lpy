@@ -30,7 +30,7 @@ mtg = mm.get_mtg()
 
 
 treenames = mm.get_treenames_of_variety(mtg)
-#['B10', 'B12', 'B14', 'F2', 'F6']
+#['B14', 'F2', 'F6', 'B10', 'B12']
 treeselection = TREE
 treename = treenames[treeselection]
 
@@ -51,7 +51,7 @@ else:
 init_date  = cycle_end(3)-timedelta(days=1)
 final_date = cycle_end(5)
 
-first_date =  date(2003,10,8) 
+first_date =    init_date # date(2003,10,8) #
 last_date  = todatetime(final_date) # date(2003,10,17)
 
 total_weeks = week_difference(last_date,first_date)
@@ -138,7 +138,7 @@ def internode_length_distribution(nb_internodes, gu_length):
 
 
 # Inflorescences length
-Inflo_length_mean        = 23.15833
+Inflo_length_mean        = 18 # 23.15833
 Inflo_length_sd          = 6.767254
 
 
@@ -286,6 +286,9 @@ module A(p), GUEnd, Internode, Leaf, Inflorescence_bud : scale = 3
 module Information : scale = 1 
 module Pedicel, Flower
 module Petiole, fLeaf, gLeaf
+if not 'TextureBaseColor' in globals():
+  TEXTURE = False
+module TextureBaseColor, InterpolateTextureBaseColors
 
 ###### Generation and initialization of elements #########
 
@@ -391,8 +394,10 @@ def set_dimension_parameters_GU(params):
 def generate_parameters_Inflo(inflo, guparam):
     bloom_date = mm.get_bloom_dates(mtg,inflo)        
     if not bloom_date: 
-      gu_cycle = get_cycle(guparam.burst_date) if guparam.burst_date else 3
-      bloom_date = date(2000+gu_cycle, 8, randint(1,31)) # We bloom the inflo in august
+      inflo_cycle = mm.get_unit_cycle(inflo)
+      if inflo_cycle is None:
+        inflo_cycle = get_cycle(guparam.burst_date) if guparam.burst_date else 3
+      bloom_date = date(2000+inflo_cycle, 8, randint(1,31)) # We bloom the inflo in august
     elif type(bloom_date) is list: 
       bloom_date = bloom_date[0]
     
@@ -410,10 +415,19 @@ def set_dimension_parameters_Inflo(params):
     final_length_inflo = get_length(Inflo_length_mean, Inflo_length_sd, 5, 44)
     
     growth_tts   = ThermalTimeAccumulator(base_temperature_Inflo)
-    pheno_tts    = MultiPhaseThermalTimeAccumulator(pheno_base_temp_Inflo, pheno_change_temp_Inflo, 350)
+    pheno_tts    = MultiPhaseThermalTimeAccumulator(pheno_base_temp_Inflo, pheno_change_temp_Inflo, 0)
     
     # burst date should be computed from bloom date and pheno_tts reverse timing
-    burst_date = todatetime(pheno_tts.reverse_from_finaldate(0, params.bloom_date, get_temperature))
+    if params.hasattr('burst_date') and params.hasattr('bloom_date'):
+      burst_date = params.burst_date
+      bloom_date = params.bloom_date      
+    elif params.hasattr('burst_date'):
+      bloom_date = todatetime(pheno_tts.find_date_of_accumulation(350, params.burst_date, get_temperature))
+      burst_date = params.burst_date
+    elif params.hasattr('bloom_date'):
+      pheno_tts  = MultiPhaseThermalTimeAccumulator(pheno_base_temp_Inflo, pheno_change_temp_Inflo, 350)
+      burst_date = todatetime(pheno_tts.reverse_from_finaldate(0, params.bloom_date, get_temperature))
+      bloom_date = params.bloom_date
     
     # burst_date = bloom_date - timedelta(days=28)
     
@@ -458,9 +472,10 @@ def generate_elements(apexparam):
     nb_lat_children = len(lat_children)
     nb_lat_inflo = nb_inflorescences if len(apical_child) > 0 else max(0,nb_inflorescences-1)
     nb_lat_elements = nb_lat_children + nb_lat_inflo
-    if nb_lat_children > 0:
-      lat_angle = phyllotaxy # 360./nb_lat_elements
+    lat_angle = phyllotaxy 
+    
     nb_proc_lat = 0
+    has_apical_gu = len(apical_child) > 0
     
     for ch in lat_children:
         nproduce  [ /(lat_angle*nb_proc_lat) &(60)
@@ -471,13 +486,14 @@ def generate_elements(apexparam):
         else:  
            nproduce A( generate_parameters_GU(ch) )
         nproduce ]
-    if len(apical_child) > 0:
-      if len(inflo) > 0 and WITH_INFLO:
-        for i in xrange(1,len(inflo)):
-            p = generate_parameters_Inflo(inflo[i], guparam)
-            set_dimension_parameters_Inflo(p)
-            nproduce   [ /(lat_angle*nb_proc_lat) &(60) Inflorescence_bud(p) ]
-            nb_proc_lat += 1
+    if len(inflo) > 0 and WITH_INFLO:
+       for i in xrange(0 if has_apical_gu else 1,nb_inflorescences):
+          p = generate_parameters_Inflo(inflo[i], guparam)
+          set_dimension_parameters_Inflo(p)
+          nproduce   [ /(lat_angle*nb_proc_lat) &(60) Inflorescence_bud(p) ]
+          nb_proc_lat += 1
+          
+    if has_apical_gu:
       ch = apical_child[0]
       if  to_be_developped(ch):  
         generate_elements( generate_parameters_GU(ch, nbdescendants[ch]) )
@@ -485,7 +501,7 @@ def generate_elements(apexparam):
       else:   
         nproduce A( generate_parameters_GU(ch) )
     
-    elif len(inflo) > 0:
+    elif nb_inflorescences > 0:
        if WITH_INFLO:
          p = generate_parameters_Inflo(inflo[0], guparam)
          set_dimension_parameters_Inflo(p)
@@ -561,7 +577,7 @@ Axiom:
   trunkparam = generate_parameters_GU(first_uc,nbdescendants[first_uc])
   generate_elements(trunkparam)
 
-  #infloparam = set_dimension_parameters_Inflo(ParameterSet(bloom_date=date(2003,8,15), nb_fruits=0))
+  #infloparam = set_dimension_parameters_Inflo(ParameterSet(burst_date=first_date, nb_fruits=0, fruiting = False))
   #nproduce Inflorescence_bud(infloparam)
   
   #guparam = set_dimension_parameters_GU(ParameterSet(burst_date=date(2003,6,1), position=eApical, position_parent=eApical, nbdescendants=1, simplified=True, leafy=True))
@@ -593,8 +609,6 @@ Inflorescence_bud(p):
      
 
 production:
-
-#group 0: # pipe model
 
 group 1: # pipemodel
 
@@ -702,12 +716,13 @@ Inflorescence(param):
    def myratio(x):
       from math import exp
       return (log(x+1))/(log(2))
+      
    length = param.length
    if length <= 1e-3: return
    growth_ttsum = param.growth_tts.ttsum
    nproduce [   
    if ( growth_ttsum >= 800):
-       nproduce ,(1) @O(0.01)
+        nproduce ,(1) @O(0.01)
    else:
       pheno_stage = param.pheno_tts.stage
       pheno_rank  = param.pheno_tts.rank_in_stage()
@@ -781,9 +796,9 @@ Pedicel(pos, age, length, nbwhorl, pheno_stage, pheno_rank):
           nbflower = 1
           
         for d in xrange (nbflower):
-          nproduce [ \(floangle*d + k*2) &(75 if nbflower > 1 else 0) F(latintlength * kpos,0.05)
+          nproduce [ \(floangle*d + k*2) &(75 if nbflower > 1 else 0) F(latintlength * kpos)
           
-          radius, colinterpolation = flowering_index, flowering_index
+          radius, colinterpolation = flowering_index*0.7, flowering_index
           if pheno_stage >= 2 and flowering_index < 0.5:
             
               radius = min((age+k/10.)/100.,0.3) + min(1,max(0,npheno-1))/10.
@@ -808,7 +823,8 @@ Flower(radius, pheno_stage, pheno_rank):
         nproduce &(-incl/5) @b(radius/3, radius*0.7*(i+1)/3.) 
       nproduce ]
   else:
-    produce f(radius) @O(radius)
+    #nproduce # f(radius) 
+    produce @O(radius)
 
 GU(p):
   if p.simplified :
@@ -841,7 +857,6 @@ GU(p):
       else:
         nproduce ,(21)
       produce  _(radius) nF(p.final_length_gu, p.final_length_gu/InternodeRes , radius) 
-
 
 fLeaf(position, size):
   nproduce @Ge @Ts(0) &(90) ,(1)  F(0.001,leafdiam(0)*leafwidth(1))  ^(90) 
@@ -900,7 +915,7 @@ Fruit(p):
     ep = (9.8*pow(MF,0.3398))*0.06
     larg = (12.5*pow(MF,0.3203))*0.06
     long = (22.3*pow(MF,0.2896))*0.06   # facteur 0.06 choisit arbitrairement
-    nproduce ,(10)[@Tp(0,0,-1) Elasticity(0.01) nF(long**2,0.1),(6) @g(Scaled(ep,larg,long, Sphere(1,32,32)))]
+    nproduce ,(10)[@Tp(0,0,-1) Elasticity(0.01) nF(long*2,0.1),(6) @g(Scaled(ep,larg,long, Sphere(1,32,32)))]
   else:
     nproduce ,(11) F(8,1)
 endlsystem
@@ -980,7 +995,7 @@ def __initialiseContext__(context):
 	context.animation_timestep = 0.101
 	context.options.setSelection('Module declaration',1)
 	context.options.setSelection('Warning with sharp module',0)
-	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 1, 0, 2), ('TEXTURE', 'Bool', True), ('Elasticity', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 3, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 1, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', False), ('Environment', 'Category'), ('TIMEBAR', 'Bool', False), ('BACKGROUND', 'Bool', False)]
+	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 1, 0, 2), ('TEXTURE', 'Bool', True), ('Elasticity', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 4, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 30, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', True), ('Environment', 'Category'), ('TIMEBAR', 'Bool', True), ('BACKGROUND', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]

@@ -84,6 +84,24 @@ class MultiPhaseThermalTimeAccumulator:
         self.setTTSum(targetttsum)
         return cdate
 
+    def find_date_of_accumulation(self, targetttsum, initialdate, get_temperature):
+        from datetime import timedelta
+
+        initialtsum = self.ttsum
+        
+        temp = get_temperature(initialdate)
+        self.accumulate(temp)
+        cdate = initialdate
+
+        while self.ttsum < targetttsum:
+            cdate += timedelta(days=1)
+            temp = get_temperature(cdate)
+            self.accumulate(temp)
+
+        self.setTTSum(initialtsum)
+
+        return cdate
+
 
 
 def test():

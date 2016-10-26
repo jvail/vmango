@@ -842,7 +842,7 @@ def check_mixed_inflo(mtg, variety = 'cogshall'):
     print 'Nb of MI that has inflorescence children :', len(hasflowering)
 
     isapical = [is_apical(mtg, gu) for gu in nbchild_mi.keys()]
-    print 'Nb of apical MI  :', len(isapical), ' from ',len(nbchild_mi.keys())
+    print 'Nb of apical MI  :', sum(isapical), ' from ',len(isapical)
 
     parents = set([])
     nbmixedinflo = {}
@@ -853,10 +853,10 @@ def check_mixed_inflo(mtg, variety = 'cogshall'):
     print 'Nb of MI in siblings  :', np.histogram(nbmixedinflo.values(), range(0,10))
 
     isterminal = [is_terminal(mtg, gu) for gu in parents]
-    print 'Terminal parents  :', len(isterminal), ' from ',len(parents)
+    print 'Terminal parents  :', sum(isterminal), ' from ',len(parents)
 
     isapicalparent = [is_apical(mtg, gu) for gu in parents]
-    print 'Apical parents  :', len(isapicalparent), ' from ',len(parents)
+    print 'Apical parents  :', sum(isapicalparent), ' from ',len(parents)
 
     isloadedtree = [gu for gu in nbchild_mi.keys() if is_loaded(mtg,get_tree_of_gu(mtg, gu))]
     print 'From loaded trees  :', len(isloadedtree), ' from ',len(nbchild_mi)
@@ -948,7 +948,6 @@ def check_mixed_inflo(mtg, variety = 'cogshall'):
         print 'Delta Month of children :', np.histogram(children_deltamonth, range(1,8))
 
 
-
 @use_global_mtg
 def check_inflo(mtg, variety = 'cogshall'):
     import numpy as np
@@ -959,7 +958,20 @@ def check_inflo(mtg, variety = 'cogshall'):
             print gu, code[gu], code[mtg.parent(gu)]
 
 
+@use_global_mtg
+def check_fruit_production(mtg, variety = 'cogshall'):
+    trees = [t for t in get_all_trees_of_variety(mtg,variety) if is_loaded(mtg,t)]
+    wgt_fr = mtg.property('wgt_fr')
+    fruits = [(vid,nb,wgt_fr[vid]) for vid, nb in mtg.property('nb_fr').items() if get_tree_of_gu(mtg,vid)in trees and nb > 0]
+    for tree in trees:
+        for cycle in xrange(3,5):
+            subfruitset = [(vid,nb,wgt) for vid,nb,wgt in fruits if get_tree_of_gu(mtg,vid) == tree and get_unit_cycle(mtg,vid) == cycle]
+            snb = sum([nb for vid,nb,wgt in subfruitset])
+            swgt = sum([wgt for vid,nb,wgt in subfruitset])
 
+            print get_tree_name(mtg,tree),'\t:',cycle,'\t:',snb, '\t', swgt, '\t', swgt/snb if snb > 0 else 0
+        print
+ 
 if __name__ == '__main__' :
     # check_cycle_and_burst_date_coherence()
     #check_produce_within_and_next_cycle()
@@ -968,8 +980,9 @@ if __name__ == '__main__' :
     #check_if_has_lateral_has_apical()
     #check_if_within_has_lateral_has_apical()
     #check_apical_ratio_in_first_layer()
-    check_mixed_inflo()
+    #check_mixed_inflo()
     #check_inflo()
+    check_fruit_production()
     pass
 
 # check reiteration

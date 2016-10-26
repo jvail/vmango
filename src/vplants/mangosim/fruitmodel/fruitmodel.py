@@ -26,6 +26,16 @@ close(out)
     else:
       launch_rpy(script)
 
+def get_R_cmd():
+    import sys
+    if sys == 'win32':
+        R_HOME = os.environ["R_USER"]
+        exe = os.path.join(R_HOME,'bin','Rscript.exe')
+        assert os.path.exists(exe)
+    else:
+        exe = 'Rscript'
+    return exe
+
 def launch_r(script):
     cwd = os.getcwd()
     os.chdir(RScriptRepo)
@@ -35,12 +45,8 @@ def launch_r(script):
     launcher.write(script)
     launcher.close()
     
-    R_HOME = os.environ["R_USER"]
-    exe = os.path.join(R_HOME,'bin','Rscript.exe')
-    assert os.path.exists(exe)
-    #print os.getcwd()
+    exe = get_R_cmd()
     command = '"'+exe +'" '+launchfile+''
-    #print command
     os.system(command)
     os.chdir(cwd)
 

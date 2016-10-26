@@ -53,7 +53,7 @@ class TexReportGenerator:
         self.write("\end{document}\n")
         self.texstream = None
 
-    def compile(self):
+    def compile(self, fastcompilation = False):
         if self.texstream: self.close()
         import os
         cwd = os.getcwd()
@@ -61,7 +61,7 @@ class TexReportGenerator:
         os.chdir(twd)
         texbasefname = os.path.basename(self.fname)
         os.system('pdflatex -interaction=batchmode '+texbasefname)
-        os.system('pdflatex -interaction=batchmode '+texbasefname)
+        if not fastcompilation: os.system('pdflatex -interaction=batchmode '+texbasefname)
         self.compiled = True
         os.chdir(cwd)
 
