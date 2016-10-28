@@ -62,7 +62,7 @@ def get_fruitmodel_function():
 
 from vplants.mangosim.tools import *
 
-def applymodel(mtg, cycle, fruit_distance = 4, dump = True):
+def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
     from pandas import read_csv
     print 'apply fruit model'
     print " * Load R function"
@@ -80,7 +80,10 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True):
     somme_acides_organiques = 0
 
     if dump:
-        outdir = 'fruitmodel-output-cycle-'+str(cycle)+'-fdist-'+str(fruit_distance)
+        if dumptag :
+          outdir = 'fruitmodeloutput/fruitmodel-'+dumptag+'-cycle-'+str(cycle)+'-fdist-'+str(fruit_distance)
+        else:
+          outdir = 'fruitmodeloutput/fruitmodel-output-cycle-'+str(cycle)+'-fdist-'+str(fruit_distance)
         if os.path.exists(outdir) : 
             import shutil
             shutil.rmtree(outdir)
@@ -145,8 +148,11 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True):
         for nbinflos, nbfruits, inflos, nbfruitsperinflo in fruit_structures:
             fstream.write(str(nbinflos)+'\t'+str(nbfruits)+'\t'+'meanfruit-'+'-'.join(map(str,inflos))+'\t'+'\t'.join(map(str,inflos))+'\t'*(1+maxbranch-len(inflos))+'\t'.join(map(str,nbfruitsperinflo))+'\t'*(maxbranch-len(inflos))+'\n' )
         fstream.close()
-
-    return fruiting_structures
+    
+    if dump:
+      return fruiting_structures, outdir
+    else:
+      return fruiting_structures
 
 def color_structures(fruiting_structures, mtg, scene):
     import matplotlib.pyplot as plt

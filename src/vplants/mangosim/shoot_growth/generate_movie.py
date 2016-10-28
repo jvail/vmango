@@ -1,5 +1,5 @@
 
-workingrep    = 'images3'
+workingrep    = 'images4'
 lsysfile      = 'mango_mtg_replay.lpy'
 tempbgeomfile = 'temp_scene.bgeom'
 bgeomfile     = 'scene_{}.bgeom'
@@ -7,7 +7,7 @@ povfile       = 'scene_{}.pov'
 mainpovfile   = 'image_{}.pov'
 imgfile       = 'image_{}.png'
 stepfile      = 'simu_nbsteps.txt'
-imageresolution = 1920, 1080
+imageresolution = 1920*2, 1080*2
 povcomdline   = 'povray -I{} -O{} +FN +W{} +H{} +A -D'
 
 from multiprocessing import cpu_count
@@ -35,16 +35,23 @@ def generate_movie(nbpovprocess):
 
 
 
-def generate_bgeom():
+def generate_bgeom(step = None):
     from openalea.lpy import Lsystem
     import os
     print 'Scene generator launched'
-    l = Lsystem(lsysfile,{'RESOLUTION' : 2, 'daystep' : 0.25, 'TIMEBAR' : False, 'LEAFY' : True, 'WITH_INFLO' : True, 'EXPORT_TO_MTG' : False})
-    nbsteps =  l.derivationLength
+    l = Lsystem(lsysfile,{'RESOLUTION' : 2, 'daystep' : 1, 'TIMEBAR' : False, 'LEAFY' : True, 'WITH_INFLO' : True, 'EXPORT_TO_MTG' : False})
+
+    if step is None:
+        firststep = 0
+        nbsteps =  l.derivationLength
+    else:
+        firststep = step
+        nbsteps =  step+1
+
     open(stepfile,'w').write(str(nbsteps))
     if not os.path.exists(workingrep) : os.makedirs(workingrep)
-    for step in xrange(nbsteps):
-        if step == 0: lstring = l.derive(1)
+    for step in xrange(firststep, nbsteps):
+        if step == firststep: lstring = l.derive(firststep+1)
         else: lstring = l.derive(lstring,step,1)
         lscene = l.sceneInterpretation(lstring)
         fname = join(workingrep, bgeomfile.format(str(step).zfill(4)))
@@ -158,8 +165,9 @@ def generate_pov(i=0,nbpovprocess=1):
 
 def main():
     import sys
-    processflag = '--process'
+    processflag =  '--process'
     numjobflag  =  '-j'
+    stepflag    =  '--step'
     if processflag  in sys.argv:
         pfi = sys.argv.index(processflag)
         numproc = int(sys.argv[pfi+1])
@@ -175,6 +183,11 @@ def main():
         generate_movie(nbpovprocess)
     elif '--bgeom' in sys.argv:
         generate_bgeom()
+    elif stepflag in sys.argv:
+        pfi = sys.argv.index(stepflag)
+        numstep = int(sys.argv[pfi+1])
+        generate_bgeom(numstep)
+        generate_pov(numstep)
     elif len(sys.argv) > 1:
         raise ValueError(sys.argv[1:])
     else:
