@@ -100,7 +100,6 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
           leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus])
         nb_fruits   = sum([params[inflo].nb_fruits for inflo in inflos])
         print nb_fruits
-        fruit_structures.append((len(inflos),nb_fruits, inflos, [params[inflo].nb_fruits for inflo in inflos] ))
         somme_nb_fruits += nb_fruits
         bloom_date  = bloom_dates[0] 
         bloom_date_date = bloom_date 
@@ -126,12 +125,10 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         dates = result["Date"]
         dates = map(lambda d:d.to_datetime(),dates)
         newyear = bloom_date_date.year
-        #dates = [datetime(newyear, d.month, d.day) for d in dates]
         dates = [date(d.year+1, d.month, d.day) for d in dates]
         property = zip(result["Masse_Fruit"], result["sucres_solubles"],  result["acides_organiques"])
         fruit_growth = dict(zip(dates,property))
-        #print type(fruit_growth.keys()[0])
-        #assert type(fruit_growth.keys()[0])==datetime
+        fruit_structures.append((len(inflos),nb_fruits, max(result["Masse_Fruit"]), inflos, [params[inflo].nb_fruits for inflo in inflos] ))
         
         for inflo in inflos:
             params[inflo].fruit_appearance_date = min(dates)
@@ -143,10 +140,19 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
              
     if dump:
         fstream = open(os.path.join(outdir,'fruitstructure.csv'),'w')
-        fstream.write('NbInflos\tNbFruits\tFilename\tIdsInflos_NbFruitsPerInflos\n')
-        maxbranch = max([len(inflos) for nbinflos, nbfruits, inflos, nbfruitsperinflo in fruit_structures])
-        for nbinflos, nbfruits, inflos, nbfruitsperinflo in fruit_structures:
-            fstream.write(str(nbinflos)+'\t'+str(nbfruits)+'\t'+'meanfruit-'+'-'.join(map(str,inflos))+'\t'+'\t'.join(map(str,inflos))+'\t'*(1+maxbranch-len(inflos))+'\t'.join(map(str,nbfruitsperinflo))+'\t'*(maxbranch-len(inflos))+'\n' )
+        maxbranch = max([len(inflos) for nbinflos, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_structures])
+        nbtotinflos = sum([nbinflos for nbinflos, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_structures])
+        nbtotfruits = sum([nbfruits for nbinflos, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_structures])
+        masstotfruits = sum([massfruit*nbfruits for nbinflos, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_structures])
+        
+        fstream.write('Filename\tNbInflos\tNbFruits\tMeanMassFruit\tTotalMassFruit')
+        fstream.write(''.join(['\tIdsInflos_'+str(i) for i in xrange(maxbranch)]) )
+        fstream.write(''.join(['\tNbFruitsPerInflos_'+str(i) for i in xrange(maxbranch)]))
+        fstream.write('\n')
+        for nbinflos, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_structures:
+            fstream.write('meanfruit-'+'-'.join(map(str,inflos))+'\t'+str(nbinflos)+'\t'+str(nbfruits)+'\t'+str(massfruit)+'\t'+str(massfruit*nbfruits)+'\t'+'\t'.join(map(str,inflos))+'\t'*(1+maxbranch-len(inflos))+'\t'.join(map(str,nbfruitsperinflo))+'\t'*(maxbranch-len(inflos))+'\n' )
+        
+        fstream.write('TOTAL\t'+str(nbtotinflos)+'\t'+str(nbtotfruits)+'\t'+str(masstotfruits/nbtotfruits)+'\t'+str(masstotfruits)+'\n')
         fstream.close()
     
     if dump:
