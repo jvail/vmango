@@ -122,33 +122,36 @@ RE.veget = Respiration_Rameau + Respiration_Feuilles
        
 # 1° utilisation des assimilats disponibles pour la respiration d'entretien
  
-if (assimilats >= RE.veget) 
-  { Reste.RE <- assimilats - RE.veget 
-  } else {
-          if (assimilats + Reserve_Dif_Util_Feuille >= RE.veget) { 
+if (assimilats >= RE.veget)   { 
+    Reste.RE = assimilats - RE.veget 
+} 
+else {
+    if (assimilats + Reserve_Dif_Util_Feuille >= RE.veget) { 
+        Reste.RE = 0
+        Reserve_Dif_Util_Feuille = assimilats + Reserve_Dif_Util_Feuille - RE.veget 
+    } 
+    else {
+        if (assimilats + Reserve_Dif_Util_Feuille + Reserve_Dif_Util_Rameau >= RE.veget) { 
             Reste.RE = 0
-            Reserve_Dif_Util_Feuille = assimilats + Reserve_Dif_Util_Feuille - RE.veget 
-            } else {
-                if (assimilats + Reserve_Dif_Util_Feuille + Reserve_Dif_Util_Rameau >= RE.veget[i]) { 
-                  Reste.RE <- 0
-                  Reserve_Dif_Util_Rameau = assimilats + Reserve_Dif_Util_Feuille + Reserve_Dif_Util_Rameau - RE.veget
-                  Reserve_Dif_Util_Feuille <- 0 
-                  } else {
-                      cat("Les parties vegetatives s'etouffent: le systeme meurt ...\n")
-                      break
-                      }
-            }  
-  }
+            Reserve_Dif_Util_Rameau = assimilats + Reserve_Dif_Util_Feuille + Reserve_Dif_Util_Rameau - RE.veget
+            Reserve_Dif_Util_Feuille <- 0 
+        } 
+        else {
+            stop("Les parties vegetatives s'etouffent: le systeme meurt ...\n")
+            return (NULL)
+        }
+    }  
+}
 
 if (Reste.RE < RE.fruct) {                                                      ### Sitution défavorable pour le fruit.
     besoin.fruit <- (Respiration_Fruit - Reste.RE) / cfruit 
-        if (besoin.fruit >= MS_Fruit_Precedent) {
-            cat("Les parties reproductrices s'etouffent: le systeme meurt ...\n")
-            break
-            } else {
-                MS_Fruit_Precedent = MS_Fruit_Precedent - besoin.fruit          # le fruit pompe sur ses réserves
-            }
+    if (besoin.fruit >= MS_Fruit_Precedent) {
+        stop("Les parties reproductrices s'etouffent: le systeme meurt ...\n")
     } 
+    else {
+        MS_Fruit_Precedent = MS_Fruit_Precedent - besoin.fruit          # le fruit pompe sur ses réserves
+    }
+} 
  
 Reste1 <- max(0, Reste.RE - RE.fruct)
 
@@ -173,14 +176,15 @@ seuil <- (psi/(1 - psi)) * Structure_Feuille * cfeuil
 if (Res.feuilles.provi > seuil){
       Reserve_Feuille_New = seuil
       Reserve_Rameau_New  = Res.feuilles.provi - seuil + Res.rameau.provi
-} else {
+} 
+else {
       Reserve_Feuille_New = Res.feuilles.provi
       Reserve_Rameau_New = Res.rameau.provi 
-        }
+}
 
 Resultats = list( MS_Fruit = MS_Fruit_New,
                   Reserve_Feuille = Reserve_Feuille_New,
                   Reserve_Rameau = Reserve_Rameau_New)
 
 return(Resultats)
-        }  
+}  

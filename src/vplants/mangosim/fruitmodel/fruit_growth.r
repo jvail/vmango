@@ -23,7 +23,7 @@ CROISSANCE_MF_TEMPERATURE = function
                         LF                                                      # Rapport feuille / fruit [10, 150] 
                         )
 
-    {   
+{   
 
 Tab_journalier = data.frame(DATE = Tab_DATE, TM = Tab_temperature_Air)
 Tab_journalier = Tab_journalier[Tab_journalier$DATE >= Jour_Flo,]
@@ -35,7 +35,8 @@ Tab_horaire = data.frame(DATE = Tab_horaire_DATE, HEURE = Tab_horaire_HEURE, Ray
 Tbase = 16                                                                      # calcul des degrés jours à partir DAB = 0
 m = vector(mode="numeric",length=nrow(Tab_journalier))
 for (i in (1:nrow(Tab_journalier)))
-{if  (Tab_journalier$TM[i] > Tbase)  m[i] = Tab_journalier$TM[i] - Tbase  else m[i] = 0  }
+{
+    if  (Tab_journalier$TM[i] > Tbase)  m[i] = Tab_journalier$TM[i] - Tbase  else m[i] = 0  }
 calcddj = as.vector(cumsum(m))
 Tab_journalier$ddj = calcddj
 ddjy = 352.72                                                                  # fin de la multiplication cellulaire dans le fruit (température base 16 °C) 
@@ -66,51 +67,51 @@ MS =          list( MS_Fruit =        MS_Debut_Sim,
 cat("\n")
 pb = txtProgressBar(min=0,max=length(DATE), char="|", width=72, style=3)        # Initialisation barre progression, sur boucle i
 
-  for (i in 1:length(DATE)[1])                                                                           
+for (i in 1:length(DATE)[1])                                                                           
 {
-Table_Croissance = Tab_horaire_fruit[Tab_horaire_fruit$DATE==DATE[i],]
-Table_Croissance = Table_Croissance[order(Table_Croissance$HEURE),]
+    Table_Croissance = Tab_horaire_fruit[Tab_horaire_fruit$DATE==DATE[i],]
+    Table_Croissance = Table_Croissance[order(Table_Croissance$HEURE),]
 
-#----------------- Fonction croissance en Matière sèche
-MS_Fruit_Precedent = MS$MS_Fruit 
-MS = CROISSANCE_MS (  Rayonnement =       Table_Croissance$Rayonnement,         # en J.cm-2 cumulé sur l'heure
-                      Temperature_Air =   Table_Croissance$TM,                  # Température journalière de l'air
-                      Temperature_Fruit = Table_Croissance$TM,                  # Température journali du fruit.
-                      envirlum =          envirlum,                             # Evolution de l'environnement lumineux dans la journée
-                      Poids_Fruit_Init =   MS_Init_Division_Cellulaire,         # Poids du fruit à la fin de la division cellulaire en gramme de MS
-                      MS_Fruit_Precedent = MS$MS_Fruit,                         # en gramme de MS
-                      Reserve_Rameau =     MS$Reserve_Rameau,                   # en gramme de carbone
-                      Reserve_Feuille =    MS$Reserve_Feuille,                  # en gramme de carbone
-                      LF = LF                                                   # Rapport feuille / fruit [10, 150] 
-                    )
-#------------------ Fonction de croissance en Matière fraiche
-MF = CROISSANCE_MF  ( Date =              unique(Table_Croissance$DATE),
-                      Temperature_Air =   Table_Croissance$Temperature_Air,     # dynamique horaire
-                      rayo =              Table_Croissance$Rayonnement,         # dynamique horaire
-                      humirela =          Table_Croissance$HR,                  # dynamique horaire  
-                      ddj =               Table_Croissance$ddj,
-                      Temp_air_moy =      mean(Table_Croissance$TM),            # donnée journalière moyenne
-                      MSfruit =           c(MS_Fruit_Precedent, MS$MS_Fruit),
-                      MF_Init =           Croissance[dim(Croissance)[1],"Masse_Fruit"],
-                      Eaupepu_Init =      Croissance[dim(Croissance)[1],"Eaupepu"],
-                      Poids_Fruit_Init =   MS_Init_Division_Cellulaire,         # Poids du fruit à la fin de la division cellulaire en gramme de MS
-                      H = 0.002027 ,                                            # Pression Seuil Y ~ H * Volume Fruit, pour la croissance, Parametre à Estimer.
-                      Phiini = 0.414,                                           #  Taux d'accroissement cellulaire (MPa / jour, article 2007)
-                      DDini = 2000,                                             # DDJ à partir duquel extensibilité cellulaire (Phiini décroit).
-                      Tau = 0.966,                                              # Tau de décroissance de l'extensibilité cellulaire.
-                      aLf = 0.3732                                              # Parametres pour calculer la conductivité hydraulique (param papier 2007 * 24)
-                     )
+    #----------------- Fonction croissance en Matière sèche
+    MS_Fruit_Precedent = MS$MS_Fruit 
+    MS = CROISSANCE_MS (  Rayonnement =       Table_Croissance$Rayonnement,         # en J.cm-2 cumulé sur l'heure
+                          Temperature_Air =   Table_Croissance$TM,                  # Température journalière de l'air
+                          Temperature_Fruit = Table_Croissance$TM,                  # Température journali du fruit.
+                          envirlum =          envirlum,                             # Evolution de l'environnement lumineux dans la journée
+                          Poids_Fruit_Init =   MS_Init_Division_Cellulaire,         # Poids du fruit à la fin de la division cellulaire en gramme de MS
+                          MS_Fruit_Precedent = MS$MS_Fruit,                         # en gramme de MS
+                          Reserve_Rameau =     MS$Reserve_Rameau,                   # en gramme de carbone
+                          Reserve_Feuille =    MS$Reserve_Feuille,                  # en gramme de carbone
+                          LF = LF                                                   # Rapport feuille / fruit [10, 150] 
+                        )
+    #------------------ Fonction de croissance en Matière fraiche
+    MF = CROISSANCE_MF  ( Date =              unique(Table_Croissance$DATE),
+                          Temperature_Air =   Table_Croissance$Temperature_Air,     # dynamique horaire
+                          rayo =              Table_Croissance$Rayonnement,         # dynamique horaire
+                          humirela =          Table_Croissance$HR,                  # dynamique horaire  
+                          ddj =               Table_Croissance$ddj,
+                          Temp_air_moy =      mean(Table_Croissance$TM),            # donnée journalière moyenne
+                          MSfruit =           c(MS_Fruit_Precedent, MS$MS_Fruit),
+                          MF_Init =           Croissance[dim(Croissance)[1],"Masse_Fruit"],
+                          Eaupepu_Init =      Croissance[dim(Croissance)[1],"Eaupepu"],
+                          Poids_Fruit_Init =   MS_Init_Division_Cellulaire,         # Poids du fruit à la fin de la division cellulaire en gramme de MS
+                          H = 0.002027 ,                                            # Pression Seuil Y ~ H * Volume Fruit, pour la croissance, Parametre à Estimer.
+                          Phiini = 0.414,                                           #  Taux d'accroissement cellulaire (MPa / jour, article 2007)
+                          DDini = 2000,                                             # DDJ à partir duquel extensibilité cellulaire (Phiini décroit).
+                          Tau = 0.966,                                              # Tau de décroissance de l'extensibilité cellulaire.
+                          aLf = 0.3732                                              # Parametres pour calculer la conductivité hydraulique (param papier 2007 * 24)
+                         )
 
-  Croissance[i,5:13]  = MF[["Results_jour"]]
-  Croissance[i+1,1:4] = MF[["Results_jour_suivant"]]
+      Croissance[i,5:13]  = MF[["Results_jour"]]
+      Croissance[i+1,1:4] = MF[["Results_jour_suivant"]]
 
-if ( Croissance[i,"Saccharose"] >= 0.04)
-{
-	cat("Le fruit est mur \n")
-	break                         # sort de la boucle et arrête les simulations 
-}  
-setTxtProgressBar(pb,i)
-       }                                                                        # Fin de la boucle sur i
+    if ( Croissance[i,"Saccharose"] >= 0.04)
+    {
+    	cat("Le fruit est mur \n")
+    	break                         # sort de la boucle et arrête les simulations 
+    }  
+    setTxtProgressBar(pb,i)
+}                                                                        # Fin de la boucle sur i
 
 return(list(DAB = DAB_sim, Croissance=Croissance))                     
 }                                                                                # Fin de la fonction
