@@ -68,20 +68,23 @@ def retrieve_simu_result(seed, tree, fdist):
 
     return get_tree_name(rep3[0]), res3, res4
 
-def process_result(result):
+def process_result(result,i):
     def meansd(val, i):
         import numpy as np
         values = [v[i] for v in val]
         m,std =  np.mean(values), np.std(values)
         return str(m)+'+/-'+str(std)
 
-    print 'Tree\tCycle\tNbInflos\tNbFruits\tNbLeaves\tTotalMassFruit'
+    fname = join(inputdir, 'result-fdist-'+str(i)+'.csv')
+    stream = file(fname,'w')
+    stream.write('Tree\tCycle\tNbInflos\tNbFruits\tNbLeaves\tTotalMassFruit\n')
     for tree, res in result.items():
         res3, res4 = res
-        print tree+'\t3\t'+meansd(res3,0)+'\t'+meansd(res3,1)+'\t'+meansd(res3,2)+'\t'+meansd(res3,3)
-        print tree+'\t4\t'+meansd(res4,0)+'\t'+meansd(res4,1)+'\t'+meansd(res4,2)+'\t'+meansd(res3,3)
-
+        stream.write(tree+'\t3\t'+meansd(res3,0)+'\t'+meansd(res3,1)+'\t'+meansd(res3,2)+'\t'+meansd(res3,3)+'\n')
+        stream.write(tree+'\t4\t'+meansd(res4,0)+'\t'+meansd(res4,1)+'\t'+meansd(res4,2)+'\t'+meansd(res3,3)+'\n')
+    stream.close()
 
 
 if __name__ == '__main__':
-    process_result(generate_range(2,3))
+    for i in xrange(1,6):
+        process_result(generate_range(100,i),i)
