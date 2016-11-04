@@ -47,8 +47,9 @@ def retrieve_simu_result(seed, tree, fdist):
         totalresult = tables[tables['Filename']=='TOTAL']
         NbInflos = totalresult.NbInflos.values[0]
         NbFruits = totalresult.NbFruits.values[0]
+        NbLeaves = totalresult.NbLeaf.values[0]
         TotalMassFruit = totalresult.TotalMassFruit.values[0]
-        return NbInflos, NbFruits, TotalMassFruit
+        return NbInflos, NbFruits, NbLeaves, TotalMassFruit
 
     def get_tree_name(path):
         p = basename(dirname(path))
@@ -74,12 +75,13 @@ def process_result(result):
         m,std =  np.mean(values), np.std(values)
         return str(m)+'+/-'+str(std)
 
+    print 'Tree\tCycle\tNbInflos\tNbFruits\tNbLeaves\tTotalMassFruit'
     for tree, res in result.items():
         res3, res4 = res
-        print tree+'\t3\t'+meansd(res3,0)+'\t'+meansd(res3,1)+'\t'+meansd(res3,2)
-        print tree+'\t4\t'+meansd(res4,0)+'\t'+meansd(res4,1)+'\t'+meansd(res4,2)
+        print tree+'\t3\t'+meansd(res3,0)+'\t'+meansd(res3,1)+'\t'+meansd(res3,2)+'\t'+meansd(res3,3)
+        print tree+'\t4\t'+meansd(res4,0)+'\t'+meansd(res4,1)+'\t'+meansd(res4,2)+'\t'+meansd(res3,3)
 
 
 
 if __name__ == '__main__':
-    process_result(generate_range(50,3))
+    process_result(generate_range(2,3))
