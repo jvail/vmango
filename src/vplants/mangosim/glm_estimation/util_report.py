@@ -31,7 +31,8 @@ TITLE_PAGE = """
 \end{titlepage}
 
 """
-
+import os
+pdffilename = lambda texfilename: os.path.splitext(texfilename)[0]+'.pdf'
 
 class TexReportGenerator:
     def __init__(self, fname, title, subtitle = ''):
@@ -60,8 +61,13 @@ class TexReportGenerator:
         twd = os.path.dirname(self.fname)
         os.chdir(twd)
         texbasefname = os.path.basename(self.fname)
-        os.system('pdflatex -interaction=batchmode '+texbasefname)
-        if not fastcompilation: os.system('pdflatex -interaction=batchmode '+texbasefname)
+        genfilename = "generationfile.tex"
+        genfile = file(genfilename,'w')
+        genfile.write("\input{"+os.path.splitext(texbasefname)[0]+"}\n\n")
+        genfile.close()
+        os.system('pdflatex -interaction=batchmode '+genfilename)
+        if not fastcompilation: os.system('pdflatex -interaction=batchmode '+genfilename)
+        os.rename(pdffilename(genfilename),pdffilename(texbasefname))
         self.compiled = True
         os.chdir(cwd)
 

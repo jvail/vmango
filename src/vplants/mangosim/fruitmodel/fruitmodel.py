@@ -64,15 +64,19 @@ from vplants.mangosim.tools import *
 
 def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
     from pandas import read_csv
-    print 'apply fruit model'
-    print " * Load R function"
+    verbose = False
+    if verbose :
+        print '*** Apply fruit model ***'
+        print " * Load R function"
     fruitmodel = get_fruitmodel_function()
 
-    print " * Compute fruiting structures"
+    if verbose :
+        print " * Compute fruiting structures"
     import fruitingstructure as fs; reload(fs)
     fruiting_structures = fs.determine_fruiting_structure(mtg, cycle, fruit_distance = fruit_distance)
 
-    print " * Compute property of the structures"
+    if verbose :    
+        print " * Compute property of the structures"
     params = mtg.property('p')
     somme_nb_fruits = 0
     somme_masse_fruit = 0
@@ -99,7 +103,7 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         else:
           leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus])
         nb_fruits   = sum([params[inflo].nb_fruits for inflo in inflos])
-        print nb_fruits
+        #print nb_fruits
         somme_nb_fruits += nb_fruits
         bloom_date  = bloom_dates[0] 
         bloom_date_date = bloom_date 
@@ -134,8 +138,9 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
             params[inflo].fruit_appearance_date = min(dates)
             params[inflo].fruit_maturity_date   = max(dates)
             params[inflo].fruit_weight_min      = min(result["Masse_Fruit"])
-            params[inflo].sucres_solubles      = max(result["sucres_solubles"])
-            params[inflo].acides_organiques    = max(result["acides_organiques"])
+            params[inflo].fruit_weight          = max(result["Masse_Fruit"])
+            params[inflo].sucres_solubles       = max(result["sucres_solubles"])
+            params[inflo].acides_organiques     = max(result["acides_organiques"])
             params[inflo].fruit_growth          = fruit_growth
              
     if dump:

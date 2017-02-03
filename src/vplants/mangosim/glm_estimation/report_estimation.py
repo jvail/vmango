@@ -14,16 +14,14 @@ from vplants.mangosim.devlaw_description import *
 
 share_dir = '../../../../share/'
 data_dir = join(share_dir,'glm_output_proba2/cogshall/selected_glm')
-periodtags = [ 'within_04', 'within_05','within_0405',]  
+periodtags = [ 'within_04', 'within_05'] #,'within_0405',]  
 periodtags2 = ["between_03to0405", "between_04to05"]
-periodtags3 = [ 'mixedinflo_within_04', 'mixedinflo_within_05','mixedinflo_within_0405',]  
+periodtags3 = [ 'mixedinflo_within_0405',]  
 name = 'vegetative_burst_within_04' # 'burst_date_children_within_05' 
 names1 = ['Vegetative_Burst',  
          "Has_Apical_GU_Child", "Has_Lateral_GU_Children", 'Nb_Lateral_GU_Children', 
-         'Burst_Date_GU_Children'] 
-names2 = ['Burst_Delta_Date_GU_Children', 'Burst_Delta_Date_GU_Children_Poisson', 
-         'Flowering', 'Nb_Inflorescences', 'Flowering_Week', 'Fruiting', 'Nb_Fruits'
-         ]
+         'Burst_Date_GU_Children'] + ['Burst_Delta_Date_GU_Children', 'Burst_Delta_Date_GU_Children_Poisson']
+names2 = ['Flowering', 'Nb_Inflorescences', 'Flowering_Week', 'Fruiting', 'Nb_Fruits', 'Fruit_Weight']
 names3 = [n.replace('GU','MI').replace('Vegetative','MixedInflo') for n in names1]
 
 
@@ -34,14 +32,33 @@ knowfactors = list(allfactors)
 knowfactors.remove('Tree_Fruit_Load')
 knowfactors.append("Cycle")
 factorsvalues['Cycle'] = [4,5]
+knowfactors.append("Has_Apical_GU_Child")
+factorsvalues['Has_Apical_GU_Child'] = [0,1]
 
-def get_factor_values(factor):
-    return factorsvalues[factor]
+def get_factor_values(factor, data = None):
+    if not data is None:
+        val = data[factor].unique()
+    else:
+        val = factorsvalues[factor]
+    return val
 
-def get_factors_values(factors):
-    return [get_factor_values(f) for f in factors]
+def get_factors_values(factors, data = None):
+    return [get_factor_values(f, data) for f in factors]
 
 monthnamemap = { 1 : 'Jan', 2 : 'Feb', 3 : 'Mar', 4 : 'Apr', 5 : 'May', 6 : 'Jun' , 7 : 'Jul', 8 : 'Aug', 9 : 'Sep' , 10 : 'Oct', 11 : 'Nov', 12 : 'Dec'}
+
+date_factors = ['Burst_Month', 'Burst_Date_GU_Children', 'Flowering_Week']
+knowfactors += date_factors[1:]
+
+def nb_date_factor(factors):
+    return sum([f in date_factors for f in factors])
+
+def has_date_factor(factors):
+    return nb_date_factor(factors) > 0
+
+def get_date_factors(factors):
+    return filter(lambda f : f in date_factors, factors)
+
 
 def convertmonth(mvalue):
     if type(mvalue) == str:
@@ -52,18 +69,20 @@ def convertmonth(mvalue):
 
 import util_report as ur ; reload(ur)
 
-def sort_burst_date(data):
-    if data.Burst_Month.dtype.name != 'category':
+
+def sort_burst_date(data, date_factor):
+    if date_factor == 'Flowering_Week': return data
+    if data[date_factor].dtype.name != 'category':
         gmonthids = range(6,13)+range(6)
-        monthids = np.unique(data.Burst_Month)
+        monthids = np.unique(data[date_factor])
         if  monthids.dtype == object:
             def mcmp(a, b) : return cmp(gmonthids.index(int(a.split('-')[0])), gmonthids.index(int(b.split('-')[0])))
             monthids = list(monthids)
             monthids.sort(cmp = mcmp) 
-            print 'monthids :', monthids
+            #print 'monthids :', monthids
         else:
             monthids = gmonthids
-        data.Burst_Month = data.Burst_Month.astype("category", categories=monthids)
+        data[date_factor] = data[date_factor].astype("category", categories=monthids)
 
     factors = get_factors(data)
     data = data.sort_values(factors)
@@ -91,12 +110,17 @@ def decompose_dataframe(data):
     factors = get_factors(data)
     nbfactors = len(factors)
     criteria = list(factors)
-    if 'Burst_Month' in criteria: 
-        criteria.remove('Burst_Month')
-        data = sort_burst_date(data)
-    nbdata = len(data)
 
-    criteriavalues = list(itertools.product(*[get_factor_values(c) for c in criteria]))
+    assert has_date_factor(criteria)
+
+    if has_date_factor(criteria): 
+        date_factor = get_date_factors(criteria)[0]
+        criteria.remove(date_factor)
+        data = sort_burst_date(data, date_factor)
+    nbdata = len(data)
+    criteria = list(reversed(criteria))
+
+    criteriavalues = list(itertools.product(*[get_factor_values(c, data) for c in criteria]))
     for ic, cvalues in enumerate(criteriavalues):
         
         mdata = data
@@ -108,7 +132,8 @@ def decompose_dataframe(data):
         yield label, mdata
 
 def simplify_factor_name(name):
-    return '_'.join([n[:3] for n in name.split('_')])
+    nparts = name.split('_')
+    return '_'.join([n[:2] for n in nparts[:min(len(nparts),2)]])
 
 
 gsummary = None
@@ -129,6 +154,8 @@ def build_factor_summary(names, simplified = True):
             del summary[v]
     return summary
 
+
+
 def barplot_from_date_matrix(data, name = name, valuename = 'Probability'):
 
     def cc(arg): return colorConverter.to_rgba(arg, alpha=0.6)
@@ -139,29 +166,40 @@ def barplot_from_date_matrix(data, name = name, valuename = 'Probability'):
     
     nbdata = len(data)
 
-    assert 'Burst_Month' in factors 
-
+    assert nb_date_factor(factors) == 1
+    date_factor = get_date_factors(factors)[0]
 
     fig = plt.figure()
     ax = fig.gca(projection='3d')
-
     for i, v in enumerate(data.iloc[:,0]):
-        rowdata = data.iloc[i,nbfactors:]
-        ax.bar(range(len(rowdata)), rowdata, zs=nbdata-i, zdir='y', color = colors[ i % len(colors)])
+        rowdata = data.iloc[nbdata-i-1,nbfactors:]
+        ax.bar(range(len(rowdata)), rowdata, zs=i, zdir='y', color = colors[ i % len(colors)])
+
+    def mxlabel(idx, labels):
+        if idx % 1 == 0:    return labels.get(int(idx),'')
+        else:               return ''
+
+    def mylabel(idx, labels):
+        if idx % 1 == 0:    return labels.get(nbdata-1-int(idx),'')
+        else:               return ''
 
     if 'burst_date' in name:
-        ax.set_xlabel('Month')
-        ax.set_xticklabels( [convertmonth(v) for v in data.columns.values[nbfactors:]] )
+        ax.set_xlabel('Month', labelpad = 10)
+        xlabels = dict([(i,convertmonth(v)) for i,v in enumerate(data.columns.values[nbfactors:])])
     elif 'week' in name:
-        ax.set_xlabel('Week')
-        ax.set_xticklabels( data.columns.values[nbfactors:] )
+        ax.set_xlabel('Week', labelpad = 10)
+        xlabels = dict([(i,v) for i,v in enumerate(data.columns.values[nbfactors:])])
     else:
-        ax.set_xticklabels( data.columns.values[nbfactors:] )
+        xlabels = dict([(i,v) for i,v in enumerate(data.columns.values[nbfactors:])])
+    ax.set_xticklabels( map(lambda x : mxlabel(x,xlabels), ax.get_xticks()) , ha ='center', rotation = 20 )
 
 
-    ax.set_ylabel('Burst_Month')
-    ax.set_yticklabels( reversed([convertmonth(v) for v in data.values[:,0]]) )
+    ylabels = dict([(i,convertmonth(v)) for i,v in enumerate(data.values[:,factors.index(date_factor)])])
+    ax.set_ylabel(date_factor, labelpad = 10)
+    ax.set_yticklabels(map(lambda y : mylabel(y,ylabels), ax.get_yticks()) , ha ='center' )
+
     ax.set_zlabel(valuename)
+
     ax.view_init(elev=40,azim=-75)
     plt.title(name)
 
@@ -170,6 +208,7 @@ def barplot_from_date_matrix(data, name = name, valuename = 'Probability'):
 def heat_map(data, name = name):
     factors = get_factors(data)
     nbfactors = len(factors)
+    date_factor = get_date_factors(factors)[0]
 
     fig = plt.figure()
     ax = fig.gca()
@@ -177,9 +216,12 @@ def heat_map(data, name = name):
     #ax.imshow(data.values[:,1:])    
     view = ax.matshow(data.values[:,nbfactors:].astype(float))  
     fig.colorbar(view)
-    plt.title(name)
-    ax.set_xticklabels( [0]+[convertmonth(v) for v in data.columns[nbfactors:]] )
-    ax.set_yticklabels( [0]+[convertmonth(v) for v in data.values[:,0]] )
+    ax.set_ylabel(name, labelpad = 10)
+    if 'burst_date' in name:
+        ax.set_xticklabels( [0]+[convertmonth(v) for v in data.columns[nbfactors:]] )
+    else:
+        ax.set_xticklabels( [0]+[v for v in data.columns[nbfactors:]] )        
+    ax.set_yticklabels( [0]+[convertmonth(v) for v in data.values[:,factors.index(date_factor)]] )
 
 
 def curves_of_date(data, name = name, type = 'probability'):
@@ -191,15 +233,37 @@ def curves_of_date(data, name = name, type = 'probability'):
     criteria = list(factors)
     plotset = ('set' in type)
 
-    if 'Burst_Month' in criteria:
-        criteria.remove('Burst_Month')
-    else:
+    assert nb_date_factor(factors) <= 1
+    if nb_date_factor(factors) == 0 :
         if not plotset: return False
+        date_factor = None
+    else:
+        if plotset:
+            date_factor = None
+        else:
+            date_factor = get_date_factors(factors)[0]
+            criteria.remove(date_factor)
 
     fig = plt.figure()
     ax = fig.gca()
 
-    criteriavalues = list(itertools.product(*[get_factor_values(c) for c in criteria]))
+    if not date_factor is None:
+        dates = sum([str(d).split('-') for d in data[date_factor].unique()],[])
+        nbdates = len(dates)
+        nbrepetitions = [len(str(d).split('-')) for d in data[date_factor].unique()]
+
+    else:
+        dates = sum([str(d).split('-') for d in data.columns[nbfactors:]],[])
+        nbdates = len(dates)
+        nbrepetitions = [len(str(d).split('-')) for d in data.columns[nbfactors:]]
+
+    def repet(dataline):
+        assert len(dataline) == len(nbrepetitions)
+        return sum([[v for i in xrange(nb)] for v,nb in zip(dataline, nbrepetitions)],[])
+
+
+
+    criteriavalues = list(itertools.product(*[get_factor_values(c, data) for c in criteria]))
     for cvalues in criteriavalues:
         mdata = data
         label = []
@@ -209,18 +273,22 @@ def curves_of_date(data, name = name, type = 'probability'):
 
         if plotset:
             assert len(mdata) == 1
-            ax.plot(range(len(data.columns[nbfactors:])),mdata.values[0,nbfactors:], label=','.join(label))
+            ax.plot(range(nbdates),repet(mdata.values[0,nbfactors:]), label=','.join(label))
         else:
-            ax.plot(range(len(mdata['Burst_Month'])),mdata[type], label=','.join(label))
+            ax.plot(range(nbdates),repet(mdata[type]), label=','.join(label))
 
     if plotset:
-        plt.xticks(range(len(data.columns[nbfactors:])), data.columns[nbfactors:]) #, [monthnamemap[int(v)] for v in data.columns[nbfactors:]] )
+        plt.xticks(range(nbdates), dates) #, [monthnamemap[int(v)] for v in data.columns[nbfactors:]] )
     else:
-        plt.xticks(range(len(mdata['Burst_Month'])), [convertmonth(v) for v in mdata['Burst_Month']] )
+        if date_factor != 'Flowering_Week':
+            xdates = [convertmonth(v) for v in dates]
+        else:
+            xdates = dates
+        plt.xticks(range(nbdates), xdates )
+        ax.set_xlabel(date_factor)
 
     import numpy as np
 
-    ax.set_xlabel('Burst Date')
     if type == 'probability':
         ax.set_ylabel('Probabilities')
         maxdata = np.amax(data[type])
@@ -243,7 +311,7 @@ def savefig(fname):
     else:
         plt.savefig(fname,  bbox_inches='tight')
     plt.close()
-    print 'Save', repr(fname)
+    #print 'Save', repr(fname)
   
 
 def exists_files(fname, timestamp = None):
@@ -263,7 +331,8 @@ class MyReportGenerator(ur.TexReportGenerator):
         ur.TexReportGenerator.__init__(self, join(projectrep,fname), "Report on mango development processes")
 
     def make_section(self, name):
-        secname = ' '.join(map(str.capitalize,name.split('_')))
+        secname = name.replace('mixedinfo','from mixedinflo')
+        secname = ' '.join(map(str.capitalize,secname.split('_')))
         self.add_section(secname)
 
     def make_subsection(self, name):
@@ -289,9 +358,10 @@ class MyReportGenerator(ur.TexReportGenerator):
         for label, mdatanb in decompose_dataframe(datanb):
             self.add_table(mdatanb)
 
-    def add_dev_date_section(self, name, dataprob, datanb, imgproba, imgnb):
-        self.make_section(name)
-        self.write_factors(dataprob)
+    def add_dev_date_section(self, name, dataprob, datanb, imgproba, imgnb, withheader = True):
+        if withheader:  
+            self.make_section(name)
+            self.write_factors(dataprob)
 
         iterimgprob = iter(imgproba)
         iterimgnb = iter(imgnb)
@@ -338,6 +408,7 @@ class MyReportGenerator(ur.TexReportGenerator):
         for data in datas:
             if len(data) > 40:
                 factors = get_factors(data)
+                print factors
                 values = data[factors[0]].unique()
                 for value in values:
                     data1 = data.loc[data[factors[0]] == value]
@@ -350,7 +421,7 @@ class MyReportGenerator(ur.TexReportGenerator):
         if summary : 
             datasummary, glmsummary = summary.split('[1] "******** GLM  *************"\n')
             gs = glmsummary.splitlines()
-            init = 1
+            init = 2
             if '[1] "Initial' in gs[1] : init+=1
             del gs[init:init+4];
             glmsummary = '\n'.join(gs)
@@ -396,32 +467,37 @@ class MyReportGenerator(ur.TexReportGenerator):
 
             return img
         
-        matrixplot = 'Burst_Month' in dataprob.columns
+        factors = get_factors(dataprob)
+        nbfactors = len(factors)
+        matrixplot = ('Burst_Month' in dataprob.columns) and nbfactors >= 2
+
+        imgs = []
+        probcurvefname = join(self.projectrep,name+'_prob.png')
+        if not exists_files(probcurvefname, timestamp) or regenerateall:
+            curves_of_date(dataprob, name, 'probabilityset')
+            savefig(probcurvefname)
+        imgs.append(os.path.basename(probcurvefname))
+
+        nbcurvefname = join(self.projectrep,name+'_nbelem.png')
+        if not exists_files(nbcurvefname, timestamp) or regenerateall:
+            curves_of_date(datanb, name, 'numberset')
+            savefig(nbcurvefname)
+        imgs.append(os.path.basename(nbcurvefname))
+        self.add_dev_proba_section(name, dataprob, imgs, datanb)
+
+        self.clear_page()
 
         if matrixplot:
             imgproba = gen_img(dataprob)
             imgnb = gen_img(datanb, 'nbelem', 'Number of Elements')
 
-            self.add_dev_date_section(name, dataprob, datanb, imgproba, imgnb)
-        else:
-            imgs = []
-            probcurvefname = join(self.projectrep,name+'_prob.png')
-            if not exists_files(probcurvefname, timestamp) or regenerateall:
-                curves_of_date(dataprob, name, 'probabilityset')
-                savefig(probcurvefname)
-            imgs.append(os.path.basename(probcurvefname))
-
-            nbcurvefname = join(self.projectrep,name+'_nbelem.png')
-            if not exists_files(nbcurvefname, timestamp) or regenerateall:
-                curves_of_date(datanb, name, 'numberset')
-                savefig(nbcurvefname)
-            imgs.append(os.path.basename(nbcurvefname))
-            self.add_dev_proba_section(name, dataprob, imgs, datanb)
+            self.add_dev_date_section(name, dataprob, datanb, imgproba, imgnb, False)
 
         #self.clear_page()
-
-        summary = file(join(data_dir, name+'_summary.txt'),'r').read()
-        self.add_summary(summary)
+        summary_file = join(data_dir, name+'_summary.txt')
+        if (os.path.exists(summary_file)):
+            summary = file(summary_file,'r').read()
+            self.add_summary(summary)
         self.clear_page()
 
     def make_dev_proba_section(self, name, dataprob = None, regenerateall = False):
@@ -430,13 +506,14 @@ class MyReportGenerator(ur.TexReportGenerator):
             dataprob = pd.read_csv(fname)
         timestamp = os.stat(fname).st_mtime
 
-        if 'Burst_Month' in dataprob.columns:
-            dataprob = sort_burst_date(dataprob)
+        if has_date_factor(dataprob.columns): 
+            date_factor = get_date_factors(dataprob.columns)[0]
+            dataprob = sort_burst_date(dataprob, date_factor)
 
         factors = get_factors(dataprob)
         nbfactors = len(factors)
 
-        print 'make_dev_proba_section'
+        #print 'make_dev_proba_section'
         imgs = []
         probcurvefname = join(self.projectrep,name+'_prob.png')
         if not exists_files(probcurvefname, timestamp) or regenerateall :
@@ -457,8 +534,10 @@ class MyReportGenerator(ur.TexReportGenerator):
         self.add_dev_proba_section(name, dataprob, imgs)
         #if len(imgs) :self.clear_page()
 
-        summary = file(join(data_dir, name+'_summary.txt'),'r').read()
-        self.add_summary(summary)
+        summary_file = join(data_dir, name+'_summary.txt')
+        if (os.path.exists(summary_file)):
+            summary = file(summary_file,'r').read()
+            self.add_summary(summary)
         self.clear_page()
 
     def make_dev_section(self, name, regenerateall = False):
@@ -538,9 +617,13 @@ def process(regenerateall = False, fastcompilation = False):
     texstream.make_intro(periodtags+periodtags2)
 
     mnames = []
+    'Within GU : veg and rep'
     mnames += list(itertools.product(periodtags,[n.lower() for n in names]))
-    mnames += list(itertools.product(periodtags2,[n.lower() for n in names1]))
+    'Within MI : veg'
     mnames += list(itertools.product(periodtags3,[n.lower() for n in names1]))
+    'Between GU : veg'
+    mnames += list(itertools.product(periodtags2,[n.lower() for n in names1]))
+    'Between GU : mi'
     mnames += list(itertools.product(periodtags2,[n.lower() for n in names3]))
     mnames = [n+'_'+y for y,n in mnames]
 

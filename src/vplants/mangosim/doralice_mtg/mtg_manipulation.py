@@ -17,6 +17,7 @@ __MtgStyle = eMeasuredMtg
 BurstDatePropertyName = 'date_burst'
 BloomPropertyName = 'flowering'
 NbFruitPropertyName = 'nb_fr'
+FruitWeightPropertyName = 'wgt_fr'
 CyclePropertyName = 'year'
 VarietyPropertyName = 'var'
 TreeNamePropertyName = 'code'
@@ -41,6 +42,7 @@ def setMtgStyle(style):
         BurstDatePropertyName = 'date_burst'
         BloomPropertyName = 'flowering'
         NbFruitPropertyName = 'nb_fr'
+        FruitWeightPropertyName = 'wgt_fr'
         CyclePropertyName = 'year'
         VarietyPropertyName = 'var'
         TreeNamePropertyName = 'code'
@@ -58,6 +60,7 @@ def setMtgStyle(style):
         BurstDatePropertyName = 'burst_date'
         BloomPropertyName = 'bloom_date'
         NbFruitPropertyName = 'nb_fruits'
+        FruitWeightPropertyName = 'fruit_weight'
         CyclePropertyName = 'cycle'
         VarietyPropertyName = 'variety'
         TreeNamePropertyName = 'treename'
@@ -132,7 +135,8 @@ def get_bloom_date(mtg, inflo, default=None):
 def get_nb_fruits(mtg, inflo, default=0):
     return mtg.property(NbFruitPropertyName).get(inflo,default)
 
-
+def get_fruit_weight(mtg, inflo, default = None):
+    return mtg.property(FruitWeightPropertyName).get(inflo,default)
 
 @use_global_mtg
 def is_gu_dead_before_cycle_end(mtg, gu, cycle):
@@ -663,27 +667,67 @@ def check_apical_ratio_in_first_layer(mtg, variety = 'cogshall'):
 def check_terminal_flowering_has_no_apical(mtg, variety = 'cogshall'):
     flowering_with_apical = []
     apical_children = []
+    loaded = True
     for cycle in range(3,6):
-        for gu in get_terminal_gus_of_variety_at_cycle(mtg, cycle, None, variety):
+        lflowering_with_apical = []
+        lapical_children = []
+        for gu in get_terminal_gus_of_variety_at_cycle(mtg, cycle, loaded, variety):
             has_inflo, has_apical = False, False
             capical = []
             for ch in mtg.children(gu):
                 if is_inflorescence(mtg, ch):
                     has_inflo = True
-                elif is_apical(mtg, ch):
+                elif is_apical(mtg, ch) and is_gu(mtg,ch):
                     has_apical = True
                     capical.append(ch)
             if has_inflo and has_apical:
-                flowering_with_apical.append(gu)
-                if len(capical) == 1:  apical_children += capical
-                else: apical_children.append(capical)
-    print "It exists",len(flowering_with_apical),"terminal gu with both inflorescence and apical vegetative children :",flowering_with_apical
-    nbterminalgus = sum([len(get_terminal_gus_of_variety_at_cycle(mtg, cycle, None, variety)) for cycle in xrange(3,6)])
+                lflowering_with_apical.append(gu)
+                if len(capical) == 1:  lapical_children += capical
+                else: lapical_children.append(capical)
+        flowering_with_apical += lflowering_with_apical
+        apical_children += lapical_children
+        print ("In cycle "+str(cycle)+', there is '+str(len(get_terminal_gus_of_variety_at_cycle(mtg, cycle, loaded, variety)))+' terminal units.')
+        print "It exists",len(lflowering_with_apical),"terminal gu with both inflorescence and apical vegetative children :",lflowering_with_apical
+        mixed_inflo = filter(is_gu_mixed_inflorescence, lapical_children)
+        print "The number of gu marked as mixed inflo from this set is",len(mixed_inflo),':',mixed_inflo
+        for gu in lapical_children:
+            if not is_gu_mixed_inflorescence(mtg,gu):
+                par = mtg.parent(gu)
+                print(par,mtg.property('code')[par], [mtg.property('code')[c] for c in mtg.children(par) if not is_inflorescence(mtg,c)], [mtg.property('code')[c] for c in mtg.children(par) if is_inflorescence(mtg,c)])
+
+    nbterminalgus = sum([len(get_terminal_gus_of_variety_at_cycle(mtg, cycle, loaded, variety)) for cycle in xrange(3,6)])
+    print "In total, It exists",len(flowering_with_apical),"terminal gu with both inflorescence and apical vegetative children :",flowering_with_apical
     print "It represents",100.*len(flowering_with_apical)/nbterminalgus,"% of the terminal gus."
     print "The apical children are :",apical_children
     mixed_inflo = filter(is_gu_mixed_inflorescence, apical_children)
     print "The number of gu marked as mixed inflo from this set is",len(mixed_inflo),':',mixed_inflo
     print "The others are",list(set(apical_children) - set(mixed_inflo))
+
+@use_global_mtg
+def check_terminal_non_flowering_has_no_apical(mtg, variety = 'cogshall'):
+    nflowering_without_apical = []
+    loaded = True
+    for cycle in range(3,5):
+        lnflowering_without_apical = []
+        lapical_children = []
+        for gu in get_terminal_gus_of_variety_at_cycle(mtg, cycle, loaded, variety):
+            has_inflo, has_apical = False, False
+            for ch in mtg.children(gu):
+                if is_inflorescence(mtg, ch):
+                    has_inflo = True
+                elif is_apical(mtg, ch) :
+                    has_apical = True
+            if len(mtg.children(gu)) > 0 and not has_inflo and not has_apical:
+                lnflowering_without_apical.append(gu)
+        nflowering_without_apical += lnflowering_without_apical
+        print ("In cycle "+str(cycle)+', there is '+str(len(get_terminal_gus_of_variety_at_cycle(mtg, cycle, loaded, variety)))+' terminal units.')
+        print "It exists",len(lnflowering_without_apical),"terminal gu without both inflorescence and apical vegetative children :"
+        for gu in lnflowering_without_apical:
+            print(gu,is_gu_mixed_inflorescence(gu),mtg.property('code')[gu], [get_unit_cycle(mtg,c) for c in mtg.children(gu) if not is_gu_mixed_inflorescence(mtg,c)], [get_unit_cycle(mtg,c) for c in mtg.children(gu) if is_gu_mixed_inflorescence(mtg,c)])
+
+    nbterminalgus = sum([len(get_terminal_gus_of_variety_at_cycle(mtg, cycle, loaded, variety)) for cycle in xrange(3,6)])
+    print "In total, It exists",len(nflowering_without_apical),"terminal gu without both inflorescence and apical vegetative children :",nflowering_without_apical
+    print "It represents",100.*len(nflowering_without_apical)/nbterminalgus,"% of the terminal gus."
 
 @use_global_mtg
 def check_if_has_lateral_has_apical(mtg, variety = 'cogshall'):
@@ -971,18 +1015,28 @@ def check_fruit_production(mtg, variety = 'cogshall'):
 
             print get_tree_name(mtg,tree),'\t:',cycle,'\t:',snb, '\t', swgt, '\t', swgt/snb if snb > 0 else 0
         print
+
+@use_global_mtg
+def check_pure_vegetative(mtg, variety = 'cogshall'):
+    loaded = True
+    for cycle in range(3,6):
+        for gu in get_all_gus_of_cycle(mtg, cycle, loaded, variety):
+            for vid in vegetative_children(mtg, gu, purevegetative=True):
+                assert not is_gu_mixed_inflorescence(mtg,vid)
  
 if __name__ == '__main__' :
     # check_cycle_and_burst_date_coherence()
     #check_produce_within_and_next_cycle()
     # check_terminal3_producing_at_cycle5()
-    #check_terminal_flowering_has_no_apical()
+    check_terminal_flowering_has_no_apical()
+    #check_terminal_non_flowering_has_no_apical()
     #check_if_has_lateral_has_apical()
     #check_if_within_has_lateral_has_apical()
     #check_apical_ratio_in_first_layer()
     #check_mixed_inflo()
     #check_inflo()
-    check_fruit_production()
+    #check_fruit_production()
+    check_pure_vegetative()
     pass
 
 # check reiteration

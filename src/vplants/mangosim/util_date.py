@@ -157,3 +157,4 @@ def get_bloom_week(date, icycle = None):
         if period_beg_end[0] <= date <= period_beg_end[1]:
             return periodid
 
+def todatetime(d): return d

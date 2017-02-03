@@ -2,13 +2,21 @@
 library(VGAM)
 library(multcomp)
 
-#' Check whether the glm is a vglm (from VGAM) or not
 is.vglm = function(glm){
+  # Check whether the glm is a vglm (from VGAM) or not
+  # Args:
+  #  glm : the glm object to test
+  # Return:
+  #  TRUE or FALSE
   return (class(glm)[1]=="vglm")
 }
 
-#' Retrieve the factors used in the GLM
 glm.factors = function(glm){
+  # Retrieve the factors used in the GLM
+  # Args:
+  #  glm : the glm object to test
+  # Return:
+  #  A vector of factor names
   factors = NULL
   
   if (is.vglm(glm))
@@ -24,25 +32,33 @@ glm.factors = function(glm){
   return (factors)
 }
 
-#' Retrieve the variable to explain from the GLM
-glm.variable = function(myglm){
+glm.variable = function(glm){
+  # Retrieve the variable to explain from the GLM
+  # Args:
+  #  glm : the glm object to test
+  # Return:
+  #  A string containing the name of the variable to explain.
   variable = NULL
   
-  if (is.vglm(myglm))
+  if (is.vglm(glm))
   {
-    if(length(myglm@xlevels)>0){ variable = rownames(slot(myglm@terms[[1]],"factors"))[1]  }
-    else {                     variable = attr(attr(myglm@terms[[1]],"dataClasses"),"names")  }
+    if(length(glm@xlevels)>0){ variable = rownames(slot(glm@terms[[1]],"factors"))[1]  }
+    else {                     variable = attr(attr(glm@terms[[1]],"dataClasses"),"names")  }
   }
   else
   {
-    if(!is.null(myglm$xlevels)){ variable = colnames(myglm$model)[[1]] }
+    if(!is.null(glm$xlevels)){ variable = colnames(glm$model)[[1]] }
     # else {    missing this   }
   }
   return (variable)
 }
 
-#' Retrieve the set of variable involved from the GLM, i.e. the 
 glm.all.variables = function(myglm){
+  # Retrieve the set of variable involved from the GLM
+  # Args:
+  #  myglm : the glm object to test
+  # Return:
+  #  A vector of string containing the name of the explicative of explained variables.
   variables = NULL
   
   if (is.vglm(myglm))
@@ -60,6 +76,11 @@ glm.all.variables = function(myglm){
 
 
 glm.formula.text = function(glm) {
+  # Retrieve the formula in text format that was used ot built the GLM
+  # Args:
+  #  glm : the glm object to test
+  # Return:
+  #  A string containing the glm formula.
   factors = glm.factors(glm)
   if (length(factors) == 0)
     formula = paste(glm.variable(glm)," ~ 1",sep="")
@@ -69,11 +90,23 @@ glm.formula.text = function(glm) {
 }
 
 glm.formula = function(glm) {
+  # Retrieve the formulathat was used ot built the GLM
+  # Args:
+  #  glm : the glm object to test
+  # Return:
+  #  the glm formula.
   return (as.formula(glm.formula.text(glm)))
 }
 
-# Fonction qui donne les effectifs par combinaison de modalités de facteurs dans les données initiales
 glm.counts = function(myglm, data, subset = NULL){
+  # Fonction qui donne les effectifs par combinaison de modalités de facteurs dans les données initiales
+  # Args:
+  #  myglm : the glm object to test
+  #  data : the data used to build the glm
+  #  subset :  a selection of the data
+  # Return:
+  #  A data.frame that gives for each modality the number of elements used in the estimation.
+  
   if (length(subset) > 0) { data = data[subset,] }
   
   if (is.vglm(myglm)){
@@ -106,8 +139,9 @@ glm.counts = function(myglm, data, subset = NULL){
   else {
     factors  = glm.factors(myglm)
     if (length(factors) > 0) {
-      subdata = data[, factors]
+      subdata = data[factors]
       nb = as.data.frame(ftable(subdata))
+      names(nb)[1:length(factors)] = factors
     }
     else { nb = data.frame(Freq=c(nrow(data))) }
   }
@@ -116,9 +150,14 @@ glm.counts = function(myglm, data, subset = NULL){
 
 
 glm.table_probability = function(myglm){
+  # Estimate the probabilities for each factor combination
+  # Args:
+  #  myglm : the glm object to test
+  #  data : the data used to build the glm
+  #  subset :  a selection of the data
+  # Return:
+  #  A data.frame that gives for each modality the probability estimated from the glm.
   
-
-
   variables = NULL # in case of selected glm, contains only influent variables
 
   if (is.vglm(myglm))
@@ -150,8 +189,8 @@ glm.table_probability = function(myglm){
       variables = glm.factors(myglm)
       data_probs = expand.grid(myglm$xlevels)
     }
-    
-    if(myglm$family[1]=="binomial" || myglm$family[1]=="poisson"){  
+    glmfamily = myglm$family[1]
+    if(glmfamily=="binomial" || glmfamily=="poisson" ){  
     
       if (!is.null(variables)) {
         probability = predict(myglm, newdata=data_probs, type="response")
@@ -161,6 +200,18 @@ glm.table_probability = function(myglm){
         # cas du glm null
         probability = predict(myglm,type="response")[1]
         data_probs = data.frame(probability)
+      }
+    }
+    else if ( glmfamily=="gaussian") {
+      if (!is.null(variables)) {
+        probability = predict(myglm, newdata=data_probs, type="response", se.fit = TRUE)
+        data_probs["probability"]=probability$fit
+        data_probs["stderror"]=probability$se.fit
+      }
+      else{
+        # cas du glm null
+        probability = predict(myglm, type="response", se.fit = TRUE)
+        data_probs = data.frame(probability=probability$fit[[1]],stderror= probability$se.fit[[1]])
       }
     }
   }
@@ -184,19 +235,28 @@ unique.index = function(mydata, nbparam = -1){
 }
 
 glm.proba_and_counts = function(myglm, data, subset){
+  # Estimate the probabilities and counts for each factor combination
+  # Args:
+  #  myglm : the glm object to test
+  #  data : the data used to build the glm
+  #  subset :  a selection of the data
+  # Return:
+  #  A data.frame that gives for each modality the probability estimated from the glm and the number of elements in the original data.
+  
+  factors = glm.factors(myglm)
+  nbfactors = length(factors)
+  
   # probas estimées par combinaison de modalités des facteurs retenus
   probtable = glm.table_probability (myglm)
-  
+
   # effectifs des données dans chaque modalité croisée des facteurs retenus
   nbelements = glm.counts(myglm, data=data, subset=subset)
+  
 
-  if (ncol(probtable) > 1) {
-    probtablecodes = unique.index(probtable)
-    nbelementscodes = unique.index(nbelements)
-    
-    # rajout des effectifs dans la table des probas estimées par le glm
-    ind = match(probtablecodes, nbelementscodes, nomatch=NA)
-    probtable$number = nbelements$Freq[ind]
+  # rajout des effectifs dans la table des probas estimées par le glm
+  if (nbfactors > 0) {
+    probtable$number = merge(probtable, nbelements, sort=FALSE, 
+                             all.x=TRUE, all.Y=FALSE)$Freq
   }
   else { 
     probtable$number = nbelements$Freq 
@@ -207,20 +267,26 @@ glm.proba_and_counts = function(myglm, data, subset){
 
 
 vglm.proba_and_counts = function(myglm, data, subset = NULL){
+  # Estimate the probabilities and counts for each factor combination for a vglm
+  # Args:
+  #  myglm : the vglm object to test
+  #  data : the data used to build the glm
+  #  subset :  a selection of the data
+  # Return:
+  #  Two data.frame that gives respectivelly for each modality the probability estimated from the glm and the number of elements in the original data.
   factors = glm.factors(myglm)
+  nbfactors = length(factors)
 
   probtable = glm.table_probability(myglm)
   
   # effectifs des données dans chaque modalité croisée des facteurs retenus
   nbelements = glm.counts(myglm, data=data, subset = subset)
   
-  # rajout des effectifs dans la table des probas estimées par le glm
-  nbfactors = length(factors)
   if (nbfactors > 0) {
     probtablecodes = unique.index(probtable, nbfactors)
     nbelementscodes = unique.index(nbelements, nbfactors)
     ind = match(probtablecodes, nbelementscodes, nomatch=NA)
-    nbelements = nbelements[ind,colnames(probtable)] 
+    nbelements = nbelements[ind,] 
   }
 
   return (list(probtable,nbelements))
@@ -228,6 +294,13 @@ vglm.proba_and_counts = function(myglm, data, subset = NULL){
 
 
 vglm.logLik = function(myglm, data, subset = NULL) {
+  # Estimate the log likelihood of a vglm computed as the probability of a modality multiply by the number of data of this modality.
+  # Args:
+  #  myglm : the vglm object to test
+  #  data : the data used to build the glm
+  #  subset :  a selection of the data
+  # Return:
+  #  the log likelihood value.
   res = vglm.proba_and_counts(myglm, data, subset)
   proba = res[[1]]
   nbelement = res[[2]]
@@ -248,6 +321,14 @@ vglm.logLik = function(myglm, data, subset = NULL) {
 }
 
 glm.AIC = function(myglm, data, subset = NULL){
+  # Estimate the AIC of a glm computed as 2*k - 2*loglikelihood.
+  # Usefull in particular with vglm that does not provide it
+  # Args:
+  #  myglm : the vglm object to test
+  #  data : the data used to build the glm
+  #  subset :  a selection of the data
+  # Return:
+  #  the AIC value.
   if (is.vglm(myglm)) {
     k = myglm@rank
     logL = myglm@criterion$loglikelihood
@@ -265,6 +346,14 @@ glm.AIC = function(myglm, data, subset = NULL){
 library(combinat)
 
 vglm.step = function(glm, data, subset = NULL) {
+  # Make a step on a vglm. Select the model with best AIC
+  # 
+  # Args:
+  #  myglm : the vglm object to test
+  #  data : the data used to build the glm
+  #  subset :  a selection of the data
+  # Return:
+  #  the AIC value.
   factors = glm.factors(glm)
   variable = glm.variable(glm)
   

@@ -1,0 +1,757 @@
+from openalea.plantgl.all import * #Text
+from datetime import *# date, timedelta, datetime
+from math import *#floor, ceil, log, exp, degrees
+from random import *
+#from pandas import DataFrame, read_csv
+import numpy as np
+import numpy.random as nprand
+
+from vplants.mangosim.tools import *
+import vplants.mangosim.util_date as ud
+from vplants.mangosim.util_date import *
+from vplants.mangosim.state import *
+import vplants.mangosim.util_lstring2mtg as lm ; reload(lm)
+from vplants.mangosim.util_lstring2mtg import *
+from vplants.mangosim.temperature import *
+from vplants.mangosim.thermaltime import *
+
+import vplants.mangosim.doralice_mtg.mtg_manipulation  as mm
+reload(mm)
+
+seed(SEED)
+nprand.seed(SEED)
+
+
+mtg = mm.get_mtg()
+
+treenames = mm.get_treenames_of_variety(mtg)
+#['B14', 'F2', 'F6', 'B10', 'B12']
+treeselection = TREE
+treename = treenames[treeselection]
+
+treeid = mm.get_tree_from_name(mtg,treename)
+first_uc = mm.get_first_gu(mtg,treeid)
+tree_load = mm.is_loaded(mtg, treeid)
+
+height_max_3 = max([mtg.Height(gu) for gu in mm.get_terminal_gus_of_tree_at_cycle(mtg,treeid,3)])
+height_max = max([mtg.Height(gu) for gu in mm.get_terminal_gus_of_tree_at_cycle(mtg,treeid,5)])
+
+if daystep < 1:
+  def todatetime(d,h=12,m=0,s=0): 
+    if d is None: return None
+    return datetime(d.year,d.month,d.day,h,m,s)
+  ud.todatetime = todatetime
+
+init_date  = cycle_end(3)+timedelta(days=1)
+final_date = cycle_end(3)+timedelta(days=250) # cycle_end(5)
+
+first_date =  init_date 
+last_date  = todatetime(final_date) # date(2003,10,17)
+
+total_weeks = week_difference(last_date,first_date)
+nbsteps     = ceil((last_date -first_date).days/float(daystep))
+delta_date  = timedelta(hours=24*daystep)
+nb_of_days  = int(ceil((last_date -first_date).days))
+
+previous_date = first_date
+current_date  = first_date
+current_cycle = get_cycle(current_date)
+
+init_temperatures()
+
+current_temperatures = [get_temperature(current_date)]
+
+import organ_properties; reload(organ_properties)
+from organ_properties import *
+from leafgeometry import retrieveCurves
+
+
+
+gumanager = GUManager()
+gumanager.retrieve_graphic_parameters(globals())
+gumanager.init_plot()
+
+inflomanager = InfloManager()
+
+
+
+def Start():
+  global previous_date, current_date, current_cycle, current_temperatures
+  
+  previous_date = first_date
+  current_date  = first_date
+  current_cycle = get_cycle(current_date)
+  current_temperature = [get_temperature(first_date)]
+  
+  backward()
+
+
+new_elements = True
+inflo_flush_start = None
+
+firstleaf = True
+
+def StartEach():
+  global new_elements, inflo_flush_start
+  useGroup(1 if new_elements else 0)
+  backward()
+  
+  new_elements = False
+  
+  global previous_date, current_date, current_cycle, current_temperatures
+  
+  previous_date = current_date
+  current_date += delta_date
+  if FRUIT_MODEL and inflo_flush_start:
+    fruit_model_date = inflo_flush_start + timedelta(days=50)
+    if previous_date < fruit_model_date and current_date > fruit_model_date:
+       current_date = fruit_model_date
+  current_cycle = get_cycle(current_date)  
+  if daystep > 1:
+    current_temperatures = [get_temperature(cdate) for cdate in date_xrange(previous_date+timedelta(days=1),current_date+timedelta(days=1))]
+  else:
+    current_temperatures = [get_temperature(current_date)]
+    
+  
+  if current_date == flowering_cycle_begin(current_cycle):
+    inflo_flush_start = None
+  
+  global firstleaf
+  firstleaf = True
+
+
+export_fname = 'replayed_mango.bmtg'
+resultmtg = None
+
+def EndEach(lstring, lscene):
+  global resultmtg
+  if EXPORT_TO_MTG:
+    resultmtg = export_to_mtg(lstring, lscene)
+
+  global inflo_flush_start
+  if inflo_flush_start and current_date == inflo_flush_start + timedelta(days=50):
+    if FRUIT_MODEL:
+      import vplants.mangosim.fruitmodel.fruitmodel as fm ; reload(fm)
+      from vplants.mangosim.fruitmodel.fruitmodel import applymodel
+      print 'Fruit model evaluation'
+      if lscene:
+        Viewer.showMessage('Fruit model evaluation : '+str(current_date), 1000)
+      lmtg = export_to_mtg_light(lstring, None) # , lscene)
+      #dump_obj(lmtg, 'fruitstructure.pkl')
+      #if lscene:
+      #  lscene.save('fruitstructure.bgeom')
+      applymodel(lmtg, get_flowering_cycle(inflo_flush_start),FRUITBRANCHSIZE,FRUITMODEL_OUTPUT,str(TREE)+'-'+treename+'-seed-'+str(SEED))
+    inflo_flush_start = None
+
+
+def End(lstring, lscene):
+  global resultmtg
+  if EXPORT_TO_MTG:
+    resultmtg = export_to_mtg(lstring, lscene)
+    if SAVE_MTG:
+      # write it in the file
+      print 'Export result in',repr(export_fname)
+      dump_obj(resultmtg, export_fname)
+
+
+def to_be_developped(gu, cdate = first_date, mtg = mtg):
+    bdate = mm.get_burst_date(mtg,gu)
+    if bdate is None: return True
+    if type(cdate) == datetime: cdate = cdate.date()
+    return bdate < cdate
+
+def estimate_radius(nbdescendants):
+  return 0.3*pow(nbdescendants, 0.45)
+
+# estimate nb of descendants for the pipe model
+@mm.use_global_mtg
+def estimate_nb_descendants(mtg, first_uc):
+  from openalea.mtg.traversal import post_order2
+  nbdescendants = {}
+  
+  for gu in post_order2(mtg, first_uc):
+    if to_be_developped(gu, first_date):
+      nbdescendants[gu] = sum([nbdescendants[cgu] for cgu in mm.vegetative_children(mtg,gu) if to_be_developped(cgu, first_date)])+1
+  return nbdescendants
+
+nbdescendants = estimate_nb_descendants(mtg,first_uc)
+
+
+module Tree(p) : scale = 1
+module GU(p), Inflorescence(p): scale = 2
+module Fruit(p)
+module A(p), GUEnd, Internode, Leaf, Inflorescence_bud : scale = 3
+module Information : scale = 1 
+module Pedicel, Flower
+module Petiole, fLeaf, gLeaf
+if not 'TextureBaseColor' in globals():
+  TEXTURE = False
+module TextureBaseColor, InterpolateTextureBaseColors
+
+###### Generation and initialization of elements #########
+
+
+#def generate_parameters_GU(current, length, burst_date, nbdescendants):
+def generate_parameters_GU(gu, nbdescendants = 1):
+   parent = mm.get_parent(mtg,gu)
+   p = ParameterSet(mtgid            = gu, 
+                    nature           = mm.get_nature_gu(mtg,gu),
+                    nature_parent    = mm.get_nature_gu(mtg,parent),
+                    position         = mm.get_position_gu(mtg,gu), 
+                    position_parent  = mm.get_position_gu(mtg,parent),
+                    nbdescendants    = nbdescendants)
+   #if mm.has_burst_date(mtg,gu) : 
+   p.set(burst_date = todatetime(mm.get_burst_date(mtg,gu))) 
+   return p
+
+
+
+def generate_parameters_Inflo(inflo, guparam):
+    bloom_date = mm.get_bloom_dates(mtg,inflo)        
+    if not bloom_date: 
+      inflo_cycle = mm.get_unit_cycle(inflo)
+      if inflo_cycle is None:
+        inflo_cycle = get_cycle(guparam.burst_date) if guparam.burst_date else 3
+      bloom_date = date(2000+inflo_cycle, 8, randint(1,31)) # We bloom the inflo in august
+    elif type(bloom_date) is list: 
+      bloom_date = bloom_date[0]
+    
+    nb_fruits = mm.get_nb_fruits(mtg,inflo)
+
+    return ParameterSet( mtgid=inflo,
+                         
+                         bloom_date = bloom_date,
+                         nb_fruits = nb_fruits,
+                         
+                         fruiting = False)
+
+
+
+
+def generate_elements(apexparam):
+    
+    # GU is composed of leaves and internodes
+    guparam = gumanager.set_dimensions(apexparam, current_date)
+    current = apexparam.mtgid
+    
+    nproduce  GU( guparam )
+    
+    is_base = (guparam.burst_date is None)
+    is_root =  mtg.parent(current) == None
+    
+    guparam.leafy = not is_root
+    
+    if is_root:    
+      guparam.final_length_gu *= 2
+    
+    elif mtg.parent(mtg.parent(current)) == None:
+      guparam.final_length_gu *= 1.5
+    
+    
+    children = mm.vegetative_children(mtg, current)
+    apical_child = [c for c in children if mm.is_apical(mtg, c)]
+    lat_children = [c for c in children if mm.is_lateral(mtg,c)]
+    
+    inflo = mm.inflorescence_children(mtg, current)
+    nb_inflorescences = len(inflo)
+    nb_lat_children = len(lat_children)
+    nb_lat_inflo = nb_inflorescences if len(apical_child) > 0 else max(0,nb_inflorescences-1)
+    nb_lat_elements = nb_lat_children + nb_lat_inflo
+    lat_angle = gumanager.phyllotaxy 
+    
+    nb_proc_lat = 0
+    has_apical_gu = len(apical_child) > 0
+    
+    for ch in lat_children:
+        nproduce  [ /(lat_angle*nb_proc_lat) &(60)
+        nb_proc_lat += 1
+        if to_be_developped(ch): 
+           generate_elements( generate_parameters_GU(ch, nbdescendants[ch]) )
+           # nproduce B( generate_parameters_GU(ch, nbdescendants[ch]) )
+        else:  
+           nproduce A( generate_parameters_GU(ch) )
+        nproduce ]
+    if len(inflo) > 0 and WITH_INFLO:
+       for i in xrange(0 if has_apical_gu else 1,nb_inflorescences):
+          p = generate_parameters_Inflo(inflo[i], guparam)
+          inflomanager.set_dimensions(p, current_date)
+          nproduce   [ /(lat_angle*nb_proc_lat) &(60) Inflorescence_bud(p) ]
+          nb_proc_lat += 1
+          
+    if has_apical_gu:
+      ch = apical_child[0]
+      if  to_be_developped(ch):  
+        generate_elements( generate_parameters_GU(ch, nbdescendants[ch]) )
+        # nproduce B( generate_parameters_GU(ch, nbdescendants[ch]))
+      else:   
+        nproduce A( generate_parameters_GU(ch) )
+    
+    elif nb_inflorescences > 0:
+       if WITH_INFLO:
+         p = generate_parameters_Inflo(inflo[0], guparam)
+         inflomanager.set_dimensions(p, current_date)
+         nproduce Inflorescence_bud(p)
+
+
+###### Generation and initialization of elements #########
+
+
+def gu_develop(p):
+  if not p.basestructure: gumanager.gu_growth(p, daystep, current_temperatures)
+  nproduce GU(p)
+
+initial_view = 1
+
+Axiom: 
+  nproduce Information 
+  nproduce @Tp(0,0,1) @Ts(ELASTICITY) @Gc
+  nproduce Tree(ParameterSet(treename=treename, variety='cogshall', date=current_date,seed=SEED, mtgid=treeid))
+  
+  #trunkparam = generate_parameters_GU(first_uc,nbdescendants[first_uc])
+  #generate_elements(trunkparam)
+
+  infloparam = inflomanager.set_dimensions(ParameterSet(burst_date=first_date, nb_fruits=1, fruiting = False), current_date)
+  nproduce +(60) Inflorescence_bud(infloparam)
+  
+  #guparam = gumanager.set_dimensions(ParameterSet(burst_date=date(2003,6,1), position=eApical, position_parent=eApical, nbdescendants=1, simplified=True, leafy=True), current_date)
+  #nproduce [+(90) GU(guparam)]
+
+derivation length: int(nbsteps)
+ignore: / &
+
+production:
+
+decomposition:
+maximum depth: max(height_max - +1,height_max_3+1)
+
+A( p ):
+  if  p.burst_date <= current_date :
+    generate_elements(p)
+
+
+Inflorescence_bud(p):
+  global inflo_flush_start
+  if  p.burst_date <= current_date :
+     if inflo_flush_start is None: inflo_flush_start = p.burst_date
+     inflomanager.init_growth(p, current_date)
+     produce Inflorescence(p)
+     
+
+production:
+
+group 1: # pipemodel
+
+consider: GU
+
+GU(p) >> x([ GU(pl) ]) GU(pa):
+  p.nbdescendants = sum([pli.nbdescendants for pli in pl])+pa.nbdescendants+1
+  p.radius = estimate_radius(p.nbdescendants)
+  gu_develop(p)
+
+
+GU(p) >> x([ GU(pl) ]) :
+  n1 = p.nbdescendants
+  p.nbdescendants = sum([pli.nbdescendants for pli in pl])+1
+  p.radius = estimate_radius(p.nbdescendants)
+  gu_develop(p)
+
+group 0:
+
+GU(p) :
+  gu_develop(p)
+
+
+Inflorescence(p):
+  # p=p.copy()
+  inflomanager.step_growth(p, daystep, current_temperatures)
+  nproduce Inflorescence(p)
+  if p.fruiting == False:
+    if hasattr(p,'fruit_appearance_date') and current_date >= p.fruiting_date:
+      p.fruiting = True
+      for i in xrange(p.nb_fruits):
+        nproduce [+((-1**i)*(120/p.nb_fruits)*i) Fruit(ParameterSet(growth=p.fruit_growth, 
+        maturity_date=p.fruit_maturity_date,
+        appearance_date=p.fruit_appearance_date,
+        weight_min=p.fruit_weight_min))]
+
+group 0:
+
+interpretation:
+maximum depth:10
+
+# Setup  tropism and legend
+# Note that the 2D legend cause a crash of lpy when recording the animation
+Information : 
+  if TIMEBAR:
+    ar = False
+    envsize = 0.8
+    nproduce [ @2D @R @Ts(0),(5) @M(-0.90,-0.85) 
+    nproduce Label('Tree: '+treename+('. Loaded' if tree_load else '. Not loaded')+'. Date: '+str(current_date.year)+'-'+str(current_date.month).zfill(2)+'-'+str(current_date.day).zfill(2)+'. Cycle: '+str(get_cycle(current_date))+'. T: '+str(current_temperatures[-1])+'?',14)
+    clength = (current_date - first_date).days/float((last_date - first_date).days)
+    nproduce ,(4) @M(-0.91,-0.9) -(90) _(0.04) F(0.01)
+    if clength > 0:
+      nproduce ,(2) @M(-0.9,-0.9) _(0.03) F(clength*envsize)
+      nproduce ,(3) @M(-0.9+clength*envsize,-0.9) _(0.04) F(0.01)  
+    if clength < 1:
+      nproduce ,(4) @M(-0.9+envsize,-0.9) _(0.04) F(0.01)
+      nproduce ,(5) @M(-0.9,-0.9) _(0.02) F(envsize)
+    nproduce ]
+  if BACKGROUND:
+    scale = 200
+    nproduce [ ,(30) @M(-1.5*scale,0,0) _(scale) TextureScale(1./(2*scale)) TextureTranslation(0.5,0) @b(1.5*scale)  ]
+    nproduce [ ,(31) @M(-1.5*scale,0,0) ^(90) _(scale) TextureScale(1./(2*scale)) TextureTranslation(0.5,0) @b(scale)  ]
+
+
+Inflorescence(param):  
+   def myratio(x):
+      from math import exp
+      return (log(x+1))/(log(2))
+      
+   length = param.length
+   if length <= 1e-3: return
+   
+   NbAxe2 = param.nb_axes
+   internode_length = length/NbAxe2
+   internode_radius = internode_length / 5.
+   growth_ttsum = param.growth_tts.ttsum
+   
+   pheno_color_inflo = inflomanager.pheno_color_inflo
+   pheno_color_flower = inflomanager.pheno_color_flower
+   
+   pheno_stage = param.pheno_tts.stage
+   pheno_rank  = param.pheno_tts.rank_in_stage()
+   n_pheno = pheno_stage + pheno_rank
+  
+   colinterfunc = lambda x, coef : 1./(1+exp(-(x-(0.8-0.6*coef))/0.05))
+   
+   # nproduce [   
+   nproduce [ @2D ,(20) @M(-0.8,0.8) Label(str((inflomanager.pheno_stadename[pheno_stage], n_pheno))) ]
+   
+   nproduce  @Ge @Tp(0,0,-1)
+   if ( pheno_stage >= 4):
+      elasticity = 0.01
+      if param.nb_fruits > 0 and current_date <= param.fruit_maturity_date:
+        elasticity += 0.02 * (n_pheno-4.)
+      nproduce Elasticity(elasticity)
+      if ( pheno_stage == 4):  
+        nproduce InterpolateColors(pheno_color_inflo[pheno_stage], pheno_color_inflo[pheno_stage+1] , pheno_rank)
+      else:
+        nproduce SetColor(pheno_color_inflo[5])
+      nproduce _(internode_length/5.) nF(length,internode_length)
+   else:
+      nproduce Elasticity(0.01 * (n_pheno / 4.) )
+      if RESOLUTION >= 1 : 
+          nproduce  _(internode_radius) 
+          if RESOLUTION <= 1 : nproduce SectionResolution(5)
+          
+          if not hasattr(param,'phyloangles'):
+             param.phyloangles = [ ((60 + randint(0,30)) if (i < 8 or i > 19) else 220) for i in xrange(NbAxe2) ]
+             param.activeaxes = [True for i in xrange(NbAxe2)]
+             param.nbactiveaxes = NbAxe2
+             param.flowersinflo = [[] for i in xrange(NbAxe2)]
+          elif pheno_stage == 3 and pheno_rank > 0.5:
+             nbactiveaxe = NbAxe2 - int(2*(pheno_rank-0.5)*NbAxe2)
+             while nbactiveaxe < param.nbactiveaxes:
+               toremove = randint(0,param.nbactiveaxes)
+               nbiter = 0
+               for i,v in enumerate(param.activeaxes):
+                 if v: 
+                   nbiter += 1
+                   if nbiter == toremove: 
+                     toremove = i
+                     break
+               param.activeaxes[toremove] = False
+               param.nbactiveaxes -= 1
+          for k in xrange(0,NbAxe2):
+            pos = k/float(NbAxe2)
+            # On choisit la couleur en fonction du stade et de son avancement
+            cpos = pos if pheno_stage > 2 else (1-pos)
+            nproduce InterpolateColors(pheno_color_inflo[pheno_stage], pheno_color_inflo[pheno_stage+1] , colinterfunc(pheno_rank, cpos))
+             
+            nproduce F(internode_length) \(param.phyloangles[k])
+            if param.activeaxes[k]:
+              axelength = inflomanager.second_order_length(param, length, pos)
+              nbwhorl = 6 + int(8 * (1-pos))
+              nproduce [ +(5+40*(1 if pheno_stage >= 1 else pheno_rank)) @Tp(0,0,1) @Ts(0.01) Pedicel(pos, length, axelength, nbwhorl, pheno_stage, pheno_rank, param.flowersinflo[k])] 
+      else:
+          nproduce InterpolateColors(pheno_color_flower[pheno_stage],pheno_color_flower[pheno_stage+1],pheno_rank) _(length/10) F(length,0.1)
+   # produce ]
+
+
+Pedicel(pos, inflolength, length, nbwhorl, pheno_stage, pheno_rank, flower_info):
+  if length <= 1e-3: return
+  flowering_index = 0
+  npheno = pheno_stage+ pheno_rank
+  nbflower = 3
+  
+  intlength = length/float(nbwhorl)
+  latintlength = length / 20
+  intradius = intlength / 10
+  firstwhorl = 4
+  
+  ppos = 1 - pos
+  
+  pheno_color_inflo = inflomanager.pheno_color_inflo
+  pheno_color_flower = inflomanager.pheno_color_flower
+  
+  # We use a logistic function
+  sininterpolation = lambda x, coef : 1./(1+exp(-(x-(0.8-0.6*coef))/0.05))
+  
+  nproduce _(intradius)
+  
+  if flower_info == []:
+    flower_info += [None for i in xrange(firstwhorl)]+[(randint(nbflower-1,nbflower+1), randint(-20,20), uniform(-0.1,0.1), uniform(0,1) < 0.2) for i in xrange(nbwhorl-firstwhorl-1)]+[(1,0,0, 1)]
+    
+  flowerradius = 0.1 + sininterpolation(npheno/3.,0.2) * 0.4
+  
+  for k in xrange(0,nbwhorl):
+      kpos = 1 - (k-firstwhorl)/float(nbwhorl -firstwhorl -1)
+      
+      # On choisi la couleur en fonction du stade et de son avancement
+      nproduce InterpolateColors(pheno_color_inflo[pheno_stage], pheno_color_inflo[pheno_stage+1] , sininterpolation(pheno_rank, 1 - ppos -ppos*kpos)) 
+      #if pos < 0.7: 
+      #  nproduce InterpolateColors(13, pheno_color_inflo[pheno_stage+1], npheno * kpos) 
+      nproduce  F(intlength)
+      
+      info = flower_info[k]
+      
+      if not info is None:
+        
+        nbflower, angdiv, deltapheno, withfruit = info
+        floangle = 360. / nbflower
+        
+        if  pheno_stage <= 1:
+           colinterpolation = pheno_rank
+        else:
+          # A flowering probability that takes into account pheno, 
+          # pos on primary axis and pos on secondary axis
+          #flowering_index = max(0,0.2 + (npheno-2) - (((age * pos) + (length * k/float(nbwhorl -1.))) / age))
+          colinterpolation = sininterpolation(pheno_rank,(ppos+kpos)/2) 
+          
+        
+        for d in xrange (nbflower):
+            nproduce [ \(floangle*d + k*2 +angdiv) &(75 if nbflower > 1 else 0) F(latintlength * kpos, intradius/2 )
+            if not colinterpolation: colinterpolation = flowering_index
+            nproduce InterpolateColors(pheno_color_flower[pheno_stage], pheno_color_flower[pheno_stage+1], colinterpolation) 
+            nproduce Flower(flowerradius, pheno_stage, pheno_rank, withfruit) ] 
+
+
+Flower(radius, pheno_stage, pheno_rank, withfruit):
+  if pheno_stage >= 2:
+    nbpetal = 4 
+    petalangle = 360 / nbpetal
+    incl = 90 # 10 + 50 * (pheno_stage+pheno_rank -1)/2.
+    nproduce @Ts(0)
+    for i in xrange(nbpetal):
+      nproduce [ /(i*petalangle) &(incl) 
+      for i in xrange(3) :
+        nproduce &(-incl/5) @b(radius/3, radius*0.7*(i+1)/3.) 
+      nproduce ]
+    if withfruit and pheno_stage > 2:
+      sininterpolation = lambda x : 1./(1+exp(-(x-(0.5))/0.05))
+      
+      produce ,(13) f(radius/2) @O(radius/8+(radius/2)*sininterpolation(pheno_rank))
+      pass
+  else:
+    # nproduce f(radius) 
+    produce @O(radius)
+
+GU(p):
+  gumanager.plot(p, TEXTURE, LEAFY)
+  pass
+
+ignore: +
+Inflorescence(param) < Fruit(p):
+  first_date = param.fruiting_date
+  if first_date < current_date <= p.maturity_date:
+    if current_date < p.appearance_date:
+      MF = p.growth[p.appearance_date][0] 
+      MF *= (current_date - first_date).days/float((p.appearance_date-first_date).days)
+    elif current_date >= p.maturity_date:
+      MF = p.growth[p.maturity_date][0]
+    else:
+      MF = p.growth[current_date][0]
+    sizefactor = 0.06
+    ep = (9.8*pow(MF,0.3398))*sizefactor
+    larg = (12.5*pow(MF,0.3203))*sizefactor
+    long = (22.3*pow(MF,0.2896))*sizefactor   # facteur 0.06 choisit arbitrairement`
+    phenoindex = (current_date - first_date).days/float((p.maturity_date-first_date).days)
+    nproduce [ InterpolateColors(2,6,phenoindex) @g(Scaled(ep,larg,long, Revolution(fruitprofile, 8 if RESOLUTION < 2 else 30))) ]
+    #@g(Scaled(ep,larg,long, Sphere(1,32,32)))]
+
+endlsystem
+
+###### INITIALISATION ######
+
+__lpy_code_version__ = 1.1
+
+def __initialiseContext__(context):
+	import openalea.plantgl.all as pgl
+	Color_1 = pgl.Material("Color_1" , ambient = (71,91,46) , diffuse = 1.67033 , )
+	Color_1.name = "Color_1"
+	context.turtle.setMaterial(1,Color_1)
+	Color_7 = pgl.Material("Color_7" , ambient = (62,125,20) , diffuse = 2.04 , )
+	Color_7.name = "Color_7"
+	context.turtle.setMaterial(7,Color_7)
+	Color_8 = pgl.Material("Color_8" , ambient = (78,102,23) , diffuse = 1.50437 , )
+	Color_8.name = "Color_8"
+	context.turtle.setMaterial(8,Color_8)
+	Color_9 = pgl.Material("Color_9" , ambient = (70,113,21) , diffuse = 1.77218 , )
+	Color_9.name = "Color_9"
+	context.turtle.setMaterial(9,Color_9)
+	Color_10 = pgl.Material("Color_10" , ambient = (59,49,16) , diffuse = 1.77966 , specular = (0,0,0) , )
+	Color_10.name = "Color_10"
+	context.turtle.setMaterial(10,Color_10)
+	Color_11 = pgl.Material("Color_11" , ambient = (137,52,37) , diffuse = 1.64964 , )
+	Color_11.name = "Color_11"
+	context.turtle.setMaterial(11,Color_11)
+	Color_12 = pgl.Material("Color_12" , ambient = (60,60,15) , diffuse = 3 , )
+	Color_12.name = "Color_12"
+	context.turtle.setMaterial(12,Color_12)
+	Color_13 = pgl.Material("Color_13" , ambient = (30,60,10) , diffuse = 1.68333 , )
+	Color_13.name = "Color_13"
+	context.turtle.setMaterial(13,Color_13)
+	Color_14 = pgl.Material("Color_14" , ambient = (55,60,14) , diffuse = 3 , )
+	Color_14.name = "Color_14"
+	context.turtle.setMaterial(14,Color_14)
+	Color_15 = pgl.Material("Color_15" , ambient = (159,235,97) , diffuse = 0.680851 , )
+	Color_15.name = "Color_15"
+	context.turtle.setMaterial(15,Color_15)
+	Color_16 = pgl.Material("Color_16" , ambient = (255,82,108) , diffuse = 0.627451 , )
+	Color_16.name = "Color_16"
+	context.turtle.setMaterial(16,Color_16)
+	Color_17 = pgl.Material("Color_17" , ambient = (255,255,0) , diffuse = 1 , specular = (99,99,99) , )
+	Color_17.name = "Color_17"
+	context.turtle.setMaterial(17,Color_17)
+	Color_18 = pgl.Material("Color_18" , ambient = (255,170,0) , diffuse = 0.705882 , )
+	Color_18.name = "Color_18"
+	context.turtle.setMaterial(18,Color_18)
+	Color_20 = pgl.Material("Color_20" , ambient = (0,0,0) , diffuse = 14.5455 , )
+	Color_20.name = "Color_20"
+	context.turtle.setMaterial(20,Color_20)
+	Color_21 = pgl.Material("Color_21" , ambient = (51,50,16) , diffuse = 1.78431 , )
+	Color_21.name = "Color_21"
+	context.turtle.setMaterial(21,Color_21)
+	Color_22 = pgl.Material("Color_22" , ambient = (207,193,17) , diffuse = 0.990526 , specular = (81,81,81) , )
+	Color_22.name = "Color_22"
+	context.turtle.setMaterial(22,Color_22)
+	Color_23 = pgl.Material("Color_23" , ambient = (101,94,11) , diffuse = 1.65347 , specular = (0,0,0) , )
+	Color_23.name = "Color_23"
+	context.turtle.setMaterial(23,Color_23)
+	PGL_140318980955920 = pgl.ImageTexture("PGL_140318980955920" , "/Users/fboudon/Develop/vplants/branches/mangosim/share/textures/leaf.png" , )
+	PGL_140318980955920.name = "PGL_140318980955920"
+	Color_30 = pgl.Texture2D(image = PGL_140318980955920 , )
+	Color_30.name = "Color_30"
+	context.turtle.setMaterial(30,Color_30)
+	PGL_140675898004864 = pgl.ImageTexture("PGL_140675898004864" , "/Users/fboudon/Develop/vplants/branches/mangosim/share/textures/leaf-bw.png" , )
+	PGL_140675898004864.name = "PGL_140675898004864"
+	Color_31 = pgl.Texture2D(image = PGL_140675898004864 , )
+	Color_31.name = "Color_31"
+	context.turtle.setMaterial(31,Color_31)
+	PGL_140608034579296 = pgl.ImageTexture("PGL_140608034579296" , "/Users/fboudon/Develop/vplants/branches/mangosim/share/textures/bark2.png" , )
+	PGL_140608034579296.name = "PGL_140608034579296"
+	Color_32 = pgl.Texture2D(image = PGL_140608034579296 , )
+	Color_32.name = "Color_32"
+	context.turtle.setMaterial(32,Color_32)
+	Color_40 = pgl.Material("Color_40" , ambient = (91,4,35) , diffuse = 1.67033 , )
+	Color_40.name = "Color_40"
+	context.turtle.setMaterial(40,Color_40)
+	context.animation_timestep = 0.1
+	context.options.setSelection('Module declaration',1)
+	context.options.setSelection('Warning with sharp module',0)
+	scalars = [('edi.', 'Category'), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 1, 0, 2), ('TEXTURE', 'Bool', False), ('ELASTICITY', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('FRUITMODEL_OUTPUT', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 1, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 1, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', True), ('FRUITBRANCHSIZE', 'Integer', 4, 1, 10), ('Environment', 'Category'), ('TIMEBAR', 'Bool', True), ('BACKGROUND', 'Bool', False)]
+	context["__scalars__"] = scalars
+	for s in scalars:
+		if not s[1] == "Category" : context[s[0]] = s[2]
+	import openalea.plantgl.all as pgl
+	leafsize = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.431282, 1),(0.324129, 0.436757, 1),(0.408886, 0.416427, 1),(0.412274, 0.708684, 1),(0.844357, 0.703533, 1),(1, 0.246499, 1)]) , 
+	    )
+	leafsize.name = "leafsize"
+	import openalea.plantgl.all as pgl
+	axis1 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.214286, 0.00865801, 1),(0.45671, 0.138528, 1)]) , 
+	    )
+	axis1.name = "axis1"
+	axis2 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.209957, -0.017316, 1),(0.491342, -0.0952381, 1)]) , 
+	    )
+	axis2.name = "axis2"
+	axis3 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.166667, 0, 1),(0.5, 0, 1)]) , 
+	    )
+	axis3.name = "axis3"
+	axis4 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.158009, -0.047619, 1),(0.166667, 0.004329, 1),(0.443723, -0.393939, 1)]) , 
+	    )
+	axis4.name = "axis4"
+	axis5 = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.416733, 0.0128104, 1),(0.2343, -0.076231, 1),(0.507411, -0.330906, 1),(0.662132, -0.814102, 1)]) , 
+	    )
+	axis5.name = "axis5"
+	leaflength = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 1, 1),(0.00149779, 1.00072, 1),(1, 0.995671, 1),(1, 0.400121, 1)]) , 
+	    )
+	leaflength.name = "leaflength"
+	petioleCurve = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(-0.543785, 0.192006, 1),(-0.178289, 0.176044, 1),(-0.0656355, 0.0728558, 1),(0.548469, 0.597983, 1),(0.397151, 0.581459, 1),(0.543571, 0.599108, 1)]) , 
+	    )
+	petioleCurve.name = "petioleCurve"
+	leafwidth = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.0123039, 1),(0.289062, 0.0763736, 1),(0.289062, 0.454469, 1),(0.331839, 0.989763, 1),(1, 1, 1)]) , 
+	    )
+	leafwidth.name = "leafwidth"
+	leafpath = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.5, 0, 1),(-0.145022, -0.0735931, 1),(0.0844156, -0.212121, 1),(0.123377, -0.497835, 1)]) , 
+	    )
+	leafpath.name = "leafpath"
+	inflo_elasticity = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.0278664, 1),(0.341991, 0.034632, 1),(0.675325, 0.04329, 1),(1, 0.252183, 1)]) , 
+	    )
+	inflo_elasticity.name = "inflo_elasticity"
+	leafsection = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(-0.508209, 0.16873, 1),(-0.515031, 0.138195, 1),(-0.198373, -0.0924227, 1),(-0.00298323, 0.188761, 1),(0.0897461, -0.106293, 1),(0.555704, 0.0979703, 1),(0.545047, 0.12817, 1)]) , 
+	    )
+	leafsection.name = "leafsection"
+	leafdiam = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.0846264, 1),(0.239002, 1.00091, 1),(0.485529, 0.991241, 1),(0.718616, 1.00718, 1),(0.877539, 0.231273, 1),(1, 0.00332359, 1)]) , 
+	    )
+	leafdiam.name = "leafdiam"
+	inflo_radius = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.160173, 1),(0.393939, 0.151515, 1),(0.735931, 0.0649351, 1),(1, 0.025974, 1)]) , 
+	    )
+	inflo_radius.name = "inflo_radius"
+	radius_base03 = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.131507, 1),(0.00454138, 0.0251277, 1),(0.578848, 0.00694723, 1),(1, 0.00524218, 1)]) , 
+	    )
+	radius_base03.name = "radius_base03"
+	radius = pgl.NurbsCurve2D(	
+	    ctrlPointList = pgl.Point3Array([(0, 0.107326, 1),(0.192635, 0.0975655, 1),(0.457142, 0.000244746, 1),(1, 0.026087, 1)]) , 
+	    )
+	radius.name = "radius"
+	fruitprofile = pgl.BezierCurve2D(	
+	    pgl.Point3Array([(0.00563514, 0.994106, 1),(0.223956, 0.97883, 1),(0.425561, 0.771672, 1),(0.680945, 0.239898, 1),(0.509633, 0.00914747, 1),(0.0130125, 0.0011832, 1)]) , 
+	    )
+	fruitprofile.name = "fruitprofile"
+	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel 2'},[('Function',leafsize),('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5),('Function',leaflength),('Curve2D',petioleCurve),('Function',leafwidth),('Curve2D',leafpath),('Function',inflo_elasticity),('Curve2D',leafsection),('Function',leafdiam),('Function',inflo_radius),('Function',radius_base03),('Function',radius),('Curve2D',fruitprofile)])
+	parameterset = [panel_0,]
+	context["__functions__"] = [('leafsize',leafsize),('leaflength',leaflength),('leafwidth',leafwidth),('inflo_elasticity',inflo_elasticity),('leafdiam',leafdiam),('inflo_radius',inflo_radius),('radius_base03',radius_base03),('radius',radius),]
+	context["__curves__"] = [('axis1',axis1),('axis2',axis2),('axis3',axis3),('axis4',axis4),('axis5',axis5),('petioleCurve',petioleCurve),('leafpath',leafpath),('leafsection',leafsection),('fruitprofile',fruitprofile),]
+	context["__parameterset__"] = parameterset
+	context["leafsize"] = pgl.QuantisedFunction(leafsize)
+	context["axis1"] = axis1
+	context["axis2"] = axis2
+	context["axis3"] = axis3
+	context["axis4"] = axis4
+	context["axis5"] = axis5
+	context["leaflength"] = pgl.QuantisedFunction(leaflength)
+	context["petioleCurve"] = petioleCurve
+	context["leafwidth"] = pgl.QuantisedFunction(leafwidth)
+	context["leafpath"] = leafpath
+	context["inflo_elasticity"] = pgl.QuantisedFunction(inflo_elasticity)
+	context["leafsection"] = leafsection
+	context["leafdiam"] = pgl.QuantisedFunction(leafdiam)
+	context["inflo_radius"] = pgl.QuantisedFunction(inflo_radius)
+	context["radius_base03"] = pgl.QuantisedFunction(radius_base03)
+	context["radius"] = pgl.QuantisedFunction(radius)
+	context["fruitprofile"] = fruitprofile
