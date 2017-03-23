@@ -135,7 +135,7 @@ def get_bloom_date(mtg, inflo, default=None):
 def get_nb_fruits(mtg, inflo, default=0):
     return mtg.property(NbFruitPropertyName).get(inflo,default)
 
-def get_fruit_weight(mtg, inflo, default = None):
+def get_fruits_weight(mtg, inflo, default = None):
     return mtg.property(FruitWeightPropertyName).get(inflo,default)
 
 @use_global_mtg
