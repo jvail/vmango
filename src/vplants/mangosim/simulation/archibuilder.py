@@ -4,11 +4,17 @@ import vplants.mangosim.util_date as ud
 from datetime import datetime, date
 from random import randint
 
-class MTGArchiBuilder:
-    def __init__(self, mtg, gumanager, inflomanager):
-        self.mtg = mtg
+
+class ArchiBuilder:
+    def __init__(self, gumanager, inflomanager):
         self.gumanager = gumanager
         self.inflomanager = inflomanager
+
+
+class MTGArchiBuilder (ArchiBuilder):
+    def __init__(self, mtg, gumanager, inflomanager):
+        ArchiBuilder.__init__(self, gumanager, inflomanager)
+        self.mtg = mtg
 
     def init(self, rootid, current_date):
         self.nbdescendants = self.estimate_nb_descendants(rootid, current_date)
@@ -37,6 +43,9 @@ class MTGArchiBuilder:
         InflorescenceBud = ModuleClass.get('InflorescenceBud')
         A = ModuleClass.get('A')
 
+        phyllotaxy = self.gumanager.phyllotaxy 
+        branching_angle = self.gumanager.branching_angle
+
         # GU is composed of leaves and internodes
         guparam = self.gumanager.set_dimensions(apexparam, current_date)
         current = apexparam.mtgid
@@ -64,13 +73,12 @@ class MTGArchiBuilder:
         nb_lat_children = len(lat_children)
         nb_lat_inflo = nb_inflorescences if len(apical_child) > 0 else max(0,nb_inflorescences-1)
         nb_lat_elements = nb_lat_children + nb_lat_inflo
-        lat_angle = self.gumanager.phyllotaxy 
-        
+
         nb_proc_lat = 0
         has_apical_gu = len(apical_child) > 0
         
         for ch in lat_children:
-            nsproduce( [ SB(), RollL(lat_angle*nb_proc_lat), Down(60) ] )
+            nsproduce( [ SB(), RollL(phyllotaxy*nb_proc_lat), Down(branching_angle) ] )
             nb_proc_lat += 1
             if self.has_to_be_developped(ch, current_date): 
                 self.generate_from_mtg( self.gu_parameters_from_mtg(ch, self.nbdescendants[ch]), current_date )
@@ -82,7 +90,7 @@ class MTGArchiBuilder:
             for i in xrange(0 if has_apical_gu else 1,nb_inflorescences):
                 p = self.inflo_parameters_from_mtg(inflo[i], guparam)
                 self.inflomanager.set_dimensions(p, current_date)
-                nsproduce( [ SB(), RollL(lat_angle*nb_proc_lat), Down(60), InflorescenceBud(p), EB() ] )
+                nsproduce( [ SB(), RollL(phyllotaxy*nb_proc_lat), Down(branching_angle), InflorescenceBud(p), EB() ] )
                 nb_proc_lat += 1
               
         if has_apical_gu:
@@ -133,3 +141,74 @@ class MTGArchiBuilder:
                              fruits_weight=fruits_weight,
                              
                              fruiting = False)
+
+from probability_tables import *
+
+
+class GLMArchiBuilder(MTGArchiBuilder):
+    def __init__(self, mtg, gumanager, inflomanager):
+        MTGArchiBuilder.__init__(self, gumanager, inflomanager)
+
+
+    def init(self, rootid, current_date):
+        MTGArchiBuilder.init(self, rootid, current_date)
+
+        use_proba_table_from(treenames[treeselection], estimationbase, estimationtype, factorrestriction)
+set_seed(SEED)
+
+
+    def generate_from_glm(self, parentparam, current_date):        
+        if  parentparam.burst_date <= current_date :
+            
+            GU = ModuleClass.get('GU')
+            InflorescenceBud = ModuleClass.get('InflorescenceBud')
+            A = ModuleClass.get('A')
+
+            dev = UnitDev(Burst_Date = parentparam.burst_date, 
+                          Position_A = parentparam.position,
+                          Position_Ancestor_A = parentparam.position_ancestor,
+                          Nature_Ancestor_F   = parentparam.nature_ancestor, #eVegetative if parentparam.nature_ancestor == eVegetative else eFlowering,
+                          Tree_Fruit_Load     = Tree_Fruit_Load,
+                          WithinDelayMethod   = WithinDelayMethod)
+
+            apical_child, nb_lat_children, nb_inflorescences, nb_fruits, date_children_burst, date_inflo_bloom = dev.process()
+
+            phyllotaxy      = self.gumanager.phyllotaxy
+            branching_angle = self.gumanager.branching_angle
+            
+            p = parentparam.copy()
+            p.set(nature = eFlowering if nb_inflorescences > 0 else eVegetative,
+                  nbdescendants = 1, radius = estimate_radius(1),
+                  cycle = current_cycle)
+            nsproduce( [ RollL(phyllotaxy), GU(p) ] )
+            
+            nb_lat_inflo = nb_inflorescences if apical_child else max(0,nb_inflorescences-1)
+            nb_lat_elements = nb_lat_children + nb_lat_inflo
+            nb_fruiting_lat_inflo = min(nb_lat_inflo, max(0, nb_fruits - int(not apical_child)))
+            if nb_lat_elements > 0:
+                anglebetweenchildren = phyllotaxy
+            if not date_children_burst is None:
+                date_children_burst = date(year=date_children_burst[0], month=date_children_burst[1], day=15)
+                if date_children_burst > cycle_end(5):
+                    import warnings
+                    warnings.warn('Invalid date of burst %s (after last date %s) of children with parent borned in %s (in cycle %i)' %(date_children_burst, cycle_end(5),p.burst_date,current_cycle))
+                cyclechange = (get_cycle(date_children_burst) != get_cycle(p.burst_date))
+                baseparameter = ParameterSet(burst_date=date_children_burst, 
+                                         nature_ancestor=p.nature_ancestor if not cyclechange else p.nature, 
+                                         position_ancestor=p.position_ancestor if not cyclechange else p.position)
+                if nb_lat_children > 0:
+                    latparam = baseparameter.copy()
+                    latparam.set(position = eLateral)
+                    for i in xrange(nb_lat_children):
+                        nsproduce( [ RollL(anglebetweenchildren), SB(), Down(branching_angle), A(latparam.copy()), EB() ] )
+                  
+            if nb_inflorescences > 0:
+                for i in xrange(nb_lat_inflo):
+                    nsproduce( [ RollL(anglebetweenchildren), SB(), Down(branching_angle), Inflorescence(ParameterSet(bloom_date=date_inflo_bloom, cycle =  get_cycle(p.burst_date), nb_fruits = (1 if i < nb_fruiting_lat_inflo else 0))), EB() ] )
+            
+            if apical_child:
+                p = baseparameter
+                p.set(position = eApical)
+                nsproduce( [ A(p) ] )
+            elif nb_inflorescences > 0:
+                nsproduce( [ Inflorescence(ParameterSet(bloom_date=date_inflo_bloom, cycle =  get_cycle(p.burst_date), nb_fruits = nb_fruits - nb_fruiting_lat_inflo)) ] )

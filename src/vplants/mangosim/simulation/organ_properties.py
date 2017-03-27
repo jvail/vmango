@@ -80,6 +80,8 @@ class GUManager (OrganManager):
       self.radius_exponent = 0.45
       self.radius_coefficient = 0.3
 
+      self.branching_angle = 60 
+
       self.__dict__.update(kwargs)
 
     def set_parameters(self, leafaxis, leafsection, leafdiam, leafwidth, petioleCurve, resolution):
@@ -445,7 +447,7 @@ class InfloManager (OrganManager):
            nsproduce ([ EndGC(), Tropism(0,0,-1) ])
            if ( pheno_stage >= 4):
               elasticity = 0.01
-              if param.nb_fruits > 0 and current_date <= param.fruit_maturity_date:
+              if param.nb_fruits > 0 and param.hasattr('fruit_maturity_date') and current_date <= param.fruit_maturity_date:
                 elasticity += 0.02 * (n_pheno-4.)
               nsproduce([ Elasticity(elasticity) ])
               if ( pheno_stage == 4):  
@@ -615,9 +617,9 @@ class FruitManager (OrganManager):
             print 'Fruit model evaluation'
             lmtg = export_to_mtg_light(lstring, None) # , lscene)
             applymodel(lmtg, get_flowering_cycle(self.inflo_flush_start), self.branchsize, self.outputenabled, self.outputname)
-            self.reset_fruiting_start_date()
         else:
             print 'No Fruit model evaluation'
+        self.reset_fruiting_start_date()
 
     def init_fruiting_start_date(self, burst_date):
         if self.inflo_flush_start is None: 

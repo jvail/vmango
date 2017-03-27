@@ -2,7 +2,9 @@
 ### Import of data :
 localdir = getSrcDirectory(function(x) {x})
 print(localdir)
-setwd(localdir)
+if (length(localdir) != 0){
+    setwd(localdir)
+}
 
 # input and output directory
 share_dir = '../../../../share/'
@@ -716,7 +718,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
                                   monthgroups=monthgroups, datemultimode = datemultimode)
   
   print("determine_reproductive_development")
-  #determine_reproductive_development(data=data, subset_selection= subset_selection, year=year, yeartag= yeartag, tag = tag, verbose = verbose, factors = factors, exclude = exclude, include = include, monthgroups=monthgroups)    
+  determine_reproductive_development(data=data, subset_selection= subset_selection, year=year, yeartag= yeartag, tag = tag, verbose = verbose, factors = factors, exclude = exclude, include = include, monthgroups=monthgroups)    
   
 }
 
@@ -912,12 +914,12 @@ test = function() {
 
 main = function() {
   verbose = 1
-  #determining_glm_tables_within_cycle_for_year(input_dir, "04",   verbose)
+  determining_glm_tables_within_cycle_for_year(input_dir, "04",   verbose)
   determining_glm_tables_within_cycle_for_year(input_dir, "05",   verbose)
-  #determining_glm_tables_mixedinflo_within_cycle_for_year(input_dir, "0405", verbose)
+  determining_glm_tables_mixedinflo_within_cycle_for_year(input_dir, "0405", verbose)
   
-  #determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", verbose)
-  #determining_glm_tables_between_cycle_for_year(input_dir, "04to05",   verbose)
+  determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", verbose)
+  determining_glm_tables_between_cycle_for_year(input_dir, "04to05",   verbose)
   
 }
 

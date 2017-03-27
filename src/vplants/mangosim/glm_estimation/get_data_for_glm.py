@@ -141,7 +141,7 @@ def flowering_dev_variables(mtg, gu, cycle = None):
         if nbfruits == 0:
             Mean_Fruit_Weight = NotRelevant
         else:
-            Mean_Fruit_Weight = get_fruit_weight(mtg, inflo, NotRelevant)
+            Mean_Fruit_Weight = get_fruits_weight(mtg, inflo, NotRelevant)
             if Mean_Fruit_Weight != NotRelevant : Mean_Fruit_Weight /= Nb_Fruits
         
     return is_terminal, Flowering, Nb_Inflorescence, Flowering_Week, Fruiting, Nb_Fruits, Mean_Fruit_Weight
@@ -317,6 +317,7 @@ def get_table_for_null_model(mtg, loaded=None, variety="cogshall"):
 
 
 def export_tables(mtg, variety, outputpath):
+    from pandas import DataFrame
     from os.path import join, exists 
     if not exists(outputpath): 
         from os import makedirs
@@ -344,10 +345,10 @@ def export_tables(mtg, variety, outputpath):
     column_names = list( table_for_null_model.columns )
     table_for_null_model.to_csv(join( outputpath, "table_for_null_model.csv"),header=column_names, index=False)
 
-
-from pandas import DataFrame, concat
-if __name__ == '__main__' :
+def main():
     mtg = get_mtg()   
     export_tables(mtg, 'cogshall', join(share_dir, 'glm_estimate_input','cogshall'))
 
+if __name__ == '__main__' :
+    main()
 
