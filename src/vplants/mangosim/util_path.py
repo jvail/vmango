@@ -14,11 +14,11 @@ def data(fname):
 from vplants.mangosim.state import *
 
 
-def get_probability_repository(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm, restriction = None):
+def get_probability_repository(variety = 'cogshall', estimationtype = eCompleteGlm, restriction = None):
     from os.path import join
-    path = join(share_dir, 'glm_output_proba', variety)
+    path = join(share_dir, 'glm_output_proba2', variety)
     if restriction : path = join(path,RestrictionName[restriction])
-    path = join(path,GlmTypeName[estimationtype], treename)
+    path = join(path,GlmTypeName[estimationtype])
     return path
 
 

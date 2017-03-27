@@ -1,6 +1,7 @@
 #from vplants.mangosim.tools import share_dir
 from vplants.mangosim.state import *
 from vplants.mangosim.util_date import *
+import vplants.mangosim.util_path as up; reload(up)
 from vplants.mangosim.util_path import *
 from vplants.mangosim.devlaw_description import *
 
@@ -78,9 +79,9 @@ class ProbaTable:
                     raise ValueError('Invalid factor for Within cycle proba',f)
 
 
-def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm, restriction = None):
+def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restriction = None):
     from os.path import exists, join
-    probafilepath = get_probability_repository(variety, treename, estimationtype, restriction)
+    probafilepath = get_probability_repository(variety, estimationtype, restriction)
     if not exists(probafilepath): raise ValueError("Proba path repository does not exist", probafilepath)
     probacycle = {}
     for cycle in range(3,6):
@@ -93,11 +94,11 @@ def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationty
                     p = ProbaTable(prop,family,propfile)
                     p.type = eWithinCycle
                     p.cycle = cycle
-                    p.estimation = (variety, treename, estimationtype)
+                    p.estimation = (variety, estimationtype)
                     proba_within[prop] = p
                 else:
                     import warnings
-                    warnings.warn("Table '%s' for variety '%s', tree '%s' does not exist." % (prop, variety, treename))
+                    warnings.warn("Table '%s' for variety '%s' does not exist." % (prop, variety))
         if between_extension[cycle]:
             ext = between_extension[cycle]
             for prop, family in zip(vegetative_proba+vegetative_proba_between,vegetative_proba_family+vegetative_proba_between_family):
@@ -106,7 +107,7 @@ def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationty
                     p = ProbaTable(prop,family,propfile)
                     p.type = eLaterCycle
                     p.cycle = cycle
-                    p.estimation = (variety, treename, estimationtype)
+                    p.estimation = (variety, estimationtype)
                     proba_between[prop] = p
                 else:
                     import warnings
@@ -117,26 +118,16 @@ def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationty
 global_proba_tables = {}
 current_proba_table = None
     
-def get_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm, restriction = None):
+def get_proba_tables(variety = 'cogshall', estimationtype = eSelectedGlm, restriction = None):
     global global_proba_tables
-    tableid = (variety, treename, estimationtype, restriction)
+    tableid = (variety, estimationtype, restriction)
     if not tableid in global_proba_tables:
-        global_proba_tables[tableid] = read_proba_tables(variety, treename, estimationtype, restriction)
+        global_proba_tables[tableid] = read_proba_tables(variety, estimationtype, restriction)
     return global_proba_tables[tableid]
 
-def use_proba_table(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm, restriction = None):
+def use_proba_table(variety = 'cogshall', estimationtype = eSelectedGlm, restriction = None):
     global current_proba_table
-    current_proba_table = get_proba_tables(variety, treename, estimationtype, restriction)
-
-def use_proba_table_from(treename,  estimationbase, estimationtype = eCompleteGlm, restriction = None):
-    import vplants.mangosim.doralice_mtg.mtg_manipulation  as mm
-    probnames = treename
-    if estimationbase == eManagementTypeBased:
-        Tree_Fruit_Load = mm.load_state(treeid)
-        probnames = 'loaded' if Tree_Fruit_Load == eLoaded else 'notloaded'
-    elif estimationbase == eVarietyBased:
-        probnames = 'all_trees'
-    use_proba_table(mm.get_variety(mm.get_tree_from_name(treename)), probnames, estimationtype, restriction)
+    current_proba_table = get_proba_tables(variety, estimationtype, restriction)
 
 def iterprobatables():
     for k, ps in global_proba_tables.items():
@@ -161,7 +152,7 @@ class UnitDev:
                        Nature_F = None, 
                        Position_Ancestor_A = None,
                        Nature_Ancestor_F = None, 
-                       Tree_Fruit_Load  = eLoaded,
+                       # Tree_Fruit_Load  = eLoaded,
                        WithinDelayMethod = eDeltaPoissonForWithin):
         self.burst_date = Burst_Date
         self.cycle = get_cycle(Burst_Date)
@@ -172,12 +163,14 @@ class UnitDev:
                            Position_A = Position_A, 
                            Position_Ancestor_A = Position_Ancestor_A, 
                            Nature_Ancestor_F   = Nature_Ancestor_F,
-                           Tree_Fruit_Load     = Tree_Fruit_Load)
+                           #Tree_Fruit_Load     = Tree_Fruit_Load
+                           )
 
         self.paramsdelayed = dict(Burst_Date = Burst_Date.month,
                                   Position_A = Position_A,
                                   Nature_F   = Nature_F,
-                                  Tree_Fruit_Load = Tree_Fruit_Load)
+                                  #Tree_Fruit_Load = Tree_Fruit_Load
+                                  )
 
         self.proba_tables = current_proba_table[self.cycle]
         global current_unitdev

@@ -166,7 +166,9 @@ class GUManager (OrganManager):
                  
                  nb_internodes    = nb_internodes,
                  
-                 t_ip             = t_ip)
+                 t_ip             = t_ip,
+
+                 leafy = True)
       
       if params.burst_date:          
           delta_base_temp  = gauss(0,3) if temperature_variability else 0
@@ -313,75 +315,75 @@ class GUManager (OrganManager):
 class InfloManager (OrganManager):
 
     def __init__(self, **kwargs):
-      OrganManager.__init__(self, **kwargs)
+        OrganManager.__init__(self, **kwargs)
 
-      self.t_ip_inflo   = 346.03/2.                          # Inflexion point of inflorescence growth curve
-      self.base_temperature = 11.12              # Base temperature of inflorescences
+        self.t_ip_inflo   = 346.03/2.                          # Inflexion point of inflorescence growth curve
+        self.base_temperature = 11.12              # Base temperature of inflorescences
 
-      self.pheno_base_temp   = [11.10, 5.38,   8.67,   15.11, 16]  # base temperature for each phenological stage of inflorescence
-      self.pheno_stade_temp  = [70.56, 133.32, 230.42, 352.72, 500]
+        self.pheno_base_temp   = [11.10, 5.38,   8.67,   15.11, 16]  # base temperature for each phenological stage of inflorescence
+        self.pheno_stade_temp  = [70.56, 133.32, 230.42, 352.72, 500]
       
-      self.pheno_change_temp = np.cumsum (self.pheno_stade_temp)     # temperatures of inflorescence stage change
+        self.pheno_change_temp = np.cumsum (self.pheno_stade_temp)     # temperatures of inflorescence stage change
 
-      self.pheno_color_inflo  =  [13, 13, 16, 16, 23, 20]                  # color for each stage (inflorescence)
-      self.pheno_color_flower = [13,2,7,17,10,20]
+        self.pheno_color_inflo  =  [13, 13, 16, 16, 23, 20]                  # color for each stage (inflorescence)
+        self.pheno_color_flower = [13,2,7,17,10,20]
 
-      self.pheno_stadename = {0: 'ABCD', 1 : 'E', 2 : 'F', 3 : 'PF', 4 :'G', 5: 'S' }
+        self.pheno_stadename = {0: 'ABCD', 1 : 'E', 2 : 'F', 3 : 'PF', 4 :'G', 5: 'S' }
 
-      # Inflorescences length
-      # Mean and Std dev of length distribution.       
-      self.length_distrib       =  (23.15833, 6.767254)
+        # Inflorescences length
+        # Mean and Std dev of length distribution.       
+        self.length_distrib       =  (23.15833, 6.767254)
 
-      self.nbaxes_length_ratio = 1.19
+        self.nbaxes_length_ratio = 1.19
 
-      self.__dict__.update(kwargs)
+        self.__dict__.update(kwargs)
 
     def set_parameters(self, resolution):
-          # Graphic Parameters
-          self.resolution = resolution
+        # Graphic Parameters
+        self.resolution = resolution
 
     def retrieve_parameters(self, namespace):
         self.set_parameters(namespace['RESOLUTION'])
 
     def set_dimensions(self, params, current_date):
-      final_length_inflo = get_realisation(self.length_distrib[0], self.length_distrib[1], 5, 44)
-      nb_axes = int(self.nbaxes_length_ratio*final_length_inflo)
+        final_length_inflo = get_realisation(self.length_distrib[0], self.length_distrib[1], 5, 44)
+        nb_axes = int(self.nbaxes_length_ratio*final_length_inflo)
       
-      growth_tts   = ThermalTimeAccumulator(self.base_temperature)
-      pheno_tts    = MultiPhaseThermalTimeAccumulator(self.pheno_base_temp, self.pheno_change_temp, 0)
+        growth_tts   = ThermalTimeAccumulator(self.base_temperature)
+        pheno_tts    = MultiPhaseThermalTimeAccumulator(self.pheno_base_temp, self.pheno_change_temp, 0)
       
-      # burst date should be computed from bloom date and pheno_tts reverse timing
-      if params.hasattr('burst_date') and params.hasattr('bloom_date'):
-        burst_date = params.burst_date
-        bloom_date = params.bloom_date      
-      elif params.hasattr('burst_date'):
-        bloom_date = todatetime(pheno_tts.find_date_of_accumulation(350, params.burst_date, get_temperature))
-        burst_date = params.burst_date
-      elif params.hasattr('bloom_date'):
-        pheno_tts  = MultiPhaseThermalTimeAccumulator(self.pheno_base_temp, self.pheno_change_temp, 350)
-        burst_date = todatetime(pheno_tts.reverse_from_finaldate(0, params.bloom_date, get_temperature))
-        bloom_date = params.bloom_date
-      fruiting_date = todatetime(growth_tts.find_date_of_accumulation(800, burst_date, get_temperature)) if params.nb_fruits > 0 else None
-      # burst_date = bloom_date - timedelta(days=28)
+        # burst date should be computed from bloom date and pheno_tts reverse timing
+        if params.hasattr('burst_date') and params.hasattr('bloom_date'):
+            burst_date = params.burst_date
+            bloom_date = params.bloom_date      
+        elif params.hasattr('burst_date'):
+            bloom_date = todatetime(pheno_tts.find_date_of_accumulation(350, params.burst_date, get_temperature))
+            burst_date = params.burst_date
+        elif params.hasattr('bloom_date'):
+            pheno_tts  = MultiPhaseThermalTimeAccumulator(self.pheno_base_temp, self.pheno_change_temp, 350)
+            burst_date = todatetime(pheno_tts.reverse_from_finaldate(0, params.bloom_date, get_temperature))
+            bloom_date = params.bloom_date
+        fruiting_date = todatetime(growth_tts.find_date_of_accumulation(800, burst_date, get_temperature)) if params.nb_fruits > 0 else None
+        # burst_date = bloom_date - timedelta(days=28)
 
-      for day in date_xrange(burst_date, current_date+timedelta(days=1)):
-          daytemp = get_temperature(day)
-          for tts in [growth_tts, pheno_tts]:
+        for day in date_xrange(burst_date, current_date+timedelta(days=1)):
+            daytemp = get_temperature(day)
+            for tts in [growth_tts, pheno_tts]:
                tts.accumulate(daytemp)  
       
-      params.set(burst_date = burst_date,
-                 bloom_date = bloom_date,
-                 fruiting_date = fruiting_date,
+        params.set(burst_date = burst_date,
+                   bloom_date = bloom_date,
+                   fruiting_date = fruiting_date,
                  
-                 final_length = final_length_inflo,
-                 length = 0.01,
+                   final_length = final_length_inflo,
+                   length = 0.01,
 
-                 nb_axes = nb_axes,
+                   nb_axes = nb_axes,
                  
-                 growth_tts = growth_tts,
-                 pheno_tts  = pheno_tts)
+                   growth_tts = growth_tts,
+                   pheno_tts  = pheno_tts)
       
-      return params
+        return params
 
     def second_order_length(self, param, mainlength, upos):
         final_second_order = param.final_length * 0.687 - 3.97
