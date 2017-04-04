@@ -345,17 +345,17 @@ def __initialiseContext__(context):
 	Color_23 = pgl.Material("Color_23" , ambient = (101,94,11) , diffuse = 1.65347 , specular = (0,0,0) , )
 	Color_23.name = "Color_23"
 	context.turtle.setMaterial(23,Color_23)
-	PGL_140318980955920 = pgl.ImageTexture("PGL_140318980955920" , "/Users/fboudon/Develop/vplants/branches/mangosim/share/textures/leaf.png" , )
+	PGL_140318980955920 = pgl.ImageTexture("PGL_140318980955920" , "../../../../share/textures/leaf.png" , )
 	PGL_140318980955920.name = "PGL_140318980955920"
 	Color_30 = pgl.Texture2D(image = PGL_140318980955920 , )
 	Color_30.name = "Color_30"
 	context.turtle.setMaterial(30,Color_30)
-	PGL_140675898004864 = pgl.ImageTexture("PGL_140675898004864" , "/Users/fboudon/Develop/vplants/branches/mangosim/share/textures/leaf-bw.png" , )
+	PGL_140675898004864 = pgl.ImageTexture("PGL_140675898004864" , "../../../../share/textures/leaf-bw.png" , )
 	PGL_140675898004864.name = "PGL_140675898004864"
 	Color_31 = pgl.Texture2D(image = PGL_140675898004864 , )
 	Color_31.name = "Color_31"
 	context.turtle.setMaterial(31,Color_31)
-	PGL_140608034579296 = pgl.ImageTexture("PGL_140608034579296" , "/Users/fboudon/Develop/vplants/branches/mangosim/share/textures/bark2.png" , )
+	PGL_140608034579296 = pgl.ImageTexture("PGL_140608034579296" , "../../../../share/textures/bark2.png" , )
 	PGL_140608034579296.name = "PGL_140608034579296"
 	Color_32 = pgl.Texture2D(image = PGL_140608034579296 , )
 	Color_32.name = "Color_32"
