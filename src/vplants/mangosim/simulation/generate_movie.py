@@ -188,7 +188,7 @@ def main():
             nbpovprocess = 3 # cpu_count() - 1
         generate_movie(nbpovprocess=nbpovprocess)
     elif '--bgeom' in sys.argv:        
-        generate_bgeom(421)
+        generate_bgeom()
     elif stepflag in sys.argv:
         pfi = sys.argv.index(stepflag)
         numstep = int(sys.argv[pfi+1])
