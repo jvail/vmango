@@ -25,9 +25,9 @@ seed(SEED)
 nprand.seed(SEED)
 
 
-mat = execContext().turtle.getMaterial(30).filename=os.path.abspath('../../../../share/textures/leaf.png')
-mat = execContext().turtle.getMaterial(31).filename=os.path.abspath('../../../../share/textures/leaf-bw.png')
-mat = execContext().turtle.getMaterial(32).filename=os.path.abspath('../../../../share/textures/bark2.png')
+mat = execContext().turtle.getMaterial(30).image.filename=os.path.abspath('../../../../share/textures/leaf.png')
+mat = execContext().turtle.getMaterial(31).image.filename=os.path.abspath('../../../../share/textures/leaf-bw.png')
+mat = execContext().turtle.getMaterial(32).image.filename=os.path.abspath('../../../../share/textures/bark2.png')
 
 mtg = mm.get_mtg()
 
