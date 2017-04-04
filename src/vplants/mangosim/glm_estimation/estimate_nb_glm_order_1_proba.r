@@ -6,16 +6,25 @@ if (length(localdir) != 0){
     setwd(localdir)
 }
 
+exclude_factor = NULL
+
 # input and output directory
 share_dir = '../../../../share/'
 input_dir = paste(share_dir,'glm_estimate_input/cogshall/', sep="")
-output_dir = paste(share_dir,'glm_output_proba2/cogshall/', sep="")
+output_dir = paste(share_dir,'glm_output_proba/cogshall/', sep="")
+if (is.null(exclude_factor) == TRUE){
+  output_dir = paste(output_dir,'allfactors','/',sep='');
+} else {
+  output_dir = paste(output_dir,'without_',exclude_factor,'/',sep='');
+}
+
 if (file.exists(output_dir) == FALSE){
     dir.create(output_dir,recursive=TRUE)
 }
 
 source("util_glm.r")
 
+NOFILTER = FALSE
 
 ############################################################# Summary functions ###########################################################################################################################
 
@@ -234,7 +243,8 @@ generate_glm = function(variable, family, data, subset, year, verbose = 0, facto
     
     # data = set_data_factors(data, factors)
   
-    subset = filter_monthes(factors, data, subset)
+    if (!NOFILTER)
+      subset = filter_monthes(factors, data, subset)
 
 
     path_complete_glm = paste(output_dir,"complete_glm/",sep="")
@@ -244,7 +254,7 @@ generate_glm = function(variable, family, data, subset, year, verbose = 0, facto
     if (file.exists(path_selected_glm) == FALSE) dir.create(path_selected_glm, recursive=TRUE)
     
     fname = tolower(variable)
-    if (!is.null(tag)) fname = paste(fname, '_', tag,sep="")
+    if (!is.null(tag)) fname = paste(tag ,'_', fname,sep="")
     basefname = paste(fname, "_", year, sep="")
     
     if (is.null(factors)) { formula = as.formula(paste(variable," ~ 1", sep="")) }
@@ -300,7 +310,8 @@ generate_vglm = function(variable, data, subset, year, verbose, factors = c("Bur
     tracestep = 0
     # if (verbose >= 3) tracestep = 0
     
-    subset = filter_monthes(factors, data, subset)
+    if (!NOFILTER)
+       subset = filter_monthes(factors, data, subset)
     
     #data = set_data_factors(data, factors)
         
@@ -311,7 +322,7 @@ generate_vglm = function(variable, data, subset, year, verbose, factors = c("Bur
     if (file.exists(path_selected_glm) == FALSE) dir.create(path_selected_glm,recursive=TRUE)
 
     fname = tolower(variable)
-    if (!is.null(tag)) fname = paste(fname, '_', tag,sep="")
+    if (!is.null(tag)) fname = paste(tag ,'_', fname,sep="")
     basefname = paste(fname, "_", year,sep="")
     
     if (is.null(factors)) { formula = as.formula(paste(variable," ~ 1", sep="")) }
@@ -394,6 +405,12 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
     Nb_Lateral_Children = "Nb_Lateral_MI_Children"
     Burst_Date_Children = "Burst_Date_MI_Children"
     Burst_Delta_Date_Children = "Burst_Delta_Date_MI_Children"
+  }
+  
+  if (NOFILTER) {
+    exclude = NULL
+    include = NULL
+    monthgroups = NULL
   }
   
   ############################################## Vegetative Burst ##############################################
@@ -508,6 +525,12 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
 determine_reproductive_development = function(data, subset_selection, year, yeartag, tag, verbose, factors, exclude = NULL, include = NULL, monthgroups = NULL) {
     MinNbGUForGLM = 30
   
+    if (NOFILTER) {
+      exclude = NULL
+      include = NULL
+      monthgroups = NULL
+    }
+    
     ############################################## Flowering  ############################################## 
     if (verbose >= 1) print("########### Estimate Flowering") 
     
@@ -623,7 +646,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
   
   include = list(   )
   
-  monthgroups = list(Vegetative_Burst = list(1:2,3:5,6:11))
+  monthgroups = list() #Vegetative_Burst = list(1:2,3:5,6:11))
 
   datemultimode = FALSE
   
@@ -641,6 +664,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     #exclude$Nb_Fruits = append(exclude[["Nb_Fruits"]],  "Nature_Ancestor_F")
     #exclude$Flowering =  c("Nature_Ancestor_F")
     #include$Flowering =  c("Nature_Ancestor_SF")
+    monthgroups$Vegetative_Burst = list(1:2,3:5,9:11)
     monthgroups$Flowering = list(c(12,1,2,3,4))
     monthgroups$Nb_Inflorescences = list(c(1,2,3,4,5) )
     monthgroups$Fruiting = list(c(1,2), c(3,4,5) )
@@ -659,10 +683,11 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     monthgroups$Burst_Date_GU_Children = list(c(8,9,10), c(12, 1, 2) )
     monthgroups$Burst_Delta_Date_GU_Children = list( c(8,9,10), c(12, 1, 2) )
     #exclude$Burst_Date_Children = c("Position_A")
-    #monthgroups$Burst_Delta_Date_GU_Children_Poisson = list( c(10, 11), c( 1, 2) )
+    monthgroups$Burst_Delta_Date_GU_Children_Poisson = list( c(10, 11) )
 
     exclude$Burst_Date_GU_Children = c("Position_Ancestor_A")
-    data = group_factor_values(data,'Burst_Date_GU_Children', list(c(10,11,12)))  
+    if(!NOFILTER)
+      data = group_factor_values(data,'Burst_Date_GU_Children', list(c(10,11,12)))  
     exclude$Burst_Delta_Date_GU_Children = c("Position_Ancestor_A")
     #data = group_factor_values(data,'Burst_Delta_Date_GU_Children', list(c(1,2),c(5,6)))  
     
@@ -688,7 +713,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     include$Nb_Fruits = c("Flowering_Week")
     include$Fruit_Weight = c("Flowering_Week")
     # ne marche pas : pas assez d'éléments ?
-    datemultimode = TRUE
+    datemultimode = FALSE # TRUE
   }
   
   if (year == '0405') {
@@ -780,7 +805,8 @@ determining_glm_tables_between_cycle = function(data, year, verbose = FALSE, sel
     monthgroups = list()
     
     if (year == '03to0405') {
-      data = group_factor_values(data,'Burst_Date_GU_Children', list(c(111,112),c(101,102,103,104),c(209:212,201:202)))
+      if (!NOFILTER) 
+        data = group_factor_values(data,'Burst_Date_GU_Children', list(c(111,112),c(101,102,103,104),c(209:212,201:202)))
     
     }
     if (year == '04to05') {
@@ -791,7 +817,8 @@ determining_glm_tables_between_cycle = function(data, year, verbose = FALSE, sel
       monthgroups$Nb_Lateral_GU_Children = list(c(10,11,12), c(3,4,5))
       monthgroups$Burst_Date_GU_Children = list(c(10,11,12), c(3,4,5))
 
-      data = group_factor_values(data,'Burst_Date_GU_Children', list(c(110,111,112)))
+      if (!NOFILTER) 
+        data = group_factor_values(data,'Burst_Date_GU_Children', list(c(110,111,112)))
     }
     
     determine_vegetative_development(data=data, subset_selection= subset_selection, year=year, yeartag= yeartag, 
@@ -845,7 +872,7 @@ determining_glm_tables_within_cycle_for_year = function(input_dir, year = NULL, 
   data = prepare_data_factors(data)
   
   general_summary_output(data,paste(output_dir,"info_table_within_",year,".txt",sep=""))
-  determining_glm_tables_within_cycle(data, year, verbose = verbose, selection=data$Mixed_Inflo == 0)
+  determining_glm_tables_within_cycle(data, year, verbose = verbose, selection=data$Mixed_Inflo == 0, tag='gu')
 }
 
 determining_glm_tables_mixedinflo_within_cycle_for_year = function(input_dir, year = NULL, verbose = 0) {
@@ -853,7 +880,7 @@ determining_glm_tables_mixedinflo_within_cycle_for_year = function(input_dir, ye
   data = prepare_data_factors(data)
   
   general_summary_output(data,paste(output_dir,"info_table_within_",year,".txt",sep=""))
-  determining_glm_tables_mixed_inflo_within_cycle(data, year, verbose = verbose, selection=data$Mixed_Inflo == 1, tag='mixedinflo')
+  determining_glm_tables_mixed_inflo_within_cycle(data, year, verbose = verbose, selection=data$Mixed_Inflo == 1, tag='mi')
 }
 
 
@@ -863,9 +890,9 @@ determining_glm_tables_between_cycle_for_year = function(input_dir, year, verbos
     data = prepare_data_factors(data)
     general_summary_output(data,paste(output_dir,"info_table_between_",year,".txt",sep=""))
     if (length(which(is.na(data$Burst_Month))) == length(data$Burst_Month)) data$Burst_Month = NULL
-    determining_glm_tables_between_cycle(data, year, verbose)
+    determining_glm_tables_between_cycle(data, year, verbose, tag='gu')
   
-    determining_glm_tables_mixed_inflo_between_cycle(data, year, verbose)
+    determining_glm_tables_mixed_inflo_between_cycle(data, year, verbose, tag='gu')
 }
 
 ####################### MAIN #######################################@

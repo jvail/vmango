@@ -5,6 +5,22 @@ import vplants.mangosim.util_path as up; reload(up)
 from vplants.mangosim.util_path import *
 from vplants.mangosim.devlaw_description import *
 
+def has_concatenated_values(array):
+    for v in array:
+        if type(v) == str and '-' in v:
+            return True
+    return False
+
+def deconcatenate_values(array):
+    val = [map(int,f.split('-')) if type(f) == str and '-' in f else [int(f)] for f in array]
+    index = []
+    i = 0
+    for v in val:
+        for j in xrange(len(v)):
+            index.append(i)
+        i += 1
+    val = sum(val,[])
+    return val, index
 
 class ProbaTable:
     def __init__(self, name, family, fname = None):
@@ -22,19 +38,49 @@ class ProbaTable:
         """
             tablevalues should be a pandas dataframe
         """
+        import itertools
         if family: self.family = family
 
         self.factors = [ name for name in list(tablevalues.columns) if name in allfactors]
         extrafactors = [ name for name in list(tablevalues.columns) if name not in allfactors]
         if self.family == eMultiVariate:
             self.answers = list(extrafactors)
+            if has_concatenated_values(self.answers):
+                self.answers, valindex = deconcatenate_values(self.answers)
+            else:
+                valindex = None
+        else:
+            if 'number' in extrafactors : extrafactors.remove('number')
+            lextrafactors = list(extrafactors)
+            lextrafactors.remove('probability')
+            if self.family == eGaussian:                
+                lextrafactors.remove('stderror')                
+            if len(lextrafactors) != 0 :
+                raise ValueError('Unrecognized factors', self.name, self.fname, lextrafactors)
 
         subset_table_factor = tablevalues[self.factors]
         subset_table_probas = tablevalues[extrafactors]
         self.values = {}
         for ind in xrange(len(tablevalues)):
             factorv = tuple(subset_table_factor.iloc[ind])
-            self.values[factorv] = list(subset_table_probas.iloc[ind])
+            probvalue = list(subset_table_probas.iloc[ind])
+            if self.family == eMultiVariate and not valindex is None:
+                probvalue = [probvalue[i] for i in valindex]
+            probvalue = [v if v > 0.01 else 0 for v in probvalue]
+
+
+            tosplit = False
+            for f in factorv:
+                if type(f) == str :
+                    tosplit = True
+                    break
+            if not tosplit:
+                self.values[factorv] = probvalue
+            else:
+                factorvl = [map(int,f.split('-')) if type(f) == str and '-' in f else [int(f)] for f in factorv]
+                for factorvi in itertools.product(*factorvl):
+                    self.values[factorvi] = probvalue
+
 
     def get_proba_value(self, args):
         if len(args) < len(self.factors): 
@@ -51,16 +97,18 @@ class ProbaTable:
             return self.values[factoractualvalue]
         except KeyError, e:
             # print self.factors, factoractualvalue, self.type, self.name
-            raise e            
+            raise KeyError(self.factors, e.args)            
 
     def realization(self, **args):
         from numpy import cumsum
-        from numpy.random import binomial, poisson, uniform
+        from numpy.random import binomial, poisson, uniform, normal
         probavalue = self.get_proba_value(args)
         if self.family == eBinomial:
             return bool( binomial(1,probavalue[0]) )
         elif self.family == ePoisson:
-            return int( poisson(probavalue,1) )
+            return int( poisson(probavalue[0],1) )
+        elif self.family == eGaussian:
+            return float( normal(probavalue[0],probavalue[1],1) )
         elif self.family == eMultiVariate:
             cumsum_probs = list( cumsum(probavalue) )
             unif_realization = float( uniform(0,1,1) )
@@ -70,12 +118,17 @@ class ProbaTable:
             return self.answers[i]
     def check(self):
         if self.type == eWithinCycle:
+            withinfactors = list(allfactors)
+            withinfactors.remove('Nature_F')
             for f in self.factors:
-                if not f in ['Tree_Fruit_Load', 'Burst_Date', 'Position_A', 'Position_Ancestor_A', 'Nature_Ancestor_F']:
+                if not f in withinfactors:
                     raise ValueError('Invalid factor for Within cycle proba',f)
         elif self.type == eLaterCycle:
+            betweenfactors = list(allfactors)
+            betweenfactors.remove('Position_Ancestor_A')
+            betweenfactors.remove('Nature_Ancestor_F')
             for f in self.factors:
-                if not f in ['Tree_Fruit_Load', 'Burst_Date', 'Position_A', 'Nature_F']:
+                if not f in betweenfactors:
                     raise ValueError('Invalid factor for Within cycle proba',f)
 
 
@@ -88,30 +141,35 @@ def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restr
         proba_within, proba_between = {}, {}
         if within_extension[cycle]:
             ext = within_extension[cycle]
-            for prop,family in zip(vegetative_proba+vegetative_proba_within+flowering_proba+fruiting_proba,vegetative_proba_family+vegetative_proba_within_family+flowering_proba_family+fruiting_proba_family):
+            for prop,family in zip( gu_vegetative_proba+gu_vegetative_proba_within+gu_flowering_proba+gu_fruiting_proba+mi_vegetative_proba+mi_vegetative_proba_within,
+                                    gu_vegetative_proba_family+gu_vegetative_proba_within_family+gu_flowering_proba_family+gu_fruiting_proba_family+mi_vegetative_proba_family+mi_vegetative_proba_within_family):
+                if prop.startswith('mi_'): ext = 'within_0405'
                 propfile = join(probafilepath,prop+'_'+ext+'.csv')
                 if exists(propfile):
                     p = ProbaTable(prop,family,propfile)
                     p.type = eWithinCycle
                     p.cycle = cycle
                     p.estimation = (variety, estimationtype)
+                    p.check()
                     proba_within[prop] = p
                 else:
                     import warnings
-                    warnings.warn("Table '%s' for variety '%s' does not exist." % (prop, variety))
+                    warnings.warn("Table '%s' for variety '%s' does not exist." % (prop+'_'+ext, variety))
         if between_extension[cycle]:
             ext = between_extension[cycle]
-            for prop, family in zip(vegetative_proba+vegetative_proba_between,vegetative_proba_family+vegetative_proba_between_family):
+            for prop, family in zip(gu_vegetative_proba+gu_vegetative_proba_between+gu_mixedinflo_proba,
+                                    gu_vegetative_proba_family+gu_vegetative_proba_between_family+gu_mixedinflo_proba_family):
                 propfile = join(probafilepath,prop+'_'+ext+'.csv')
                 if exists(propfile):
                     p = ProbaTable(prop,family,propfile)
                     p.type = eLaterCycle
                     p.cycle = cycle
                     p.estimation = (variety, estimationtype)
+                    p.check()
                     proba_between[prop] = p
                 else:
                     import warnings
-                    # warnings.warn("Table '%s' for variety '%s', tree '%s' does not exist." % (prop, variety, treename))
+                    warnings.warn("Table '%s' for variety '%s' does not exist." % (prop+'_'+ext, variety))
         probacycle[cycle] = (proba_within, proba_between)
     return probacycle
 
@@ -138,6 +196,56 @@ def iterprobatables():
             for pbname, pb in lpbs.items():
                 yield pb
 
+def check_proba_tables():
+    def check_which_values(pb, factor = 'Burst_Month'):
+        if factor in pb.factors:
+            idx = pb.factors.index(factor)
+            res = set()
+            for key, prob in pb.values.items():
+                if prob[0] > 0.01:
+                    res.add(key[idx])
+        else:
+            res = factorsvalues[factor]
+            res = set(res)
+        return res
+
+    def check_values_incompatibility(pb, factor, values):
+        if not factor in pb.factors:
+            return []
+        else:
+            res = set(values)
+            idx = pb.factors.index(factor)
+            for key, prob in pb.values.items():
+                res.discard(key[idx])
+            return list(res)
+
+    def check_consistency(tables, probanames):
+        pbinit = tables[probanames[0]]
+        for factor in pbinit.factors:
+            refvalues = check_which_values(pbinit, factor)
+            #print 'Values of',factor,'in',repr(probanames[0]),':',refvalues
+            for pbname in probanames[1:]:
+                if tables.has_key(pbname):
+                    incompatvalues = check_values_incompatibility(tables[pbname], factor, refvalues)
+                    if len(incompatvalues):
+                        print 'Incompatible values coverage of ',repr(factor),'between',repr(probanames[0]),'and', repr(pbname), ':',incompatvalues
+                else:
+                    print 'Cannot find', repr(pbname)
+
+    for cycle, pbs in current_proba_table.items():
+        print 'Examining cycle',cycle
+        wpbs, lpbs =  pbs
+        if len(wpbs) > 0:
+            check_consistency(wpbs, gu_vegetative_proba+gu_vegetative_proba_within+[gu_flowering_proba[0],gu_fruiting_proba[0]])
+            check_consistency(wpbs, gu_flowering_proba+[gu_fruiting_proba[0]])
+            check_consistency(wpbs, gu_fruiting_proba)
+            check_consistency(wpbs, mi_vegetative_proba+mi_vegetative_proba_within)
+        if len(lpbs) > 0:
+            check_consistency(lpbs, gu_vegetative_proba+gu_vegetative_proba_between)
+            check_consistency(lpbs, gu_mixedinflo_proba)
+
+
+
 def set_seed(value):
     from numpy.random import seed
     seed(value)
@@ -146,96 +254,195 @@ def set_seed(value):
 
 current_unitdev = None
 
+
+def appendmonthdelta(intialdate, monthdelta):
+        burst_year = intialdate.year
+        burst_month = intialdate.month + monthdelta
+        if burst_month  > 12:
+            dyear = (burst_month-1) // 12
+            burst_year += dyear
+            burst_month -=  dyear*12
+            if not(1 <= burst_month <= 12): 
+                raise ValueError('Invalid month',burst_month, monthdelta, self.burst_date.month)
+        return burst_year, burst_month
+
+def appenddeltaindex(burst_date, burst_index):
+    cycle_delay, burst_month = divmod(burst_index,100)
+    pyear = burst_date.year
+    if burst_date.month < 6: pyear -= 1
+    burst_year = pyear + cycle_delay
+    if burst_month < 6:  burst_year += 1
+    return burst_year, burst_month
+
 class UnitDev:
     def __init__(self, Burst_Date, 
                        Position_A, 
                        Nature_F = None, 
                        Position_Ancestor_A = None,
                        Nature_Ancestor_F = None, 
+                       UnitType = eGU,
                        # Tree_Fruit_Load  = eLoaded,
-                       WithinDelayMethod = eDeltaPoissonForWithin):
+                       WithinDelayMethod = eDeltaPoissonForWithin,
+                       verbose = True):
         self.burst_date = Burst_Date
         self.cycle = get_cycle(Burst_Date)
         self.trace = False
         self.withindelaymethod = WithinDelayMethod
+        self.unittype = UnitType
 
-        self.params = dict(Burst_Date = Burst_Date.month,
+        self.params = dict(Burst_Month = Burst_Date.month,
                            Position_A = Position_A, 
                            Position_Ancestor_A = Position_Ancestor_A, 
-                           Nature_Ancestor_F   = Nature_Ancestor_F,
+                           Nature_Ancestor_F   = eVegetative if Nature_Ancestor_F == eVegetative else eFlowering,
                            #Tree_Fruit_Load     = Tree_Fruit_Load
+                           Cycle = self.cycle
                            )
 
-        self.paramsdelayed = dict(Burst_Date = Burst_Date.month,
+        self.paramsdelayed = dict(Burst_Month = Burst_Date.month,
                                   Position_A = Position_A,
                                   Nature_F   = Nature_F,
+                                  Cycle = self.cycle
                                   #Tree_Fruit_Load = Tree_Fruit_Load
                                   )
 
         self.proba_tables = current_proba_table[self.cycle]
+        self.verbose = verbose
         global current_unitdev
         current_unitdev = self
+
+    def log(self, cycle, processname, msg):
+        if self.verbose:
+            print self.cycle,'Within' if cycle == eWithinCycle else 'Delayed','>',processname,':', msg
+
+    def get_name(self, name):
+        return ('gu_' if self.unittype == eGU else 'mi_') + name
+
+    def get_table(self, name, cycle = eWithinCycle):
+        name = self.get_name(name)
+        return self.proba_tables[0 if cycle == eWithinCycle else 1][name]
 
     def get_realization(self, name, cycle = eWithinCycle):
         if self.trace: print 'Test',self.cycle,'Within' if cycle == eWithinCycle else 'Delayed',name
         p = (self.params if cycle == eWithinCycle else self.paramsdelayed)
-        return self.proba_tables[0 if cycle == eWithinCycle else 1][name].realization(**p)
+        #print 'current_proba_table[',self.cycle,'][', 0 if cycle == eWithinCycle else 1,"]['"+self.get_name(name)+"']"
+        proba_table = self.get_table(name, cycle)
+        try:
+            return proba_table.realization(**p)
+        except KeyError, ie:
+            self.log(cycle, name, repr(ie))
+            raise ie
+
 
     def vegetative_burst(self, cycle = eWithinCycle):
         if cycle == eWithinCycle and self.burst_date.month == cycle_end(self.cycle).month:
+            print 'Too late to decide'
             return False
         try:
             return self.get_realization('vegetative_burst',cycle)
         except KeyError, ie: # some month may not be fulfilled.
             return False
 
-    def burst_date_children(self, cycle = eWithinCycle):
+    def find_closest_month(self, name, cycle = eWithinCycle, factorname = 'Burst_Month'):
+        import numpy as np
+        proba_table = self.get_table(name, cycle)
+        refmonth = self.params[factorname]
+        if factorname in proba_table.factors:
+            idx = proba_table.factors.index(factorname)
+            existingvalue = list(np.unique([k[idx] for k in proba_table.values.keys()]))
+            if refmonth in existingvalue: return refmonth
+            existingvalue.append(refmonth)
+            existingvalue.sort(key = lambda v : MonthOrder.index(v))
+            monthindex = existingvalue.index(refmonth)
+            if monthindex == 0 : return existingvalue[1]
+            elif monthindex == (len(existingvalue) -1): return existingvalue[-2]
+            else: return (existingvalue[monthindex-1],existingvalue[monthindex+1])
+        else:
+            return refmonth
+
+    def get_realization_from_closestmonth(self, name, cycle = eWithinCycle, factorname = 'Burst_Month'):
+        try:
+            return self.get_realization(name, cycle = cycle)
+        except KeyError, ke:
+            mth = self.find_closest_month(name, cycle=cycle)
+            p = (self.params if cycle == eWithinCycle else self.paramsdelayed)
+            cm = p[factorname]
+            if type(mth) == tuple:
+                mth1, mth2 = mth
+                p[factorname] = mth1
+                res1 = self.get_realization(name, cycle)
+                p[factorname] = mth2
+                res2 = self.get_realization(name, cycle)
+                res = (res1+res2)/2
+            else:
+                p[factorname] = mth
+                res = self.get_realization(name, cycle)
+            p[factorname] = cm
+            return res
+
+    def burst_delta_date_gu_children(self, cycle = eWithinCycle):
+        return int(self.get_realization_from_closestmonth('burst_delta_date_gu_children', cycle))
+
+    def burst_delta_date_gu_children_poisson(self, cycle = eWithinCycle):
+        return self.get_realization_from_closestmonth('burst_delta_date_gu_children_poisson', cycle)+1
+
+    def gu_burst_date_children(self, cycle = eWithinCycle):
         if cycle == eLaterCycle or self.withindelaymethod == eMonthMultiVariateForWithin:
-            burst_index = int(self.get_realization('burst_date_children',cycle))
-            cycle_delay, burst_month = divmod(burst_index,100)
-            pyear = self.burst_date.year
-            if self.burst_date.month < 6: pyear -= 1
-            burst_year = pyear + cycle_delay
-            if burst_month < 6:  burst_year += 1
+            try:
+                burst_index = int(self.get_realization('burst_date_gu_children',cycle))
+                burst_year, burst_month = appenddeltaindex(self.burst_date, burst_index)
+            except KeyError, ie: # some month may not be fulfilled.
+                if cycle == eLaterCycle:
+                    burst_index = int(self.get_realization_from_closestmonth('burst_date_gu_children', cycle))
+                    burst_year, burst_month = appenddeltaindex(self.burst_date, burst_index)
+                else:
+                    burst_delta = self.burst_delta_date_gu_children_poisson(cycle)
+                    burst_year, burst_month = appendmonthdelta(self.burst_date, burst_delta)
         else:
             if self.withindelaymethod == eDeltaMultiVariateForWithin:
-                burst_delta = int(self.get_realization('burst_delta_date_children',cycle))
+                burst_delta = self.burst_delta_date_gu_children(cycle)
             else:
-                burst_delta = self.get_realization('burst_delta_date_children_poisson',cycle)+1
-            burst_year = self.burst_date.year
-            burst_month = self.burst_date.month + burst_delta
-            if burst_month  > 12:
-                dyear = (burst_month-1) // 12
-                burst_year += dyear
-                burst_month -=  dyear*12
-                if not(1 <= burst_month <= 12): 
-                    raise ValueError('Invalid month',burst_month, burst_delta, self.burst_date.month)
+                burst_delta = self.burst_delta_date_gu_children_poisson(cycle)
+            burst_year, burst_month = appendmonthdelta(self.burst_date, burst_delta)
 
 
         if  not (burst_year > self.burst_date.year or burst_month >= self.burst_date.month):
-            return self.burst_date_children(cycle)
+            self.log(cycle, 'burst_date_gu_children', 'Invalid children date. Earlier than parent')
+            return self.gu_burst_date_children(cycle)
             #raise ValueError('Children burst date is before parent burst',(burst_year, burst_month), self.burst_date )
         if (burst_year == self.burst_date.year and burst_month == self.burst_date.month):
-            return self.burst_date_children(cycle)
+            self.log(cycle, 'burst_date_gu_children', 'Invalid children date. Same than parent')
+            return self.gu_burst_date_children(cycle)
             #print 'Warning: Children GUs are borned in the same month than their parent GU'
         if cycle == eWithinCycle:
             endcycle = cycle_end(self.cycle)
             if (endcycle < date(year=burst_year,month=burst_month,day=15)):
+                self.log(cycle, 'burst_date_gu_children', 'Invalid children date. Outside cycle')
                 # print 'Warning within cycle children borned outside cycle'
-                return self.burst_date_children(cycle)
+                return self.gu_burst_date_children(cycle)
+        return (burst_year, burst_month)
+
+    def mi_burst_date_children(self):
+        burst_index = int(self.get_realization('burst_date_gu_children', eWithinCycle))
+        burst_year, burst_month = appenddeltaindex(self.burst_date, burst_index)
         return (burst_year, burst_month)
 
     def has_apical_gu_child(self, cycle = eWithinCycle):
-        return self.get_realization('has_apical_gu_child',cycle)
+        try:
+            return self.get_realization('has_apical_gu_child',cycle)
+        except KeyError, ie:
+            return True
 
     def has_lateral_gu_children(self, cycle = eWithinCycle):
-        return self.get_realization('has_lateral_gu_children',cycle)
+        try:
+            return self.get_realization('has_lateral_gu_children',cycle)
+        except KeyError, ie:
+            return False
 
     def nb_lateral_gu_children(self, cycle = eWithinCycle):
         try:
             return self.get_realization('nb_lateral_gu_children',cycle)+1
         except KeyError, ie:
-            return 0
+            return 1
 
     def flowering(self):
         try:
@@ -244,7 +451,7 @@ class UnitDev:
             return False
 
     def nb_inflorescences(self):
-        return self.get_realization('nb_inflorescences')+1
+        return self.get_realization_from_closestmonth('nb_inflorescences')+1
 
     def flowering_date(self):
         from random import randint
@@ -254,7 +461,7 @@ class UnitDev:
         except KeyError,e:
             fweek = 0      
         period_beg, period_end = bloom_weeks[self.cycle][fweek]
-        return period_beg + timedelta(days=randint(0,(period_end-period_beg).days))
+        return period_beg + timedelta(days=randint(0,(period_end-period_beg).days)), fweek
 
     def fruiting(self):
         try:
@@ -265,32 +472,69 @@ class UnitDev:
     def nb_fruits(self):
         return self.get_realization('nb_fruits')+1
 
+    def fruit_weight(self):
+        return self.get_realization('fruit_weight')
+
+    def has_mixedinflo_child(self):
+        try:
+            return self.get_realization('mixedinflo_burst')
+        except KeyError, ie:
+            return False
+    
+    def is_mixedinflo_apical(self):
+        try:
+            return self.get_realization('has_apical_mi_children')
+        except KeyError, ie:
+            return True
+
+    def mixedinflo_burstdate(self):
+        burst_index = int(self.get_realization('burst_date_mi_children', eBetweenCycle))
+        burst_year, burst_month = appenddeltaindex(self.burst_date, burst_index)
+        return (burst_year, burst_month)
+
+
     def process(self):
-        apical_child, nb_lateral_gu_children, nb_inflorescences, nb_fruits = False, 0, 0, 0
+        apical_child, nb_lateral_gu_children = False, 0
+        has_mi_child, mi_burst_date = None, None
+        nb_inflorescences, nb_fruits, fruit_weight =  0, 0, 0
         date_children_burst, date_inflo_bloom = None, None
         if self.cycle > 3 and self.vegetative_burst():
+            # Within steps.
             apical_child = self.has_apical_gu_child()
             nb_lateral_gu_children = 0 
             if self.has_lateral_gu_children():
                 nb_lateral_gu_children += self.nb_lateral_gu_children()
-            date_children_burst = self.burst_date_children()
-        else:
+
+            if self.unittype == eGU:
+                date_children_burst = self.gu_burst_date_children()
+            else:
+                date_children_burst = self.mi_burst_date_children()
+
+        elif self.unittype == eGU:
+            # Between steps
+            if self.has_mixedinflo_child():
+                has_mi_child = eApical if self.is_mixedinflo_apical() else eLateral
+                mi_burst_date = self.mixedinflo_burstdate()
+
             if self.cycle > 3 and self.flowering():
+                self.paramsdelayed['Nature_F'] = eFlowering                
                 nb_inflorescences = self.nb_inflorescences()
-                date_inflo_bloom  = self.flowering_date()
-                self.paramsdelayed['Nature_F'] = eFlowering
+                date_inflo_bloom, fweek  = self.flowering_date()
+                self.params['Flowering_Week'] = fweek
                 if self.fruiting():
-                    nb_fruits = self.nb_fruits()
+                    nb_fruits    = self.nb_fruits()
+                    fruit_weigth = self.fruit_weight()
             else:
                 self.paramsdelayed['Nature_F'] = eVegetative
 
             if self.cycle < 5 and self.vegetative_burst(eLaterCycle):
-                apical_child = self.has_apical_gu_child(eLaterCycle)
+                apical_child = self.has_apical_gu_child(eLaterCycle) if has_mi_child != eApical else False
+                self.paramsdelayed['Has_Apical_GU_Child'] = apical_child
                 nb_lateral_gu_children = 0
                 if self.has_lateral_gu_children(eLaterCycle):
                     nb_lateral_gu_children += self.nb_lateral_gu_children(eLaterCycle)
-                date_children_burst = self.burst_date_children(eLaterCycle)
-        return apical_child, nb_lateral_gu_children, nb_inflorescences, nb_fruits, date_children_burst, date_inflo_bloom
+                date_children_burst = self.gu_burst_date_children(eLaterCycle)
+        return apical_child, nb_lateral_gu_children, has_mi_child, nb_inflorescences, nb_fruits, fruit_weight, date_children_burst, date_inflo_bloom, mi_burst_date
             
 
 

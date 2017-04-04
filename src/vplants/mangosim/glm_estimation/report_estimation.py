@@ -13,10 +13,10 @@ import os
 from vplants.mangosim.devlaw_description import *
 
 share_dir = '../../../../share/'
-data_dir = join(share_dir,'glm_output_proba2/cogshall/selected_glm')
+data_dir = join(share_dir,'glm_output_proba/cogshall/allfactors/selected_glm')
 periodtags = [ 'within_04', 'within_05'] #,'within_0405',]  
 periodtags2 = ["between_03to0405", "between_04to05"]
-periodtags3 = [ 'mixedinflo_within_0405',]  
+periodtags3 = [ 'within_0405',]  
 name = 'vegetative_burst_within_04' # 'burst_date_children_within_05' 
 names1 = ['Vegetative_Burst',  
          "Has_Apical_GU_Child", "Has_Lateral_GU_Children", 'Nb_Lateral_GU_Children', 
@@ -25,15 +25,12 @@ names2 = ['Flowering', 'Nb_Inflorescences', 'Flowering_Week', 'Fruiting', 'Nb_Fr
 names3 = [n.replace('GU','MI').replace('Vegetative','MixedInflo') for n in names1]
 
 
+
 names = names1+names2
 
 tmprep = 'tmp'
 knowfactors = list(allfactors)
-knowfactors.remove('Tree_Fruit_Load')
-knowfactors.append("Cycle")
-factorsvalues['Cycle'] = [4,5]
-knowfactors.append("Has_Apical_GU_Child")
-factorsvalues['Has_Apical_GU_Child'] = [0,1]
+
 
 def get_factor_values(factor, data = None):
     if not data is None:
@@ -48,7 +45,7 @@ def get_factors_values(factors, data = None):
 monthnamemap = { 1 : 'Jan', 2 : 'Feb', 3 : 'Mar', 4 : 'Apr', 5 : 'May', 6 : 'Jun' , 7 : 'Jul', 8 : 'Aug', 9 : 'Sep' , 10 : 'Oct', 11 : 'Nov', 12 : 'Dec'}
 
 date_factors = ['Burst_Month', 'Burst_Date_GU_Children', 'Flowering_Week']
-knowfactors += date_factors[1:]
+#knowfactors += date_factors[1:]
 
 def nb_date_factor(factors):
     return sum([f in date_factors for f in factors])
@@ -139,6 +136,7 @@ def simplify_factor_name(name):
 gsummary = None
 
 def build_factor_summary(names, simplified = True):
+    print knowfactors
     global gsummary
     summary = []
     for name in names:
@@ -618,13 +616,13 @@ def process(regenerateall = False, fastcompilation = False):
 
     mnames = []
     'Within GU : veg and rep'
-    mnames += list(itertools.product(periodtags,[n.lower() for n in names]))
+    mnames += list(itertools.product(periodtags,['gu_'+n.lower() for n in names]))
     'Within MI : veg'
-    mnames += list(itertools.product(periodtags3,[n.lower() for n in names1]))
+    mnames += list(itertools.product(periodtags3,['mi_'+n.lower() for n in names1]))
     'Between GU : veg'
-    mnames += list(itertools.product(periodtags2,[n.lower() for n in names1]))
+    mnames += list(itertools.product(periodtags2,['gu_'+n.lower() for n in names1]))
     'Between GU : mi'
-    mnames += list(itertools.product(periodtags2,[n.lower() for n in names3]))
+    mnames += list(itertools.product(periodtags2,['gu_'+n.lower() for n in names3]))
     mnames = [n+'_'+y for y,n in mnames]
 
     texstream.make_sections(mnames, regenerateall)

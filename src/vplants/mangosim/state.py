@@ -1,7 +1,7 @@
 
 
 # Type of units of the mango
-eGU, eInflorescence, eFruit, eLeaf, eInternode = range(5)
+eGU, eInflorescence, eMixedInflorescence, eFruit, eLeaf, eInternode = range(6)
 # Type of positions of units
 eLateral, eApical = 0,1
 # Type of GU

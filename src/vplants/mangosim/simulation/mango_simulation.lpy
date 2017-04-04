@@ -27,7 +27,9 @@ nprand.seed(SEED)
 mtg = mm.get_mtg()
 
 treenames = mm.get_treenames_of_variety(mtg)
-#['B14', 'F2', 'F6', 'B10', 'B12']
+treeids = map(lambda tname : mm.get_tree_from_name(mtg,tname), treenames)
+treenames = [tname for tname, treeid in zip(treenames,treeids) if mm.is_loaded(mtg, treeid)]
+#['F2', 'B10', 'B12']
 treeselection = TREE
 treename = treenames[treeselection]
 
@@ -50,7 +52,7 @@ final_date = cycle_end(5)
 first_date =  init_date
 last_date  = todatetime(final_date)
 
-glm_start_date   = init_date
+glm_start_date   = first_date if WITH_GLM else last_date
 
 total_weeks = week_difference(last_date,first_date)
 nbsteps     = ceil((last_date -first_date).days/float(daystep))
@@ -81,7 +83,7 @@ fruitmanager = FruitManager()
 fruitmanager.retrieve_parameters(globals())
 fruitmanager.init_plot()
 
-archibuilder = GLMArchiBuilder(mtg, gumanager, inflomanager)
+archibuilder = GLMArchiBuilder(mtg, gumanager, inflomanager, False)
 
 def Start():
   global previous_date, current_date, current_cycle, current_temperatures
@@ -100,12 +102,12 @@ def StartEach():
   useGroup(1)
   backward()
   
-  archibuilder.starteach(current_date)
-  
   global previous_date, current_date, current_cycle, current_temperatures
   
   previous_date = current_date
   current_date += delta_date
+  
+  archibuilder.starteach(current_date)
   
   if fruitmanager.is_fruiting_started(current_date):
      if previous_date < fruitmanager.get_fruiting_start_date() < current_date :
@@ -126,15 +128,16 @@ resultmtg = None
 
 def EndEach(lstring, lscene):
   archibuilder.endeach(current_date)
+  print 'Step',getIterationNb()
   
   global resultmtg
-  if EXPORT_TO_MTG:
-    resultmtg = export_to_mtg(lstring, lscene)
+  #if EXPORT_TO_MTG:
+  #  resultmtg = export_to_mtg(lstring, lscene)
 
   if fruitmanager.is_fruiting_started(current_date):
     fruitmanager.applymodel(lstring, lscene)
-    if fruitmanager.modelenabled and lscene:
-        Viewer.showMessage('Fruit model evaluation : '+str(current_date), 1000)
+    #if fruitmanager.modelenabled and lscene:
+    #    Viewer.showMessage('Fruit model evaluation : '+str(current_date), 1000)
 
 
 def End(lstring, lscene):
@@ -146,9 +149,6 @@ def End(lstring, lscene):
       print 'Export result in',repr(export_fname)
       dump_obj(resultmtg, export_fname)
 
-
-def estimate_radius(nbdescendants):
-  return 0.3*pow(nbdescendants, 0.45)
 
 
 module Tree(p) : scale = 1
@@ -171,7 +171,7 @@ initial_view = 1
 Axiom: 
   nproduce Information 
   nproduce @Tp(0,0,1) @Ts(ELASTICITY) @Gc
-  nproduce Tree(ParameterSet(treename=treename, variety='cogshall', date=current_date,seed=SEED, mtgid=treeid))
+  nproduce Tree(ParameterSet(treename=treename, variety='cogshall', date=current_date,seed=SEED, mtgid=treeid,loading=eLoaded))
   
   archibuilder.init(first_uc, current_date)
   
@@ -215,7 +215,7 @@ consider: GU
 
 GU(p) >> x([ GU(pl) ]) GU(pa):
   p.nbdescendants = sum([pli.nbdescendants for pli in pl])+pa.nbdescendants+1
-  p.radius = estimate_radius(p.nbdescendants)
+  p.radius = gumanager.estimate_radius(p.nbdescendants)
   gumanager.gu_growth(p, daystep, current_temperatures)
   nproduce GU(p)
 
@@ -223,7 +223,7 @@ GU(p) >> x([ GU(pl) ]) GU(pa):
 GU(p) >> x([ GU(pl) ]) :
   n1 = p.nbdescendants
   p.nbdescendants = sum([pli.nbdescendants for pli in pl])+1
-  p.radius = estimate_radius(p.nbdescendants)
+  p.radius = gumanager.estimate_radius(p.nbdescendants)
   gumanager.gu_growth(p, daystep, current_temperatures)
   nproduce GU(p)
 
@@ -366,7 +366,7 @@ def __initialiseContext__(context):
 	context.animation_timestep = 0.1
 	context.options.setSelection('Module declaration',1)
 	context.options.setSelection('Warning with sharp module',0)
-	scalars = [('edi.', 'Category'), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 0, 0, 2), ('TEXTURE', 'Bool', False), ('ELASTICITY', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', False), ('SAVE_MTG', 'Bool', False), ('FRUITMODEL_OUTPUT', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 1, 0, 4), ('SEED', 'Integer', 1, 0, 100), ('daystep', 'Integer', 5, 1, 100), ('temperature_variability', 'Bool', False), ('FRUIT_MODEL', 'Bool', False), ('FRUITBRANCHSIZE', 'Integer', 4, 1, 10), ('Environment', 'Category'), ('TIMEBAR', 'Bool', True), ('BACKGROUND', 'Bool', False)]
+	scalars = [('Geometry', 'Category'), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('RESOLUTION', 'Integer', 0, 0, 2), ('TEXTURE', 'Bool', True), ('ELASTICITY', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', True), ('SAVE_MTG', 'Bool', False), ('FRUITMODEL_OUTPUT', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 1, 0, 2), ('SEED', 'Integer', 0, 0, 100), ('daystep', 'Integer', 29, 1, 100), ('temperature_variability', 'Bool', False), ('WITH_GLM', 'Bool', True), ('FRUIT_MODEL', 'Bool', True), ('FRUITBRANCHSIZE', 'Integer', 4, 1, 10), ('Environment', 'Category'), ('TIMEBAR', 'Bool', True), ('BACKGROUND', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]

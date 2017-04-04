@@ -77,7 +77,7 @@ class GUManager (OrganManager):
       self.leaf_area_length_ratio   = 2.3594
       self.leaf_width_length_ratio  = 0.24
 
-      self.radius_exponent = 0.45
+      self.radius_exponent = 0.5
       self.radius_coefficient = 0.3
 
       self.branching_angle = 60 
@@ -253,7 +253,7 @@ class GUManager (OrganManager):
               nsproduce([ RollToVert() ])
               # Color depends of phenological stage and advancement
               pheno_color = self.pheno_color
-              if textured:
+              if False:
                 if pheno_rank > 0:
                   nsproduce([ InterpolateTextureBaseColors(pheno_color[pheno_stage],pheno_color[pheno_stage+1],pheno_rank) ])
                 else: 
@@ -381,7 +381,9 @@ class InfloManager (OrganManager):
                    nb_axes = nb_axes,
                  
                    growth_tts = growth_tts,
-                   pheno_tts  = pheno_tts)
+                   pheno_tts  = pheno_tts,
+
+                   fruiting = False)
       
         return params
 
@@ -449,6 +451,8 @@ class InfloManager (OrganManager):
            nsproduce ([ EndGC(), Tropism(0,0,-1) ])
            if ( pheno_stage >= 4):
               elasticity = 0.01
+              if param.hasattr('fruit_maturity_date') and current_date > param.fruit_maturity_date:
+                return
               if param.nb_fruits > 0 and param.hasattr('fruit_maturity_date') and current_date <= param.fruit_maturity_date:
                 elasticity += 0.02 * (n_pheno-4.)
               nsproduce([ Elasticity(elasticity) ])
@@ -600,7 +604,7 @@ class FruitManager (OrganManager):
         self.branchsize = branchsize
         self.outputenabled = outputenabled
         self.outputname = outputname
-        print 'Fruit Model Enabled :', modelenabled
+        #print 'Fruit Model Enabled :', modelenabled
 
     def retrieve_parameters(self, namespace):
         self.set_parameters(namespace['fruitprofile'], namespace['RESOLUTION'], namespace['FRUIT_MODEL'], namespace['FRUITBRANCHSIZE'], namespace['FRUITMODEL_OUTPUT'], str(namespace['TREE'])+'-'+namespace['treename']+'-seed-'+str(namespace['SEED']))
@@ -611,6 +615,7 @@ class FruitManager (OrganManager):
                          maturity_date=p.fruit_maturity_date,
                          appearance_date=p.fruit_appearance_date,
                          weight_min=p.fruit_weight_min)
+
     def applymodel(self, lstring, lscene):
         if self.modelenabled :
             import vplants.mangosim.fruitmodel.fruitmodel as fm ; reload(fm)
@@ -620,7 +625,8 @@ class FruitManager (OrganManager):
             lmtg = export_to_mtg_light(lstring, None) # , lscene)
             applymodel(lmtg, get_flowering_cycle(self.inflo_flush_start), self.branchsize, self.outputenabled, self.outputname)
         else:
-            print 'No Fruit model evaluation'
+            pass
+            #print 'No Fruit model evaluation'
         self.reset_fruiting_start_date()
 
     def init_fruiting_start_date(self, burst_date):

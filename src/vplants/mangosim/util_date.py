@@ -15,6 +15,9 @@ MonthEn = {'jan' : 1, 'feb' : 2, 'march' : 3,
 MonthName = dict([(v,k) for k,v in Month.items()])
 MonthEnName = dict([(v,k) for k,v in MonthEn.items()])
 
+
+MonthOrder = range(6,13)+range(6)
+
 def date_from_string(string):
     """From string = 'month.year', it return a date
     """

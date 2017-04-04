@@ -1,5 +1,5 @@
 from os.path import join, exists, abspath, dirname
-
+import os
 import vplants.mangosim
 try:
     from openalea.deploy.shared_data import shared_data
@@ -16,8 +16,9 @@ from vplants.mangosim.state import *
 
 def get_probability_repository(variety = 'cogshall', estimationtype = eCompleteGlm, restriction = None):
     from os.path import join
-    path = join(share_dir, 'glm_output_proba2', variety)
+    path = join(share_dir, 'glm_output_proba', variety)
     if restriction : path = join(path,RestrictionName[restriction])
+    else: path = join(path,'allfactors')
     path = join(path,GlmTypeName[estimationtype])
     return path
 
@@ -27,29 +28,25 @@ def get_simulated_mtg_repository(variety = 'cogshall'):
 
 
 def get_option_glm_mtg_repository(variety = 'cogshall', 
-                           treename = 'all_trees', 
-                           estimationbase = eVarietyBased,
                            estimationtype = eSelectedGlm,
                            withindelaymethod = eMonthMultiVariateForWithin,
                            restriction = None):
-    path = join(get_simulated_mtg_repository(variety), EstimationBaseName[estimationbase].lower(), 
-                GlmTypeName[estimationtype])  
+    path = join(get_simulated_mtg_repository(variety), GlmTypeName[estimationtype])  
     if restriction : path = join(path,RestrictionName[restriction])
-    path = join(path,WithinDelayMethodName[withindelaymethod].lower(),
-                treename)
+    else: path = join(path,'allfactors')
+    #path = join(path, WithinDelayMethodName[withindelaymethod].lower(), treename)
     return path
 
-def get_glm_mtg_repository(trees = range(5), 
+def get_glm_mtg_repository(trees = range(3), 
                            params = dict(), 
                            optionname = None,
-                           lsysfile = 'mango_glm.lpy'):
-    from openalea.lpy import Lsystem
+                           lsysfile = 'mango_simulation.lpy'):
+    #from openalea.lpy import Lsystem
     repparams = {}
-    l = Lsystem(lsysfile)
-    repparams['estimationbase'] = params.get('ESTIMATIONBASE', l.estimationbase)
-    repparams['estimationtype'] = params.get('ESTIMATIONTYPE', l.estimationtype)
-    repparams['withindelaymethod'] = params.get('WITHINDELAYMETHOD', l.WithinDelayMethod)
-    repparams['restriction'] = params.get('FACTORRESTRICTION', l.factorrestriction)
+    #l = Lsystem(lsysfile)
+    repparams['estimationtype'] = eSelectedGlm
+    #repparams['withindelaymethod'] = params.get('WITHINDELAYMETHOD', l.WithinDelayMethod)
+    repparams['restriction'] = None # params.get('FACTORRESTRICTION', l.factorrestriction)
     outputdir = get_option_glm_mtg_repository(**repparams)
     if optionname:
         outputdir = join(outputdir,optionname)
