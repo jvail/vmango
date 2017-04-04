@@ -5,6 +5,7 @@ from random import *
 #from pandas import DataFrame, read_csv
 import numpy as np
 import numpy.random as nprand
+import os
 
 from vplants.mangosim.tools import *
 import vplants.mangosim.util_date as ud
@@ -23,6 +24,10 @@ from archibuilder import MTGArchiBuilder, GLMArchiBuilder
 seed(SEED)
 nprand.seed(SEED)
 
+
+mat = execContext().turtle.getMaterial(30).filename=os.path.abspath('../../../../share/textures/leaf.png')
+mat = execContext().turtle.getMaterial(31).filename=os.path.abspath('../../../../share/textures/leaf-bw.png')
+mat = execContext().turtle.getMaterial(32).filename=os.path.abspath('../../../../share/textures/bark2.png')
 
 mtg = mm.get_mtg()
 
