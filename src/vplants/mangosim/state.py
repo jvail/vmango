@@ -11,23 +11,25 @@ eLoaded, eNotLoaded = 1, 0
 
 eBinomial, ePoisson, eMultiVariate, eGaussian = range(1,5)
 
-eCompleteGlm, eSelectedGlm, eNullGlm = 1,2,3
-GlmTypeName = {eCompleteGlm : 'complete_glm', eSelectedGlm : 'selected_glm', eNullGlm : 'null_glm'} 
+eCompleteGlm, eSelectedGlm, eInteractionGlm = 1,2,3
+GlmTypeName = {eCompleteGlm : 'complete_glm', eSelectedGlm : 'selected_glm', eInteractionGlm :'interaction_glm'} 
 
 
 eWithinCycle, eLaterCycle = range(2)
 
-eTreeBased, eManagementTypeBased, eVarietyBased = range(3)
-EstimationBaseName = {eTreeBased : 'TreeBasedEstimation', eManagementTypeBased : 'ManagementTypeBasedEstimation', eVarietyBased : 'VarietyBasedEstimation' }
+#eTreeBased, eManagementTypeBased, eVarietyBased = range(3)
+#EstimationBaseName = {eTreeBased : 'TreeBasedEstimation', eManagementTypeBased : 'ManagementTypeBasedEstimation', eVarietyBased : 'VarietyBasedEstimation' }
 
 eMeasuredMtg, eSimulatedMtg = 1,2
 
 eMonthMultiVariateForWithin, eDeltaMultiVariateForWithin, eDeltaPoissonForWithin = range(3)
 WithinDelayMethodName = {eMonthMultiVariateForWithin : 'MonthMultiVariate', eDeltaMultiVariateForWithin : 'DeltaMultiVariate', eDeltaPoissonForWithin : 'DeltaPoisson'}
 
-eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction = 1,2,4,8
+eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction, eAllRestriction = 1,2,4,8,15
 RestrictionName = { eBurstDateRestriction         : 'without_burst_date', 
                     ePositionARestriction         : 'without_position_a', 
                     ePositionAncestorARestriction : 'without_ancestor_position_a',                    
-                    eNatureFRestriction           : 'without_nature_f'
+                    eNatureFRestriction           : 'without_nature_f',
+                    eAllRestriction               : 'without_all',
+                    None                          : 'allfactors'
                     }

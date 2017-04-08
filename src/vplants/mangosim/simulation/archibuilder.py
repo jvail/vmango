@@ -161,9 +161,9 @@ class GLMArchiBuilder(MTGArchiBuilder):
         MTGArchiBuilder.__init__(self, mtg, gumanager, inflomanager, verbose)
 
 
-    def init(self, rootid, current_date, factorrestriction = None):
+    def init(self, rootid, current_date, estimationtype = eSelectedGlm, factorrestriction = None):
         MTGArchiBuilder.init(self, rootid, current_date)
-        use_proba_table(restriction = factorrestriction)
+        use_proba_table(estimationtype = estimationtype, restriction = factorrestriction)
 
     def starteach(self, current_date):
         self.current_date  = current_date

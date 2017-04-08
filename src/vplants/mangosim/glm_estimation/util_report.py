@@ -54,7 +54,7 @@ class TexReportGenerator:
         self.write("\end{document}\n")
         self.texstream = None
 
-    def compile(self, fastcompilation = False):
+    def compile(self, fastcompilation = None):
         if self.texstream: self.close()
         import os
         cwd = os.getcwd()
@@ -62,10 +62,20 @@ class TexReportGenerator:
         os.chdir(twd)
         texbasefname = os.path.basename(self.fname)
         genfilename = "generationfile.tex"
+        toc = os.path.splitext(genfilename)[0]+'.toc'
+        if fastcompilation is None:
+            md5sum = None
+            if os.path.exists(toc):
+                import md5
+                md5sum = md5.new(file(toc,'r').read()).digest()
+
         genfile = file(genfilename,'w')
         genfile.write("\input{"+os.path.splitext(texbasefname)[0]+"}\n\n")
         genfile.close()
         os.system('pdflatex -interaction=batchmode '+genfilename)
+        if fastcompilation is None and not md5sum is None:
+            nmd5sum = md5.new(file(toc,'r').read()).digest()
+            fastcompilation = (md5sum == nmd5sum)
         if not fastcompilation: os.system('pdflatex -interaction=batchmode '+genfilename)
         os.rename(pdffilename(genfilename),pdffilename(texbasefname))
         self.compiled = True

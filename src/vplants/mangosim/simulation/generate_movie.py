@@ -9,11 +9,11 @@ imgfile       = 'image_{}.png'
 stepfile      = 'simu_nbsteps.txt'
 #imageresolution = 1920, 1080
 imageresolution = 1280, 720
-povcomdline   = 'povray -I{} -O{} +FN +W{} +H{} +A -D'
+povcomdline   = 'povray -I{} -O{} +FN +W{} +H{} +A -D -GD -GR -GS -GW'
 
 from multiprocessing import cpu_count
 import os
-from os.path import join
+from os.path import join, basename
 
 
 
@@ -187,8 +187,19 @@ def main():
         else:
             nbpovprocess = 3 # cpu_count() - 1
         generate_movie(nbpovprocess=nbpovprocess)
-    elif '--bgeom' in sys.argv:        
-        generate_bgeom()
+    elif '--bgeom' in sys.argv: 
+        bgi = sys.argv.index('--bgeom')
+        beg = None
+        if len(sys.argv) > bgi+1:
+            beg = int(sys.argv[bgi+1])
+        else:
+            import glob
+            bgeomfiles = glob.glob(join(workingrep,bgeomfile.format('*')))
+            if len(bgeomfiles) > 0:
+                bgeomfiles= map(os.path.basename, bgeomfiles)
+                bgeomids = map(int,[os.path.splitext(f)[0][bgeomfile.index('{'):] for f in bgeomfiles])
+                beg = max(bgeomids)
+        generate_bgeom(beg)
     elif stepflag in sys.argv:
         pfi = sys.argv.index(stepflag)
         numstep = int(sys.argv[pfi+1])

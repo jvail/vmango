@@ -502,7 +502,7 @@ class UnitDev:
             # Within steps.
             apical_child = self.has_apical_gu_child()
             nb_lateral_gu_children = 0 
-            if self.has_lateral_gu_children():
+            if not apical_child or self.has_lateral_gu_children():
                 nb_lateral_gu_children += self.nb_lateral_gu_children()
 
             if self.unittype == eGU:
@@ -531,7 +531,7 @@ class UnitDev:
                 apical_child = self.has_apical_gu_child(eLaterCycle) if has_mi_child != eApical else False
                 self.paramsdelayed['Has_Apical_GU_Child'] = apical_child
                 nb_lateral_gu_children = 0
-                if self.has_lateral_gu_children(eLaterCycle):
+                if not apical_child or self.has_lateral_gu_children(eLaterCycle):
                     nb_lateral_gu_children += self.nb_lateral_gu_children(eLaterCycle)
                 date_children_burst = self.gu_burst_date_children(eLaterCycle)
         return apical_child, nb_lateral_gu_children, has_mi_child, nb_inflorescences, nb_fruits, fruit_weight, date_children_burst, date_inflo_bloom, mi_burst_date

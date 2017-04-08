@@ -228,50 +228,51 @@ class GUManager (OrganManager):
     def plot(self, p, textured = True, leafy = True):
 
         def fLeaf(position, size):
-              #nsproduce([ SetColor(13), Down(self.pheno_angle(4)), surface('finalleaf', size)])
-              #return
-              nsproduce([ EndGC(),Elasticity(0.),Down(90), SetColor(1),F(0.001,self.leafdiam(0)*self.leafwidth(1)), Up(90)])  
-              # petiole
-              nsproduce([ Down(self.pheno_angle(4)) ])
-              Petiole((1.1-position)* size/4.,self.leafdiam(0))
-              nsproduce([ RollToVert() ])
-              if textured:
+            #nsproduce([ SetColor(13), Down(self.pheno_angle(4)), surface('finalleaf', size)])
+            #return
+            nsproduce([ EndGC(),Elasticity(0.),Down(90), SetColor(1),F(0.001,self.leafdiam(0)*self.leafwidth(1)), Up(90)])  
+            # petiole
+            nsproduce([ Down(self.pheno_angle(4)) ])
+            Petiole((1.1-position)* size/4.,self.leafdiam(0))
+            nsproduce([ RollToVert() ])
+            if textured:
                 nsproduce([ TextureBaseColor(13), SetColor(31), TextureVScale(1) ])
-              else:
+                #nsproduce([ SetColor(30), TextureVScale(1) ])
+            else:
                 nsproduce([ SetColor(13) ])
-              nsproduce([ surface('finalleaf', size) ])
-              #nsproduce([ PglShape(self.leafSymbol(), size) ])
+            nsproduce([ surface('finalleaf', size) ])
+            #nsproduce([ PglShape(self.leafSymbol(), size) ])
 
         def gLeaf(position, final_length, growth_ratio, pheno_stage, pheno_rank, ttsum):
-              petioleradius  = self.leafdiam(0)*self.leafwidth(min(growth_ratio,1))
-              nsproduce([ EndGC(), Elasticity(0.), Down(90), SetColor(1), F(0.001, petioleradius), Up(90) ]) 
-              # Angle depends of phenological stage and advancement
-              nsproduce([ Down(self.pheno_angle(pheno_stage+pheno_rank)) ])
-              # petiole
-              petiolelength = max(0.01,(1-position)* final_length/4.)
-              Petiole(petiolelength, petioleradius)
-              nsproduce([ RollToVert() ])
-              # Color depends of phenological stage and advancement
-              pheno_color = self.pheno_color
-              if False:
+            petioleradius  = self.leafdiam(0)*self.leafwidth(min(growth_ratio,1))
+            nsproduce([ EndGC(), Elasticity(0.), Down(90), SetColor(1), F(0.001, petioleradius), Up(90) ]) 
+            # Angle depends of phenological stage and advancement
+            nsproduce([ Down(self.pheno_angle(pheno_stage+pheno_rank)) ])
+            # petiole
+            petiolelength = max(0.01,(1-position)* final_length/4.)
+            Petiole(petiolelength, petioleradius)
+            nsproduce([ RollToVert() ])
+            # Color depends of phenological stage and advancement
+            pheno_color = self.pheno_color
+            if False:
                 if pheno_rank > 0:
-                  nsproduce([ InterpolateTextureBaseColors(pheno_color[pheno_stage],pheno_color[pheno_stage+1],pheno_rank) ])
+                    nsproduce([ InterpolateTextureBaseColors(pheno_color[pheno_stage],pheno_color[pheno_stage+1],pheno_rank) ])
                 else: 
-                  nsproduce([ TextureBaseColor(pheno_color[pheno_stage]) ])
+                    nsproduce([ TextureBaseColor(pheno_color[pheno_stage]) ])
                 nsproduce([ TextureVScale(1), SetColor(31) ])
-              else:
+            else:
                 if pheno_rank > 0:
-                  nsproduce([ InterpolateColors(pheno_color[pheno_stage],pheno_color[pheno_stage+1],pheno_rank) ])
+                    nsproduce([ InterpolateColors(pheno_color[pheno_stage],pheno_color[pheno_stage+1],pheno_rank) ])
                 else: 
-                  nsproduce([ SetColor(pheno_color[pheno_stage]) ])
+                    nsproduce([ SetColor(pheno_color[pheno_stage]) ])
                 
-              clength = final_length * growth_ratio
-              nsproduce([ PglShape(self.leafSymbol(pheno_stage+pheno_rank), clength) ])
+            clength = final_length * growth_ratio
+            nsproduce([ PglShape(self.leafSymbol(pheno_stage+pheno_rank), clength) ])
 
         def Petiole(length,radius):
-              if self.resolution > 0:
+            if self.resolution > 0:
                 nsproduce([ SetGuide(self.petioleCurve,length), nF(length, length/self.PetioleRes,radius) ])
-              else:
+            else:
                 nsproduce([ SetGuide(self.petioleCurve,length), F(length) ])
 
 

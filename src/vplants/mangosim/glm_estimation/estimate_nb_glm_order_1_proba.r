@@ -1,4 +1,3 @@
-
 ### Import of data :
 localdir = getSrcDirectory(function(x) {x})
 print(localdir)
@@ -6,21 +5,26 @@ if (length(localdir) != 0){
     setwd(localdir)
 }
 
-exclude_factor = NULL
+EXCLUDE_FACTORS = NULL
 
 # input and output directory
 share_dir = '../../../../share/'
 input_dir = paste(share_dir,'glm_estimate_input/cogshall/', sep="")
-output_dir = paste(share_dir,'glm_output_proba/cogshall/', sep="")
-if (is.null(exclude_factor) == TRUE){
-  output_dir = paste(output_dir,'allfactors','/',sep='');
-} else {
-  output_dir = paste(output_dir,'without_',exclude_factor,'/',sep='');
+output_basedir = paste(share_dir,'glm_output_proba/cogshall/', sep="")
+
+generate_outputdir = function(exclude_factors = EXCLUDE_FACTORS){
+  if (is.null(exclude_factors) == TRUE){
+    output_dir <<- paste(output_basedir,'allfactors','/',sep='');
+  } else {
+    output_dir <<- paste(output_basedir,'without_',paste(tolower(exclude_factors),sep='_and_'),'/',sep='');
+  }
+  
+  if (file.exists(output_dir) == FALSE){
+    dir.create(output_dir,recursive=TRUE)
+  }
 }
 
-if (file.exists(output_dir) == FALSE){
-    dir.create(output_dir,recursive=TRUE)
-}
+generate_outputdir(EXCLUDE_FACTORS)
 
 source("util_glm.r")
 
@@ -30,6 +34,8 @@ NOFILTER = FALSE
 
 mdebug = FALSE
 use_fruiting_state = TRUE
+
+
 
 vsummary_output = function(glm, data, outfile, subset = NULL, verbose = FALSE, fromglm = NULL){
   if(length(subset) > 0)  ndata = data[subset,]
@@ -234,24 +240,36 @@ filter_monthes = function(factors, data, subset, minminalcount = 6) {
   else return (subset)
 }
 
+global_factor_filtering = function(factors){
+  if (is.null(EXCLUDE_FACTORS) == FALSE){
+    if (EXCLUDE_FACTORS == "all") { factors = NULL }
+    else if (!is.null(factors)){
+      factors = setdiff(factors, EXCLUDE_FACTORS)
+      if (length(factors) == 0) 
+        factors = NULL
+    }
+  }
+  return (factors)  
+}
 ################################################################## GLM and VGLM generation ######################################################################################################################
 
-generate_glm = function(variable, family, data, subset, year, verbose = 0, factors = c("Burst_Month","Position_A","Position_Ancestor_A","Nature_Ancestor_F"), tag = NULL, exclude = NULL)
+generate_glm = function(variable, family, data, subset, year, verbose = 0, factors = c("Burst_Month","Position_A","Position_Ancestor_A","Nature_Ancestor_F"), tag = NULL)
 {
     tracestep = 0
     # if (verbose >= 3) tracestep = 0
     
     # data = set_data_factors(data, factors)
+    factors = global_factor_filtering(factors)
   
     if (!NOFILTER)
       subset = filter_monthes(factors, data, subset)
 
+    
+    path_complete_glm    = paste(output_dir,"complete_glm/",sep="")
+    path_selected_glm    = paste(output_dir,"selected_glm/",sep="")
+    path_interaction_glm = paste(output_dir,"interaction_glm/",sep="")
 
-    path_complete_glm = paste(output_dir,"complete_glm/",sep="")
-    path_selected_glm = paste(output_dir,"selected_glm/",sep="")
-
-    if (file.exists(path_complete_glm) == FALSE) dir.create(path_complete_glm, recursive=TRUE)
-    if (file.exists(path_selected_glm) == FALSE) dir.create(path_selected_glm, recursive=TRUE)
+    if (file.exists(path_complete_glm) == FALSE)    dir.create(path_complete_glm,    recursive=TRUE)
     
     fname = tolower(variable)
     if (!is.null(tag)) fname = paste(tag ,'_', fname,sep="")
@@ -267,45 +285,61 @@ generate_glm = function(variable, family, data, subset, year, verbose = 0, facto
       
       proba.complete_glm.all = data.frame(probability=val,number=length(data[subset,variable]))
       write.csv(proba.complete_glm.all,file=paste(path_complete_glm, basefname,".csv", sep=""), row.names = FALSE)
+      if (!is.null(EXCLUDE_FACTORS) && (EXCLUDE_FACTORS == "all")) { return (NA) } 
       write.csv(proba.complete_glm.all,file=paste(path_selected_glm, basefname,".csv", sep=""), row.names = FALSE)
+      write.csv(proba.complete_glm.all,file=paste(path_interaction_glm, basefname,".csv", sep=""), row.names = FALSE)
       
       return (NA)
     }
     
     
     #print("complete glm")
-    complete_glm.all = glm( formula , family = family, data = data, subset = subset)
+    complete_glm = glm( formula , family = family, data = data, subset = subset)
     
 
     #print("complete glm summary")
-    vsummary_output(complete_glm.all, data, paste(path_complete_glm,basefname,"_summary.txt",sep=""), subset = subset, verbose)
+    vsummary_output(complete_glm, data, paste(path_complete_glm,basefname,"_summary.txt",sep=""), subset = subset, verbose)
     
-    proba.complete_glm.all = glm.proba_and_counts(complete_glm.all, data, subset)
+    proba.complete_glm = glm.proba_and_counts(complete_glm, data, subset)
     
 
     #print("complete glm proba writting")
-    write.csv(proba.complete_glm.all,file=paste(path_complete_glm, basefname,".csv", sep=""), row.names = FALSE)
+    write.csv(proba.complete_glm,file=paste(path_complete_glm, basefname,".csv", sep=""), row.names = FALSE)
 
+    if (!is.null(EXCLUDE_FACTORS) && (EXCLUDE_FACTORS == "all")) { return (NA) } 
+    
     ### selected GLM ###
+    if (file.exists(path_selected_glm) == FALSE)    dir.create(path_selected_glm,    recursive=TRUE)
+    
     #print("selected glm")
-    if (is.null(factors)) { selected_glm.all =  complete_glm.all }
-    else { selected_glm.all = step(complete_glm.all, trace = tracestep) }
+    if (is.null(factors)) { selected_glm =  complete_glm }
+    else { selected_glm = step(complete_glm, trace = tracestep) }
 
     #print("selected glm summary")
-    vsummary_output(selected_glm.all, data, paste(path_selected_glm,basefname,"_summary.txt",sep=""), subset, verbose, fromglm = complete_glm.all)
+    vsummary_output(selected_glm, data, paste(path_selected_glm,basefname,"_summary.txt",sep=""), subset, verbose, fromglm = complete_glm)
 
     #print("selected glm proba")
-    proba.selected_glm.all = glm.proba_and_counts(selected_glm.all, data, subset)
+    proba.selected_glm = glm.proba_and_counts(selected_glm, data, subset)
 
     #print("selected glm proba writting")
-    write.csv(proba.selected_glm.all,file=paste(path_selected_glm, basefname,".csv", sep=""), row.names = FALSE)
+    write.csv(proba.selected_glm,file=paste(path_selected_glm, basefname,".csv", sep=""), row.names = FALSE)
+    
+    ### interaction GLM ###
+    if (file.exists(path_interaction_glm) == FALSE) dir.create(path_interaction_glm, recursive=TRUE)
+    
+    interaction_glm = glm.test.interactions(selected_glm, data = data, subset = subset, trace = tracestep)
 
+    vsummary_output(interaction_glm, data, paste(path_interaction_glm,basefname,"_summary.txt",sep=""), subset, verbose, fromglm = complete_glm)
+
+    proba.interaction_glm = glm.proba_and_counts(interaction_glm, data, subset)
+    
+    write.csv(proba.interaction_glm,file=paste(path_interaction_glm, basefname,".csv", sep=""), row.names = FALSE)
 }
 
 #
 #' Generate the multinomial glm for a process
 #
-generate_vglm = function(variable, data, subset, year, verbose, factors = c("Burst_Month","Position_A","Position_Ancestor_A","Nature_Ancestor_F"), tag = NULL, exclude = NULL)
+generate_vglm = function(variable, data, subset, year, verbose, factors = c("Burst_Month","Position_A","Position_Ancestor_A","Nature_Ancestor_F"), tag = NULL)
 {
     tracestep = 0
     # if (verbose >= 3) tracestep = 0
@@ -313,14 +347,15 @@ generate_vglm = function(variable, data, subset, year, verbose, factors = c("Bur
     if (!NOFILTER)
        subset = filter_monthes(factors, data, subset)
     
+    factors = global_factor_filtering(factors)
     #data = set_data_factors(data, factors)
         
-    path_complete_glm = paste(output_dir,"complete_glm/",sep="")
-    path_selected_glm = paste(output_dir,"selected_glm/",sep="")
+    path_complete_glm    = paste(output_dir,"complete_glm/",sep="")
+    path_selected_glm    = paste(output_dir,"selected_glm/",sep="")
+    path_interaction_glm = paste(output_dir,"interaction_glm/",sep="")
 
-    if (file.exists(path_complete_glm) == FALSE) dir.create(path_complete_glm,recursive=TRUE)
-    if (file.exists(path_selected_glm) == FALSE) dir.create(path_selected_glm,recursive=TRUE)
-
+    if (file.exists(path_complete_glm) == FALSE)    dir.create(path_complete_glm,    recursive=TRUE)
+    
     fname = tolower(variable)
     if (!is.null(tag)) fname = paste(tag ,'_', fname,sep="")
     basefname = paste(fname, "_", year,sep="")
@@ -335,49 +370,72 @@ generate_vglm = function(variable, data, subset, year, verbose, factors = c("Bur
       print(paste(variable,"has no variability : ", val))
       print(ndata[,variable])
       
-      proba.complete_glm.all = data.frame(c(1))
-      names(proba.complete_glm.all) = val
-      nbelement.complete_glm.all = data.frame(length(data[subset,variable]))
-      names(nbelement.complete_glm.all) = val
-      write.csv(proba.complete_glm.all,file=paste(path_complete_glm, basefname,".csv", sep=""), row.names = FALSE)
-      write.csv(nbelement.complete_glm.all,file=paste(path_complete_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
-      write.csv(proba.complete_glm.all,file=paste(path_selected_glm, basefname,".csv", sep=""), row.names = FALSE)
-      write.csv(nbelement.complete_glm.all,file=paste(path_selected_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
+      proba.complete_glm = data.frame(c(1))
+      names(proba.complete_glm) = val
+      nbelement.complete_glm = data.frame(length(data[subset,variable]))
+      names(nbelement.complete_glm) = val
+      write.csv(proba.complete_glm,file=paste(path_complete_glm, basefname,".csv", sep=""), row.names = FALSE)
+      write.csv(nbelement.complete_glm,file=paste(path_complete_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
+      if (!is.null(EXCLUDE_FACTORS) && (EXCLUDE_FACTORS == "all")) { return (NA) } 
+      write.csv(proba.complete_glm,file=paste(path_selected_glm, basefname,".csv", sep=""), row.names = FALSE)
+      write.csv(nbelement.complete_glm,file=paste(path_selected_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
+      write.csv(proba.complete_glm,file=paste(path_interaction_glm, basefname,".csv", sep=""), row.names = FALSE)
+      write.csv(nbelement.complete_glm,file=paste(path_interaction_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
       return (NA)
     }    
     
     if (verbose >= 2) print("complete glm")
-    complete_glm.all = vglm( formula , family = cumulative(parallel=TRUE), data = ndata)
+    complete_glm = vglm( formula , family = cumulative(parallel=TRUE), data = ndata)
 
     if (verbose >= 2) print("complete glm proba")
-    res = vglm.proba_and_counts (complete_glm.all, ndata)
-    proba.complete_glm.all = res[[1]]
-    nbelement.complete_glm.all = res[[2]]
+    res = vglm.proba_and_counts (complete_glm, ndata)
+    proba.complete_glm = res[[1]]
+    nbelement.complete_glm = res[[2]]
 
     if (verbose >= 2) print("complete glm proba writting")
-    write.csv(proba.complete_glm.all,file=paste(path_complete_glm, basefname,".csv", sep=""), row.names = FALSE)
-    write.csv(nbelement.complete_glm.all,file=paste(path_complete_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
+    write.csv(proba.complete_glm,file=paste(path_complete_glm, basefname,".csv", sep=""), row.names = FALSE)
+    write.csv(nbelement.complete_glm,file=paste(path_complete_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
 
     if (verbose >= 2) print("complete glm summary")
-    vsummary_output(complete_glm.all, ndata, paste(path_complete_glm,basefname,"_summary.txt",sep=""), verbose=verbose)
+    vsummary_output(complete_glm, ndata, paste(path_complete_glm,basefname,"_summary.txt",sep=""), verbose=verbose)
+
+    if (!is.null(EXCLUDE_FACTORS) && (EXCLUDE_FACTORS == "all")) { return (NA) } 
     
     ### selected GLM ###
-
+    if (file.exists(path_selected_glm) == FALSE)    dir.create(path_selected_glm,    recursive=TRUE)
+    
     if (verbose >= 2) print("selected glm")
-    #selected_glm.all = complete_glm.all
-    selected_glm.all = vglm.step(complete_glm.all, data = ndata)
+    selected_glm = vglm.step(complete_glm, data = ndata)
 
     if (verbose >= 2) print("selected glm proba")
-    res = vglm.proba_and_counts (selected_glm.all, ndata)
-    proba.selected_glm.all = res[[1]]
-    nbelement.selected_glm.all = res[[2]]
+    res = vglm.proba_and_counts (selected_glm, ndata)
+    proba.selected_glm = res[[1]]
+    nbelement.selected_glm = res[[2]]
     
     if (verbose >= 2) print("selected glm proba writting")
-    write.csv(proba.selected_glm.all,file=paste(path_selected_glm, basefname,".csv", sep=""), row.names = FALSE)
-    write.csv(nbelement.selected_glm.all,file=paste(path_selected_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
+    write.csv(proba.selected_glm,file=paste(path_selected_glm, basefname,".csv", sep=""), row.names = FALSE)
+    write.csv(nbelement.selected_glm,file=paste(path_selected_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
 
     if (verbose >= 2) print("selected glm summary")
-    vsummary_output(selected_glm.all, ndata,  paste(path_selected_glm,basefname,"_summary.txt",sep=""), verbose=verbose, fromglm = complete_glm.all)
+    vsummary_output(selected_glm, ndata,  paste(path_selected_glm,basefname,"_summary.txt",sep=""), verbose=verbose, fromglm = complete_glm)
+
+    ### interaction GLM ###
+    if (file.exists(path_interaction_glm) == FALSE) dir.create(path_interaction_glm, recursive=TRUE)
+    
+    if (verbose >= 2) print("interaction glm")
+    interaction_glm = glm.test.interactions(selected_glm, data = ndata, trace = tracestep)
+
+    if (verbose >= 2) print("interaction glm proba")
+    res = vglm.proba_and_counts (interaction_glm, ndata)
+    proba.interaction_glm = res[[1]]
+    nbelement.interaction_glm = res[[2]]
+    
+    if (verbose >= 2) print("interaction glm proba writting")
+    write.csv(proba.interaction_glm,file=paste(path_interaction_glm, basefname,".csv", sep=""), row.names = FALSE)
+    write.csv(nbelement.interaction_glm,file=paste(path_interaction_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
+    
+    if (verbose >= 2) print("interaction glm summary")
+    vsummary_output(interaction_glm, ndata,  paste(path_interaction_glm,basefname,"_summary.txt",sep=""), verbose=verbose, fromglm = complete_glm)
     
 }
 
@@ -909,13 +967,14 @@ test = function() {
   subset_selection = data$Tree_Fruit_Load == 1
   subset= which(subset_selection)
   
-  factors = c("Burst_Month") # , "Position_A" , "Position_Ancestor_A" , "Nature_Ancestor_F")
+  factors = c("Burst_Month", "Position_A" , "Position_Ancestor_A" , "Nature_Ancestor_F")
   
   #generate_glm("Vegetative_Burst", family = binomial, data=data, subset= subset, year= "04", verbose = 1, factors = factors)
 
   ndata = data[subset,]
   
-  formula = as.formula("Vegetative_Burst ~ Burst_Month")
+  formula = paste(variable," ~ ", paste(factors,collapse=" + "),sep="")
+  formula = as.formula(formula)
   myglm = glm( formula , family = binomial, data = ndata)
   summary(myglm)
   myglm = glm( ndata$Vegetative_Burst ~ ndata$Burst_Month , family = binomial, data = ndata)
@@ -930,11 +989,7 @@ test = function() {
   subset= index_bursted.all
   ndata = data[subset,]
   
-  formula = as.formula("Burst_Delta_Date_Children ~ Burst_Month")
-  myglm2 = vglm( formula , family = cumulative(parallel=TRUE), data = ndata)
-  res = vglm.proba_and_counts (myglm, ndata)
-
-  formula2 = as.formula("Burst_Delta_Date_Children ~ Burst_Month")
+  formula2 = as.formula("Burst_Delta_Date_GU_Children ~ Burst_Month + Position_A + Burst_Month:Position_A")
   myglm2 = vglm( formula2 , family = cumulative(parallel=TRUE), data = ndata)
   res2 = vglm.proba_and_counts (myglm2, ndata)
 }
@@ -947,7 +1002,18 @@ main = function() {
   
   determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", verbose)
   determining_glm_tables_between_cycle_for_year(input_dir, "04to05",   verbose)
-  
 }
 
 main()
+
+gen_constraint_glm = function() {
+  initialvalue = EXCLUDE_FACTORS
+  for (ef in c('Position_A','Nature_F','Position_Ancestor_A','Nature_Ancestor_F','all')) {
+    EXCLUDE_FACTORS <<- ef
+    generate_outputdir(ef)
+    main()
+  }
+  EXCLUDE_FACTORS <<- initialvalue
+}
+
+gen_constraint_glm()

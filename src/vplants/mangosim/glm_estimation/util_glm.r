@@ -75,27 +75,51 @@ glm.all.variables = function(myglm){
 
 
 
-glm.formula.text = function(glm) {
+glm.formula.text = function(myglm) {
   # Retrieve the formula in text format that was used ot built the GLM
   # Args:
   #  glm : the glm object to test
   # Return:
   #  A string containing the glm formula.
-  factors = glm.factors(glm)
-  if (length(factors) == 0)
-    formula = paste(glm.variable(glm)," ~ 1",sep="")
-  else 
-    formula = paste(glm.variable(glm)," ~ ", paste(factors, collapse=" + "),sep="")
-  return (formula)
+  
+  # factors = glm.factors(myglm)
+  # if (length(factors) == 0)
+  #   formula = paste(glm.variable(myglm)," ~ 1",sep="")
+  # else 
+  #   formula = paste(glm.variable(myglm)," ~ ", paste(factors, collapse=" + "),sep="")
+  # return (formula)
+  
+  # if (is.vglm(myglm)){
+  #   formula = myglm@terms$terms
+  # } else {
+  #   formula = myglm$formula
+  # }
+  
+  formulatxt = as.character(glm.formula(myglm)) 
+  return (paste(formulatxt[2],formulatxt[1],formulatxt[3],sep=" "))
 }
 
-glm.formula = function(glm) {
+glm.formula = function(myglm) {
   # Retrieve the formulathat was used ot built the GLM
   # Args:
   #  glm : the glm object to test
   # Return:
   #  the glm formula.
-  return (as.formula(glm.formula.text(glm)))
+  if (is.vglm(myglm)){
+    return (myglm@terms$terms) #(as.formula(glm.formula.text(myglm)))
+  } else {
+    return (myglm$formula)
+  }
+  
+}
+
+
+glm.family = function(glm) {
+  if (is.vglm(glm)){
+    return (glm@family)
+  } else {
+    return (glm$family)
+  }
 }
 
 glm.counts = function(myglm, data, subset = NULL){
@@ -364,7 +388,7 @@ vglm.step = function(glm, data, subset = NULL) {
   
   mformula = paste(variable," ~ 1", sep="")
 
-  candidatvglm = vglm(as.formula(mformula), family = glm@family, data = data, subset = subset)
+  candidatvglm = vglm(as.formula(mformula), family = glm.family(glm), data = data, subset = subset)
   candidataic = glm.AIC(candidatvglm, data, subset)
   
   if (candidataic < bestaic) {
@@ -379,7 +403,7 @@ vglm.step = function(glm, data, subset = NULL) {
             lfactors = factorcombini[,lindex]
             ftext = paste(variable," ~ ", paste(lfactors,collapse=" + "),sep="")
             formula = as.formula(ftext)
-            candidatvglm = vglm(formula = formula, family = glm@family, data = data, subset = subset)
+            candidatvglm = vglm(formula = formula, family = glm.family(glm), data = data, subset = subset)
             candidataic = glm.AIC(candidatvglm, data, subset)
             if (candidataic < bestaic) {
                 bestvglm = candidatvglm
@@ -391,3 +415,40 @@ vglm.step = function(glm, data, subset = NULL) {
   
   return (bestvglm)
 }
+
+
+glm.test.interactions = function(myglm, data, subset = NULL,trace = 1) {
+  factors = glm.factors(myglm)
+  variable = glm.variable(myglm)
+  nbfactors = length(factors)
+  if (nbfactors < 2 ){ 
+    return (myglm)
+  } else {
+    formula = paste(variable," ~ ", paste(factors,collapse=" + "),  sep="")
+    if (nbfactors == 2 ){
+      formula = paste(formula, ' + ', paste(factors,collapse=":"),  sep="")
+    } else {
+      cfactors = combn(factors,2)
+      for(lindex in 1:ncol(cfactors)) {
+        lfactors = cfactors[,lindex]
+        formula = paste(formula, ' + ', paste(lfactors,collapse=":"),  sep="")
+      }
+    }
+    formula = as.formula(formula)
+    applyglm = function(isvglm, formula, family, data, subset) {
+      if (is.vglm(myglm)){
+        nglm = vglm( formula , family = glm.family(myglm), data = data, subset = subset)
+        vglm.step(nglm, data, subset)
+      } else {
+        nglm = glm( formula , family = glm.family(myglm), data = data, subset = subset)
+        step(nglm, trace = trace)
+      }
+      return (nglm)
+    }
+    
+    nglm = tryCatch(applyglm(is.vglm(myglm), formula , family = glm.family(myglm), data = data, subset = subset), error = function(e) myglm)
+    if (is.null(nglm)) nglm = myglm
+    return (nglm)
+  }
+}
+

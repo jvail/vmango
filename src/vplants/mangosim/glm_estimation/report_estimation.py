@@ -13,7 +13,7 @@ import os
 from vplants.mangosim.devlaw_description import *
 
 share_dir = '../../../../share/'
-data_dir = join(share_dir,'glm_output_proba/cogshall/allfactors/selected_glm')
+data_dir = join(share_dir,'glm_output_proba/cogshall/allfactors/interaction_glm')
 periodtags = [ 'within_04', 'within_05'] #,'within_0405',]  
 periodtags2 = ["between_03to0405", "between_04to05"]
 periodtags3 = [ 'within_0405',]  
@@ -28,7 +28,7 @@ names3 = [n.replace('GU','MI').replace('Vegetative','MixedInflo') for n in names
 
 names = names1+names2
 
-tmprep = 'tmp'
+tmprep = 'interactionreport'
 knowfactors = list(allfactors)
 
 
@@ -418,11 +418,11 @@ class MyReportGenerator(ur.TexReportGenerator):
     def add_summary(self, summary = None):
         if summary : 
             datasummary, glmsummary = summary.split('[1] "******** GLM  *************"\n')
-            gs = glmsummary.splitlines()
+            glmsumlines = glmsummary.splitlines()
             init = 2
-            if '[1] "Initial' in gs[1] : init+=1
-            del gs[init:init+4];
-            glmsummary = '\n'.join(gs)
+            if '[1] "Initial' in glmsumlines[1] : init+=1
+            del glmsumlines[init:init+4];
+            glmsummary = '\n'.join(glmsumlines)
             # self.add_subsection('Data Summary')
             # self.write('{\\small\n')
             # self.write('\\begin{verbatim}\n')
@@ -432,7 +432,13 @@ class MyReportGenerator(ur.TexReportGenerator):
             self.add_subsection('GLM Summary')
             self.write('{\\small\n')
             self.write('\\begin{verbatim}\n')
-            self.write(glmsummary)
+            linemaxsize = 110
+            for glmsumline in glmsumlines:
+                while len(glmsumline) > linemaxsize:
+                    self.write(glmsumline[:linemaxsize]+'\n')
+                    glmsumline = glmsumline[linemaxsize:]
+                self.write(glmsumline+'\n')
+            #self.write(glmsummary)
             self.write('\n\\end{verbatim}\n')
             self.write('}\n')
 
@@ -605,7 +611,7 @@ class MyReportGenerator(ur.TexReportGenerator):
             import shutil
             shutil.rmtree(self.projectrep)        
 
-def process(regenerateall = False, fastcompilation = False):
+def process(regenerateall = False, fastcompilation = None):
     if regenerateall and exists(tmprep):
         import shutil
         shutil.rmtree(tmprep)
@@ -627,7 +633,6 @@ def process(regenerateall = False, fastcompilation = False):
 
     texstream.make_sections(mnames, regenerateall)
 
-
     texstream.close()
     #texstream.viewtex()
     texstream.compile(fastcompilation)
@@ -644,4 +649,4 @@ if __name__ == '__main__':
     # plt.show()
     # plt.close()
 
-    texstream = process(False, True)
+    texstream = process(False)
