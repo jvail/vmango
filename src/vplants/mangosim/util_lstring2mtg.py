@@ -6,9 +6,10 @@ scales = [1,2,2,2]
 def export_to_mtg(lstring, lscene):
   from openalea.mtg.io import axialtree2mtg
   # Name of the modules to export
+  tree_parameters = ['treename','estimation','loading','variety','seed']
   for m in lstring:
     if m.name == 'Tree':
-        tree_parameters = m[0].parameter_names()
+        tree_parameters = list(m[0].parameter_names())
         break
 
   params_to_export = [tree_parameters,
