@@ -64,10 +64,10 @@ def generate_all(nb = 10, fruitmodel = False):
     params = {'GLM_TYPE' : eSelectedGlm, 'FRUIT_MODEL' : fruitmodel}
     generate_mtgs(seeds = range(nb), params = params)
 
-def generate_all_parallel(nb = 100, fruitmodel = False):
+def generate_all(nb = 100, fruitmodel = False):
     import itertools
     params = list(itertools.product(range(nb),['GLM_TYPE'],['eSelectedGlm','eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],[str(fruitmodel)]))
-    process_set_of_simulations(params)
+    process_set_of_simulations(params, not fruitmodel)
 
 def generate_all_restriction(nb = 1000):
     generate_mtgs(seeds = range(nb))
@@ -99,9 +99,9 @@ def process_set_of_simulations(paramvalueslist, parallel = True):
 
 def process_restricted_models(nb=1000, fruitmodel = False):
     import itertools
-    params = list(itertools.product(range(nb),['GLM_TYPE'],['eSelectedGlm','eInteractionGlm'],['GLM_RESTRICTION'],['eBurstDateRestriction', 'ePositionARestriction', 'ePositionAncestorARestriction', 'eNatureFRestriction', 'eAllRestriction'],['FRUIT_MODEL'],[str(fruitmodel)]))
+    params = list(itertools.product(range(nb),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['eBurstDateRestriction', 'ePositionARestriction', 'ePositionAncestorARestriction', 'eNatureFRestriction', 'eAllRestriction'],['FRUIT_MODEL'],[str(fruitmodel)]))
 
-    process_set_of_simulations(params)
+    process_set_of_simulations(params, not fruitmodel)
 
 
 if __name__ == '__main__' :

@@ -22,6 +22,7 @@ def get_probability_repository(variety = 'cogshall',
     path = join(share_dir, 'glm_output_proba', variety)
     if restriction : path = join(path,RestrictionName[restriction])
     else: path = join(path,'allfactors')
+    if restriction == 'all': estimationtype = eCompleteGlm
     path = join(path,GlmTypeName[estimationtype])
     return path
 
