@@ -14,7 +14,10 @@ def data(fname):
 from vplants.mangosim.state import *
 
 
-def get_probability_repository(variety = 'cogshall', estimationtype = eSelectedGlm, restriction = None):
+def get_probability_repository(variety = 'cogshall', 
+                               estimationtype = eSelectedGlm, 
+                               restriction = None):
+    
     from os.path import join
     path = join(share_dir, 'glm_output_proba', variety)
     if restriction : path = join(path,RestrictionName[restriction])
@@ -29,27 +32,23 @@ def get_simulated_mtg_repository(variety = 'cogshall'):
 
 def get_option_glm_mtg_repository(variety = 'cogshall', 
                                   estimationtype = eSelectedGlm,
-                                  withindelaymethod = eMonthMultiVariateForWithin,
-                                  restriction = None):
+                                  restriction = None, 
+                                  optionname = None):
+    
     path = join(get_simulated_mtg_repository(variety), GlmTypeName[estimationtype])  
+    if optionname: path = join(path,optionname)
     if restriction : path = join(path,RestrictionName[restriction])
     else: path = join(path,'allfactors')
     #path = join(path, WithinDelayMethodName[withindelaymethod].lower(), treename)
     return path
 
-def get_glm_mtg_repository(trees = range(3), 
-                           params = dict(), 
-                           optionname = None,
-                           lsysfile = 'mango_simulation.lpy'):
-    repparams = {}
-    # from openalea.lpy import Lsystem
-    # l = Lsystem(lsysfile)
-    repparams['estimationtype'] = eSelectedGlm
-    #repparams['withindelaymethod'] = params.get('WITHINDELAYMETHOD', l.WithinDelayMethod)
-    repparams['restriction'] = None # params.get('FACTORRESTRICTION', l.factorrestriction)
+def get_glm_mtg_repository(params = dict(), 
+                           optionname = None):
+    repparams = {'optionname' : optionname}
+    repparams['variety'] = params.get('VARIETY', 'cogshall') 
+    repparams['estimationtype'] = params.get('ESTIMATIONTYPE', eSelectedGlm) 
+    repparams['restriction'] = params.get('FACTORRESTRICTION', None)
     outputdir = get_option_glm_mtg_repository(**repparams)
-    if optionname:
-        outputdir = join(outputdir,optionname)
     return outputdir
 
 

@@ -36,7 +36,7 @@ def generate_movie(nbpovprocess):
 
 
 
-def generate_bgeom(step = None):
+def generate_bgeom(step = None, endstep = None):
     from openalea.lpy import Lsystem
     import os
     print 'Scene generator launched'
@@ -44,14 +44,17 @@ def generate_bgeom(step = None):
 
     if step is None:
         firststep = 0
-        nbsteps =  l.derivationLength
+        endstep =  l.derivationLength
     else:
         firststep = step
-        nbsteps =  l.derivationLength
+        if endstep is None:
+            endstep =  l.derivationLength
+        else:
+            assert endstep < l.derivationLength
 
-    open(stepfile,'w').write(str(nbsteps))
+    open(stepfile,'w').write(str(endstep))
     if not os.path.exists(workingrep) : os.makedirs(workingrep)
-    for step in xrange(firststep, nbsteps):
+    for step in xrange(firststep, endstep):
         if step == firststep: lstring = l.derive(firststep+1)
         else: lstring = l.derive(lstring,step,1)
         lscene = l.sceneInterpretation(lstring)

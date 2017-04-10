@@ -36,23 +36,25 @@ def generate_mtgs(trees = range(3),
     os.chdir(dirname(lsysfile))
     print os.getcwd()
 
-    outputdir = get_glm_mtg_repository(trees, params, optionname, basename(lsysfile))
+    outputdir = get_glm_mtg_repository(params, optionname)
     if not os.path.exists(outputdir): os.makedirs(outputdir)
 
     for seed in seeds:
-      fname = mtgfname.format(str(seed).zfill(4))
-      if not os.path.exists(join(outputdir,fname)):  
-        print 'Generate trees with seed',seed
-        nparams = params.copy()
-        nparams.update({'SEED':seed})
-        try :
-            mtg = generate_mtg(trees, nparams)
-        except :
-            import traceback
-            traceback.print_exc()
-            continue      
-        dump_obj(mtg,fname, outputdir)
-        print "Write "+repr(str(join(outputdir,fname)))
+        fname = mtgfname.format(str(seed).zfill(4))
+        if not os.path.exists(join(outputdir,fname)):  
+            print 'Generate trees with seed',seed
+            nparams = params.copy()
+            nparams.update({'SEED':seed})
+            try :
+                mtg = generate_mtg(trees, nparams)
+            except :
+                import traceback
+                traceback.print_exc()
+                continue      
+            dump_obj(mtg,fname, outputdir)
+            print "Write "+repr(str(join(outputdir,fname)))
+        else:
+            print join(outputdir,fname),'already exists.'
 
     os.chdir(cwd)
 
@@ -65,8 +67,9 @@ def generate_all_restriction(nb = 1000):
 
 
 def _generate(params):
-        print('python process_glm.py '+params)
-        os.system('python process_glm.py '+params)
+    cmd = 'python process_glm.py '+params
+    print(cmd)
+    os.system(cmd)
 
 def process_set_of_simulations(paramvalueslist):
     from multiprocessing import Pool
@@ -101,10 +104,10 @@ if __name__ == '__main__' :
         assert len(paramcmd) % 2 == 0
         for i in xrange(len(paramcmd)/2):
             params[paramcmd[2*i]] = eval(paramcmd[2*i+1])
+        print params
         generate_mtgs(seeds=[seed],params=params)
     else:
-        generate_all(100)
-        process_restricted_models(100)
+        #generate_all(100)
+        process_restricted_models(1)
         import vplants.mangosim.utils.message as message
         message.send_msg('Simu','Done.')
-        #process_null_models()
