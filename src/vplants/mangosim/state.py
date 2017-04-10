@@ -26,10 +26,10 @@ eMonthMultiVariateForWithin, eDeltaMultiVariateForWithin, eDeltaPoissonForWithin
 WithinDelayMethodName = {eMonthMultiVariateForWithin : 'MonthMultiVariate', eDeltaMultiVariateForWithin : 'DeltaMultiVariate', eDeltaPoissonForWithin : 'DeltaPoisson'}
 
 eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction, eAllRestriction = 1,2,4,8,15
-RestrictionName = { eBurstDateRestriction         : 'without_burst_date', 
+RestrictionName = { eBurstDateRestriction         : 'without_burst_month', 
                     ePositionARestriction         : 'without_position_a', 
-                    ePositionAncestorARestriction : 'without_ancestor_position_a',                    
-                    eNatureFRestriction           : 'without_nature_f',
+                    ePositionAncestorARestriction : 'without_position_ancestor_a',                    
+                    eNatureFRestriction           : 'without_nature_f_and_nature_ancestor_f',
                     eAllRestriction               : 'without_all',
                     None                          : 'allfactors'
                     }

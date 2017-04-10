@@ -16,8 +16,9 @@ generate_outputdir = function(exclude_factors = EXCLUDE_FACTORS){
   if (is.null(exclude_factors) == TRUE){
     output_dir <<- paste(output_basedir,'allfactors','/',sep='');
   } else {
-    output_dir <<- paste(output_basedir,'without_',paste(tolower(exclude_factors),sep='_and_'),'/',sep='');
+    output_dir <<- paste(output_basedir,'without_',paste(tolower(exclude_factors),collapse='_and_'),'/',sep='');
   }
+  print(output_dir)
   
   if (file.exists(output_dir) == FALSE){
     dir.create(output_dir,recursive=TRUE)
@@ -453,6 +454,7 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
     Has_Apical_Child = "Has_Apical_GU_Child"
     Has_Lateral_Children = "Has_Lateral_GU_Children"
     Nb_Lateral_Children = "Nb_Lateral_GU_Children"
+    Nb_Children = "Nb_GU_Children"
     Burst_Date_Children = "Burst_Date_GU_Children"
     Burst_Delta_Date_Children = "Burst_Delta_Date_GU_Children"
   }
@@ -461,6 +463,7 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
     Has_Apical_Child = "Has_Apical_MI_Child"
     Has_Lateral_Children = "Has_Lateral_MI_Children"
     Nb_Lateral_Children = "Nb_Lateral_MI_Children"
+    Nb_Children = "Nb_MI_Children"
     Burst_Date_Children = "Burst_Date_MI_Children"
     Burst_Delta_Date_Children = "Burst_Delta_Date_MI_Children"
   }
@@ -499,7 +502,7 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
   
   
   ############################################## Number of lateral GU ############################################## 
-
+  
   if (verbose >= 1) print("########### Estimate Number of Lateral Children ") 
   
   lateral_selection = bursted_selection & data[,Has_Lateral_Children] == 1
@@ -511,10 +514,30 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
     ####Attention!!!Il ne faudra pas oublier de rajouter 1 ensuite lors de la simulation!!!
     data[[Nb_Lateral_Children]] = data[,Nb_Lateral_Children] -1
     #data$Nb_Lateral_GU_Children = data$Nb_Lateral_GU_Children -1
-  
+    
     lfactors = filter_factors(Nb_Lateral_Children,factors, exclude, include)
     ldata = grouping_monthes(Nb_Lateral_Children, data, monthgroups, lfactors)
     generate_glm(Nb_Lateral_Children, family = poisson, data=ldata, subset= index_lateral, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
+  }
+  
+  ############################################## Number of GU ############################################## 
+  
+  if (verbose >= 1) print("########### Estimate Number Children ") 
+  
+  nbchild_selection = bursted_selection 
+  index_nbchild = which(nbchild_selection)
+
+  if (length(index_nbchild) > 10){
+    #On choisi une loi de poisson. Néanmoins, pour Poisson la distribution doit commencer à 0 et pas à 1.
+    #On enlève donc 1 au nombre de latérales afin de commencer à 0.
+    ####Attention!!!Il ne faudra pas oublier de rajouter 1 ensuite lors de la simulation!!!
+    data[[Nb_Children]] = data[,Nb_Children] -1
+    
+    #data$Nb_Lateral_GU_Children = data$Nb_Lateral_GU_Children -1
+    
+    lfactors = filter_factors(Nb_Children,factors, exclude, include)
+    ldata = grouping_monthes(Nb_Children, data, monthgroups, lfactors)
+    generate_glm(Nb_Children, family = poisson, data=ldata, subset= index_nbchild, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
   }
   
   ############################################## Burst date of children  ############################################## 
@@ -959,7 +982,8 @@ determining_glm_tables_between_cycle_for_year = function(input_dir, year, verbos
 
 test = function() {
   data = read.csv(paste(input_dir,"table_within_cycle_04.csv",sep=""),header = TRUE)
-
+  #data = read.csv(paste(input_dir,"table_between_cycle_03to0405.csv",sep=""),header = TRUE)
+  
   #data = prepare_data_factors(data, month_cycle_order)
   data$Burst_Month = as.factor(data$Burst_Month)
   data$Burst_Month = ordered(data$Burst_Month, levels = month_cycle_order)
@@ -1008,7 +1032,10 @@ main()
 
 gen_constraint_glm = function() {
   initialvalue = EXCLUDE_FACTORS
-  for (ef in c('Position_A','Nature_F','Position_Ancestor_A','Nature_Ancestor_F','all')) {
+  EXCLUDE_FACTORS <<- c('Nature_F','Nature_Ancestor_F')
+  generate_outputdir(EXCLUDE_FACTORS)
+  main()
+  for (ef in c('Burst_Month','Position_A','Position_Ancestor_A','all')) {
     EXCLUDE_FACTORS <<- ef
     generate_outputdir(ef)
     main()

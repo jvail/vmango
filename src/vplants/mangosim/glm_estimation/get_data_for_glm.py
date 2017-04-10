@@ -30,6 +30,7 @@ def dev_variables_from_children(mtg, gu, children):
     import collections
     Burst = int(len(children) > 0)
     if not Burst:
+        Nb_Children = NotRelevant
         Apical_Child  = NotRelevant
         Lateral_Children = NotRelevant
         Nb_Lateral_Children = NotRelevant
@@ -40,6 +41,7 @@ def dev_variables_from_children(mtg, gu, children):
         assert nb_apical_children in [0,1]
         lateral_children = [c for c in children if is_lateral(mtg,c)]
 
+        Nb_Children = len(children)
         Apical_Child = int(nb_apical_children > 0)
         Lateral_Children = int(len(lateral_children) > 0)
         Nb_Lateral_Children = len(lateral_children)
@@ -52,11 +54,11 @@ def dev_variables_from_children(mtg, gu, children):
             raise ValueError("Cycle difference between a mother and its children is not in [0,1,2]", cycle_diff)
         Burst_Date_Children = mostFrequentDate.month + 100*cycle_diff
         if get_unit_cycle(mtg,gu) == 3:
-            Burst_Delta_Date_Children = month_difference(mostFrequentDate,cycle_end(3))
+            Burst_Delta_Date_Children = month_difference(mostFrequentDate,vegetative_cycle_end(3))
         else:
             Burst_Delta_Date_Children = month_difference(mostFrequentDate, get_burst_date(mtg,gu))
 
-    return Burst, Apical_Child, Lateral_Children, Nb_Lateral_Children, Burst_Date_Children, Burst_Delta_Date_Children
+    return Burst, Nb_Children, Apical_Child, Lateral_Children, Nb_Lateral_Children, Burst_Date_Children, Burst_Delta_Date_Children
 
 def vegetative_dev_variables(mtg, gu, cycle = None):
     if cycle is None:
@@ -68,8 +70,9 @@ def vegetative_dev_variables(mtg, gu, cycle = None):
 
 
 def add_vegetative_dev_variables(dict_gu_prop, mtg, gu, cycle = None):
-    Vegetative_Burst, Apical_GU_Child, Lateral_GU_Children, Nb_Lateral_GU_Children, Burst_Date_GU_Children, Burst_Delta_Date_GU_Children = vegetative_dev_variables(mtg, gu, cycle)
+    Vegetative_Burst, Nb_Children, Apical_GU_Child, Lateral_GU_Children, Nb_Lateral_GU_Children, Burst_Date_GU_Children, Burst_Delta_Date_GU_Children = vegetative_dev_variables(mtg, gu, cycle)
     dict_gu_prop["Vegetative_Burst"] = Vegetative_Burst
+    dict_gu_prop["Nb_GU_Children"] = Nb_Children
     dict_gu_prop["Has_Apical_GU_Child"] = Apical_GU_Child
     dict_gu_prop["Has_Lateral_GU_Children"] = Lateral_GU_Children
     dict_gu_prop["Nb_Lateral_GU_Children"] = Nb_Lateral_GU_Children 
@@ -86,8 +89,9 @@ def mixedinflo_dev_variables(mtg, gu, cycle = None):
 
 
 def add_mixedinflo_dev_variables(dict_gu_prop, mtg, gu, cycle = None):
-    MI_Burst, Apical_MI_Child, Lateral_MI_Children, Nb_Lateral_MI_Children, Burst_Date_MI_Children, Burst_Delta_Date_MI_Children = mixedinflo_dev_variables(mtg, gu, cycle)
+    MI_Burst, Nb_MI_Children, Apical_MI_Child, Lateral_MI_Children, Nb_Lateral_MI_Children, Burst_Date_MI_Children, Burst_Delta_Date_MI_Children = mixedinflo_dev_variables(mtg, gu, cycle)
     dict_gu_prop["MixedInflo_Burst"] = MI_Burst
+    dict_gu_prop["Nb_MI_Children"] = Nb_MI_Children
     dict_gu_prop["Has_Apical_MI_Child"] = Apical_MI_Child
     dict_gu_prop["Has_Lateral_MI_Children"] = Lateral_MI_Children
     dict_gu_prop["Nb_Lateral_MI_Children"] = Nb_Lateral_MI_Children 

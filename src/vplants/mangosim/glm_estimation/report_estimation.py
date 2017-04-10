@@ -18,7 +18,7 @@ periodtags = [ 'within_04', 'within_05'] #,'within_0405',]
 periodtags2 = ["between_03to0405", "between_04to05"]
 periodtags3 = [ 'within_0405',]  
 name = 'vegetative_burst_within_04' # 'burst_date_children_within_05' 
-names1 = ['Vegetative_Burst',  
+names1 = ['Vegetative_Burst',  'Nb_GU_Children',
          "Has_Apical_GU_Child", "Has_Lateral_GU_Children", 'Nb_Lateral_GU_Children', 
          'Burst_Date_GU_Children'] + ['Burst_Delta_Date_GU_Children', 'Burst_Delta_Date_GU_Children_Poisson']
 names2 = ['Flowering', 'Nb_Inflorescences', 'Flowering_Week', 'Fruiting', 'Nb_Fruits', 'Fruit_Weight']
