@@ -1,5 +1,5 @@
-from openalea.lpy.gui.pymodulemonitoring import reload_local_modules
-reload_local_modules()
+#from openalea.lpy.gui.pymodulemonitoring import reload_local_modules
+#reload_local_modules()
 
 from openalea.plantgl.all import * #Text
 from datetime import *# date, timedelta, datetime
