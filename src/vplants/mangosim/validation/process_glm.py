@@ -97,7 +97,7 @@ def process_restricted_models(nb=1000):
 
 if __name__ == '__main__' :
     import sys
-    if len(sys.argv) > 1:
+    if len(sys.argv) > 1 :
         seed = int(sys.argv[1])
         params = dict()
         paramcmd = sys.argv[2:]
@@ -108,6 +108,6 @@ if __name__ == '__main__' :
         generate_mtgs(seeds=[seed],params=params)
     else:
         #generate_all(100)
-        process_restricted_models(1)
+        process_restricted_models(100)
         import vplants.mangosim.utils.message as message
         message.send_msg('Simu','Done.')
