@@ -45,7 +45,7 @@ def date_month_distribution(mtg, ucs, strip = True, date_accessor = get_burst_da
     from vplants.mangosim.util_date import Month
     Month = dict([(i,v) for v,i in Month.items()])
     from collections import OrderedDict
-    daterange = monthdate_range(cycle_end(3),cycle_begin(6))
+    daterange = monthdate_range(vegetative_cycle_end(3),vegetative_cycle_begin(6))
     histo_date = OrderedDict([(d,0) for d in daterange])
     for uc in ucs:
         try:
@@ -151,8 +151,8 @@ def retrieve_mtgs(inputdir, nb = None):
 WITHINDELAYMETHODVALUES = [eMonthMultiVariateForWithin, eDeltaMultiVariateForWithin, eDeltaPoissonForWithin]
 gu_distrib_fname = 'gu_distribution.pkl'
 
-def burst_date_distribution(i=0, glmestimation = eNullGlm, force = True):
-    params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[i],  'ESTIMATIONTYPE' : glmestimation}
+def burst_date_distribution(i=0, glmestimation = eSelectedGlm, force = True):
+    params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[i],  'GLM_TYPE' : glmestimation}
     inputdir = get_glm_mtg_repository( params = params)
     distrib_file = join(inputdir, gu_distrib_fname)
     if not os.path.exists(distrib_file) or force:
@@ -190,12 +190,12 @@ def estimate_tree_burst_date_distribution(parameters):
 
 
 
-def tree_burst_date_distribution(treename = 'B10', i=0, glmestimation = eNullGlm):
+def tree_burst_date_distribution(treename = 'B10', i=0, glmestimation = eSelectedGlm):
     from multiprocessing import Pool, Manager, cpu_count
     from vplants.mangosim.util_date import MonthEn
     Month = dict( [(mi,v) for v,mi in MonthEn.items()] )
 
-    params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[i],  'ESTIMATIONTYPE' : glmestimation}
+    params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[i],  'GLM_TYPE' : glmestimation}
     inputdir = get_glm_mtg_repository( params = params)
     distrib_file = join(inputdir, treename+'_'+gu_distrib_fname)
     if not os.path.exists(distrib_file):
@@ -252,7 +252,7 @@ def restricted_burst_date_distribution(restriction = None):
     from vplants.mangosim.util_date import MonthEn
     Month = dict( [(mi,v) for v,mi in MonthEn.items()] )
 
-    params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[0],  'ESTIMATIONTYPE' : eSelectedGlm, 'FACTORRESTRICTION' : restriction}
+    params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[0],  'GLM_TYPE' : eSelectedGlm, 'GLM_RESTRICTION' : restriction}
     inputdir = get_glm_mtg_repository( params = params)
     distrib_file = join(inputdir, gu_distrib_fname)
     if not os.path.exists(distrib_file):
@@ -288,7 +288,7 @@ def restricted_burst_date_distribution(restriction = None):
 def get_burst_date_distributions(treename = None, verbose = False):
     allvalues = []
     for glmtype, withindelaymethodval,restriction in itertools.product([eSelectedGlm],[eMonthMultiVariateForWithin],[None]+RestrictionName.keys()):
-        params = {'WITHINDELAYMETHOD' : eMonthMultiVariateForWithin, 'ESTIMATIONTYPE' : eSelectedGlm, 'FACTORRESTRICTION' : restriction}
+        params = {'WITHINDELAYMETHOD' : eMonthMultiVariateForWithin, 'GLM_TYPE' : eSelectedGlm, 'GLM_RESTRICTION' : restriction}
         inputdir = get_glm_mtg_repository( params = params)
         if not treename is None: lgu_distrib_fname = treename+'_'+gu_distrib_fname
         else: lgu_distrib_fname = gu_distrib_fname
@@ -299,7 +299,7 @@ def get_burst_date_distributions(treename = None, verbose = False):
         allvalues.append([mean([values[j][i] for j in range(len(values))] ) for i in range(len(values[0]))])
 
     for glmtype, withindelaymethodval,restriction in itertools.product([eNullGlm],[eMonthMultiVariateForWithin],[None]):
-        params = {'WITHINDELAYMETHOD' : withindelaymethodval, 'ESTIMATIONTYPE' : glmtype, 'FACTORRESTRICTION' : restriction}
+        params = {'WITHINDELAYMETHOD' : withindelaymethodval, 'GLM_TYPE' : glmtype, 'GLM_RESTRICTION' : restriction}
         inputdir = get_glm_mtg_repository( params = params)
         if not treename is None: lgu_distrib_fname = treename+'_'+gu_distrib_fname
         else: lgu_distrib_fname = gu_distrib_fname
@@ -314,7 +314,7 @@ def get_burst_date_distributions(treename = None, verbose = False):
 def burst_date_distribution_comparison0(treename = None):
     allvalues = []
     for glmtype, withindelaymethodval in itertools.product([eSelectedGlm,eNullGlm],[eMonthMultiVariateForWithin]):
-        params = {'WITHINDELAYMETHOD' : withindelaymethodval, 'ESTIMATIONTYPE' : glmtype}
+        params = {'WITHINDELAYMETHOD' : withindelaymethodval, 'GLM_TYPE' : glmtype}
         inputdir = get_glm_mtg_repository( params = params)
         if not treename is None: lgu_distrib_fname = treename+'_'+gu_distrib_fname
         else: lgu_distrib_fname = gu_distrib_fname
@@ -334,7 +334,7 @@ def burst_date_distribution_comparison0(treename = None):
 def burst_date_distribution_ks_test(treename = None):
     allvalues = []
     for glmtype, withindelaymethodval in itertools.product([eSelectedGlm],[eMonthMultiVariateForWithin]):
-        params = {'WITHINDELAYMETHOD' : withindelaymethodval, 'ESTIMATIONTYPE' : glmtype}
+        params = {'WITHINDELAYMETHOD' : withindelaymethodval, 'GLM_TYPE' : glmtype}
         inputdir = get_glm_mtg_repository( params = params)
         if not treename is None: lgu_distrib_fname = treename+'_'+gu_distrib_fname
         else: lgu_distrib_fname = gu_distrib_fname
@@ -394,7 +394,7 @@ def bloom_date_distribution():
 gu_distrib_layer1_fname = 'gu_distribution_layer1.pkl'
 
 def burst_date_distribution_layer1(i=0, glmestimation = eSelectedGlm):
-    params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[i],  'ESTIMATIONTYPE' : glmestimation}
+    params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[i],  'GLM_TYPE' : glmestimation}
     inputdir = get_glm_mtg_repository( params = params)
     distrib_file = join(inputdir, gu_distrib_layer1_fname)
     consider = lambda mtg, uc: rank_within_cycle(mtg,uc) == 0
@@ -488,7 +488,7 @@ def restricted_branch_length_histogram(glm = eSelectedGlm, restriction = None, p
     from vplants.mangosim.util_date import MonthEn
     Month = dict( [(mi,v) for v,mi in MonthEn.items()] )
 
-    params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[0],  'ESTIMATIONTYPE' : glm, 'FACTORRESTRICTION' : restriction}
+    params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[0],  'GLM_TYPE' : glm, 'GLM_RESTRICTION' : restriction}
     inputdir = get_glm_mtg_repository( params = params)
     distrib_file = join(inputdir, axe_length_distrib_fname)
     if not os.path.exists(distrib_file):
@@ -534,7 +534,7 @@ def get_branch_length_histograms(treename = None, verbose = False):
     grefvalues = None
     for glmtype, withindelaymethodval,restriction in list(itertools.product([eSelectedGlm],[eMonthMultiVariateForWithin],[None]+RestrictionName.keys()))+[(eNullGlm,eMonthMultiVariateForWithin, None )]:
     #for glmtype, withindelaymethodval,restriction in [(eSelectedGlm,eMonthMultiVariateForWithin, None ),(eNullGlm,eMonthMultiVariateForWithin, None )]:
-        params = {'WITHINDELAYMETHOD' : withindelaymethodval, 'ESTIMATIONTYPE' : glmtype, 'FACTORRESTRICTION' : restriction}
+        params = {'WITHINDELAYMETHOD' : withindelaymethodval, 'GLM_TYPE' : glmtype, 'GLM_RESTRICTION' : restriction}
         inputdir = get_glm_mtg_repository( params = params)
         if not treename is None: laxe_length_distrib_fname = treename+'_'+axe_length_distrib_fname
         else: laxe_length_distrib_fname = axe_length_distrib_fname

@@ -64,6 +64,7 @@ from vplants.mangosim.tools import *
 
 def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
     from pandas import read_csv
+    from random import randint
     verbose = False
     if verbose :
         print '*** Apply fruit model ***'
@@ -109,9 +110,12 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         bloom_date_date = bloom_date 
         bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/'+str(bloom_date.year)
         # call fruit model in r 
-        tempfile = os.path.join(RScriptRepo,"resultats.csv")
+        import sys
+        idsimu = randint(0,1000000)
+        print 'Do simu', idsimu
+        tempfile = os.path.join(RScriptRepo,"resultats-"+str(idsimu)+".csv")
         if os.path.exists(tempfile): os.remove(tempfile)
-        result = fruitmodel(bloom_date=bloom_date, nb_fruits=nb_fruits, leaf_nbs=leaf_nbs)
+        result = fruitmodel(bloom_date=bloom_date, nb_fruits=nb_fruits, leaf_nbs=leaf_nbs, idsimu=idsimu)
         
         def wait_for_file(fname, timeout = 5):
           import time
@@ -119,12 +123,21 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
           while abs(t - time.time()) < timeout and not os.path.exists(fname) : pass
           return os.path.exists(fname)
          
-        assert wait_for_file(tempfile)
+        if not wait_for_file(tempfile):
+            failedfile = os.path.join(RScriptRepo,"failed-"+str(idsimu)+".csv")
+            if os.path.exists(failedfile):
+                os.remove(failedfile)
+                for inflos, gus in fruiting_structures:
+                    for inflo in inflos:
+                        params[inflo].nb_fruits = 0
+                return
+
         date_parser = lambda d : datetime.strptime(d, '%Y-%m-%d')
-        result = read_csv(os.path.join(RScriptRepo,"resultats.csv"), parse_dates=['Date'], date_parser=date_parser)
+        result = read_csv(tempfile, parse_dates=['Date'], date_parser=date_parser)
         if dump:
-          import shutil
-          shutil.copy(tempfile,os.path.join(outdir, 'meanfruit-'+'-'.join(map(str,inflos)))+'.csv')
+            import shutil
+            shutil.copy(tempfile,os.path.join(outdir, 'meanfruit-'+'-'.join(map(str,inflos)))+'.csv')
+        os.remove(tempfile)
         
         dates = result["Date"]
         dates = map(lambda d:d.to_datetime(),dates)

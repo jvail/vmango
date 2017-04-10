@@ -3,18 +3,18 @@ from vplants.mangosim.state import *
 vegetative_proba = ['vegetative_burst','has_apical_gu_child','has_lateral_gu_children','nb_lateral_gu_children']
 vegetative_proba_family = [eBinomial, eBinomial, eBinomial, ePoisson]
 vegetative_proba_within = ['burst_date_gu_children','burst_delta_date_gu_children','burst_delta_date_gu_children_poisson']
-vegetative_proba_within_family = [eMultiVariate, eMultiVariate, ePoisson]
+vegetative_proba_within_family = [eMultinomial, eMultinomial, ePoisson]
 vegetative_proba_between = ['burst_date_gu_children']
-vegetative_proba_between_family = [eMultiVariate]
+vegetative_proba_between_family = [eMultinomial]
 
 flowering_proba  = ['flowering','nb_inflorescences','flowering_week']
-flowering_proba_family  = [eBinomial, ePoisson, eMultiVariate ]
+flowering_proba_family  = [eBinomial, ePoisson, eMultinomial ]
 
 fruiting_proba  = ['fruiting','nb_fruits','fruit_weight']
 fruiting_proba_family  = [eBinomial, ePoisson, eGaussian ]
 
 mixedinflo_proba = ['mixedinflo_burst','burst_date_mi_children','burst_delta_date_mi_children','burst_delta_date_mi_children_poisson']
-mixedinflo_proba_family = [eBinomial, eMultiVariate, eMultiVariate, ePoisson]
+mixedinflo_proba_family = [eBinomial, eMultinomial, eMultinomial, ePoisson]
 # Always one apical mixed inflo.
 
 def appendprefix(prefix, names): return [prefix+name for name in names]

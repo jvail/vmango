@@ -135,7 +135,7 @@ class MTGArchiBuilder (ArchiBuilder):
         if not bloom_date: 
             inflo_cycle = mm.get_unit_cycle(inflo)
             if inflo_cycle is None:
-                inflo_cycle = get_cycle(guparam.burst_date) if guparam.burst_date else 3
+                inflo_cycle = get_vegetative_cycle(guparam.burst_date) if guparam.burst_date else 3
             bloom_date = date(2000+inflo_cycle, 8, randint(1,31)) # We bloom the inflo in august
         elif type(bloom_date) is list: 
             bloom_date = bloom_date[0]
@@ -167,7 +167,7 @@ class GLMArchiBuilder(MTGArchiBuilder):
 
     def starteach(self, current_date):
         self.current_date  = current_date
-        self.current_cycle = get_cycle(current_date)
+        self.current_cycle = get_vegetative_cycle(current_date)
 
     def generate_from_glm(self, param, current_date):        
         if  param.burst_date <= current_date :
@@ -202,9 +202,9 @@ class GLMArchiBuilder(MTGArchiBuilder):
             anglebetweenchildren = phyllotaxy
             if not date_children_burst is None:
                 date_children_burst = date(year=date_children_burst[0], month=date_children_burst[1], day=15)
-                if date_children_burst > cycle_end(5) and self.verbose:
-                    print('Invalid date of burst %s (after last date %s) of children with parent borned in %s (in cycle %i)' %(date_children_burst, cycle_end(5),p.burst_date,current_cycle))
-                cyclechange = (get_cycle(date_children_burst) != get_cycle(param.burst_date))
+                if date_children_burst > vegetative_cycle_end(5) and self.verbose:
+                    print('Invalid date of burst %s (after last date %s) of children with parent borned in %s (in cycle %i)' %(date_children_burst, vegetative_cycle_end(5),p.burst_date,current_cycle))
+                cyclechange = (get_vegetative_cycle(date_children_burst) != get_vegetative_cycle(param.burst_date))
                 baseparameter = ParameterSet(burst_date        = date_children_burst, 
                                              position_parent   = param.position,
                                              nature_parent     = param.nature,
@@ -221,7 +221,7 @@ class GLMArchiBuilder(MTGArchiBuilder):
             if nb_lat_inflo > 0:
                 for i in xrange(nb_lat_inflo):
                     p = ParameterSet(bloom_date=date_inflo_bloom, 
-                                     cycle =  get_cycle(param.burst_date), 
+                                     cycle =  get_vegetative_cycle(param.burst_date), 
                                      nb_fruits = (1 if i < nb_fruiting_lat_inflo else 0),
                                      fruit_weight = fruit_weight)
                     self.inflomanager.set_dimensions(p, current_date)
@@ -237,7 +237,7 @@ class GLMArchiBuilder(MTGArchiBuilder):
                 nsproduce( [ A(p) ] )
             elif nb_inflorescences > 0:
                 p = ParameterSet(bloom_date=date_inflo_bloom, 
-                                 cycle =  get_cycle(param.burst_date), 
+                                 cycle =  get_vegetative_cycle(param.burst_date), 
                                  nb_fruits = nb_fruits - nb_fruiting_lat_inflo,
                                  fruit_weight = fruit_weight)
                 self.inflomanager.set_dimensions(p, current_date)

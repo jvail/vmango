@@ -46,8 +46,8 @@ def get_glm_mtg_repository(params = dict(),
                            optionname = None):
     repparams = {'optionname' : optionname}
     repparams['variety'] = params.get('VARIETY', 'cogshall') 
-    repparams['estimationtype'] = params.get('ESTIMATIONTYPE', eSelectedGlm) 
-    repparams['restriction'] = params.get('FACTORRESTRICTION', None)
+    repparams['estimationtype'] = params.get('GLM_TYPE', eSelectedGlm) 
+    repparams['restriction'] = params.get('GLM_RESTRICTION', None)
     outputdir = get_option_glm_mtg_repository(**repparams)
     return outputdir
 

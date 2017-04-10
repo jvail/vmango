@@ -412,7 +412,7 @@ def get_all_gus_of_tree_at_cycle(mtg, tree, cycle):
   # Fred Question: Pourquoi on retrie sur les date de burst?
   if cycle != 3:
     date_burst = mtg.property(BurstDatePropertyName)
-    gus_tree_cycle = [gu for gu in gus_tree_cycle if in_cycle(date_burst[gu],cycle)]
+    gus_tree_cycle = [gu for gu in gus_tree_cycle if in_vegetative_cycle(date_burst[gu],cycle)]
   return gus_tree_cycle
 
 @use_global_mtg

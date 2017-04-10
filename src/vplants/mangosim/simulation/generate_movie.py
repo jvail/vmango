@@ -9,7 +9,7 @@ imgfile       = 'image_{}.png'
 stepfile      = 'simu_nbsteps.txt'
 #imageresolution = 1920, 1080
 imageresolution = 1280, 720
-povcomdline   = 'povray -I{} -O{} +FN +W{} +H{} +A -D -GD -GR -GS -GW'
+povcomdline   = 'povray -I{} -O{} +FN +W{} +H{} +A -D -GA +GF'
 
 from multiprocessing import cpu_count
 import os
@@ -40,7 +40,7 @@ def generate_bgeom(step = None, endstep = None):
     from openalea.lpy import Lsystem
     import os
     print 'Scene generator launched'
-    l = Lsystem(lsysfile,{'RESOLUTION' : 2, 'daystep' : 1, 'TIMEBAR' : False, 'LEAFY' : True, 'WITH_INFLO' : True, 'WITH_GLM' : False, 'FRUIT_MODEL' : True, 'EXPORT_TO_MTG' : False})
+    l = Lsystem(lsysfile,{'RESOLUTION' : 2, 'TIMESTEP' : 1, 'TIMEBAR' : False, 'LEAFY' : True, 'WITH_INFLO' : True, 'WITH_GLM' : False, 'FRUIT_MODEL' : True, 'EXPORT_TO_MTG' : False})
 
     if step is None:
         firststep = 0

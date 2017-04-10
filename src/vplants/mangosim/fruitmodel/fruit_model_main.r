@@ -2,10 +2,10 @@
 
 ############################### Lancement des simulations pour x fruits #######################################################################
 ##### nom du fichier : Utilisation de la fonction MS MF_arbre_simp.r
-fruitmodel = function(bloom_date, nb_fruits, leaf_nbs)
+fruitmodel = function(bloom_date, nb_fruits, leaf_nbs,idsimu)
 
 {
-                                                          
+idsimu <<- idsimu
 #********************
 #setwd(dir="C:/Users/Severine/Documents/Develop/mangosim/src/vplants/mangosim/fruitmodel")
 LF = leaf_nbs/nb_fruits
@@ -148,7 +148,7 @@ don$environ_lum = rep(sum(k1_fruit)/24,dim(don)[[1]])
 don$DAB = Res$DAB[1:length(Res$Croissance$Date)]
 
 print(don)
-write.csv(don, file="resultats.csv")
+write.csv(don, file=paste("resultats-",idsimu,".csv",sep=''))
 return(don)
 }
 

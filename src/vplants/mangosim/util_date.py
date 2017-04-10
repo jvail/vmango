@@ -34,30 +34,28 @@ def week_difference(d1,d2):
     return ceil((d2 -d1).days/7.)
 
 # Fred note : The actual cycle seems to start at beginning of June
-def cycle_begin(cycle):
+def vegetative_cycle_begin(cycle):
     return date(2000+cycle-1,6,1)
     # return date(2000+cycle-1,7,1)
 
-def cycle_end(cycle):
+def vegetative_cycle_end(cycle):
    return date(2000+cycle,5,31)
    # return date(2000+cycle,6,30)
 
-def in_cycle(cdate, cycle):
+def in_vegetative_cycle(cdate, cycle):
     if type(cdate) != date: cdate = cdate.date()
-    return cycle_begin(cycle) <= cdate <= cycle_end(cycle)
+    return vegetative_cycle_begin(cycle) <= cdate <= vegetative_cycle_end(cycle)
 
 
-def get_cycle(cdate):
+def get_vegetative_cycle(cdate):
     if type(cdate) != date: cdate = cdate.date()
-    if cdate < cycle_begin(4) : return 3
-    elif cdate < cycle_begin(5) : return 4
+    if cdate < vegetative_cycle_begin(4) : return 3
+    elif cdate < vegetative_cycle_begin(5) : return 4
     else : return 5
 
 def get_semester(cdate):
-    if cdate.month >= cycle_begin(4).month : return 1
+    if cdate.month >= vegetative_cycle_begin(4).month : return 1
     else : return 2
-
-
 
 def flowering_cycle_begin(cycle):
     return date(2000+cycle, 6, 15)

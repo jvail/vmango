@@ -43,7 +43,7 @@ class ProbaTable:
 
         self.factors = [ name for name in list(tablevalues.columns) if name in allfactors]
         extrafactors = [ name for name in list(tablevalues.columns) if name not in allfactors]
-        if self.family == eMultiVariate:
+        if self.family == eMultinomial:
             self.answers = list(extrafactors)
             if has_concatenated_values(self.answers):
                 self.answers, valindex = deconcatenate_values(self.answers)
@@ -64,7 +64,7 @@ class ProbaTable:
         for ind in xrange(len(tablevalues)):
             factorv = tuple(subset_table_factor.iloc[ind])
             probvalue = list(subset_table_probas.iloc[ind])
-            if self.family == eMultiVariate and not valindex is None:
+            if self.family == eMultinomial and not valindex is None:
                 probvalue = [probvalue[i] for i in valindex]
             probvalue = [v if v > 0.01 else 0 for v in probvalue]
 
@@ -109,7 +109,7 @@ class ProbaTable:
             return int( poisson(probavalue[0],1) )
         elif self.family == eGaussian:
             return float( normal(probavalue[0],probavalue[1],1) )
-        elif self.family == eMultiVariate:
+        elif self.family == eMultinomial:
             cumsum_probs = list( cumsum(probavalue) )
             unif_realization = float( uniform(0,1,1) )
             cumsum_probs[-1] = 1
@@ -285,7 +285,7 @@ class UnitDev:
                        WithinDelayMethod = eDeltaPoissonForWithin,
                        verbose = True):
         self.burst_date = Burst_Date
-        self.cycle = get_cycle(Burst_Date)
+        self.cycle = get_vegetative_cycle(Burst_Date)
         self.trace = False
         self.withindelaymethod = WithinDelayMethod
         self.unittype = UnitType
@@ -334,8 +334,8 @@ class UnitDev:
 
 
     def vegetative_burst(self, cycle = eWithinCycle):
-        if cycle == eWithinCycle and self.burst_date.month == cycle_end(self.cycle).month:
-            print 'Too late to decide'
+        if cycle == eWithinCycle and self.burst_date.month == vegetative_cycle_end(self.cycle).month:
+            self.log(cycle, 'vegetative_burst', 'Too late to decide')
             return False
         try:
             return self.get_realization('vegetative_burst',cycle)
@@ -414,7 +414,7 @@ class UnitDev:
             return self.gu_burst_date_children(cycle)
             #print 'Warning: Children GUs are borned in the same month than their parent GU'
         if cycle == eWithinCycle:
-            endcycle = cycle_end(self.cycle)
+            endcycle = vegetative_cycle_end(self.cycle)
             if (endcycle < date(year=burst_year,month=burst_month,day=15)):
                 self.log(cycle, 'burst_date_gu_children', 'Invalid children date. Outside cycle')
                 # print 'Warning within cycle children borned outside cycle'

@@ -9,7 +9,7 @@ eVegetative, eFlowering, eFruiting = range(3)
 # Load state of a tree
 eLoaded, eNotLoaded = 1, 0
 
-eBinomial, ePoisson, eMultiVariate, eGaussian = range(1,5)
+eBinomial, ePoisson, eMultinomial, eGaussian = range(1,5)
 
 eCompleteGlm, eSelectedGlm, eInteractionGlm = 1,2,3
 GlmTypeName = {eCompleteGlm : 'complete_glm', eSelectedGlm : 'selected_glm', eInteractionGlm :'interaction_glm'} 

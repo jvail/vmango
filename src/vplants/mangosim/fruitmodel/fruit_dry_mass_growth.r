@@ -137,6 +137,8 @@ else {
             Reserve_Dif_Util_Feuille <- 0 
         } 
         else {
+            failed = data.frame()
+            write.csv(failed, file=paste("failed-",idsimu,".csv",sep=''))
             stop("Les parties vegetatives s'etouffent: le systeme meurt ...\n")
             return (NULL)
         }
@@ -146,6 +148,8 @@ else {
 if (Reste.RE < RE.fruct) {                                                      ### Sitution défavorable pour le fruit.
     besoin.fruit <- (Respiration_Fruit - Reste.RE) / cfruit 
     if (besoin.fruit >= MS_Fruit_Precedent) {
+        failed = data.frame()
+        write.csv(failed, file=paste("failed-",idsimu,".csv",sep=''))
         stop("Les parties reproductrices s'etouffent: le systeme meurt ...\n")
     } 
     else {
