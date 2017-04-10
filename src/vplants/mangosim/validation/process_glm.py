@@ -59,12 +59,12 @@ def generate_mtgs(trees = range(3),
 
 
 def generate_all(nb = 10, fruitmodel = False):
-    params = {'GLM_TYPE' : eSelectedGlm, 'FRUIT_MODEL' : fruitmodel}
-    generate_mtgs(seeds = range(nb), params = params)
     params = {'GLM_TYPE' : eInteractionGlm, 'FRUIT_MODEL' : fruitmodel}
     generate_mtgs(seeds = range(nb), params = params)
+    params = {'GLM_TYPE' : eSelectedGlm, 'FRUIT_MODEL' : fruitmodel}
+    generate_mtgs(seeds = range(nb), params = params)
 
-def generate_all(nb = 100, fruitmodel = False):
+def generate_all_parallel(nb = 100, fruitmodel = False):
     import itertools
     params = list(itertools.product(range(nb),['GLM_TYPE'],['eSelectedGlm','eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],[str(fruitmodel)]))
     process_set_of_simulations(params)
@@ -93,7 +93,7 @@ def process_set_of_simulations(paramvalueslist, parallel = True):
             _generate(params)
     else:
         countcpus = mp.cpu_count()
-        pool = mp.Pool(processes=countcpus-2)
+        pool = mp.Pool(processes=countcpus-3)
         pool.map(_generate,paramvalueslist)
 
 
