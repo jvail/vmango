@@ -77,10 +77,12 @@ class GUManager (OrganManager):
       self.leaf_area_length_ratio   = 2.3594
       self.leaf_width_length_ratio  = 0.24
 
-      self.radius_exponent = 0.5
-      self.radius_coefficient = 0.3
+      self.radius_exponent = 0.443 # 0.5
+      self.radius_coefficient = 0.415 # 0.3
 
       self.branching_angle = 60 
+
+      self.max_leafy_diameter = 1.65
 
       self.__dict__.update(kwargs)
 
@@ -222,10 +224,12 @@ class GUManager (OrganManager):
               params.length_gu = self.gu_growth_function(params.gu_growth_tts.ttsum, params.final_length_gu, t_ip = params.t_ip)  # GU's length calculation
           #p.diam   = growth_function(eGU, p.gu_growth_tts.ttsum, final_diamI, t_ip = p.t_ip)     # GU's diameter calculation
 
+        if params.radius >= self.max_leafy_diameter: params.leafy = False
+
     def init_plot(self):
         execContext().turtle.setSurface('finalleaf', self.leafSymbol())
 
-    def plot(self, p, textured = True, leafy = True):
+    def plot(self, p, textured = True, leafy = True, distinct_mi = False):
 
         def fLeaf(position, size):
             #nsproduce([ SetColor(13), Down(self.pheno_angle(4)), surface('finalleaf', size)])
@@ -235,7 +239,9 @@ class GUManager (OrganManager):
             nsproduce([ Down(self.pheno_angle(4)) ])
             Petiole((1.1-position)* size/4.,self.leafdiam(0))
             nsproduce([ RollToVert() ])
-            if textured:
+            if distinct_mi and p.hasattr('mixed_inflo'):
+                nsproduce([ SetColor(12) ])
+            elif textured:
                 nsproduce([ TextureBaseColor(13), SetColor(31), TextureVScale(1) ])
                 #nsproduce([ SetColor(30), TextureVScale(1) ])
             else:

@@ -123,12 +123,13 @@ def flowering_dev_variables(mtg, gu, cycle = None):
         Fruiting, Nb_Fruits, Mean_Fruit_Weight = NotRelevant, NotRelevant, NotRelevant
       else : 
         # A unique entity in the MTG represent all the inflorescence children of a given gu
+        #if len(inflorescence_child) != 1: print len(inflorescence_child)
         inflo = inflorescence_child[0]
         icycle = cycle if not cycle is None else get_unit_cycle(mtg,inflo)
-        if mtg.property('nb_inflo_l').get(inflo) :
             # The number of inflorescence apical and lateral are stored into the two properties
-            Nb_Inflorescence = nb_of_inflorescences(mtg, inflo)
-        else : 
+        Nb_Inflorescence = [nb_of_inflorescences(mtg, infloi) for infloi in inflorescence_child]
+        Nb_Inflorescence = sum([nb for nb in Nb_Inflorescence if nb > 0])
+        if Nb_Inflorescence == 0:
             Nb_Inflorescence = NotAvailable
 
         # date of full bloom is given by property 'flowering'
@@ -151,10 +152,10 @@ def flowering_dev_variables(mtg, gu, cycle = None):
     return is_terminal, Flowering, Nb_Inflorescence, Flowering_Week, Fruiting, Nb_Fruits, Mean_Fruit_Weight
 
 def add_flowering_dev_variables(dict_gu_prop, mtg, gu, cycle):
-    is_terminal, Flowering, Nb_Inflorescence, Flowering_Week, Fruiting, Nb_Fruits, Mean_Fruit_Weight = flowering_dev_variables(mtg, gu, cycle)
+    is_terminal, Flowering, Nb_Inflorescences, Flowering_Week, Fruiting, Nb_Fruits, Mean_Fruit_Weight = flowering_dev_variables(mtg, gu, cycle)
     dict_gu_prop["is_terminal"] = is_terminal
     dict_gu_prop["Flowering"] = Flowering
-    dict_gu_prop["Nb_Inflorescence"] = Nb_Inflorescence 
+    dict_gu_prop["Nb_Inflorescences"] = Nb_Inflorescences 
     dict_gu_prop["Flowering_Week"] = Flowering_Week
     dict_gu_prop["Fruiting"] = Fruiting
     dict_gu_prop["Nb_Fruits"] = Nb_Fruits

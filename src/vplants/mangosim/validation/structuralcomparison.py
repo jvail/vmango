@@ -77,7 +77,7 @@ def get_reference_mtg():
     return load_obj(join(share_dir,'replayed_mango.bmtg'))
 
 
-WITHINDELAYMETHODVALUES = [eMonthMultiVariateForWithin, eDeltaMultiVariateForWithin, eDeltaPoissonForWithin]
+WITHINDELAYMETHODVALUES = [eMonthMultinomialForWithin, eDeltaMultinomialForWithin, eDeltaPoissonForWithin]
 structural_comparison_cache = 'structural_comparison.pkl'
 
 allres = None

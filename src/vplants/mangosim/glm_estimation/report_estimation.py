@@ -64,7 +64,7 @@ def convertmonth(mvalue):
     return monthnamemap.get(int(mvalue), mvalue)
 
 
-import util_report as ur ; reload(ur)
+import vplants.mangosim.utils.util_report as ur ; reload(ur)
 
 
 def sort_burst_date(data, date_factor):

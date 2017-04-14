@@ -13,7 +13,7 @@ def export_to_mtg(lstring, lscene):
         break
 
   params_to_export = [tree_parameters,
-                      ['burst_date','cycle','mtgid','nature','final_length_gu','radius','final_length_leaves','nb_internodes'],
+                      ['burst_date','cycle','mtgid','nature','mixed_inflo','final_length_gu','radius','final_length_leaves','nb_internodes'],
                       ['burst_date','bloom_date','cycle','final_length','fruiting','nb_axes','fruiting_date','nb_fruits','fruit_weight'],
                       ['inflo_bloom_date','cycle']]
   # Convert lstring into mtg

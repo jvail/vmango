@@ -46,7 +46,7 @@ def setMtgStyle(style):
         CyclePropertyName = 'year'
         VarietyPropertyName = 'var'
         TreeNamePropertyName = 'code'
-        MixedInfloPropertyName = 'mixed_inflo' 
+        MixedInfloPropertyName = 'mixed_inflo'
         LoadingPropertyName = 'fr_load'
 
         LoadedValue = 'C'
@@ -67,8 +67,8 @@ def setMtgStyle(style):
         MixedInfloPropertyName = 'mixed_inflo' 
         LoadingPropertyName = 'loading'
 
-        LoadedValue = 'C'
-        NotLoadedValue = 'NC'
+        LoadedValue = eLoaded
+        NotLoadedValue = eNotLoaded
         InfloLabel = 'Inflorescence'
         FruitLabel = 'Fruit'
 
@@ -99,9 +99,23 @@ def use_global_mtg(f):
 # Characterizing UCs
 @use_global_mtg
 def get_unit_cycle(mtg, unit):
-  """Return the cycle of the unit.  """
-  if mtg.label(unit) in 'MP' : return 3
-  else: return mtg.property(CyclePropertyName)[unit]
+    """Return the cycle of the unit.  """
+    if __MtgStyle == eMeasuredMtg:
+        if mtg.label(unit) in 'MP' : return 3
+        else: 
+            return mtg.property(CyclePropertyName)[unit]
+    else: 
+        if is_gu(mtg, unit) : 
+            bdate = get_burst_date(mtg, unit)
+            if bdate is None: return 3
+            return get_vegetative_cycle(bdate)
+        elif is_inflorescence(mtg, unit) : 
+            bdate = get_bloom_date(mtg, unit)
+            if bdate is None: 
+                print mtg[unit]
+                return 3
+            return get_flowering_cycle(bdate)
+        elif is_fruit(mtg,unit) : return get_fruiting_cycle(get_burst_date(mtg,unit))
 
 @use_global_mtg
 def get_burst_date(mtg, unit, default=None):
@@ -168,6 +182,7 @@ def is_gu_flowering(mtg, gu, inflocycle = None):
             if inflocycle is None or get_unit_cycle(mtg,ch) == inflocycle:
                 return True
             else : return False
+    return False
 
 @use_global_mtg
 def is_gu_fruiting(mtg, gu, inflocycle = None):
@@ -189,7 +204,10 @@ def nb_of_inflorescences(mtg, gu):
             if is_inflorescence(mtg, ch):
                 nbinflo += nb_of_inflorescences(mtg, ch)
     elif is_inflorescence(mtg, gu):
-        nbinflo = mtg.property('nb_inflo_t').get(gu,0) + mtg.property('nb_inflo_l').get(gu,0)
+        if __MtgStyle == eMeasuredMtg:
+            nbinflo = mtg.property('nb_inflo_t').get(gu,0) + mtg.property('nb_inflo_l').get(gu,0)
+        else:
+            nbinflo = 1
     return nbinflo
 
 @use_global_mtg
@@ -348,12 +366,15 @@ def get_all_treenames(mtg):
     return map(lambda tid: get_tree_name(mtg,tid), get_all_trees(mtg))
 
 @use_global_mtg
-def get_treenames_of_variety(mtg, variety = 'cogshall'):
-    return map(lambda tid: get_tree_name(mtg,tid), get_all_trees_of_variety(mtg, variety))
+def get_treenames_of_variety(mtg, variety = 'cogshall', loaded = None):
+    return map(lambda tid: get_tree_name(mtg,tid), get_all_trees_of_variety(mtg, variety, loaded))
 
 @use_global_mtg
-def get_all_trees_of_variety(mtg, variety = 'cogshall'):
-    return [k for k,v in mtg.property(VarietyPropertyName).items() if v == variety]
+def get_all_trees_of_variety(mtg, variety = 'cogshall', loaded = None):
+    if loaded is None:
+        return [k for k,v in mtg.property(VarietyPropertyName).items() if v == variety]
+    else:
+        return [k for k,v in mtg.property(VarietyPropertyName).items() if v == variety and load_state(mtg,k) == loaded]
 
 @use_global_mtg
 def get_variety(mtg, tree):
@@ -475,7 +496,7 @@ def get_all_inflo_of_tree_at_cycle(mtg, tree, cycle):
   Parameters : 
     tree: the tree id.
   """
-  return [i for i in mtg.components_at_scale(tree,scale=GUScale) if is_inflorescence(mtg,i) and in_flowering_cycle(get_bloom_date(mtg,i),cycle) ]
+  return [i for i in mtg.components_at_scale(tree,scale=GUScale) if is_inflorescence(mtg,i) and get_unit_cycle(mtg,i) == cycle ]
 
 
 @use_global_mtg
@@ -490,6 +511,21 @@ def get_all_inflo_of_variety(mtg, loaded = None, variety = "cogshall"):
   trees = select_trees(mtg, loaded, variety)
   for tree in trees :
         inflos += get_all_inflo_of_tree(mtg, tree)
+  return inflos
+
+
+@use_global_mtg
+def get_all_inflo_of_variety_at_cycle(mtg, cycle, loaded = None, variety = "cogshall"):
+  """ 
+  Parameters : 
+    loaded : a booleen, if true, return trees which are loaded, if false, return trees which are not loaded.
+    variety : a string, the choice of variety is : 
+            'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
+  """
+  inflos = []
+  trees = select_trees(mtg, loaded, variety)
+  for tree in trees :
+        inflos += get_all_inflo_of_tree_at_cycle(mtg, tree, cycle)
   return inflos
 
 

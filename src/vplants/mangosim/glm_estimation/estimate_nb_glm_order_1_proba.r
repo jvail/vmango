@@ -626,13 +626,14 @@ determine_reproductive_development = function(data, subset_selection, year, year
     ############################################## Number of inflorescences  ############################################## 
     if (verbose >= 1) print("########### Estimate Number of inflorescences") 
     
-    flowering_selection = subset_selection & data$Flowering == 1
-    index_flowering.all = which(flowering_selection)
-    data$Nb_Inflorescences = data$Nb_Inflorescence -1
+    flowering_selection = subset_selection  & data$Flowering == 1
+    flowering_selection[is.na(flowering_selection)] = FALSE
+    index_flowering = which(flowering_selection)
+    data$Nb_Inflorescences = data$Nb_Inflorescences -1
     
     lfactors = filter_factors("Nb_Inflorescences",factors, exclude, include)
     ldata = grouping_monthes("Nb_Inflorescences", data, monthgroups, lfactors)
-    generate_glm("Nb_Inflorescences", family = poisson, data=ldata, subset= index_flowering.all, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
+    generate_glm("Nb_Inflorescences", family = poisson, data=ldata, subset= index_flowering, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
     
     
     ############################################## Date of inflorescences ############################################## 
@@ -666,23 +667,23 @@ determine_reproductive_development = function(data, subset_selection, year, year
         data$Flowering_Week = factor(data$Flowering_Week, ordered = TRUE)
     }
     ldata = grouping_monthes("Fruiting", data, monthgroups, lfactors)
-    generate_glm("Fruiting", family = binomial, data=ldata, subset= index_flowering.all, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
+    generate_glm("Fruiting", family = binomial, data=ldata, subset= index_flowering, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
     
     
     ############################################## Number of fruits  ############################################## 
     if (verbose >= 1) print("########### Estimate Number of fruits") 
     
     fruiting_selection = subset_selection & data$Fruiting == 1
-    index_fruiting.all = which(fruiting_selection)
+    index_fruiting = which(fruiting_selection)
     data$Nb_Fruits = data$Nb_Fruits -1
     
     lfactors = filter_factors("Nb_Fruits",factors, exclude, include)
     ldata = grouping_monthes("Nb_Fruits", data, monthgroups, lfactors)
-    if(length(index_fruiting.all) > MinNbGUForGLM){
-      generate_glm("Nb_Fruits", family = poisson, data=ldata, subset= index_fruiting.all, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
+    if(length(index_fruiting) > MinNbGUForGLM){
+      generate_glm("Nb_Fruits", family = poisson, data=ldata, subset= index_fruiting, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
     }
     else {
-      print(paste("Not enougth fruits specified for year",year,":",length(index_fruiting.all)))
+      print(paste("Not enougth fruits specified for year",year,":",length(index_fruiting)))
     }
 
     ############################################## Weigth of fruits  ############################################## 
@@ -690,11 +691,11 @@ determine_reproductive_development = function(data, subset_selection, year, year
     
     lfactors = filter_factors("Fruit_Weight",factors, exclude, include)
     ldata = grouping_monthes("Fruit_Weight", data, monthgroups, lfactors)
-    if(length(index_fruiting.all) > MinNbGUForGLM){
-      generate_glm("Fruit_Weight", family = gaussian, data=ldata, subset= index_fruiting.all, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
+    if(length(index_fruiting) > MinNbGUForGLM){
+      generate_glm("Fruit_Weight", family = gaussian, data=ldata, subset= index_fruiting, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
     }
     else {
-      print(paste("Not enougth fruits specified for year",year,":",length(index_fruiting.all)))
+      print(paste("Not enougth fruits specified for year",year,":",length(index_fruiting)))
     }
     
     if (verbose >= 1) print("Done")
@@ -735,7 +736,6 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     #monthgroups$Has_Lateral_GU_Children = list( c(10,11,12,1))
     exclude$Vegetative_Burst =  c("Nature_Ancestor_F")
     exclude$Has_Apical_GU_Child = append(exclude[["Has_Apical_GU_Child"]],  c("Nature_Ancestor_F", "Burst_Month"))
-    #monthgroups$Has_Lateral_GU_Children = list( c(10,11), c(3,4,5)) # valider
     monthgroups$Burst_Date_GU_Children = list(c(9,10) )
     monthgroups$Burst_Delta_Date_GU_Children = list(c(9,10) )
     exclude$Burst_Delta_Date_GU_Children =  c("Position_A")
@@ -746,6 +746,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     #exclude$Flowering =  c("Nature_Ancestor_F")
     #include$Flowering =  c("Nature_Ancestor_SF")
     monthgroups$Vegetative_Burst = list(1:2,3:5,9:11)
+    
     monthgroups$Flowering = list(c(12,1,2,3,4))
     monthgroups$Nb_Inflorescences = list(c(1,2,3,4,5) )
     monthgroups$Fruiting = list(c(1,2), c(3,4,5) )
@@ -767,8 +768,8 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     monthgroups$Burst_Delta_Date_GU_Children_Poisson = list( c(10, 11) )
 
     exclude$Burst_Date_GU_Children = c("Position_Ancestor_A")
-    if(!NOFILTER)
-      data = group_factor_values(data,'Burst_Date_GU_Children', list(c(10,11,12)))  
+    #if(!NOFILTER)
+    #  data = group_factor_values(data,'Burst_Date_GU_Children', list(c(10,11,12)))  
     exclude$Burst_Delta_Date_GU_Children = c("Position_Ancestor_A")
     #data = group_factor_values(data,'Burst_Delta_Date_GU_Children', list(c(1,2),c(5,6)))  
     
@@ -898,8 +899,8 @@ determining_glm_tables_between_cycle = function(data, year, verbose = FALSE, sel
       monthgroups$Nb_Lateral_GU_Children = list(c(10,11,12), c(3,4,5))
       monthgroups$Burst_Date_GU_Children = list(c(10,11,12), c(3,4,5))
 
-      if (!NOFILTER) 
-        data = group_factor_values(data,'Burst_Date_GU_Children', list(c(110,111,112)))
+      #if (!NOFILTER) 
+      #  data = group_factor_values(data,'Burst_Date_GU_Children', list(c(110,111,112)))
     }
     
     determine_vegetative_development(data=data, subset_selection= subset_selection, year=year, yeartag= yeartag, 
@@ -1021,8 +1022,8 @@ test = function() {
 main = function() {
   verbose = 1
   determining_glm_tables_within_cycle_for_year(input_dir, "04",   verbose)
-  determining_glm_tables_within_cycle_for_year(input_dir, "05",   verbose)
   determining_glm_tables_mixedinflo_within_cycle_for_year(input_dir, "0405", verbose)
+  determining_glm_tables_within_cycle_for_year(input_dir, "05",   verbose)
   
   determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", verbose)
   determining_glm_tables_between_cycle_for_year(input_dir, "04to05",   verbose)

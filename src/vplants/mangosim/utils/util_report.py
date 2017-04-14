@@ -116,6 +116,9 @@ class TexReportGenerator:
     def add_subsection(self, title):
         self.write('\\subsection{'+title+'}\n\n')
 
+    def add_subsubsection(self, title):
+        self.write('\\subsubsection{'+title+'}\n\n')
+
     def add_figure(self, fnames, caption = None) :
         self.write('\\begin{figure}[h]\n\t\centering\n')
         if type(fnames) == str:

@@ -87,7 +87,7 @@ class MTGArchiBuilder (ArchiBuilder):
             nsproduce( [ SB(), RollL(phyllotaxy*nb_proc_lat), Down(branching_angle) ] )
             nb_proc_lat += 1
             if self.has_to_be_developped(ch, current_date): 
-                self.generate_from_mtg( self.gu_parameters_from_mtg(ch, self.nbdescendants[ch]), current_date )
+                self.generate_from_mtg( self.gu_parameters_from_mtg(ch, self.nbdescendants.get(ch,1)), current_date )
                 # nproduce B( generate_parameters_GU(ch, nbdescendants[ch]) )
             else:  
                 nsproduce( [ A( self.gu_parameters_from_mtg(ch) ) ] )
@@ -102,7 +102,7 @@ class MTGArchiBuilder (ArchiBuilder):
         if has_apical_gu:
             ch = apical_child[0]
             if  self.has_to_be_developped(ch, current_date):  
-                self.generate_from_mtg( self.gu_parameters_from_mtg(ch, self.nbdescendants[ch]), current_date )
+                self.generate_from_mtg( self.gu_parameters_from_mtg(ch, self.nbdescendants.get(ch,1)), current_date )
                 # nproduce B( generate_parameters_GU(ch, nbdescendants[ch]))
             else:   
                 nsproduce( [ A( self.gu_parameters_from_mtg(ch) ) ] )
@@ -123,9 +123,9 @@ class MTGArchiBuilder (ArchiBuilder):
                         position         = mm.get_position_gu(self.mtg,gu), 
                         position_parent  = mm.get_position_gu(self.mtg,parent),
                         position_ancestor  = mm.get_position_gu(self.mtg,ancestor), 
-                        nbdescendants    = nbdescendants,
-                        type = eGU if not mm.is_gu_mixed_inflorescence(self.mtg, gu) else eMixedInflorescence)
-
+                        nbdescendants    = nbdescendants)
+       if mm.is_gu_mixed_inflorescence(self.mtg, gu):
+           p.mixed_inflo = True
        p.set(burst_date = ud.todatetime(mm.get_burst_date(self.mtg,gu))) 
        return p
 
@@ -176,13 +176,13 @@ class GLMArchiBuilder(MTGArchiBuilder):
             InflorescenceBud = ModuleClass.get('InflorescenceBud')
             A = ModuleClass.get('A')
 
-            dev = UnitDev(UnitType = param.type,
+            dev = UnitDev(UnitType = eGU if not param.hasattr('mixed_inflo') else eMixedInflorescence,
                           Burst_Date = param.burst_date, 
                           Position_A = param.position,
                           Position_Ancestor_A = param.position_ancestor,
                           Nature_Ancestor_F   = param.nature_ancestor, #eVegetative if param.nature_ancestor == eVegetative else eFlowering,
                           #Tree_Fruit_Load     = Tree_Fruit_Load,
-                          WithinDelayMethod   = eMonthMultiVariateForWithin, # if param.nature_ancestor != eVegetative else eDeltaPoissonForWithin)
+                          WithinDelayMethod   = eMonthMultinomialForWithin, # eMonthMultinomialForWithin if param.nature_ancestor != eVegetative else eDeltaPoissonForWithin,
                           verbose = self.verbose)
 
             apical_child, nb_lat_children, mi_child, nb_inflorescences, nb_fruits, fruit_weight, date_children_burst, date_inflo_bloom, mi_burst_date = dev.process()
@@ -209,8 +209,7 @@ class GLMArchiBuilder(MTGArchiBuilder):
                                              position_parent   = param.position,
                                              nature_parent     = param.nature,
                                              nature_ancestor   = param.nature_ancestor   if not cyclechange else param.nature, 
-                                             position_ancestor = param.position_ancestor if not cyclechange else param.position,
-                                             type = eGU)
+                                             position_ancestor = param.position_ancestor if not cyclechange else param.position)
                 if nb_lat_children > 0:
                     latparam = baseparameter.copy()
                     latparam.set(position = eLateral)
@@ -228,10 +227,18 @@ class GLMArchiBuilder(MTGArchiBuilder):
                     nsproduce( [ RollL(phyllotaxy), SB(), Down(branching_angle), InflorescenceBud(p), EB() ] )
             
             if mi_child:
-                p = baseparameter
-                p.set(position = eApical, type = eMixedInflorescence)
+                date_mi_child_burst = date(year=mi_burst_date[0], month=mi_burst_date[1], day=15)
+                cyclechange = (get_vegetative_cycle(date_mi_child_burst) != get_vegetative_cycle(param.burst_date))
+                p = ParameterSet(burst_date        = date_mi_child_burst, 
+                                 position_parent   = param.position,
+                                 nature_parent     = param.nature,
+                                 nature_ancestor   = param.nature_ancestor   if not cyclechange else param.nature, 
+                                 position_ancestor = param.position_ancestor if not cyclechange else param.position,
+                                 position = eApical,
+                                 mixed_inflo = True)
                 nsproduce( [ A(p) ] )                
             elif apical_child:
+                assert not date_children_burst is None
                 p = baseparameter
                 p.set(position = eApical)
                 nsproduce( [ A(p) ] )

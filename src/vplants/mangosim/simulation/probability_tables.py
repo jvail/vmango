@@ -22,6 +22,16 @@ def deconcatenate_values(array):
     val = sum(val,[])
     return val, index
 
+class IncompatibleValues(Exception):
+    pass
+
+
+month_order = range(6,13)+range(6)
+month_position = dict([(m,i+1) for i,m in enumerate(month_order)])
+
+def target_monthes(parentmonth):
+    return set(month_order[month_position[parentmonth]:])
+
 class ProbaTable:
     def __init__(self, name, family, fname = None):
         self.name = name
@@ -110,12 +120,22 @@ class ProbaTable:
         elif self.family == eGaussian:
             return float( normal(probavalue[0],probavalue[1],1) )
         elif self.family == eMultinomial:
+            check_compat = True
+            if check_compat:
+                compatvalues = self.check_value_compatibility(args)
+                if len(compatvalues) == 0:
+                    raise IncompatibleValues(self.name, args['Burst_Month'], self.answers)
+                probavalue = [probavalue[i] for i in compatvalues]
+                answers = [self.answers[i] for i in compatvalues]
+            else:
+                answers = self.answers
             cumsum_probs = list( cumsum(probavalue) )
             unif_realization = float( uniform(0,1,1) )
             cumsum_probs[-1] = 1
             i = 0
             while unif_realization >= cumsum_probs[i] : i += 1
-            return self.answers[i]
+            return answers[i]
+
     def check(self):
         if self.type == eWithinCycle:
             withinfactors = list(allfactors)
@@ -131,6 +151,13 @@ class ProbaTable:
                 if not f in betweenfactors:
                     raise ValueError('Invalid factor for Within cycle proba',f)
 
+    def check_value_compatibility(self, args):
+        assert self.family == eMultinomial
+        if self.type == eWithinCycle and 'burst_date' in self.name:
+            targetanswers = target_monthes(args['Burst_Month'])
+            return [i for i,a in enumerate(self.answers) if int(a) in targetanswers]
+        else:
+            return range(len(self.answers))
 
 def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restriction = None):
     from os.path import exists, join
@@ -386,7 +413,7 @@ class UnitDev:
         return self.get_realization_from_closestmonth('burst_delta_date_gu_children_poisson', cycle)+1
 
     def gu_burst_date_children(self, cycle = eWithinCycle):
-        if cycle == eLaterCycle or self.withindelaymethod == eMonthMultiVariateForWithin:
+        if cycle == eLaterCycle or self.withindelaymethod == eMonthMultinomialForWithin:
             try:
                 burst_index = int(self.get_realization('burst_date_gu_children',cycle))
                 burst_year, burst_month = appenddeltaindex(self.burst_date, burst_index)
@@ -398,21 +425,21 @@ class UnitDev:
                     burst_delta = self.burst_delta_date_gu_children_poisson(cycle)
                     burst_year, burst_month = appendmonthdelta(self.burst_date, burst_delta)
         else:
-            if self.withindelaymethod == eDeltaMultiVariateForWithin:
+            if self.withindelaymethod == eDeltaMultinomialForWithin:
                 burst_delta = self.burst_delta_date_gu_children(cycle)
             else:
                 burst_delta = self.burst_delta_date_gu_children_poisson(cycle)
             burst_year, burst_month = appendmonthdelta(self.burst_date, burst_delta)
 
 
-        if  not (burst_year > self.burst_date.year or burst_month >= self.burst_date.month):
-            self.log(cycle, 'burst_date_gu_children', 'Invalid children date. Earlier than parent')
-            return self.gu_burst_date_children(cycle)
-            #raise ValueError('Children burst date is before parent burst',(burst_year, burst_month), self.burst_date )
-        if (burst_year == self.burst_date.year and burst_month == self.burst_date.month):
-            self.log(cycle, 'burst_date_gu_children', 'Invalid children date. Same than parent')
-            return self.gu_burst_date_children(cycle)
-            #print 'Warning: Children GUs are borned in the same month than their parent GU'
+        #if  not (burst_year > self.burst_date.year or burst_month >= self.burst_date.month):
+        #    self.log(cycle, 'burst_date_gu_children', 'Invalid children date. Earlier than parent')
+        #    return self.gu_burst_date_children(cycle)
+        #    #raise ValueError('Children burst date is before parent burst',(burst_year, burst_month), self.burst_date )
+        #if (burst_year == self.burst_date.year and burst_month == self.burst_date.month):
+        #    self.log(cycle, 'burst_date_gu_children', 'Invalid children date. Same than parent')
+        #    return self.gu_burst_date_children(cycle)
+        #    #print 'Warning: Children GUs are borned in the same month than their parent GU'
         if cycle == eWithinCycle:
             endcycle = vegetative_cycle_end(self.cycle)
             if (endcycle < date(year=burst_year,month=burst_month,day=15)):
@@ -459,7 +486,7 @@ class UnitDev:
         try:
             fweek = int(self.get_realization('flowering_week'))
         except KeyError,e:
-            fweek = 0      
+            fweek = randint(0,max(bloom_weeks[self.cycle].keys()))
         period_beg, period_end = bloom_weeks[self.cycle][fweek]
         return period_beg + timedelta(days=randint(0,(period_end-period_beg).days)), fweek
 
@@ -492,25 +519,32 @@ class UnitDev:
         burst_year, burst_month = appenddeltaindex(self.burst_date, burst_index)
         return (burst_year, burst_month)
 
-
     def process(self):
         apical_child, nb_lateral_gu_children = False, 0
         has_mi_child, mi_burst_date = None, None
         nb_inflorescences, nb_fruits, fruit_weight =  0, 0, 0
         date_children_burst, date_inflo_bloom = None, None
-        if self.cycle > 3 and self.vegetative_burst():
+
+        veg_burst = self.vegetative_burst()
+        if self.cycle > 3 and veg_burst:
             # Within steps.
-            apical_child = self.has_apical_gu_child()
-            nb_lateral_gu_children = 0 
-            if not apical_child or self.has_lateral_gu_children():
-                nb_lateral_gu_children += self.nb_lateral_gu_children()
+            try:
+                if self.unittype == eGU:
+                    date_children_burst = self.gu_burst_date_children()
+                else:
+                    date_children_burst = self.mi_burst_date_children()
+            except IncompatibleValues, iv:
+                self.log(eWithinCycle, 'burst_date_children', 'Incompatible children month burst value compared to parent burst month.')
+                veg_burst = False
 
-            if self.unittype == eGU:
-                date_children_burst = self.gu_burst_date_children()
-            else:
-                date_children_burst = self.mi_burst_date_children()
+            if veg_burst:
+                apical_child = self.has_apical_gu_child()
+                nb_lateral_gu_children = 0 
+                if not apical_child or self.has_lateral_gu_children():
+                    nb_lateral_gu_children += self.nb_lateral_gu_children()
 
-        elif self.unittype == eGU:
+
+        if not veg_burst and self.unittype == eGU:
             # Between steps
             if self.has_mixedinflo_child():
                 has_mi_child = eApical if self.is_mixedinflo_apical() else eLateral
@@ -534,6 +568,7 @@ class UnitDev:
                 if not apical_child or self.has_lateral_gu_children(eLaterCycle):
                     nb_lateral_gu_children += self.nb_lateral_gu_children(eLaterCycle)
                 date_children_burst = self.gu_burst_date_children(eLaterCycle)
+
         return apical_child, nb_lateral_gu_children, has_mi_child, nb_inflorescences, nb_fruits, fruit_weight, date_children_burst, date_inflo_bloom, mi_burst_date
             
 

@@ -63,10 +63,12 @@ def generate_all(nb = 10, fruitmodel = False):
     generate_mtgs(seeds = range(nb), params = params)
     params = {'GLM_TYPE' : eSelectedGlm, 'FRUIT_MODEL' : fruitmodel}
     generate_mtgs(seeds = range(nb), params = params)
+    params = {'GLM_TYPE' : eCompleteGlm, 'FRUIT_MODEL' : fruitmodel}
+    generate_mtgs(seeds = range(nb), params = params)
 
 def generate_all(nb = 100, fruitmodel = False):
     import itertools
-    params = list(itertools.product(range(nb),['GLM_TYPE'],['eSelectedGlm','eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],[str(fruitmodel)]))
+    params = list(itertools.product(range(nb),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],[str(fruitmodel)]))
     process_set_of_simulations(params, not fruitmodel)
 
 def generate_all_restriction(nb = 1000):
@@ -101,7 +103,7 @@ def process_restricted_models(nb=1000, fruitmodel = False):
     import itertools
     params = list(itertools.product(range(nb),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['eBurstDateRestriction', 'ePositionARestriction', 'ePositionAncestorARestriction', 'eNatureFRestriction', 'eAllRestriction'],['FRUIT_MODEL'],[str(fruitmodel)]))
 
-    process_set_of_simulations(params, not fruitmodel)
+    process_set_of_simulations(params, False) #not fruitmodel)
 
 
 if __name__ == '__main__' :
@@ -131,6 +133,6 @@ if __name__ == '__main__' :
             print '--restricted [nb] [fruitmodel]'
     else:
         #generate_all(100, False)
-        generate_all(100, True)
-        process_restricted_models(100)
+        generate_all(10, False)
+        #process_restricted_models(100)
         message.send_msg('Simu','Done.')
