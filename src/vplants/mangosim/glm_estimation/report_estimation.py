@@ -21,7 +21,7 @@ name = 'vegetative_burst_within_04' # 'burst_date_children_within_05'
 names1 = ['Vegetative_Burst',  'Nb_GU_Children',
          "Has_Apical_GU_Child", "Has_Lateral_GU_Children", 'Nb_Lateral_GU_Children', 
          'Burst_Date_GU_Children'] + ['Burst_Delta_Date_GU_Children', 'Burst_Delta_Date_GU_Children_Poisson']
-names2 = ['Flowering', 'Nb_Inflorescences', 'Flowering_Week', 'Fruiting', 'Nb_Fruits', 'Fruit_Weight']
+names2 = ['Flowering', 'Nb_Inflorescences', 'Flowering_Week', 'Flowering_Week_Poisson', 'Fruiting', 'Nb_Fruits', 'Fruit_Weight','Harvest_Week','Harvest_Week_Poisson']
 names3 = [n.replace('GU','MI').replace('Vegetative','MixedInflo') for n in names1]
 
 

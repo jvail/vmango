@@ -18,6 +18,7 @@ BurstDatePropertyName = 'date_burst'
 BloomPropertyName = 'flowering'
 NbFruitPropertyName = 'nb_fr'
 FruitWeightPropertyName = 'wgt_fr'
+FruitHarvestDatePropertyName = 'date_b_harv'
 CyclePropertyName = 'year'
 VarietyPropertyName = 'var'
 TreeNamePropertyName = 'code'
@@ -43,6 +44,7 @@ def setMtgStyle(style):
         BloomPropertyName = 'flowering'
         NbFruitPropertyName = 'nb_fr'
         FruitWeightPropertyName = 'wgt_fr'
+        FruitHarvestDatePropertyName = 'date_b_harv'
         CyclePropertyName = 'year'
         VarietyPropertyName = 'var'
         TreeNamePropertyName = 'code'
@@ -61,6 +63,7 @@ def setMtgStyle(style):
         BloomPropertyName = 'bloom_date'
         NbFruitPropertyName = 'nb_fruits'
         FruitWeightPropertyName = 'fruit_weight'
+        FruitHarvestDatePropertyName = 'maturity_date'
         CyclePropertyName = 'cycle'
         VarietyPropertyName = 'variety'
         TreeNamePropertyName = 'treename'
@@ -149,8 +152,13 @@ def get_bloom_date(mtg, inflo, default=None):
 def get_nb_fruits(mtg, inflo, default=0):
     return mtg.property(NbFruitPropertyName).get(inflo,default)
 
+@use_global_mtg
 def get_fruits_weight(mtg, inflo, default = None):
     return mtg.property(FruitWeightPropertyName).get(inflo,default)
+
+@use_global_mtg
+def get_fruits_harvest_date(mtg, inflo, default = None):
+    return mtg.property(FruitHarvestDatePropertyName).get(inflo,default)
 
 @use_global_mtg
 def is_gu_dead_before_cycle_end(mtg, gu, cycle):

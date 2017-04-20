@@ -10,8 +10,8 @@ vegetative_proba_between_family = [eMultinomial]
 flowering_proba  = ['flowering','nb_inflorescences','flowering_week']
 flowering_proba_family  = [eBinomial, ePoisson, eMultinomial ]
 
-fruiting_proba  = ['fruiting','nb_fruits','fruit_weight']
-fruiting_proba_family  = [eBinomial, ePoisson, eGaussian ]
+fruiting_proba  = ['fruiting','nb_fruits','fruit_weight','harvest_week']
+fruiting_proba_family  = [eBinomial, ePoisson, eGaussian, eMultinomial ]
 
 mixedinflo_proba = ['mixedinflo_burst','burst_date_mi_children','burst_delta_date_mi_children','burst_delta_date_mi_children_poisson']
 mixedinflo_proba_family = [eBinomial, eMultinomial, eMultinomial, ePoisson]
@@ -44,6 +44,6 @@ mi_vegetative_proba_within_family = vegetative_proba_between_family
 within_extension = {3 : None, 4 : 'within_04', 5 : 'within_05'}
 between_extension = {3 : 'between_03to0405', 4 : 'between_04to05', 5 : None }
 
-allfactors = ['Burst_Month', 'Position_A', 'Position_Ancestor_A', 'Nature_Ancestor_F', 'Nature_F', 'Cycle', 'Flowering_Week', 'Has_Apical_GU_Child']
-factorsvalues = [range(6,13)+range(6), [eApical,eLateral], [eApical,eLateral], [eVegetative, eFlowering, eFruiting], [eVegetative, eFlowering], [3,4,5], range(0,13), [0,1]]
+allfactors = ['Burst_Month', 'Position_A', 'Position_Ancestor_A', 'Nature_Ancestor_F', 'Nature_F', 'Cycle', 'Flowering_Week', 'Has_Apical_GU_Child','Nb_Inflorescences']
+factorsvalues = [range(6,13)+range(6), [eApical,eLateral], [eApical,eLateral], [eVegetative, eFlowering, eFruiting], [eVegetative, eFlowering], [3,4,5], range(0,13), [0,1],range(1,6)]
 factorsvalues = dict(zip(allfactors,factorsvalues))

@@ -4,27 +4,30 @@ from datetime import *
 import os.path
 
 RScriptRepo = dirname(abspath(__file__))
+RWorkRepo = os.path.join(RScriptRepo,'tmp')
 
 EXTERNALPROCESS = True
 
-def execute_r_script(**params):
+def execute_r_script(idsimu, **params):
     #for var, value in params.items():
     #    launcher.write(var+" <- "+ repr(value)+'\n')
     script = '''
-out = file("fruitmodel.log",open="wt")
+out = file("{}/fruitmodel-{}.log",open="wt")
 sink(file = out, split = FALSE)
 
-source("fruit_model_main.r")
-fruitmodel({})
+source("{}/fruit_model_main.r",keep.source=TRUE)
+res = fruitmodel({})
 
 sink()
 close(out)
-'''.format(','.join([var+" = "+ repr(value).replace("'",'"') for var, value in params.items()]))
+'''.format(RWorkRepo,idsimu,RScriptRepo,' , '.join([var+" = "+ repr(value).replace("'",'"') for var, value in params.items()])+' , idsimu='+str(idsimu))
     #print script
+    if not os.path.exists(RWorkRepo):
+        os.makedirs(RWorkRepo)
     if EXTERNALPROCESS:
-      launch_r(script)
+      launch_r(idsimu, script)
     else:
-      launch_rpy(script)
+      launch_rpy(idsimu, script)
 
 def get_R_cmd():
     import sys
@@ -36,11 +39,11 @@ def get_R_cmd():
         exe = 'Rscript'
     return exe
 
-def launch_r(script):
+def launch_r(idsimu, script):
     cwd = os.getcwd()
-    os.chdir(RScriptRepo)
+    os.chdir(RWorkRepo)
     
-    launchfile = 'modellauncher.r'
+    launchfile = 'modellauncher-'+str(idsimu)+'.r'
     launcher = file(launchfile,'w')
     launcher.write(script)
     launcher.close()
@@ -48,15 +51,17 @@ def launch_r(script):
     exe = get_R_cmd()
     command = '"'+exe +'" '+launchfile+''
     os.system(command)
+    os.remove(launchfile)
+    os.remove("fruitmodel-{}.log".format(idsimu))
     os.chdir(cwd)
 
-def launch_rpy(script):
+def launch_rpy(idsimu, script):
   import rpy2.robjects as r
   return r.r(script)
 
 def get_fruitmodel_function():
-    def fruitmodel(**params):
-        execute_r_script(**params)
+    def fruitmodel(idsimu, **params):
+        execute_r_script(idsimu, **params)
     return fruitmodel
 
 
@@ -98,7 +103,7 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
 
     fruit_structures = []
     for inflos, gus in fruiting_structures:
-        bloom_dates = [params[inflo].bloom_date for inflo in inflos]
+        bloom_dates = [params[inflo].fullbloom_date for inflo in inflos]
         if len(gus) == 0 and len(mtg.vertices(scale=mtg.max_scale())) == 1:
           leaf_nbs    = 100
         else:
@@ -112,8 +117,8 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         # call fruit model in r 
         import sys
         idsimu = randint(0,1000000)
-        print 'Do simu', idsimu
-        tempfile = os.path.join(RScriptRepo,"resultats-"+str(idsimu)+".csv")
+        #print 'Do simu', idsimu
+        tempfile = os.path.join(RWorkRepo,"resultats-"+str(idsimu)+".csv")
         if os.path.exists(tempfile): os.remove(tempfile)
         result = fruitmodel(bloom_date=bloom_date, nb_fruits=nb_fruits, leaf_nbs=leaf_nbs, idsimu=idsimu)
         
@@ -124,13 +129,13 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
           return os.path.exists(fname)
          
         if not wait_for_file(tempfile):
-            failedfile = os.path.join(RScriptRepo,"failed-"+str(idsimu)+".csv")
+            failedfile = os.path.join(RWorkRepo,"failed-"+str(idsimu)+".csv")
             if os.path.exists(failedfile):
                 os.remove(failedfile)
                 for inflos, gus in fruiting_structures:
                     for inflo in inflos:
                         params[inflo].nb_fruits = 0
-                return
+                continue
 
         date_parser = lambda d : datetime.strptime(d, '%Y-%m-%d')
         result = read_csv(tempfile, parse_dates=['Date'], date_parser=date_parser)
@@ -148,9 +153,9 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         fruit_structures.append((len(inflos), leaf_nbs,  nb_fruits, max(result["Masse_Fruit"]), inflos, [params[inflo].nb_fruits for inflo in inflos] ))
         
         for inflo in inflos:
-            params[inflo].fruit_appearance_date = min(dates)
+            params[inflo].fruit_growth_stage_date = min(dates)
             params[inflo].fruit_maturity_date   = max(dates)
-            params[inflo].fruit_weight_min      = min(result["Masse_Fruit"])
+            params[inflo].fruit_initial_weight  = min(result["Masse_Fruit"])
             params[inflo].fruit_weight          = max(result["Masse_Fruit"])
             params[inflo].sucres_solubles       = max(result["sucres_solubles"])
             params[inflo].acides_organiques     = max(result["acides_organiques"])

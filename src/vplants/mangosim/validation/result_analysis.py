@@ -44,6 +44,16 @@ def parmap(f,X):
     [p.join() for p in proc]
     return [p.recv() for (p,c) in pipe]
 
+def nparmap(f,X,n = 5):
+    from math import ceil
+    res = []
+    nbdata = len(X)
+    nbsteps =  int(ceil(float(nbdata) / n))
+    print X
+    for j in xrange(nbsteps):
+        res += parmap(f,X[j*n:min(nbdata,(j+1)*n)])
+    return res
+
 
 class Evaluator:
     def __init__(self, name, func, reducefunc, reference = True, verbose = True):
@@ -99,16 +109,21 @@ class Evaluator:
             refvalues = None
         for iglm, irestriction, inputdir in self.inputdirs:
             cachefile = join(inputdir, cachebasename)
-            if force or not exists(cachefile):
-                values = []
+            computation = force or not exists(cachefile)
+            if not computation :
                 mtgfiles = retrieve_mtgfiles(inputdir)
+                lastcreation = max([os.stat(fname).st_mtime for fname in mtgfiles])
+                computation = lastcreation > os.stat(cachefile).st_mtime 
+            if computation:
+                mtgfiles = retrieve_mtgfiles(inputdir)
+                values = []
                 if not nb is None: mtgfiles = mtgfiles[:nb]
                 t = time.time()
                 if not parallel:
                     for mtgfile in mtgfiles:
                         values.append(self._applyto(eSimulatedMtg, mtgfile))
                 else:
-                    values += parmap(lambda mfile : self._applyto(eSimulatedMtg, mfile), mtgfiles)
+                    values += nparmap(lambda mfile : self._applyto(eSimulatedMtg, mfile), mtgfiles)
                 print 'Applied in', time.time()-t,'sec.'
                 dump_obj(values, cachebasename, inputdir)
             else:
@@ -152,6 +167,7 @@ class Evaluator:
         else : 
             if self.verbose : print 'Process reference'
             mtg = get_mtg()
+        if type(mtg) != MTG: raise ValueError(mtg)
         return self.func(mtg, mtgtype, *self.funcargs, **self.funckwds)
 
 

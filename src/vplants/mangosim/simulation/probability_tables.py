@@ -71,6 +71,7 @@ class ProbaTable:
         subset_table_factor = tablevalues[self.factors]
         subset_table_probas = tablevalues[extrafactors]
         self.values = {}
+        self.factorsvalues = dict([(f,set()) for f in self.factors])
         for ind in xrange(len(tablevalues)):
             factorv = tuple(subset_table_factor.iloc[ind])
             probvalue = list(subset_table_probas.iloc[ind])
@@ -86,18 +87,27 @@ class ProbaTable:
                     break
             if not tosplit:
                 self.values[factorv] = probvalue
+                for fv,f in zip(factorv, self.factors):
+                    self.factorsvalues[f].add(fv)
             else:
                 factorvl = [map(int,f.split('-')) if type(f) == str and '-' in f else [int(f)] for f in factorv]
                 for factorvi in itertools.product(*factorvl):
                     self.values[factorvi] = probvalue
+                    for fv,f in zip(factorvi, self.factors):
+                        self.factorsvalues[f].add(fv)
 
 
     def get_proba_value(self, args):
         if len(args) < len(self.factors): 
             raise ValueError('Invalid number of factors.',args, self.factors)
         for arg, value in args.items():
-            if not value in factorsvalues[arg]: 
-                raise ValueError('Invalid value for factor of test',value,arg,self.name)
+            if arg in self.factorsvalues and not value in self.factorsvalues[arg]: 
+                #print arg, value
+                if arg in ['Nature_F','Nature_Ancestor_F'] and value == eFruiting:
+                    if eFlowering in self.factorsvalues[arg]:
+                        args[arg] = eFlowering
+                        continue
+                raise KeyError('Invalid value for factor of test',value,arg,self.name)
         try:
             factoractualvalue = tuple([args[f] for f in self.factors])
         except KeyError, e:
@@ -164,6 +174,7 @@ def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restr
     probafilepath = get_probability_repository(variety, estimationtype, restriction)
     if not exists(probafilepath): raise ValueError("Proba path repository does not exist", probafilepath)
     probacycle = {}
+    replacement = {'gu_flowering_week_within_04' : 'gu_flowering_week_within_05', 'gu_harvest_week_within_04' : 'gu_harvest_week_within_05' }
     for cycle in range(3,6):
         proba_within, proba_between = {}, {}
         if within_extension[cycle]:
@@ -172,16 +183,18 @@ def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restr
                                     gu_vegetative_proba_family+gu_vegetative_proba_within_family+gu_flowering_proba_family+gu_fruiting_proba_family+mi_vegetative_proba_family+mi_vegetative_proba_within_family):
                 if prop.startswith('mi_'): ext = 'within_0405'
                 propfile = join(probafilepath,prop+'_'+ext+'.csv')
-                if exists(propfile):
+                if not exists(propfile) and replacement.has_key(prop+'_'+ext):
+                    propfile = join(probafilepath,replacement[prop+'_'+ext]+'.csv')
+                if not exists(propfile):
+                    import warnings
+                    warnings.warn("Table '%s' for variety '%s' does not exist." % (prop+'_'+ext, variety))
+                else:
                     p = ProbaTable(prop,family,propfile)
                     p.type = eWithinCycle
                     p.cycle = cycle
                     p.estimation = (variety, estimationtype)
                     p.check()
                     proba_within[prop] = p
-                else:
-                    import warnings
-                    warnings.warn("Table '%s' for variety '%s' does not exist." % (prop+'_'+ext, variety))
         if between_extension[cycle]:
             ext = between_extension[cycle]
             for prop, family in zip(gu_vegetative_proba+gu_vegetative_proba_between+gu_mixedinflo_proba,
@@ -320,7 +333,7 @@ class UnitDev:
         self.params = dict(Burst_Month = Burst_Date.month,
                            Position_A = Position_A, 
                            Position_Ancestor_A = Position_Ancestor_A, 
-                           Nature_Ancestor_F   = eVegetative if Nature_Ancestor_F == eVegetative else eFlowering,
+                           Nature_Ancestor_F   = Nature_Ancestor_F, # eVegetative if Nature_Ancestor_F == eVegetative else eFlowering,
                            #Tree_Fruit_Load     = Tree_Fruit_Load
                            Cycle = self.cycle
                            )
@@ -502,6 +515,16 @@ class UnitDev:
     def fruit_weight(self):
         return self.get_realization('fruit_weight')
 
+    def harvest_date(self):
+        from random import randint
+        from datetime import timedelta
+        try:
+            fweek = int(self.get_realization('harvest_week'))
+        except KeyError,e:
+            fweek = randint(0,max(harvest_weeks[self.cycle].keys()))
+        period_beg, period_end = harvest_weeks[self.cycle][fweek]
+        return period_beg + timedelta(days=randint(0,(period_end-period_beg).days)), fweek
+
     def has_mixedinflo_child(self):
         try:
             return self.get_realization('mixedinflo_burst')
@@ -523,7 +546,7 @@ class UnitDev:
         apical_child, nb_lateral_gu_children = False, 0
         has_mi_child, mi_burst_date = None, None
         nb_inflorescences, nb_fruits, fruit_weight =  0, 0, 0
-        date_children_burst, date_inflo_bloom = None, None
+        date_children_burst, date_inflo_bloom, harvest_date = None, None, None
 
         veg_burst = self.vegetative_burst()
         if self.cycle > 3 and veg_burst:
@@ -555,9 +578,11 @@ class UnitDev:
                 nb_inflorescences = self.nb_inflorescences()
                 date_inflo_bloom, fweek  = self.flowering_date()
                 self.params['Flowering_Week'] = fweek
+                self.params['Nb_Inflorescences'] = min(5,nb_inflorescences)
                 if self.fruiting():
                     nb_fruits    = self.nb_fruits()
                     fruit_weigth = self.fruit_weight()
+                    harvest_date, hweek = self.harvest_date()
             else:
                 self.paramsdelayed['Nature_F'] = eVegetative
 
@@ -569,7 +594,7 @@ class UnitDev:
                     nb_lateral_gu_children += self.nb_lateral_gu_children(eLaterCycle)
                 date_children_burst = self.gu_burst_date_children(eLaterCycle)
 
-        return apical_child, nb_lateral_gu_children, has_mi_child, nb_inflorescences, nb_fruits, fruit_weight, date_children_burst, date_inflo_bloom, mi_burst_date
+        return apical_child, nb_lateral_gu_children, has_mi_child, nb_inflorescences, nb_fruits, fruit_weight, date_children_burst, date_inflo_bloom, mi_burst_date, harvest_date
             
 
 

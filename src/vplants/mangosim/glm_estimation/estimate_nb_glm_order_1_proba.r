@@ -6,6 +6,7 @@ if (length(localdir) != 0){
 }
 
 EXCLUDE_FACTORS = NULL
+EFACTOR_POST_REMOVAL = TRUE
 
 # input and output directory
 share_dir = '../../../../share/'
@@ -253,6 +254,11 @@ global_factor_filtering = function(factors){
   return (factors)  
 }
 ################################################################## GLM and VGLM generation ######################################################################################################################
+gen_formula.text = function(variable, factors) {
+  if (is.null(factors)) { mformula = paste(variable," ~ 1", sep="") }
+  else { mformula = paste(variable," ~ ", paste(factors,collapse=" + "), sep="") }
+  return (mformula)
+}
 
 generate_glm = function(variable, family, data, subset, year, verbose = 0, factors = c("Burst_Month","Position_A","Position_Ancestor_A","Nature_Ancestor_F"), tag = NULL)
 {
@@ -260,7 +266,8 @@ generate_glm = function(variable, family, data, subset, year, verbose = 0, facto
     # if (verbose >= 3) tracestep = 0
     
     # data = set_data_factors(data, factors)
-    factors = global_factor_filtering(factors)
+    gfactors = factors
+    factors = global_factor_filtering(gfactors)
   
     if (!NOFILTER)
       subset = filter_monthes(factors, data, subset)
@@ -276,9 +283,6 @@ generate_glm = function(variable, family, data, subset, year, verbose = 0, facto
     if (!is.null(tag)) fname = paste(tag ,'_', fname,sep="")
     basefname = paste(fname, "_", year, sep="")
     
-    if (is.null(factors)) { formula = as.formula(paste(variable," ~ 1", sep="")) }
-    else { formula = as.formula(paste(variable," ~ ", paste(factors,collapse=" + "), sep="")) }
-
     if (length(unique(data[subset,variable])) <= 1) {
       val = unique(data[subset,variable])
       print(paste(variable,"has no variability : ", val))
@@ -293,9 +297,11 @@ generate_glm = function(variable, family, data, subset, year, verbose = 0, facto
       return (NA)
     }
     
-    
+    mformula = as.formula(gen_formula.text(variable,factors))
+    #if (is.null(factors)) { formula = as.formula(paste(variable," ~ 1", sep="")) }
+    #else { formula = as.formula(paste(variable," ~ ", paste(factors,collapse=" + "), sep="")) }
     #print("complete glm")
-    complete_glm = glm( formula , family = family, data = data, subset = subset)
+    complete_glm = glm( mformula , family = family, data = data, subset = subset)
     
 
     #print("complete glm summary")
@@ -314,7 +320,15 @@ generate_glm = function(variable, family, data, subset, year, verbose = 0, facto
     
     #print("selected glm")
     if (is.null(factors)) { selected_glm =  complete_glm }
-    else { selected_glm = step(complete_glm, trace = tracestep) }
+    else if (!is.null(EXCLUDE_FACTORS) && EFACTOR_POST_REMOVAL) {
+      formula = as.formula(gen_formula.text(variable, gfactors))
+      complete_glm = glm( formula , family = family, data = data, subset = subset)
+      selected_glm = step(complete_glm, trace = tracestep)
+      lfactors = glm.factors(selected_glm)
+      lfactors = global_factor_filtering(lfactors)
+      formula = as.formula(gen_formula.text(variable, lfactors))
+      selected_glm = glm( formula , family = family, data = data, subset = subset)
+    } else { selected_glm = step(complete_glm, trace = tracestep) }
 
     #print("selected glm summary")
     vsummary_output(selected_glm, data, paste(path_selected_glm,basefname,"_summary.txt",sep=""), subset, verbose, fromglm = complete_glm)
@@ -348,7 +362,8 @@ generate_vglm = function(variable, data, subset, year, verbose, factors = c("Bur
     if (!NOFILTER)
        subset = filter_monthes(factors, data, subset)
     
-    factors = global_factor_filtering(factors)
+    gfactors = factors
+    factors = global_factor_filtering(gfactors)
     #data = set_data_factors(data, factors)
         
     path_complete_glm    = paste(output_dir,"complete_glm/",sep="")
@@ -361,9 +376,6 @@ generate_vglm = function(variable, data, subset, year, verbose, factors = c("Bur
     if (!is.null(tag)) fname = paste(tag ,'_', fname,sep="")
     basefname = paste(fname, "_", year,sep="")
     
-    if (is.null(factors)) { formula = as.formula(paste(variable," ~ 1", sep="")) }
-    else { formula = as.formula(paste(variable," ~ ", paste(factors,collapse=" + "), sep="")) }
-
     ndata = data[subset,]
     
     if (length(unique(ndata[,variable])) <= 1) {
@@ -384,6 +396,8 @@ generate_vglm = function(variable, data, subset, year, verbose, factors = c("Bur
       write.csv(nbelement.complete_glm,file=paste(path_interaction_glm, basefname,"_nbelements.csv", sep=""), row.names = FALSE)
       return (NA)
     }    
+
+    formula = as.formula(gen_formula.text(variable,factors))
     
     if (verbose >= 2) print("complete glm")
     complete_glm = vglm( formula , family = cumulative(parallel=TRUE), data = ndata)
@@ -406,7 +420,17 @@ generate_vglm = function(variable, data, subset, year, verbose, factors = c("Bur
     if (file.exists(path_selected_glm) == FALSE)    dir.create(path_selected_glm,    recursive=TRUE)
     
     if (verbose >= 2) print("selected glm")
-    selected_glm = vglm.step(complete_glm, data = ndata)
+    if (is.null(factors)) { selected_glm =  complete_glm }
+    else if (!is.null(EXCLUDE_FACTORS) && EFACTOR_POST_REMOVAL) {
+      formula = as.formula(gen_formula.text(variable, gfactors))
+      complete_glm = vglm( formula , family = cumulative(parallel=TRUE), data = ndata)
+      selected_glm = vglm.step(complete_glm, data = ndata)
+      lfactors = glm.factors(selected_glm)
+      lfactors = global_factor_filtering(lfactors)
+      formula = as.formula(gen_formula.text(variable, lfactors))
+      selected_glm = vglm( formula , family = cumulative(parallel=TRUE), data = ndata)
+    }
+    else { selected_glm = vglm.step(complete_glm, data = ndata) }
 
     if (verbose >= 2) print("selected glm proba")
     res = vglm.proba_and_counts (selected_glm, ndata)
@@ -678,6 +702,10 @@ determine_reproductive_development = function(data, subset_selection, year, year
     data$Nb_Fruits = data$Nb_Fruits -1
     
     lfactors = filter_factors("Nb_Fruits",factors, exclude, include)
+    if ('Nb_Inflorescences' %in% lfactors) {
+      data$Nb_Inflorescences = factor(data$Nb_Inflorescences+1, ordered = TRUE)
+    }
+    
     ldata = grouping_monthes("Nb_Fruits", data, monthgroups, lfactors)
     if(length(index_fruiting) > MinNbGUForGLM){
       generate_glm("Nb_Fruits", family = poisson, data=ldata, subset= index_fruiting, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
@@ -696,6 +724,30 @@ determine_reproductive_development = function(data, subset_selection, year, year
     }
     else {
       print(paste("Not enougth fruits specified for year",year,":",length(index_fruiting)))
+    }
+    
+    ############################################## Harvest Date of fruits  ############################################## 
+    if (verbose >= 1) print("###########  Estimate Harvest Date of fruits") 
+    
+    has_harvest_week_selection = fruiting_selection & data$Harvest_Week > 0
+    index_has_harvest_week = which(has_harvest_week_selection)
+    if(length(index_has_harvest_week) > MinNbGUForGLM){
+      
+
+      lfactors = filter_factors("Harvest_Week",factors, exclude, include)
+      ldata = grouping_monthes("Harvest_Week", data, monthgroups, lfactors)
+      ldata$Harvest_Week = factor(ldata$Harvest_Week, ordered = TRUE)
+      generate_vglm("Harvest_Week",  data=ldata, subset= index_has_harvest_week, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
+      
+      if (verbose >= 1) print("########### Estimate Harvest Date of fruits with Poisson") 
+      data$Harvest_Week_Poisson = data$Harvest_Week - 1
+      lfactors = filter_factors("Harvest_Week_Poisson",factors, exclude, include)
+      ldata = grouping_monthes("Harvest_Week_Poisson", data, monthgroups, lfactors)
+      generate_glm("Harvest_Week_Poisson", family = poisson, data=ldata, subset= index_has_harvest_week, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
+      
+    }
+    else {
+      print(paste("Not enougth harvest week specified for year",year,":",length(index_has_harvest_week)))
     }
     
     if (verbose >= 1) print("Done")
@@ -751,6 +803,9 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     monthgroups$Nb_Inflorescences = list(c(1,2,3,4,5) )
     monthgroups$Fruiting = list(c(1,2), c(3,4,5) )
     monthgroups$Fruit_Weigth = list(c(1,2), c(3,4,5) )
+    
+    include$Nb_Fruits = c("Nb_Inflorescences")
+    
   }
 
   if (year == '05') {
@@ -792,8 +847,13 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     monthgroups$Fruiting = list( 1:6, 7:10, 11:12) # A corriger !!!!!
 
     #exclude$Fruit_Weight =  c("Nature_Ancestor_F")
-    include$Nb_Fruits = c("Flowering_Week")
+    #include$Nb_Fruits = c("Flowering_Week")
+    include$Nb_Fruits = c("Nb_Inflorescences")
     include$Fruit_Weight = c("Flowering_Week")
+    include$Harvest_Week = c("Flowering_Week","Nb_Inflorescences")
+    exclude$Harvest_Week = c("Burst_Month")
+    include$Harvest_Week_Poisson = c("Flowering_Week","Nb_Inflorescences")
+    exclude$Harvest_Week_Poisson = c("Burst_Month")
     # ne marche pas : pas assez d'éléments ?
     datemultimode = FALSE # TRUE
   }
@@ -1044,4 +1104,4 @@ gen_constraint_glm = function() {
   EXCLUDE_FACTORS <<- initialvalue
 }
 
-gen_constraint_glm()
+#gen_constraint_glm()

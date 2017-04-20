@@ -109,7 +109,7 @@ def flowering_dev_variables(mtg, gu, cycle = None):
       Flowering = NotRelevant
       Nb_Inflorescence = NotRelevant
       Flowering_Week = NotRelevant
-      Fruiting, Nb_Fruits, Mean_Fruit_Weight = NotRelevant, NotRelevant, NotRelevant
+      Fruiting, Nb_Fruits, Mean_Fruit_Weight, Harvest_Week = NotRelevant, NotRelevant, NotRelevant, NotRelevant
     else : 
       # The inflorescence children of the gu
       if not cycle is None:
@@ -120,7 +120,7 @@ def flowering_dev_variables(mtg, gu, cycle = None):
       if not Flowering : 
         Nb_Inflorescence = NotRelevant
         Flowering_Week = NotRelevant
-        Fruiting, Nb_Fruits, Mean_Fruit_Weight = NotRelevant, NotRelevant, NotRelevant
+        Fruiting, Nb_Fruits, Mean_Fruit_Weight, Harvest_Week = NotRelevant, NotRelevant, NotRelevant, NotRelevant
       else : 
         # A unique entity in the MTG represent all the inflorescence children of a given gu
         #if len(inflorescence_child) != 1: print len(inflorescence_child)
@@ -134,25 +134,24 @@ def flowering_dev_variables(mtg, gu, cycle = None):
 
         # date of full bloom is given by property 'flowering'
         date_flo = get_bloom_dates(mtg,inflo)
-        if date_flo is None : 
-            Flowering_Week = NotAvailable
-        else : 
-            # We find the week of bloom using the predefined calendar
-            Flowering_Week = get_bloom_week(date_flo[0], icycle)
+        # We find the week of bloom using the predefined calendar
+        Flowering_Week = get_bloom_week(date_flo[0], icycle) if not date_flo is None else NotAvailable
         
         nbfruits = get_nb_fruits(mtg, inflo)
         Fruiting, Nb_Fruits = int(nbfruits > 0), nbfruits 
 
         if nbfruits == 0:
-            Mean_Fruit_Weight = NotRelevant
+            Mean_Fruit_Weight, Harvest_Week = NotRelevant, NotRelevant
         else:
-            Mean_Fruit_Weight = get_fruits_weight(mtg, inflo, NotRelevant)
-            if Mean_Fruit_Weight != NotRelevant : Mean_Fruit_Weight /= Nb_Fruits
+            Mean_Fruit_Weight = get_fruits_weight(mtg, inflo, NotAvailable)
+            if Mean_Fruit_Weight != NotAvailable : Mean_Fruit_Weight /= Nb_Fruits
+            date_harv = get_fruits_harvest_date(mtg, inflo)
+            Harvest_Week = get_harvest_week(date_harv) if not date_harv is None else NotAvailable
         
-    return is_terminal, Flowering, Nb_Inflorescence, Flowering_Week, Fruiting, Nb_Fruits, Mean_Fruit_Weight
+    return is_terminal, Flowering, Nb_Inflorescence, Flowering_Week, Fruiting, Nb_Fruits, Mean_Fruit_Weight, Harvest_Week
 
 def add_flowering_dev_variables(dict_gu_prop, mtg, gu, cycle):
-    is_terminal, Flowering, Nb_Inflorescences, Flowering_Week, Fruiting, Nb_Fruits, Mean_Fruit_Weight = flowering_dev_variables(mtg, gu, cycle)
+    is_terminal, Flowering, Nb_Inflorescences, Flowering_Week, Fruiting, Nb_Fruits, Mean_Fruit_Weight, Harvest_Week = flowering_dev_variables(mtg, gu, cycle)
     dict_gu_prop["is_terminal"] = is_terminal
     dict_gu_prop["Flowering"] = Flowering
     dict_gu_prop["Nb_Inflorescences"] = Nb_Inflorescences 
@@ -160,6 +159,8 @@ def add_flowering_dev_variables(dict_gu_prop, mtg, gu, cycle):
     dict_gu_prop["Fruiting"] = Fruiting
     dict_gu_prop["Nb_Fruits"] = Nb_Fruits
     dict_gu_prop["Fruit_Weight"] = Mean_Fruit_Weight
+    dict_gu_prop["Harvest_Week"] = Harvest_Week
+
 
 def explicative_variables_inside(mtg, gu):
     # get position feature (as mother)

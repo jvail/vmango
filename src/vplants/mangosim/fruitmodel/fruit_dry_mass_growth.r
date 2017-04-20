@@ -1,11 +1,15 @@
 
-### Fonction MS à partir Model MS Lechaudel, 2005
+
+localdir = getSrcDirectory(function(x) {x})
+
+
+### Fonction MS ? partir Model MS Lechaudel, 2005
 
 CROISSANCE_MS = function( Rayonnement,                                          # En watts.m-2
-                          Temperature_Air,                                      # Température horaire de l'air
-                          Temperature_Fruit,                                    # Température horaire du fruit.
-                          envirlum,                                             # Evolution de l'environnement lumineux dans la journée
-                          Poids_Fruit_Init,                                     # Poids du fruit à la fin de la division cellulaire en gramme de MS
+                          Temperature_Air,                                      # Temp?rature horaire de l'air
+                          Temperature_Fruit,                                    # Temp?rature horaire du fruit.
+                          envirlum,                                             # Evolution de l'environnement lumineux dans la journ?e
+                          Poids_Fruit_Init,                                     # Poids du fruit ? la fin de la division cellulaire en gramme de MS
                           MS_Fruit_Precedent,                                   # en gramme de MS
                           Reserve_Rameau,                                       # en gramme de carbone
                           Reserve_Feuille,                                      # en gramme de carbone
@@ -13,14 +17,15 @@ CROISSANCE_MS = function( Rayonnement,                                          
                         )
 
     {
-Delta_DDJ_Journee = sum((Temperature_Fruit - 16)/24)                            # Accumulation de DDJ dans la journée
+  
+Delta_DDJ_Journee = sum((Temperature_Fruit - 16)/24)                            # Accumulation de DDJ dans la journ?e
 RG = Rayonnement / 3600 * 10000                                                 # transformation du RG en J/cm2/h en W/m2
-PAR = RG * 0.5 * 4.6                                                            # Transformation du RG en watts/m2 en Rayonnement Photosynthétiquement Actif (papier Varlet-Grancher et al. 1989 dans Agronomie, vol 9:419-139)
+PAR = RG * 0.5 * 4.6                                                            # Transformation du RG en watts/m2 en Rayonnement Photosynth?tiquement Actif (papier Varlet-Grancher et al. 1989 dans Agronomie, vol 9:419-139)
 
-#--------------------------------------------------------- Paramètres du Modèle ----------------------------------------------------------------------------------------------------------------
+#--------------------------------------------------------- Param?tres du Mod?le ----------------------------------------------------------------------------------------------------------------
 
 # PARAMETRES POUR ASSIMILATION
-# k1 et k2 : coefficients de pondération du rayonnement inter et intra-rameau
+# k1 et k2 : coefficients de pond?ration du rayonnement inter et intra-rameau
     k1.fin <- envirlum
     k2.fin <- rep(0.88,24)
 
@@ -40,8 +45,8 @@ PAR = RG * 0.5 * 4.6                                                            
     Q10_fruits <- 1.9                                                           # Q10 fruits
 
 # PARAMETRES POUR DEMANDE DU FRUIT 
-    gamma.feuilles <- 0.0162                                                    # remobilisation des réserves, papier 2005
-    gamma.rameau <- 0.0164                                                      # remobilisation des réserves, papier 2005
+    gamma.feuilles <- 0.0162                                                    # remobilisation des r?serves, papier 2005
+    gamma.rameau <- 0.0164                                                      # remobilisation des r?serves, papier 2005
     cram <- 0.4387                                                              # concentration carbone rameau
     cfeuil <- 0.4051                                                            # concentration carbone feuille
     cfruit <- 0.4239                                                            # concentration carbone fruit
@@ -55,10 +60,10 @@ PAR = RG * 0.5 * 4.6                                                            
     DMfmax =  a.fruit * (Poids_Fruit_Init ^ b.fruit)                            # poids maximum du fruit.
 
 # PARAMETRES DES STRUCTURES    
-    poids.rameau <- (41.83 + 77.41) / 2                                         # moy expé, fixe
+    poids.rameau <- (41.83 + 77.41) / 2                                         # moy exp?, fixe
     poids.feuilles <- 0.8                                                       # poids sec feuille, fixe
-    partMS.reserves0.rameau <- 0.1                                              # moy expé
-    partMS.reserves0.feuilles <- 0.074                                          # moy expé
+    partMS.reserves0.rameau <- 0.1                                              # moy exp?
+    partMS.reserves0.feuilles <- 0.074                                          # moy exp?
 
 # PARAMETRES DE STRUCTURES
   Structure_Rameau = poids.rameau * (1 - partMS.reserves0.rameau)               # partie structure du remeau en gC. 
@@ -73,33 +78,33 @@ PAR = RG * 0.5 * 4.6                                                            
 #----- demande de croissance du fruit (gC/j) , ce que veux le fruit en fonction de la croissance potentielle.
   Dfruit =  MS_Fruit_Precedent * RGRini.fruit * Delta_DDJ_Journee * (1-( MS_Fruit_Precedent / DMfmax)) * (cfruit + GRCfruit)
       
-#----- calcul de la photosynthèse maximale, est fonction de la demande du fruit, surface folaire (la demande tient compte des coûts (en C) de construction )
+#----- calcul de la photosynth?se maximale, est fonction de la demande du fruit, surface folaire (la demande tient compte des co?ts (en C) de construction )
   Pmax <- (p1 * (Dfruit / Surf_Fol) * p2) / (p1 * (Dfruit / Surf_Fol) + p2)
   if (Pmax >=15) {Pmax = 15}                                                    # Plafonnement de la demande du fruit
 
-###----- CALCUL DES ASSIMILATS SUR LA JOURNEE OFFRE DE LA JOURNEE, production et mobilisation des réserves.
+###----- CALCUL DES ASSIMILATS SUR LA JOURNEE OFFRE DE LA JOURNEE, production et mobilisation des r?serves.
 
   Surf_Fol_Sol = k1.fin[PAR>0] * k2.fin[PAR>0] * Surf_Fol                       # on calcul la surface folaire en plein soleil
-  Surf_Fol_Omb = Surf_Fol - Surf_Fol_Sol                                        # surface folaire à l'ombre
+  Surf_Fol_Omb = Surf_Fol - Surf_Fol_Sol                                        # surface folaire ? l'ombre
 
 #calcul du rayonnement a l'ombre a l'aide d'une fonction de ponderation du PPFD
   PAR.omb = r3 * PAR
   photomb = ((Pmax + p3)* (1 - exp(- p4 * PAR.omb[PAR.omb>0] / (Pmax + p3))))- p3
-  assiomb = 3600 * sum (photomb[photomb>0] *  Surf_Fol_Omb[photomb>0]) * 12 / 10^6         # ajout avril 2015 : si PAR.omb très faible, photomb <0, dû à p3
+  assiomb = 3600 * sum (photomb[photomb>0] *  Surf_Fol_Omb[photomb>0]) * 12 / 10^6         # ajout avril 2015 : si PAR.omb tr?s faible, photomb <0, d? ? p3
   
   photsol = ((Pmax + p3)* (1 - exp(-p4*PAR[PAR>0] / (Pmax + p3)))) - p3
-  assisol = 3600 * sum(photsol[photsol>0] * Surf_Fol_Sol[photsol>0]) * 12/10^6                         # ajout avril 2015 : si PAR.omb très faible, photomb <0, dû à p3
+  assisol = 3600 * sum(photsol[photsol>0] * Surf_Fol_Sol[photsol>0]) * 12/10^6                         # ajout avril 2015 : si PAR.omb tr?s faible, photomb <0, d? ? p3
 
-# assimilation sur la journée (gC/j)
+# assimilation sur la journ?e (gC/j)
 photo.fol = assiomb + assisol  
 
-# réserves facilement utilisables (gC)
+# r?serves facilement utilisables (gC)
 Reserve_Facile_Util = (Reserve_Feuille * gamma.feuilles) + (Reserve_Rameau * gamma.rameau)
 
 # assimilats disponibles totaux
 assimilats = photo.fol + Reserve_Facile_Util
 
-# réserves difficilement utilisables (gC)
+# r?serves difficilement utilisables (gC)
 Reserve_Dif_Util_Feuille  = Reserve_Feuille * (1 - gamma.feuilles)
 Reserve_Dif_Util_Rameau   = Reserve_Rameau *  (1- gamma.rameau)
  
@@ -117,10 +122,10 @@ Respiration_Rameau =    sum(Respiration_Rameau)
 RE.fruct = Respiration_Fruit                
 RE.veget = Respiration_Rameau + Respiration_Feuilles
 
-      # RAPPEL : règles de priorité d'utiolisation des assimilats : 
-      # 1- maitenance, 2- croissance reproductive, 3- mise en réserve dans rameau et feuilles  
+      # RAPPEL : r?gles de priorit? d'utiolisation des assimilats : 
+      # 1- maitenance, 2- croissance reproductive, 3- mise en r?serve dans rameau et feuilles  
        
-# 1° utilisation des assimilats disponibles pour la respiration d'entretien
+# 1? utilisation des assimilats disponibles pour la respiration d'entretien
  
 if (assimilats >= RE.veget)   { 
     Reste.RE = assimilats - RE.veget 
@@ -138,29 +143,29 @@ else {
         } 
         else {
             failed = data.frame()
-            write.csv(failed, file=paste("failed-",idsimu,".csv",sep=''))
+            write.csv(failed, file=paste(localdir,"/tmp/failed-",idsimu,".csv",sep=''))
             stop("Les parties vegetatives s'etouffent: le systeme meurt ...\n")
             return (NULL)
         }
     }  
 }
 
-if (Reste.RE < RE.fruct) {                                                      ### Sitution défavorable pour le fruit.
+if (Reste.RE < RE.fruct) {                                                      ### Sitution d?favorable pour le fruit.
     besoin.fruit <- (Respiration_Fruit - Reste.RE) / cfruit 
     if (besoin.fruit >= MS_Fruit_Precedent) {
         failed = data.frame()
-        write.csv(failed, file=paste("failed-",idsimu,".csv",sep=''))
+        write.csv(failed, file=paste(localdir,"/tmp/failed-",idsimu,".csv",sep=''))
         stop("Les parties reproductrices s'etouffent: le systeme meurt ...\n")
     } 
     else {
-        MS_Fruit_Precedent = MS_Fruit_Precedent - besoin.fruit          # le fruit pompe sur ses réserves
+        MS_Fruit_Precedent = MS_Fruit_Precedent - besoin.fruit          # le fruit pompe sur ses r?serves
     }
 } 
  
 Reste1 <- max(0, Reste.RE - RE.fruct)
 
            
-#------ 2° utilisation de ce qui reste pour la croissance du fruit
+#------ 2? utilisation de ce qui reste pour la croissance du fruit
 
 MS_Fruit_New  = MS_Fruit_Precedent + (min(Dfruit,Reste1)/(cfruit + GRCfruit))
       
@@ -168,13 +173,13 @@ MS_Fruit_New  = MS_Fruit_Precedent + (min(Dfruit,Reste1)/(cfruit + GRCfruit))
 # MISE EN RESERVE de ce qui reste
 # ===========================================================================================
 
-Reste2 <- Reste1 - min(Dfruit,Reste1)                                        # Ce qui n'est pas pris par le fruit et qui va dans les réserves. Distribution rameaux et feuille
+Reste2 <- Reste1 - min(Dfruit,Reste1)                                        # Ce qui n'est pas pris par le fruit et qui va dans les r?serves. Distribution rameaux et feuille
 
 Res.rameau.provi    = Reserve_Dif_Util_Rameau + min(Reste2, Reserve_Rameau * gamma.rameau)
 Res.feuilles.provi  = Reserve_Dif_Util_Feuille + max(0, Reste2 - Reserve_Rameau * gamma.rameau)
 
-# création d'un seuil de réserves qui peuvent être stockées chaque jour :
-          # part des réserves/unité de struc * nb de strctures (ie nb de feuilles) 
+# cr?ation d'un seuil de r?serves qui peuvent ?tre stock?es chaque jour :
+          # part des r?serves/unit? de struc * nb de strctures (ie nb de feuilles) 
 seuil <- (psi/(1 - psi)) * Structure_Feuille * cfeuil 
 
 if (Res.feuilles.provi > seuil){
@@ -192,3 +197,4 @@ Resultats = list( MS_Fruit = MS_Fruit_New,
 
 return(Resultats)
 }  
+

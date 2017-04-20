@@ -12,6 +12,7 @@ lsysfile = '../simulation/mango_simulation.lpy'
 
 def generate_mtg(trees = range(3), params = dict()):
     from openalea.lpy import Lsystem
+    from openalea.mtg import MTG
     from openalea.mtg.algo import union
     g = None
     for tree in trees:
@@ -19,8 +20,9 @@ def generate_mtg(trees = range(3), params = dict()):
         nparams = params.copy()
         nparams.update({'TREE':tree,'TIMESTEP': 180,'EXPORT_TO_MTG':True, 'WITH_GLM':True})
         l = Lsystem(basename(lsysfile),  nparams)
-        l.iterate()
+        lstring = l.iterate()
         resmtg = l.resultmtg
+        assert type(resmtg) == MTG
         if g is None:
             g = resmtg
         else:
@@ -69,7 +71,7 @@ def generate_all(nb = 10, fruitmodel = False):
 def generate_all(nb = 100, fruitmodel = False):
     import itertools
     params = list(itertools.product(range(nb),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],[str(fruitmodel)]))
-    process_set_of_simulations(params, not fruitmodel)
+    process_set_of_simulations(params, True)
 
 def generate_all_restriction(nb = 1000):
     generate_mtgs(seeds = range(nb))
@@ -95,7 +97,7 @@ def process_set_of_simulations(paramvalueslist, parallel = True):
             _generate(params)
     else:
         countcpus = mp.cpu_count()
-        pool = mp.Pool(processes=countcpus-3)
+        pool = mp.Pool(processes=countcpus)
         pool.map(_generate,paramvalueslist)
 
 
@@ -103,7 +105,7 @@ def process_restricted_models(nb=1000, fruitmodel = False):
     import itertools
     params = list(itertools.product(range(nb),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['eBurstDateRestriction', 'ePositionARestriction', 'ePositionAncestorARestriction', 'eNatureFRestriction', 'eAllRestriction'],['FRUIT_MODEL'],[str(fruitmodel)]))
 
-    process_set_of_simulations(params, False) #not fruitmodel)
+    process_set_of_simulations(params, not fruitmodel)
 
 
 if __name__ == '__main__' :
