@@ -40,7 +40,10 @@ def generate_bgeom(step = None, endstep = None):
     from openalea.lpy import Lsystem
     import os
     print 'Scene generator launched'
-    l = Lsystem(lsysfile,{'RESOLUTION' : 2, 'TIMESTEP' : 1, 'TIMEBAR' : False, 'LEAFY' : True, 'WITH_INFLO' : True, 'WITH_GLM' : False, 'FRUIT_MODEL' : True, 'EXPORT_TO_MTG' : False})
+    l = Lsystem(lsysfile,{'RESOLUTION' : 2, 'TIMESTEP' : 1, 'TIMEBAR' : False, 
+                          'LEAFY' : True, 'WITH_INFLO' : True, 'TEXTURE' : True, 'GENERALIZEDCYLINDER' : True, 
+                          'WITH_GLM' : True, 'FRUIT_MODEL' : False, 'GLM_RESTRICTION' : None, '_GLM_TYPE' : 3,
+                          'EXPORT_TO_MTG' : False})
 
     if step is None:
         firststep = 0
