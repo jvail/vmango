@@ -114,7 +114,8 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         somme_nb_fruits += nb_fruits
         bloom_date  = bloom_dates[0] 
         bloom_date_date = bloom_date 
-        bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/'+str(bloom_date.year)
+        cycledecal = bloom_date.year - 2002
+        bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/2002'
         # call fruit model in r 
         import sys
         idsimu = randint(0,1000000)
@@ -148,7 +149,7 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         dates = result["Date"]
         dates = map(lambda d:d.to_pydatetime(),dates)
         newyear = bloom_date_date.year
-        dates = [date(d.year+1, d.month, d.day) for d in dates]
+        dates = [date(d.year+cycledecal, d.month, d.day) for d in dates]
         property = zip(result["Masse_Fruit"], result["sucres_solubles"],  result["acides_organiques"])
         fruit_growth = dict(zip(dates,property))
         fruit_structures.append((len(inflos), leaf_nbs,  nb_fruits, max(result["Masse_Fruit"]), inflos, [params[inflo].nb_fruits for inflo in inflos] ))

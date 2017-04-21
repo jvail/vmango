@@ -38,7 +38,8 @@ Tbase = 16                                                                      
 m = vector(mode="numeric",length=nrow(Tab_journalier))
 for (i in (1:nrow(Tab_journalier)))
 {
-    if  (Tab_journalier$TM[i] > Tbase)  m[i] = Tab_journalier$TM[i] - Tbase  else m[i] = 0  }
+    if  (Tab_journalier$TM[i] > Tbase)  m[i] = Tab_journalier$TM[i] - Tbase  else m[i] = 0  
+}
 calcddj = as.vector(cumsum(m))
 Tab_journalier$ddj = calcddj
 ddjy = 352.72                                                                  # fin de la multiplication cellulaire dans le fruit (temp?rature base 16 ?C) 

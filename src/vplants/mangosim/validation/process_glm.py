@@ -68,9 +68,9 @@ def generate_all(nb = 10, fruitmodel = False):
     params = {'GLM_TYPE' : eCompleteGlm, 'FRUIT_MODEL' : fruitmodel}
     generate_mtgs(seeds = range(nb), params = params)
 
-def generate_all(nb = 100, fruitmodel = False):
+def generate_all(maxseed = 100, fruitmodel = False, minseed = 0):
     import itertools
-    params = list(itertools.product(range(nb),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],[str(fruitmodel)]))
+    params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],[str(fruitmodel)]))
     process_set_of_simulations(params, True)
 
 def generate_all_restriction(nb = 1000):
@@ -101,9 +101,9 @@ def process_set_of_simulations(paramvalueslist, parallel = True):
         pool.map(_generate,paramvalueslist)
 
 
-def process_restricted_models(nb=1000, fruitmodel = False):
+def process_restricted_models(maxseed=1000, fruitmodel = False, minseed = 0):
     import itertools
-    params = list(itertools.product(range(nb),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['eBurstDateRestriction', 'ePositionARestriction', 'ePositionAncestorARestriction', 'eNatureFRestriction', 'eAllRestriction'],['FRUIT_MODEL'],[str(fruitmodel)]))
+    params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['eBurstDateRestriction', 'ePositionARestriction', 'ePositionAncestorARestriction', 'eNatureFRestriction', 'eAllRestriction'],['FRUIT_MODEL'],[str(fruitmodel)]))
 
     process_set_of_simulations(params, not fruitmodel)
 
@@ -121,15 +121,37 @@ if __name__ == '__main__' :
                 params[paramcmd[2*i]] = eval(paramcmd[2*i+1])
             generate_mtgs(seeds=[seed],params=params)
         elif '--std' == sys.argv[1]:
+            import time
+            stime = time.time()
+            minseed = 0
             maxseed = int(sys.argv[2]) if len(sys.argv) > 2 else 10
-            fruitmodel = eval(sys.argv[3]) if len(sys.argv) > 3 else False
-            generate_all(maxseed, fruitmodel)
-            message.send_msg('Simu Std','Done.')
+            fruitmodel = False
+            if len(sys.argv) > 3:
+                extraval = eval(sys.argv[3])
+                if type(extraval) == bool:
+                    fruitmodel = extraval
+                elif type(extraval) == int:
+                    minseed, maxseed = maxseed, extraval
+                    if len(sys.argv) > 4:
+                        extraval = eval(sys.argv[4])
+            generate_all(maxseed, fruitmodel, minseed=minseed)
+            message.send_msg('Simu Std with'+('' if fruitmodel else 'out')+' fruit model',str(maxseed-minseed)+' simulations done in '+str(time.time()-stime)+' sec.')
         elif '--restricted' == sys.argv[1]:
+            import time
+            stime = time.time()
+            minseed = 0
             maxseed = int(sys.argv[2]) if len(sys.argv) > 2 else 10
-            fruitmodel = eval(sys.argv[3]) if len(sys.argv) > 3 else False
-            process_restricted_models(maxseed, fruitmodel)            
-            message.send_msg('Simu Restricted','Done.')
+            fruitmodel = False
+            if len(sys.argv) > 3:
+                extraval = eval(sys.argv[3])
+                if type(extraval) == bool:
+                    fruitmodel = extraval
+                elif type(extraval) == int:
+                    minseed, maxseed = maxseed, extraval
+                    if len(sys.argv) > 4:
+                        extraval = eval(sys.argv[4])
+            process_restricted_models(maxseed, fruitmodel, minseed=minseed)
+            message.send_msg('Simu Restricted with'+('' if fruitmodel else 'out')+' fruit model',str(maxseed-minseed)+' simulations done in '+str(time.time()-stime)+' sec.')
         elif '--help' == sys.argv[1] or '--h' == sys.argv[1]:
             print '--std [nb] [fruitmodel]'
             print '--restricted [nb] [fruitmodel]'
