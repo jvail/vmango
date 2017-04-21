@@ -34,8 +34,11 @@ TreeScale = 1
 GUScale = 4
 
 def setMtgStyle(style):
-    global __MtgStyle, BurstDatePropertyName, BloomPropertyName, NbFruitPropertyName, CyclePropertyName, VarietyPropertyName, TreeNamePropertyName, MixedInfloPropertyName, LoadingPropertyName
-    global LoadedValue, NotLoadedValue, InfloLabel, FruitLabel
+    global __MtgStyle, BurstDatePropertyName, BloomPropertyName, FruitHarvestDatePropertyName
+    global NbFruitPropertyName, FruitWeightPropertyName
+    global CyclePropertyName, VarietyPropertyName, TreeNamePropertyName
+    global LoadingPropertyName, LoadedValue, NotLoadedValue
+    global InfloLabel, FruitLabel, MixedInfloPropertyName
     global TreeScale, GUScale
     if __MtgStyle != style:
         __MtgStyle = style
@@ -62,8 +65,8 @@ def setMtgStyle(style):
         BurstDatePropertyName = 'burst_date'
         BloomPropertyName = 'bloom_date'
         NbFruitPropertyName = 'nb_fruits'
-        FruitWeightPropertyName = 'fruit_weight'
-        FruitHarvestDatePropertyName = 'maturity_date'
+        FruitWeightPropertyName = 'fruits_weight'
+        FruitHarvestDatePropertyName = 'fruits_maturity_date'
         CyclePropertyName = 'cycle'
         VarietyPropertyName = 'variety'
         TreeNamePropertyName = 'treename'
@@ -107,7 +110,8 @@ def get_unit_cycle(mtg, unit):
         if mtg.label(unit) in 'MP' : return 3
         else: 
             return mtg.property(CyclePropertyName)[unit]
-    else: 
+    else:
+        if unit in mtg.property(CyclePropertyName): return mtg.property(CyclePropertyName)[unit]
         if is_gu(mtg, unit) : 
             bdate = get_burst_date(mtg, unit)
             if bdate is None: return 3
@@ -115,7 +119,6 @@ def get_unit_cycle(mtg, unit):
         elif is_inflorescence(mtg, unit) : 
             bdate = get_bloom_date(mtg, unit)
             if bdate is None: 
-                print mtg[unit]
                 return 3
             return get_flowering_cycle(bdate)
         elif is_fruit(mtg,unit) : return get_fruiting_cycle(get_burst_date(mtg,unit))
@@ -153,8 +156,9 @@ def get_nb_fruits(mtg, inflo, default=0):
     return mtg.property(NbFruitPropertyName).get(inflo,default)
 
 @use_global_mtg
-def get_fruits_weight(mtg, inflo, default = None):
+def get_fruits_weight(mtg, inflo, default = 0):
     return mtg.property(FruitWeightPropertyName).get(inflo,default)
+
 
 @use_global_mtg
 def get_fruits_harvest_date(mtg, inflo, default = None):

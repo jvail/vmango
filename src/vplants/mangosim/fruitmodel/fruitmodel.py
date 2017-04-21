@@ -81,6 +81,7 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
     import fruitingstructure as fs; reload(fs)
     fruiting_structures = fs.determine_fruiting_structure(mtg, cycle, fruit_distance = fruit_distance)
 
+
     if verbose :    
         print " * Compute property of the structures"
     params = mtg.property('p')
@@ -105,9 +106,9 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
     for inflos, gus in fruiting_structures:
         bloom_dates = [params[inflo].fullbloom_date for inflo in inflos]
         if len(gus) == 0 and len(mtg.vertices(scale=mtg.max_scale())) == 1:
-          leaf_nbs    = 100
+            leaf_nbs    = 100
         else:
-          leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus])
+            leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus])
         nb_fruits   = sum([params[inflo].nb_fruits for inflo in inflos])
         #print nb_fruits
         somme_nb_fruits += nb_fruits
@@ -117,12 +118,12 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         # call fruit model in r 
         import sys
         idsimu = randint(0,1000000)
-        #print 'Do simu', idsimu
+        #print 'Do simu', inflos
         tempfile = os.path.join(RWorkRepo,"resultats-"+str(idsimu)+".csv")
         if os.path.exists(tempfile): os.remove(tempfile)
         result = fruitmodel(bloom_date=bloom_date, nb_fruits=nb_fruits, leaf_nbs=leaf_nbs, idsimu=idsimu)
         
-        def wait_for_file(fname, timeout = 5):
+        def wait_for_file(fname, timeout = 0.1):
           import time
           t = time.time()
           while abs(t - time.time()) < timeout and not os.path.exists(fname) : pass
@@ -130,8 +131,8 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
          
         if not wait_for_file(tempfile):
             failedfile = os.path.join(RWorkRepo,"failed-"+str(idsimu)+".csv")
-            if os.path.exists(failedfile):
-                os.remove(failedfile)
+            if True : #os.path.exists(failedfile):
+                if os.path.exists(failedfile): os.remove(failedfile)
                 for inflos, gus in fruiting_structures:
                     for inflo in inflos:
                         params[inflo].nb_fruits = 0
@@ -145,7 +146,7 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         os.remove(tempfile)
         
         dates = result["Date"]
-        dates = map(lambda d:d.to_datetime(),dates)
+        dates = map(lambda d:d.to_pydatetime(),dates)
         newyear = bloom_date_date.year
         dates = [date(d.year+1, d.month, d.day) for d in dates]
         property = zip(result["Masse_Fruit"], result["sucres_solubles"],  result["acides_organiques"])
@@ -153,13 +154,14 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         fruit_structures.append((len(inflos), leaf_nbs,  nb_fruits, max(result["Masse_Fruit"]), inflos, [params[inflo].nb_fruits for inflo in inflos] ))
         
         for inflo in inflos:
-            params[inflo].fruit_growth_stage_date = min(dates)
-            params[inflo].fruit_maturity_date   = max(dates)
-            params[inflo].fruit_initial_weight  = min(result["Masse_Fruit"])
-            params[inflo].fruit_weight          = max(result["Masse_Fruit"])
-            params[inflo].sucres_solubles       = max(result["sucres_solubles"])
-            params[inflo].acides_organiques     = max(result["acides_organiques"])
-            params[inflo].fruit_growth          = fruit_growth
+            params[inflo].fruits_growth_stage_date = min(dates)
+            params[inflo].fruits_maturity_date     = max(dates)
+            params[inflo].fruits_initial_weight    = min(result["Masse_Fruit"])
+            params[inflo].fruits_weight            = max(result["Masse_Fruit"])
+            params[inflo].sucres_solubles          = max(result["sucres_solubles"])
+            params[inflo].acides_organiques        = max(result["acides_organiques"])
+            params[inflo].fruits_growth            = fruit_growth
+            params[inflo].idsimu                   = idsimu
              
     if dump:
         fstream = open(os.path.join(outdir,'fruitstructure.csv'),'w')

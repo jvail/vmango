@@ -314,6 +314,16 @@ def appenddeltaindex(burst_date, burst_index):
     if burst_month < 6:  burst_year += 1
     return burst_year, burst_month
 
+
+def find_closest_values(value, existingvalues, keyordering = None):
+    if value in existingvalues: return value
+    existingvalues.append(value)
+    existingvalues.sort(key = keyordering)
+    valueindex = existingvalues.index(value)
+    if valueindex == 0 : return existingvalues[1]
+    elif valueindex == (len(existingvalues) -1): return existingvalues[-2]
+    else: return (existingvalues[valueindex-1],existingvalues[valueindex+1])
+
 class UnitDev:
     def __init__(self, Burst_Date, 
                        Position_A, 
@@ -382,28 +392,22 @@ class UnitDev:
         except KeyError, ie: # some month may not be fulfilled.
             return False
 
-    def find_closest_month(self, name, cycle = eWithinCycle, factorname = 'Burst_Month'):
+    def find_closest_factor_values(self, name, cycle = eWithinCycle, factorname = 'Burst_Month'):
         import numpy as np
         proba_table = self.get_table(name, cycle)
         refmonth = self.params[factorname]
         if factorname in proba_table.factors:
             idx = proba_table.factors.index(factorname)
-            existingvalue = list(np.unique([k[idx] for k in proba_table.values.keys()]))
-            if refmonth in existingvalue: return refmonth
-            existingvalue.append(refmonth)
-            existingvalue.sort(key = lambda v : MonthOrder.index(v))
-            monthindex = existingvalue.index(refmonth)
-            if monthindex == 0 : return existingvalue[1]
-            elif monthindex == (len(existingvalue) -1): return existingvalue[-2]
-            else: return (existingvalue[monthindex-1],existingvalue[monthindex+1])
+            existingvalues = list(np.unique([k[idx] for k in proba_table.values.keys()]))
+            return find_closest_values(refmonth, existingvalues, lambda v : MonthOrder.index(v))
         else:
             return refmonth
 
-    def get_realization_from_closestmonth(self, name, cycle = eWithinCycle, factorname = 'Burst_Month'):
+    def get_realization_from_closestvalues(self, name, cycle = eWithinCycle, factorname = 'Burst_Month'):
         try:
             return self.get_realization(name, cycle = cycle)
         except KeyError, ke:
-            mth = self.find_closest_month(name, cycle=cycle)
+            mth = self.find_closest_factor_values(name, cycle=cycle)
             p = (self.params if cycle == eWithinCycle else self.paramsdelayed)
             cm = p[factorname]
             if type(mth) == tuple:
@@ -420,10 +424,10 @@ class UnitDev:
             return res
 
     def burst_delta_date_gu_children(self, cycle = eWithinCycle):
-        return int(self.get_realization_from_closestmonth('burst_delta_date_gu_children', cycle))
+        return int(self.get_realization_from_closestvalues('burst_delta_date_gu_children', cycle))
 
     def burst_delta_date_gu_children_poisson(self, cycle = eWithinCycle):
-        return self.get_realization_from_closestmonth('burst_delta_date_gu_children_poisson', cycle)+1
+        return self.get_realization_from_closestvalues('burst_delta_date_gu_children_poisson', cycle)+1
 
     def gu_burst_date_children(self, cycle = eWithinCycle):
         if cycle == eLaterCycle or self.withindelaymethod == eMonthMultinomialForWithin:
@@ -432,7 +436,7 @@ class UnitDev:
                 burst_year, burst_month = appenddeltaindex(self.burst_date, burst_index)
             except KeyError, ie: # some month may not be fulfilled.
                 if cycle == eLaterCycle:
-                    burst_index = int(self.get_realization_from_closestmonth('burst_date_gu_children', cycle))
+                    burst_index = int(self.get_realization_from_closestvalues('burst_date_gu_children', cycle))
                     burst_year, burst_month = appenddeltaindex(self.burst_date, burst_index)
                 else:
                     burst_delta = self.burst_delta_date_gu_children_poisson(cycle)
@@ -484,6 +488,13 @@ class UnitDev:
         except KeyError, ie:
             return 1
 
+    def nb_gu_children(self, cycle = eWithinCycle):
+        
+        try:
+            return self.get_realization('nb_gu_children',cycle)+1
+        except KeyError, ie:
+            return 1
+
     def flowering(self):
         try:
             return self.get_realization('flowering')
@@ -491,7 +502,7 @@ class UnitDev:
             return False
 
     def nb_inflorescences(self):
-        return self.get_realization_from_closestmonth('nb_inflorescences')+1
+        return self.get_realization_from_closestvalues('nb_inflorescences')+1
 
     def flowering_date(self):
         from random import randint
@@ -510,7 +521,10 @@ class UnitDev:
             return False
 
     def nb_fruits(self):
-        return self.get_realization('nb_fruits')+1
+        try:
+            return self.get_realization('nb_fruits')+1
+        except KeyError:
+            return self.get_realization_from_closestvalues('nb_fruits', factorname = 'Nb_Inflorescences')+1
 
     def fruit_weight(self):
         return self.get_realization('fruit_weight')
@@ -562,6 +576,10 @@ class UnitDev:
 
             if veg_burst:
                 apical_child = self.has_apical_gu_child()
+                
+                #nb_children  = self.nb_gu_children()
+                #nb_lateral_gu_children = nb_children - apical_child
+
                 nb_lateral_gu_children = 0 
                 if not apical_child or self.has_lateral_gu_children():
                     nb_lateral_gu_children += self.nb_lateral_gu_children()
@@ -581,17 +599,23 @@ class UnitDev:
                 self.params['Nb_Inflorescences'] = min(5,nb_inflorescences)
                 if self.fruiting():
                     nb_fruits    = self.nb_fruits()
-                    fruit_weigth = self.fruit_weight()
+                    fruit_weight = self.fruit_weight()
                     harvest_date, hweek = self.harvest_date()
             else:
                 self.paramsdelayed['Nature_F'] = eVegetative
 
             if self.cycle < 5 and self.vegetative_burst(eLaterCycle):
+
                 apical_child = self.has_apical_gu_child(eLaterCycle) if has_mi_child != eApical else False
                 self.paramsdelayed['Has_Apical_GU_Child'] = apical_child
+
+                #nb_children  = self.nb_gu_children(eLaterCycle)
+                #nb_lateral_gu_children = nb_children - apical_child
+
                 nb_lateral_gu_children = 0
                 if not apical_child or self.has_lateral_gu_children(eLaterCycle):
                     nb_lateral_gu_children += self.nb_lateral_gu_children(eLaterCycle)
+
                 date_children_burst = self.gu_burst_date_children(eLaterCycle)
 
         return apical_child, nb_lateral_gu_children, has_mi_child, nb_inflorescences, nb_fruits, fruit_weight, date_children_burst, date_inflo_bloom, mi_burst_date, harvest_date

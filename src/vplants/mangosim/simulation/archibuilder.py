@@ -146,16 +146,18 @@ class MTGArchiBuilder (ArchiBuilder):
         if fruit_maturity_date is None:
             fruit_maturity_date = date(2000+inflo_cycle, 12, 15) + timedelta(days=randint(1,31))
 
-        if fruit_weight and nb_fruits > 0 :
-            fruit_weight /= nb_fruits
+        #if fruit_weight and nb_fruits > 0 :
+        #    fruit_weight /= nb_fruits
 
-        return ParameterSet( mtgid=inflo,
+        p = ParameterSet( mtgid=inflo,
                              
-                             bloom_date = bloom_date,
+                          bloom_date = bloom_date,
 
-                             nb_fruits = nb_fruits,
-                             fruit_weight=fruit_weight,
-                             fruit_maturity_date= fruit_maturity_date)
+                          nb_fruits = nb_fruits)
+        if nb_fruits > 0:
+            p.set(fruits_weight = fruit_weight,
+                  fruits_maturity_date = fruit_maturity_date)
+        return p
 
 import probability_tables as pt ; reload(pt)
 from probability_tables import *
@@ -189,8 +191,7 @@ class GLMArchiBuilder(MTGArchiBuilder):
                           #Tree_Fruit_Load     = Tree_Fruit_Load,
                           WithinDelayMethod   = eMonthMultinomialForWithin, # eMonthMultinomialForWithin if param.nature_ancestor != eVegetative else eDeltaPoissonForWithin,
                           verbose = self.verbose)
-
-            apical_child, nb_lat_children, mi_child, nb_inflorescences, nb_fruits, fruit_weight, date_children_burst, date_inflo_bloom, mi_burst_date, harvest_date = dev.process()
+            apical_child, nb_lat_children, mi_child, nb_inflorescences, nb_fruits, mean_fruit_weight, date_children_burst, date_inflo_bloom, mi_burst_date, harvest_date = dev.process()
 
             phyllotaxy      = self.gumanager.phyllotaxy
             branching_angle = self.gumanager.branching_angle
@@ -225,12 +226,13 @@ class GLMArchiBuilder(MTGArchiBuilder):
             if nb_lat_inflo > 0:
                 for i in xrange(nb_lat_inflo):
                     inflo_nb_fruits = (1 if i < nb_fruiting_lat_inflo else 0)
-                    p = ParameterSet(bloom_date=date_inflo_bloom, 
+                    p = ParameterSet(gu_burst_date = param.burst_date,
+                                     bloom_date=date_inflo_bloom, 
                                      cycle =  get_vegetative_cycle(param.burst_date), 
                                      nb_fruits = inflo_nb_fruits)
                     if inflo_nb_fruits > 0:
-                        p.set(fruit_maturity_date = harvest_date,
-                              fruit_weight = fruit_weight)
+                        p.set(fruits_maturity_date = harvest_date,
+                              fruits_weight = mean_fruit_weight *  inflo_nb_fruits)
                     self.inflomanager.set_dimensions(p, current_date)
                     nsproduce( [ RollL(phyllotaxy), SB(), Down(branching_angle), InflorescenceBud(p), EB() ] )
             
@@ -252,11 +254,12 @@ class GLMArchiBuilder(MTGArchiBuilder):
                 nsproduce( [ A(p) ] )
             elif nb_inflorescences > 0:
                 inflo_nb_fruits = nb_fruits - nb_fruiting_lat_inflo
-                p = ParameterSet(bloom_date=date_inflo_bloom, 
+                p = ParameterSet(gu_burst_date = param.burst_date,
+                                 bloom_date=date_inflo_bloom, 
                                  cycle =  get_vegetative_cycle(param.burst_date), 
-                                 nb_fruits = nb_fruits - nb_fruiting_lat_inflo)
+                                 nb_fruits = inflo_nb_fruits)
                 if inflo_nb_fruits > 0:
-                    p.set(fruit_maturity_date = harvest_date,
-                          fruit_weight = fruit_weight)
+                    p.set(fruits_maturity_date = harvest_date,
+                          fruits_weight = mean_fruit_weight *  inflo_nb_fruits)
                 self.inflomanager.set_dimensions(p, current_date)
                 nsproduce( [ InflorescenceBud(p) ] )

@@ -18,7 +18,7 @@ def generate_mtg(trees = range(3), params = dict()):
     for tree in trees:
         print 'Generate tree', tree
         nparams = params.copy()
-        nparams.update({'TREE':tree,'TIMESTEP': 180,'EXPORT_TO_MTG':True, 'WITH_GLM':True})
+        nparams.update({'TREE':tree,'TIMESTEP': 180 if not params['FRUIT_MODEL'] else 90,'EXPORT_TO_MTG':True, 'WITH_GLM':True})
         l = Lsystem(basename(lsysfile),  nparams)
         lstring = l.iterate()
         resmtg = l.resultmtg

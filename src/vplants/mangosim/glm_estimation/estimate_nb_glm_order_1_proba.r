@@ -260,18 +260,30 @@ gen_formula.text = function(variable, factors) {
   return (mformula)
 }
 
+check_factor_variability = function(factors, data, subset) {
+  factortoremove = c()
+  for (factor in factors){
+    if (length(unique(data[subset,factor])) <= 1){
+      print(paste(variable,"has no variability for factor ",factor,": ", paste(val,collapse = ',')))
+      factortoremove = c(factortoremove, factor)
+    }
+  }
+  if(length(factortoremove) > 0){
+    factors = setdiff(factors, factortoremove)
+  }
+  return (factors)
+}
+
 generate_glm = function(variable, family, data, subset, year, verbose = 0, factors = c("Burst_Month","Position_A","Position_Ancestor_A","Nature_Ancestor_F"), tag = NULL)
 {
     tracestep = 0
-    # if (verbose >= 3) tracestep = 0
-    
-    # data = set_data_factors(data, factors)
-    gfactors = factors
-    factors = global_factor_filtering(gfactors)
-  
+
     if (!NOFILTER)
       subset = filter_monthes(factors, data, subset)
 
+    factors = check_factor_variability(factors, data, subset)
+    gfactors = factors
+    factors = global_factor_filtering(gfactors)
     
     path_complete_glm    = paste(output_dir,"complete_glm/",sep="")
     path_selected_glm    = paste(output_dir,"selected_glm/",sep="")
@@ -283,9 +295,11 @@ generate_glm = function(variable, family, data, subset, year, verbose = 0, facto
     if (!is.null(tag)) fname = paste(tag ,'_', fname,sep="")
     basefname = paste(fname, "_", year, sep="")
     
+
+
     if (length(unique(data[subset,variable])) <= 1) {
       val = unique(data[subset,variable])
-      print(paste(variable,"has no variability : ", val))
+      print(paste(variable,"has no variability : ", paste(val,collapse = ',')))
       print(data[subset,variable])
       
       proba.complete_glm.all = data.frame(probability=val,number=length(data[subset,variable]))
@@ -296,7 +310,7 @@ generate_glm = function(variable, family, data, subset, year, verbose = 0, facto
       
       return (NA)
     }
-    
+
     mformula = as.formula(gen_formula.text(variable,factors))
     #if (is.null(factors)) { formula = as.formula(paste(variable," ~ 1", sep="")) }
     #else { formula = as.formula(paste(variable," ~ ", paste(factors,collapse=" + "), sep="")) }
@@ -506,10 +520,30 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
   ldata = grouping_monthes(Burst, data, monthgroups, lfactors)
   generate_glm(Burst, family = binomial, data=ldata, subset= index_loaded, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
   
+  ############################################## Number of GU ############################################## 
+  bursted_selection = subset_selection & data[,Burst] == 1 
+  
+  if (verbose >= 1) print("########### Estimate Number Children ") 
+  
+  nbchild_selection = bursted_selection 
+  index_nbchild = which(nbchild_selection)
+  
+  if (length(index_nbchild) > 10){
+    #On choisi une loi de poisson. Néanmoins, pour Poisson la distribution doit commencer à 0 et pas à 1.
+    #On enlève donc 1 au nombre de latérales afin de commencer à 0.
+    ####Attention!!!Il ne faudra pas oublier de rajouter 1 ensuite lors de la simulation!!!
+    data[[Nb_Children]] = data[,Nb_Children] -1
+    
+    #data$Nb_Lateral_GU_Children = data$Nb_Lateral_GU_Children -1
+    
+    lfactors = filter_factors(Nb_Children,factors, exclude, include)
+    ldata = grouping_monthes(Nb_Children, data, monthgroups, lfactors)
+    generate_glm(Nb_Children, family = poisson, data=ldata, subset= index_nbchild, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
+  }
+  
   ############################################## Has_Apical_GU_Child ############################################## 
   if (verbose >= 1) print("########### Estimate Has_Apical_Child")
   
-  bursted_selection = subset_selection & data[,Burst] == 1
   index_bursted = which(bursted_selection)
   
   lfactors = filter_factors(Has_Apical_Child,factors, exclude, include)
@@ -520,9 +554,11 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
   ############################################## Has_Lateral_GU_Children ############################################## 
   if (verbose >= 1) print("########### Estimate Has_Lateral_Children") 
   
+  has_lateral_selection = bursted_selection & data[,Has_Apical_Child] == 1 
+  #print(ldata[has_lateral_selection,Has_Lateral_Children])
   lfactors = filter_factors(Has_Lateral_Children,factors, exclude, include)
   ldata = grouping_monthes(Has_Lateral_Children, data, monthgroups, lfactors)
-  generate_glm(Has_Lateral_Children, family = binomial, data=ldata, subset= index_bursted, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
+  generate_glm(Has_Lateral_Children, family = binomial, data=ldata, subset= has_lateral_selection, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
   
   
   ############################################## Number of lateral GU ############################################## 
@@ -544,26 +580,7 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
     generate_glm(Nb_Lateral_Children, family = poisson, data=ldata, subset= index_lateral, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
   }
   
-  ############################################## Number of GU ############################################## 
-  
-  if (verbose >= 1) print("########### Estimate Number Children ") 
-  
-  nbchild_selection = bursted_selection 
-  index_nbchild = which(nbchild_selection)
 
-  if (length(index_nbchild) > 10){
-    #On choisi une loi de poisson. Néanmoins, pour Poisson la distribution doit commencer à 0 et pas à 1.
-    #On enlève donc 1 au nombre de latérales afin de commencer à 0.
-    ####Attention!!!Il ne faudra pas oublier de rajouter 1 ensuite lors de la simulation!!!
-    data[[Nb_Children]] = data[,Nb_Children] -1
-    
-    #data$Nb_Lateral_GU_Children = data$Nb_Lateral_GU_Children -1
-    
-    lfactors = filter_factors(Nb_Children,factors, exclude, include)
-    ldata = grouping_monthes(Nb_Children, data, monthgroups, lfactors)
-    generate_glm(Nb_Children, family = poisson, data=ldata, subset= index_nbchild, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
-  }
-  
   ############################################## Burst date of children  ############################################## 
   if (verbose >= 1) print("########### Estimate Burst Date of Children") 
   
@@ -908,7 +925,7 @@ determining_glm_tables_mixed_inflo_within_cycle = function(data, year, verbose =
   
   exclude = NULL
   # Testing 
-  include = list("Has_Lateral_GU_Children" = c("Has_Apical_GU_Child")
+  include = list(#"Has_Lateral_GU_Children" = c("Has_Apical_GU_Child")
                  #,"Nb_Lateral_GU_Children" = c("Has_Apical_GU_Child")
                  ) 
   monthgroups = list()
@@ -941,7 +958,7 @@ determining_glm_tables_between_cycle = function(data, year, verbose = FALSE, sel
 
     exclude = list()
     
-    include = list("Has_Lateral_GU_Children" = c("Has_Apical_GU_Child"),
+    include = list(#"Has_Lateral_GU_Children" = c("Has_Apical_GU_Child"),
                    "Nb_Lateral_GU_Children" = c("Has_Apical_GU_Child")) 
     
     monthgroups = list()
@@ -1082,11 +1099,11 @@ test = function() {
 main = function() {
   verbose = 1
   determining_glm_tables_within_cycle_for_year(input_dir, "04",   verbose)
-  determining_glm_tables_mixedinflo_within_cycle_for_year(input_dir, "0405", verbose)
-  determining_glm_tables_within_cycle_for_year(input_dir, "05",   verbose)
+  #determining_glm_tables_mixedinflo_within_cycle_for_year(input_dir, "0405", verbose)
+  #determining_glm_tables_within_cycle_for_year(input_dir, "05",   verbose)
   
-  determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", verbose)
-  determining_glm_tables_between_cycle_for_year(input_dir, "04to05",   verbose)
+  #determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", verbose)
+  #determining_glm_tables_between_cycle_for_year(input_dir, "04to05",   verbose)
 }
 
 main()
@@ -1104,4 +1121,4 @@ gen_constraint_glm = function() {
   EXCLUDE_FACTORS <<- initialvalue
 }
 
-#gen_constraint_glm()
+gen_constraint_glm()

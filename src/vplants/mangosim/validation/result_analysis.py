@@ -49,16 +49,16 @@ def nparmap(f,X,n = 5):
     res = []
     nbdata = len(X)
     nbsteps =  int(ceil(float(nbdata) / n))
-    print X
     for j in xrange(nbsteps):
         res += parmap(f,X[j*n:min(nbdata,(j+1)*n)])
     return res
 
 
 class Evaluator:
-    def __init__(self, name, func, reducefunc, reference = True, verbose = True):
+    def __init__(self, name, func, reducefuncs, reference = True, verbose = True, fruitmodel = False):
         self.func = func
-        self.reducefunc = reducefunc
+        self.reducefuncs = reducefuncs
+        if type(reducefuncs) != list : self.reducefuncs = [reducefuncs]
         self.name = name 
         self.inputdirs = []
         self.reference = reference
@@ -69,13 +69,14 @@ class Evaluator:
         self.reducekwds = {}
         self.glmtargets = []
         self.target_tree = 'all'
+        self.fruitmodel = fruitmodel
 
     def target(self, glm = eInteractionGlm, restriction = None):
         if type(glm) != list: glm = [glm]
         if type(restriction) != list: restriction = [restriction]
         glmtargets = list(itertools.product(glm, restriction))
         for iglm, irestriction in glmtargets:
-            params = {'GLM_TYPE' : iglm, 'GLM_RESTRICTION' : irestriction}
+            params = {'GLM_TYPE' : iglm, 'GLM_RESTRICTION' : irestriction, 'FRUIT_MODEL' : self.fruitmodel}
             self.inputdirs.append((iglm, irestriction, get_glm_mtg_repository( params = params)))
         self.glmtargets += glmtargets
         return self
@@ -98,7 +99,7 @@ class Evaluator:
         return self
 
     def apply(self, nb = None, force = False, parallel = True, saving = False):
-        cachebasename = 'cache_'+self.name+'_'+self.target_tree+'.pkl'
+        cachebasename = self.cachebasename()
         import time
         if len(self.inputdirs) == 0: self.target()
 
@@ -129,25 +130,34 @@ class Evaluator:
             else:
                 values = load_obj(cachebasename, inputdir)
             valuesset[(iglm, irestriction)] = values
-        self.reducefunc(refvalues, valuesset, *self.reduseargs, **self.reducekwds)
+
         import matplotlib.pyplot as plt
-        if saving:
-            filename = self.saved_filename()
-            if not os.path.exists(figoutdir):
-                os.makedirs(figoutdir)
-            print 'Save',repr(filename)
-            plt.savefig(filename,  bbox_inches='tight')
-            plt.close()
-        else:
-            plt.show()
+        for func, filename in zip(self.reducefuncs, self.saved_filenames()):
+            func(refvalues, valuesset, *self.reduseargs, **self.reducekwds)
+            if saving:
+                lfigoutdir = os.path.join(figoutdir,'fruitmodel' if self.fruitmodel else 'nofruitmodel')
+                if not os.path.exists(lfigoutdir):
+                    os.makedirs(lfigoutdir)
+                print 'Save',repr(filename)
+                plt.savefig(filename,  bbox_inches='tight')
+                plt.close()
+            else:
+                plt.show()
 
         return self
 
-    def saved_filename(self):
-        if len(self.inputdirs) == 0: self.target()
+    def cachebasename(self):
+        return 'cache_'+self.name+'_'+self.target_tree+'.pkl'
 
+    def cache_files(self):
+        if len(self.inputdirs) == 0: self.target()
+        cachebasename = self.cachebasename()
+        return [join(inputdir, cachebasename) for iglm, irestriction, inputdir in self.inputdirs]
+
+    def savedbasename(self):
+        if len(self.inputdirs) == 0: self.target()
         fname = self.name+'_'+self.target_tree
-        if len(self.glmtargets) > 0:
+        if len(self.glmtargets) > 1:
             fname += '_comp_'
             if len(self.glmtargets) == 6:
                 fname +='all'
@@ -155,9 +165,25 @@ class Evaluator:
                 fname += '_'.join([RestrictionName[r] for g,r in self.glmtargets])
         else:
             fname += '_'+RestrictionName[self.glmtargets[0][1]]
-        fname += '.png'
-        filename = os.path.join(figoutdir,fname)
-        return filename
+
+        return fname
+
+    def saved_filenames(self):
+        lfigoutdir = os.path.join(figoutdir,'fruitmodel' if self.fruitmodel else 'nofruitmodel')
+        fname = self.savedbasename()
+        fnames = [os.path.join(lfigoutdir,fname+str(i)+'.png') for i in xrange(len(self.reducefuncs))]
+        return fnames
+
+    def isUptodate(self):
+        caches = self.cache_files()
+        for c in caches: 
+            if not os.path.exists(c): return False
+        images = self.saved_filenames()
+        if type(images) != list: images = [images]
+        for i in images: 
+            if not os.path.exists(i): return False
+
+        return max([os.stat(c).st_mtime for c in caches]) < min([os.stat(i).st_mtime for i in images])
 
     def _applyto(self, mtgtype, mtgfile = None):
         setMtgStyle(mtgtype)
@@ -272,6 +298,13 @@ def flattenarray(values):
 def flattenarrays(kvalues):
    return dict([(k,[flattenarray(values) for values in valuesset]) for k,valuesset in kvalues.items()])
 
+def selectsubarray(values, indices):
+    return [values[i] for i in indices]
+
+def selectsubarrays(kvalues, indices):
+   return dict([(k,[selectsubarray(values, indices) for values in valuesset])  for k,valuesset in kvalues.items()])
+
+
 def homogenize_histo_length(refvalues, kvalues):
     maxl = max(max([max(map(len,ivalues)) for ivalues in kvalues.values()]), len(refvalues))
     for ivalues in kvalues.values():
@@ -296,22 +329,39 @@ def histodistance_legend(meankvalues):
     skeys = sortedkeys(meankvalues)
     return [str(histo[sk]) for sk in skeys]
 
-class terminal_count_distribution(Evaluator):
-    def __init__(self):
-        Evaluator.__init__(self,'terminals',self.determine_distribution, self.plot_distribution)
+
+class organ_count_distribution(Evaluator):
+    def __init__(self, name, func, reducefuncs):
+        Evaluator.__init__(self, name, func, reducefuncs)
         self.begcycle, self.maxcycle = 4,6
+
+    def plot_distributioni(self, refvalues, kvalues, labels, proprange = None):
+        import numpy as np
+        labels = flattenarray(labels)
+        kvalues = flattenarrays(kvalues)
+        refvalues = flattenarray(refvalues)
+        if not proprange is None:
+            for pr in proprange:
+                if pr > len(refvalues) : raise ValueError(pr, len(refvalues))
+            refvalues = selectsubarray(refvalues, proprange)
+            kvalues = selectsubarrays(kvalues, proprange)
+        if len(kvalues) == 1:
+            fig, ax = plot_histo(labels, kvalues.values()[0], self.maketitle('Characteritics'), refvalues, legendtag = kvalues.keys()[0], linestyle='o', titlelocation = 2)
+        else:
+            fig, ax = plot_histos(labels, sortedvalues(kvalues), self.maketitle('Characteritics Comparison'), reference=refvalues, legendtags = sortedkeys(kvalues), titlelocation = 2)
+            
+        fig.subplots_adjust(bottom=0.30, top = 0.94)
+
+class terminal_count_distribution(organ_count_distribution):
+    def __init__(self):
+        organ_count_distribution.__init__(self,'terminals',self.determine_distribution, self.plot_distribution1)
 
     def determine_distribution(self, mtg, mtgtype):
         terminals = [self.get_terminal_gus_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
         nbterminals = map(lambda t : (len ([gu for gu in t if mtg.edge_type(gu) == '<']),len ([gu for gu in t if mtg.edge_type(gu) == '+'])),terminals)
         nbfloterminals = [(len([gu for gu in cterminals if len(inflorescence_children(mtg,gu)) > 0 and mtg.edge_type(gu) == '<']),
                            len([gu for gu in cterminals if len(inflorescence_children(mtg,gu)) > 0 and mtg.edge_type(gu) == '+'])) for cterminals in terminals]
-        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
-        nbinflos = [sum([mm.nb_of_inflorescences(mtg,inflo) for inflo in inflocycle]) for inflocycle in inflos]
-        if mtgtype == eMeasuredMtg:
-            nbinflos[0] = len(inflos[0])
-        nbfruits = [sum([mm.get_nb_fruits(mtg,inflo) for inflo in inflocycle]) for inflocycle in inflos]
-        return nbterminals+nbfloterminals+nbinflos+nbfruits
+        return nbterminals+nbfloterminals
 
     def print_distribution(self, refvalues, kvalues):
         import numpy as np
@@ -333,24 +383,36 @@ class terminal_count_distribution(Evaluator):
                         print np.std([val[i][j] for val in values]),',',
                     print ')'
 
-    def plot_distribution(self, refvalues, kvalues):
-        import numpy as np
+
+    def plot_distribution1(self, refvalues, kvalues):
         begcycle, maxcycle = self.begcycle, self.maxcycle
         labels =  [('Nb. Ter. Api. '+str(i),'Nb. Ter. Lat. '+str(i)) for i in xrange(begcycle, maxcycle)]
         labels += [('Nb. Flo. Ter. Api. '+str(i),'Nb. Flo. Ter. Lat. '+str(i)) for i in xrange(begcycle, maxcycle)]
-        labels += ['Nb. Inflo. '+str(i) for i in xrange(begcycle, maxcycle)]
+        self.plot_distributioni(refvalues, kvalues, labels)
+    
+
+class production(organ_count_distribution):
+    def __init__(self):
+        organ_count_distribution.__init__(self,'production',self.determine_distribution, self.plot_distribution2)
+
+    def determine_distribution(self, mtg, mtgtype):
+        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
+        nbinflos = [sum([mm.nb_of_inflorescences(mtg,inflo) for inflo in inflocycle]) for inflocycle in inflos]
+        if mtgtype == eMeasuredMtg:
+            nbinflos[0] = len(inflos[0])
+        nbfruits = [sum([mm.get_nb_fruits(mtg,inflo) for inflo in inflocycle]) for inflocycle in inflos]
+        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=3)]+inflos
+        production = [sum([mm.get_fruits_weight(mtg,inflo,0) for inflo in inflocycle if not mm.get_fruits_weight(mtg,inflo,0) is None])/100. for inflocycle in inflos]
+        return nbinflos+nbfruits+production
+
+    def plot_distribution2(self, refvalues, kvalues):
+        begcycle, maxcycle = self.begcycle, self.maxcycle
+        labels = ['Nb. Inflo. '+str(i) for i in xrange(begcycle, maxcycle)]
         labels += ['Nb. Fruits '+str(i) for i in xrange(begcycle, maxcycle)]
-        labels = flattenarray(labels)
-        kvalues = flattenarrays(kvalues)
-        if len(kvalues) == 1:
-            fig, ax = plot_histo(labels, kvalues.values()[0], self.maketitle('Characteritics'), flattenarray(refvalues), legendtag = kvalues.keys()[0], linestyle='o', titlelocation = 1)
-        else:
-            #meankvalues = meanarrays(kvalues)
-            #fig, ax = plot_histos_means(labels, sortedvalues(meankvalues), self.maketitle('Characteritics Comparison'), reference=flattenarray(refvalues), legendtags = sortedkeys(meankvalues), linestyle='o', titlelocation = 1)
-            plot_histos
-            fig, ax = plot_histos(labels, sortedvalues(kvalues), self.maketitle('Characteritics Comparison'), reference=flattenarray(refvalues), legendtags = sortedkeys(kvalues), titlelocation = 2)
-            
-        fig.subplots_adjust(bottom=0.30, top = 0.94)
+        labels += ['Production '+str(i)+' (100g)' for i in xrange(3, maxcycle)]
+        self.plot_distributioni(refvalues, kvalues, labels)
+    
+
 
 
 def histogram(values):
@@ -453,6 +515,41 @@ class bloom_date_distribution(Evaluator):
         dates     = map(strdate, self.daterange)
         plot_histogram(refvalues, kvalues, dates, self.maketitle('Bloom Dates'), titlelocation = 2)
 
+class harvest_date_distribution(Evaluator):
+
+    def __init__(self):
+        Evaluator.__init__(self,'harvest_dates',self.date_week_distribution, self.plot)
+        self.daterange = (#[(2003,None)]+weekdate_range(fruiting_cycle_begin(3),fruiting_cycle_end(3))+
+                 #[(2004,None)]+weekdate_range(fruiting_cycle_begin(4),fruiting_cycle_end(4))+
+                 weekdate_range(fruiting_cycle_begin(5),fruiting_cycle_end(5)))
+
+    def date_week_distribution(self, mtg, mtgtype):
+        from collections import OrderedDict
+        def toweekid(inflo):
+            date = get_fruits_harvest_date(mtg,inflo)
+            if date is None:
+                return (2000+get_unit_cycle(mtg,inflo),None)
+            d = date.isocalendar()
+            return (d[0],d[1]) # retrieve year and week number
+
+        histo_date = OrderedDict([(d,0) for d in self.daterange])
+
+        inflos = self.get_all_inflos(mtg)
+        for inflo in inflos:
+            if mm.get_nb_fruits(mtg,inflo) > 0:
+                try:
+                    d = toweekid(inflo)
+                    assert d in histo_date
+                    histo_date[d] += 1
+                except : pass
+        #if strip : __strip_histo(histo_date)
+        return histo_date.values()
+
+    def plot(self, refvalues,kvalues):
+        strdate = lambda d : str(d[1])+'/'+str(d[0]-2000)
+        dates     = map(strdate, self.daterange)
+        plot_histogram(refvalues, kvalues, dates, self.maketitle('Harvest Dates'), titlelocation = 2)
+
 
 
 from vplants.mangosim.util_date import Month
@@ -487,47 +584,60 @@ def get_treenames():
 from collections import OrderedDict        
 cmdflags = OrderedDict([('burst' , burst_date_distribution), 
                         ('bloom' , bloom_date_distribution),
-                        ('terminal' , terminal_count_distribution),
+                        ('harvest' , harvest_date_distribution),                        
                         ('branch' , tree_branch_length),
-                        ('axe' , current_year_axe_length)])
-cmdlabels = { 'burst'    : 'Burst Date Distribution', 
+                        ('axe' , current_year_axe_length),
+                        ('terminal' , terminal_count_distribution),
+                        ('production' , production)
+                        ])
+cmdlabels = {
+             'burst'    : 'Burst Date Distribution', 
              'bloom'    : 'Bloom Date Distributon', 
-             'terminal' : 'Organ Population Characteristics', 
+             'harvest'  : 'Harvest Date Distributon', 
              'branch'   : 'Axial Branches Length Distribution', 
-             'axe'      : 'Current Year Axe Length Distribution'}
+             'axe'      : 'Current Year Axe Length Distribution',
+             'terminal' : 'Terminal GU Characteristics', 
+             'production' : 'Production'
+             }
 
-def saveall():
+def saveall(fruitmodel=False, comparison = True, force=False):
     for tree in ['all']+get_treenames():
         for restriction in [None, 'all']:
             for cmd in cmdflags.values():
                 p = cmd()
+                p.fruitmodel = fruitmodel
                 if restriction == 'all':
                     p.allrestrictions()
                 if tree != 'all':
                     p.targettree(tree)
-                p(saving=True)
+                p(force=force, saving=True)
 
-def make_report(force = False):
+def make_report(force = False, comparison = True, fruitmodel = False):
     from vplants.mangosim.utils.util_report import TexReportGenerator
     rep = 'texreport'
     if not os.path.exists(rep): os.makedirs(rep)
     tx = TexReportGenerator(os.path.join(rep,'validationreport.tex'),'Validation Report')
 
+    restrictions = [None]
+    if comparison: restrictions.append('all')
+
     for cmdname, cmd in cmdflags.items():
         tx.add_section(cmdlabels[cmdname])
-        for restriction in [None, 'all']:
+        for restriction in restrictions:
             tx.add_subsection('Simulation from GLM' if restriction is None else 'Factor Sensitivity Test')
             for tree in ['all']+get_treenames():
                     tx.add_subsubsection('Tree '+tree if tree != 'all' else 'Cultivar Cogshall')
                     p = cmd()
+                    p.fruitmodel = fruitmodel
                     if restriction == 'all':
                         p.allrestrictions()
                     if tree != 'all':
                         p.targettree(tree)
-                    figname = p.saved_filename()
-                    if not os.path.exists(figname) or force:
+                    if not p.isUptodate() or force:
                         p.apply(saving=True)
-                    tx.add_figure(os.path.join(os.pardir,figname))
+                    fignames = p.saved_filenames()
+                    for figname in fignames:
+                        tx.add_figure(os.path.join(os.pardir,figname))
                     tx.clear_page()
     tx.close()
     tx.compile()
@@ -537,11 +647,14 @@ def main():
     import sys
     def help():
         print 'Available plots :',cmdflags.keys()
-        print '-c : Comparison mode'
-        print '-f : Force reevaluation'
-        print '-s : Save figure'
+        print '-c  : Comparison mode'
+        print '-fm : Use fruitmodel'
+        print '-f  : Force reevaluation'
+        print '-s  : Save figure'
         print '-sa : Save all figures'
-        print '-r : Create a report'
+        print '-sa1: Save all figures without comparison section'
+        print '-r  : Create a report'
+        print '-r1 : Create a report without comparison section'
         print '-tTREENAME : Limit the study to one tree. Available trees are',get_treenames()
     argv = sys.argv[1:]
     switches = [a for a in argv if a.startswith('-')]
@@ -563,17 +676,26 @@ def main():
                 return
 
     force = '-f' in switches
+    fruitmodel = '-fm' in switches
     if '-h' in switches:
         help()
         return
     if '-sa' in switches:
-        saveall()
+        saveall(force=force, fruitmodel=fruitmodel)
+    elif '-sa1' in switches:
+        saveall(force=force, fruitmodel=fruitmodel, comparison=False)
     elif '-r' in switches:
-        make_report(force=force)
+        make_report(force=force, fruitmodel=fruitmodel)
+    elif '-r1' in switches:
+        make_report(force=force, comparison=False, fruitmodel=fruitmodel)
     else:
+        if fruitmodel:
+            for p in processes:
+                p.fruitmodel=True
         if '-c' in switches:
             for p in processes:
                 p.allrestrictions()
+
 
         treename = None
         for switch in switches:
@@ -588,7 +710,7 @@ def main():
         saving = '-s' in switches
         for i,p in enumerate(processes):
             print cmdlabels[cmds[i]]
-            p(force=force, saving=saving)
+            p(force=force or p.isUptodate(), saving=saving)
 
         if treename:
             print 'Available trees are',get_treenames()

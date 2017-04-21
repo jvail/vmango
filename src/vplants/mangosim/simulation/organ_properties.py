@@ -246,7 +246,7 @@ class GUManager (OrganManager):
         def fLeaf(position, radius, size):
             #nsproduce([ SetColor(13), Down(self.pheno_angle(4)), surface('finalleaf', size)])
             #return
-            nsproduce([ EndGC(),Elasticity(0.),Down(90), SetColor(self.petiolecolor),SetWidth(self.leafwidth(0)*self.leafwidthgrowth(1)),f(radius), Up(90)])  
+            nsproduce([ EndGC(),Elasticity(0.),Down(90),f(radius), Up(90), SetColor(self.petiolecolor),SetWidth(self.leafwidth(0)*self.leafwidthgrowth(1))])  
             # petiole
             nsproduce([ Down(self.pheno_angle(4)) ])
             Petiole((1.1-position)* size/4.,self.leafwidth(0))
@@ -263,13 +263,9 @@ class GUManager (OrganManager):
 
         def gLeaf(position, radius, final_length, growth_ratio, pheno_stage, pheno_rank, ttsum):
             petioleradius  = self.leafwidth(0)*self.leafwidthgrowth(min(growth_ratio,1))
-            nsproduce([ EndGC(), Elasticity(0.), Down(90), SetColor(self.petiolecolor), SetWidth(petioleradius),f(radius), Up(90) ]) 
+            nsproduce([ EndGC(), Elasticity(0.), Down(90),f(radius), Up(90) ]) 
             # Angle depends of phenological stage and advancement
-            nsproduce([ Down(self.pheno_angle(pheno_stage+pheno_rank)) ])
-            # petiole
-            petiolelength = max(0.01,(1-position)* final_length/4.)
-            Petiole(petiolelength, petioleradius)
-            nsproduce([ RollToVert() ])
+            nsproduce([ Down(self.pheno_angle(pheno_stage+pheno_rank)),SetWidth(petioleradius) ])
             # Color depends of phenological stage and advancement
             pheno_color = self.pheno_color
             if False:
@@ -283,6 +279,11 @@ class GUManager (OrganManager):
                     nsproduce([ InterpolateColors(pheno_color[pheno_stage],pheno_color[pheno_stage+1],pheno_rank) ])
                 else: 
                     nsproduce([ SetColor(pheno_color[pheno_stage]) ])
+
+            # petiole
+            petiolelength = max(0.01,(1-position)* final_length/4.)
+            Petiole(petiolelength, petioleradius)
+            nsproduce([ RollToVert() ])
                 
             clength = final_length * growth_ratio
             nsproduce([ PglShape(self.leafSymbol(pheno_stage+pheno_rank), clength) ])
@@ -304,10 +305,14 @@ class GUManager (OrganManager):
             gu_growth_ratio   = p.length_gu / p.final_length_gu
             leaf_ttsum        = p.leaf_growth_tts.ttsum
             leaf_growth_ratio = self.leaf_growth_function(leaf_ttsum, p.final_length_leaves[0])/p.final_length_leaves[0]
+            nsproduce([EndGC(), SetColor(self.stem_color), StartGC()])
           else: 
             gu_growth_ratio   = 1
             finalleaf = True
-          nsproduce([EndGC(), SetColor(self.stem_color), StartGC()])
+            if textured:
+                nsproduce([SetColor(self.textures_colorid+2),TextureVScale(0.02)])
+            else:
+                nsproduce([SetColor(self.oldwood_color)])
           i = 0
           posnorm = 1./float(p.nb_internodes-1)
           nsproduce([SetWidth(radius)])
@@ -326,6 +331,7 @@ class GUManager (OrganManager):
           else:
             nsproduce([SetColor(self.oldwood_color)])
           nsproduce([SetWidth(radius)]+[F(l) for l in p.final_length_internodes]+[RollL(phyllotaxy*len(p.final_length_internodes))])
+          if not textured: nsproduce([Sphere(radius)])
 
 
 
@@ -333,7 +339,7 @@ class GUManager (OrganManager):
 
 class InfloManager (OrganManager):
 
-    def __init__(self, **kwargs):
+    def __init__(self, fruitmanager = None, **kwargs):
         OrganManager.__init__(self, **kwargs)
 
         self.t_ip_inflo   = 346.03/2.                          # Inflexion point of inflorescence growth curve
@@ -362,6 +368,8 @@ class InfloManager (OrganManager):
         self.length_distrib       =  (23.15833, 6.767254)
 
         self.nbaxes_length_ratio = 1.19
+
+        self.fruitmanager = fruitmanager
 
         self.__dict__.update(kwargs)
 
@@ -402,11 +410,12 @@ class InfloManager (OrganManager):
         for day in date_xrange(burst_date, current_date+timedelta(days=1)):
             daytemp = get_temperature(day)
             for tts in [growth_tts, pheno_tts]:
-               tts.accumulate(daytemp)  
-      
+               tts.accumulate(daytemp)
+
         params.set(burst_date = burst_date,
                    bloom_date = bloom_date,
                    fullbloom_date = fullbloom_date,
+                   cycle = get_flowering_cycle(fullbloom_date),
 
                    final_length = final_length_inflo,
                    length = 0.01,
@@ -417,6 +426,9 @@ class InfloManager (OrganManager):
                    pheno_tts  = pheno_tts,
 
                    fruiting = False)
+
+        if self.fruitmanager : 
+            self.fruitmanager.init_fruiting_start_date(params, current_date)  
       
         return params
 
@@ -486,7 +498,7 @@ class InfloManager (OrganManager):
            
            nsproduce ([ EndGC(), Tropism(0,0,-1)])
            if ( pheno_stage >= 4):
-              if param.hasattr('fruit_maturity_date') and current_date > param.fruit_maturity_date:
+              if current_date >= fruiting_cycle_end(param.cycle):
                 return
 
               elasticity = 0.01 if param.nb_fruits == 0 else 0.04 + 0.04 * pheno_rank
@@ -641,7 +653,7 @@ class FruitManager (OrganManager):
     def __init__(self, **kwargs):
         OrganManager.__init__(self, **kwargs)
 
-        self.inflo_flush_start = None
+        self.inflo_flush_start = {}
 
         self.pheno_base_temp   = [15.11]  # base temperature for each phenological stage of inflorescence
         self.pheno_stade_temp  = [352.72]
@@ -655,6 +667,7 @@ class FruitManager (OrganManager):
         # Graphic Parameters
         self.resolution = resolution
         self.profile = profile
+        self.profile.ctrlPointList = list(reversed(self.profile.ctrlPointList))
 
         # Model parameters
         self.modelenabled = modelenabled
@@ -667,6 +680,7 @@ class FruitManager (OrganManager):
     def generate_initial_masses(self):
         from random import normalvariate
         MS_Init = 0.97 * normalvariate(mu=13.9,sigma=4.1) + 0.03 * normalvariate(mu=29.2,sigma=0.66)
+        MS_Init = max(0,MS_Init)
         MF_Init = 23.647 * (MS_Init ** 0.6182)
         return MF_Init, MS_Init
 
@@ -676,46 +690,67 @@ class FruitManager (OrganManager):
     def set_dimensions(self, infloparam, current_date):
         if self.modelenabled:
             return ParameterSet(inflo_fullbloom_date=infloparam.fullbloom_date,
-                                growth=infloparam.fruit_growth, 
-                                maturity_date=infloparam.fruit_maturity_date,
-                                weight = infloparam.fruit_weight,
-                                growth_stage_date=infloparam.fruit_growth_stage_date,
-                                initial_weight=infloparam.fruit_initial_weight)
+                                growth=infloparam.fruits_growth, 
+                                maturity_date=infloparam.fruits_maturity_date,
+                                weight = infloparam.fruits_weight / infloparam.nb_fruits,
+                                growth_stage_date=infloparam.fruits_growth_stage_date,
+                                initial_weight=infloparam.fruits_initial_weight)
         else:
             mass, drymass = self.generate_initial_masses()
             fruit_growth_tts   = ThermalTimeAccumulator(self.pheno_base_temp[0])
             growth_stage_date = todatetime(fruit_growth_tts.find_date_of_accumulation(self.pheno_stade_temp[0], infloparam.fullbloom_date, get_temperature)) 
             return ParameterSet(inflo_fullbloom_date=infloparam.fullbloom_date,
-                                maturity_date=infloparam.fruit_maturity_date,
-                                weight = infloparam.fruit_weight,
+                                maturity_date=infloparam.fruits_maturity_date,
+                                weight = infloparam.fruits_weight / infloparam.nb_fruits,
                                 growth_stage_date=growth_stage_date,
                                 initial_weight=mass)            
 
-    def applymodel(self, lstring, lscene):
+    def applymodel(self, lstring, lscene, current_date):
         if self.modelenabled :
             import vplants.mangosim.fruitmodel.fruitmodel as fm ; reload(fm)
             from vplants.mangosim.fruitmodel.fruitmodel import applymodel
             from vplants.mangosim.util_lstring2mtg import export_to_mtg_light
-            print 'Fruit model evaluation'
+            print 'Fruit model evaluation', current_date
             lmtg = export_to_mtg_light(lstring, None) # , lscene)
-            applymodel(lmtg, get_flowering_cycle(self.inflo_flush_start), self.branchsize, self.outputenabled, self.outputname)
+            applymodel(lmtg, get_flowering_cycle(current_date), self.branchsize, self.outputenabled, self.outputname)
         else:
             pass
             #print 'No Fruit model evaluation'
-        self.reset_fruiting_start_date()
+        #self.reset_fruiting_start_date()
 
-    def init_fruiting_start_date(self, burst_date):
-        if self.inflo_flush_start is None: 
-            self.inflo_flush_start = burst_date
+    def init_fruiting_start_date(self, infloparam, current_date):
+        if infloparam.nb_fruits > 0:
+            candidate = infloparam.fullbloom_date - timedelta(days=1)
+            lcycle = candidate.year
+            self.inflo_flush_start.setdefault(lcycle,None)
+            if self.inflo_flush_start[lcycle] is None or candidate < self.inflo_flush_start[lcycle]:
+                self.inflo_flush_start[lcycle] = candidate
+                #print 'Set inflo_flush_start ',lcycle,' to', candidate, current_date
+            if self.modelenabled and self.inflo_flush_start[lcycle] < current_date:
+                raise ValueError('Reduce timestep. Cannot process the flush', self.inflo_flush_start[lcycle], current_date, infloparam.gu_burst_date)
+            #elif infloparam.burst_date > self.inflo_flush_start:
+            #    raise ValueError('The flush will not process all inflos', self.inflo_flush_start, infloparam.burst_date)
 
-    def is_fruiting_started(self, current_date):
-        return self.inflo_flush_start and current_date >= self.get_fruiting_start_date()
+    def has_fruiting_in_period(self, begin_period, end_period):
+        for year in xrange(begin_period.year, end_period.year+1):
+            if self.inflo_flush_start.has_key(year) and begin_period < self.get_fruiting_start_date(year) <= end_period:
+                return True
+        return False
 
-    def get_fruiting_start_date(self):
-        return self.inflo_flush_start + timedelta(days=50)
+    def get_first_fruiting_start_date(self, begin_period, end_period):
+        for year in xrange(begin_period.year, end_period.year+1):
+            if self.inflo_flush_start.has_key(year):
+                fdate = self.get_fruiting_start_date(year)
+                if begin_period < fdate <= end_period:
+                    return fdate
+        return None
 
-    def reset_fruiting_start_date(self):
-        self.inflo_flush_start = None
+    def is_fruiting_start_date(self, date):
+        return self.inflo_flush_start.get(date.year) == date
+
+
+    def get_fruiting_start_date(self, year):
+        return self.inflo_flush_start[year]
 
     def init_plot(self):
         pass

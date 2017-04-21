@@ -33,11 +33,13 @@ def get_simulated_mtg_repository(variety = 'cogshall'):
 
 def get_option_glm_mtg_repository(variety = 'cogshall', 
                                   estimationtype = eSelectedGlm,
-                                  restriction = None, 
+                                  restriction = None,
+                                  fruitmodel = False, 
                                   optionname = None):
     
-    path = join(get_simulated_mtg_repository(variety), GlmTypeName[estimationtype])  
+    path = join(get_simulated_mtg_repository(variety), GlmTypeName[estimationtype]) 
     if optionname: path = join(path,optionname)
+    path = join(path,'withfruitmodel' if fruitmodel else 'withoutfruitmodel')
     if restriction : path = join(path,RestrictionName[restriction])
     else: path = join(path,'allfactors')
     #path = join(path, WithinDelayMethodName[withindelaymethod].lower(), treename)
@@ -49,6 +51,7 @@ def get_glm_mtg_repository(params = dict(),
     repparams['variety'] = params.get('VARIETY', 'cogshall') 
     repparams['estimationtype'] = params.get('GLM_TYPE', eSelectedGlm) 
     repparams['restriction'] = params.get('GLM_RESTRICTION', None)
+    repparams['fruitmodel'] = params.get('FRUIT_MODEL', False) 
     outputdir = get_option_glm_mtg_repository(**repparams)
     return outputdir
 

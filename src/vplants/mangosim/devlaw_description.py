@@ -1,7 +1,7 @@
 from vplants.mangosim.state import *
 
-vegetative_proba = ['vegetative_burst','has_apical_gu_child','has_lateral_gu_children','nb_lateral_gu_children']
-vegetative_proba_family = [eBinomial, eBinomial, eBinomial, ePoisson]
+vegetative_proba = ['vegetative_burst','has_apical_gu_child','has_lateral_gu_children','nb_lateral_gu_children','nb_gu_children']
+vegetative_proba_family = [eBinomial, eBinomial, eBinomial, ePoisson, ePoisson]
 vegetative_proba_within = ['burst_date_gu_children','burst_delta_date_gu_children','burst_delta_date_gu_children_poisson']
 vegetative_proba_within_family = [eMultinomial, eMultinomial, ePoisson]
 vegetative_proba_between = ['burst_date_gu_children']
@@ -40,6 +40,14 @@ mi_vegetative_proba_within = appendprefix('mi_',vegetative_proba_between)
 mi_vegetative_proba_within_family = vegetative_proba_between_family
 
 
+def check_probadef_consistency():
+    for objname, obj in globals().items():
+        if objname.endswith('_family'):
+            cobj = globals()[objname.replace('_family','')]
+            if len(cobj) != len(obj):
+                raise ValueError(objname, 'not properly defined. Missing or extra values', obj, cobj)
+
+check_probadef_consistency()
 
 within_extension = {3 : None, 4 : 'within_04', 5 : 'within_05'}
 between_extension = {3 : 'between_03to0405', 4 : 'between_04to05', 5 : None }
