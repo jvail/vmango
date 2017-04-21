@@ -1099,11 +1099,11 @@ test = function() {
 main = function() {
   verbose = 1
   determining_glm_tables_within_cycle_for_year(input_dir, "04",   verbose)
-  #determining_glm_tables_mixedinflo_within_cycle_for_year(input_dir, "0405", verbose)
-  #determining_glm_tables_within_cycle_for_year(input_dir, "05",   verbose)
+  determining_glm_tables_mixedinflo_within_cycle_for_year(input_dir, "0405", verbose)
+  determining_glm_tables_within_cycle_for_year(input_dir, "05",   verbose)
   
-  #determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", verbose)
-  #determining_glm_tables_between_cycle_for_year(input_dir, "04to05",   verbose)
+  determining_glm_tables_between_cycle_for_year(input_dir, "03to0405", verbose)
+  determining_glm_tables_between_cycle_for_year(input_dir, "04to05",   verbose)
 }
 
 main()
