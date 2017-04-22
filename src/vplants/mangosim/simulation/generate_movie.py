@@ -214,8 +214,8 @@ def main():
     elif len(sys.argv) > 1:
         raise ValueError(sys.argv[1:])
     else:
-        #generate_bgeom(421)
-        generate_pov(3,4)
+        generate_bgeom()
+        generate_pov(0,1)
 
 if __name__ == '__main__':
     main()

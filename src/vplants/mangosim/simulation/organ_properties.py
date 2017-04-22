@@ -501,7 +501,11 @@ class InfloManager (OrganManager):
               if current_date >= fruiting_cycle_end(param.cycle):
                 return
 
-              elasticity = 0.01 if param.nb_fruits == 0 else 0.04 + 0.04 * pheno_rank
+              elasticity = 0.01 
+              if param.nb_fruits > 0 :
+                 elasticity = 0.04 
+                 if current_date <= p.fruits_maturity_date :
+                    elasticity += 0.04 * (n_pheno-4)
               nsproduce([ Elasticity(elasticity) ])
               if ( pheno_stage == 4):  
                 nsproduce([ InterpolateColors(pheno_color_inflo[pheno_stage], pheno_color_inflo[pheno_stage+1] , pheno_rank) ])
@@ -764,7 +768,7 @@ class FruitManager (OrganManager):
 
     def plot(self, fruitparam, current_date):
         first_date = fruitparam.inflo_fullbloom_date
-        if first_date < current_date <= fruitparam.maturity_date:
+        if first_date < current_date <= fruitparam.maturity_date+timedelta(days=30):
             if current_date < fruitparam.growth_stage_date:
                 weight = fruitparam.initial_weight 
                 growthindex = (current_date - first_date).days/float((fruitparam.growth_stage_date-first_date).days)
@@ -787,5 +791,7 @@ class FruitManager (OrganManager):
                     ep, larg, long = self.fruit_dimensions(weight)
 
             phenoindex = (current_date - first_date).days/float((fruitparam.maturity_date-first_date).days)
+            if  current_date > fruitparam.maturity_date:
+                nsproduce([MoveTo(None,None,0),RollToHorizontal()])
             from openalea.plantgl.all import Scaled, Revolution
             nsproduce([SB(),InterpolateColors(self.pheno_colors[0],self.pheno_colors[1],phenoindex),PglShape(Scaled(ep,larg,long, Revolution(self.profile, 8 if self.resolution < 2 else 30))),EB()])   
