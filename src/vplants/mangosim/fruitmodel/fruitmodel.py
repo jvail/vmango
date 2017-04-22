@@ -118,7 +118,8 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/2002'
         # call fruit model in r 
         import sys
-        idsimu = randint(0,1000000)
+        idsimu = randint(0,100000)
+        idsimu += fruit_distance*100000
         #print 'Do simu', inflos
         tempfile = os.path.join(RWorkRepo,"resultats-"+str(idsimu)+".csv")
         if os.path.exists(tempfile): os.remove(tempfile)
