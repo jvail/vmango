@@ -7,17 +7,21 @@ if (length(localdir) != 0){
 
 EXCLUDE_FACTORS = NULL
 EFACTOR_POST_REMOVAL = TRUE
+CONSIDER_FACTORS = NULL
+BASE_FACTORS = c("Burst_Month","Flowering_Week","Position_A","Position_Ancestor_A","Nature_Ancestor_F","Nature_F")
 
 # input and output directory
 share_dir = '../../../../share/'
 input_dir = paste(share_dir,'glm_estimate_input/cogshall/', sep="")
 output_basedir = paste(share_dir,'glm_output_proba/cogshall/', sep="")
 
-generate_outputdir = function(exclude_factors = EXCLUDE_FACTORS){
-  if (is.null(exclude_factors) == TRUE){
+generate_outputdir = function(exclude_factors = EXCLUDE_FACTORS, consider_factors = CONSIDER_FACTORS){
+  if (is.null(exclude_factors) == TRUE && is.null(consider_factors) == TRUE ){
     output_dir <<- paste(output_basedir,'allfactors','/',sep='');
-  } else {
+  } else if (is.null(exclude_factors) == FALSE ) {
     output_dir <<- paste(output_basedir,'without_',paste(tolower(exclude_factors),collapse='_and_'),'/',sep='');
+  } else if (is.null(consider_factors) == FALSE ) {
+    output_dir <<- paste(output_basedir,'with_only_',paste(tolower(consider_factors),collapse='_and_'),'/',sep='');
   }
   print(output_dir)
   
@@ -26,7 +30,7 @@ generate_outputdir = function(exclude_factors = EXCLUDE_FACTORS){
   }
 }
 
-generate_outputdir(EXCLUDE_FACTORS)
+generate_outputdir(EXCLUDE_FACTORS, CONSIDER_FACTORS)
 
 source("util_glm.r")
 
@@ -137,15 +141,15 @@ prepare_data_factors = function(data) {
   factors = intersect(names(data), knowfactors)
   data = set_data_factors(data, factors)
   
-  if (!use_fruiting_state && 'Nature_Ancestor_F' %in% names(data)) {
-    levels(data$Nature_Ancestor_F) = c(0,1,1) 
+  if (!use_fruiting_state){
+    if ('Nature_Ancestor_F' %in% names(data)) {
+      levels(data$Nature_Ancestor_F) = c(0,1,1) 
+    }
+  
+    if ('Nature_F' %in% names(data)) {
+      levels(data$Nature_F) = c(0,1,1) 
+    }
   }
-
-  if (!use_fruiting_state && 'Nature_F' %in% names(data)) {
-    levels(data$Nature_F) = c(0,1,1) 
-  }
-  #data$Nature_SF = data$Nature_F
-  #levels(data$Nature_SF) = c(0,1,1) 
 
   return (data)
 }
@@ -250,20 +254,28 @@ global_factor_filtering = function(factors){
       if (length(factors) == 0) 
         factors = NULL
     }
+  } else if (is.null(CONSIDER_FACTORS) == FALSE){
+    if (CONSIDER_FACTORS == "all") { factors = factors }
+    else if (!is.null(factors)){
+      factors = c(intersect( factors, CONSIDER_FACTORS),setdiff( factors, BASE_FACTORS))
+      if (length(factors) == 0) 
+        factors = NULL
+    }
   }
   return (factors)  
 }
 ################################################################## GLM and VGLM generation ######################################################################################################################
 gen_formula.text = function(variable, factors) {
-  if (is.null(factors)) { mformula = paste(variable," ~ 1", sep="") }
+  if (is.null(factors) || length(factors) ==0) { mformula = paste(variable," ~ 1", sep="") }
   else { mformula = paste(variable," ~ ", paste(factors,collapse=" + "), sep="") }
   return (mformula)
 }
 
-check_factor_variability = function(factors, data, subset) {
+check_factor_variability = function(variable, factors, data, subset) {
   factortoremove = c()
   for (factor in factors){
-    if (length(unique(data[subset,factor])) <= 1){
+    val = unique(data[subset,factor])
+    if (length(val) <= 1){
       print(paste(variable,"has no variability for factor ",factor,": ", paste(val,collapse = ',')))
       factortoremove = c(factortoremove, factor)
     }
@@ -281,10 +293,10 @@ generate_glm = function(variable, family, data, subset, year, verbose = 0, facto
     if (!NOFILTER)
       subset = filter_monthes(factors, data, subset)
 
-    factors = check_factor_variability(factors, data, subset)
+    factors = check_factor_variability(variable, factors, data, subset)
     gfactors = factors
     factors = global_factor_filtering(gfactors)
-    
+
     path_complete_glm    = paste(output_dir,"complete_glm/",sep="")
     path_selected_glm    = paste(output_dir,"selected_glm/",sep="")
     path_interaction_glm = paste(output_dir,"interaction_glm/",sep="")
@@ -376,6 +388,7 @@ generate_vglm = function(variable, data, subset, year, verbose, factors = c("Bur
     if (!NOFILTER)
        subset = filter_monthes(factors, data, subset)
     
+    factors = check_factor_variability(variable, factors, data, subset)
     gfactors = factors
     factors = global_factor_filtering(gfactors)
     #data = set_data_factors(data, factors)
@@ -544,7 +557,13 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
   ############################################## Has_Apical_GU_Child ############################################## 
   if (verbose >= 1) print("########### Estimate Has_Apical_Child")
   
-  index_bursted = which(bursted_selection)
+  if (Has_Apical_Child == "Has_Apical_GU_Child" && "Has_Apical_MI_Child" %in% rownames(data)) {
+    lbursted_selection = bursted_selection & (is.na(data[,"Has_Apical_MI_Child"]) | data[,"Has_Apical_MI_Child"] != 1)
+  } else {
+    lbursted_selection = bursted_selection
+  }
+    
+  index_bursted = which(lbursted_selection)
   
   lfactors = filter_factors(Has_Apical_Child,factors, exclude, include)
   ldata = grouping_monthes(Has_Apical_Child, data, monthgroups, lfactors)
@@ -588,6 +607,7 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
   ldata = grouping_monthes(Burst_Date_Children, data, monthgroups, lfactors)
   monthes = unique(ldata[[Burst_Date_Children]])
   monthes = monthes[!is.na(monthes)]
+  
   if (length(monthes) >= 1){
     bdate_subset = index_bursted
     bddate_subset = index_bursted
@@ -602,7 +622,19 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
     }
     generate_vglm(Burst_Date_Children,  data=ldata, subset= bdate_subset, year= yeartag, verbose = verbose, factors = lfactors, tag = tag)
   
-    if (children_date_test) {
+  children_date_decompose = FALSE
+  if (children_date_decompose && 'Nature_Ancestor_F' %in% lfactors) {
+    for (c in unique(ldata$Nature_Ancestor_F)){
+      Burst_Date_ChildrenI = paste(Burst_Date_Children,c,sep='_')
+      ldata[Burst_Date_ChildrenI] = ldata[Burst_Date_Children]
+      llfactors = setdiff(lfactors,  'Nature_Ancestor_F')
+      lbdate_selection = bursted_selection & ldata$Nature_Ancestor_F == c
+      lbdate_subset = which(lbdate_selection)
+      generate_vglm(Burst_Date_ChildrenI,  data=ldata, subset= lbdate_subset, year= yeartag, verbose = verbose, factors = llfactors, tag = tag)
+    }
+  }
+    
+  if (children_date_test) {
       
       ############################################## Delta Burst date of children ############################################## 
       if (verbose >= 1) print("########### Estimate Burst Delta Date of Children with vglm") 
@@ -779,7 +811,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
   yeartag = paste("within_",year,sep="")
   
   # data = prepare_data_factors(data)
-  levels(data$Nature_Ancestor_F) = c(0,1,1) 
+  #levels(data$Nature_Ancestor_F) = c(0,1,1) 
   
   # summary(data)
   if (is.null(selection)) { subset_selection = data$Tree_Fruit_Load == 1 }
@@ -791,7 +823,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
   exclude = list("Has_Apical_GU_Child" = c("Position_Ancestor_A"),
                  "Has_Lateral_GU_Children" = c("Position_Ancestor_A", "Nature_Ancestor_F"),
                  "Nb_Inflorescences" = c("Position_Ancestor_A"),
-                 "Fruiting" = c('Nature_Ancestor_F'),
+                 #"Fruiting" = c('Nature_Ancestor_F'),
                  "Nb_Fruits" = c("Position_Ancestor_A")
                  )
   
@@ -810,6 +842,8 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     exclude$Burst_Delta_Date_GU_Children =  c("Position_A")
     monthgroups$Burst_Delta_Date_GU_Children_Poisson = list(c(9,10) )
     
+    #exclude$Fruiting = append(exclude[["Fruiting"]],  c("Burst_Month"))
+    #include$Fruiting =  c("Flowering_Week")
     #exclude$Fruiting = append(exclude[["Fruiting"]],  "Burst_Month")
     #exclude$Nb_Fruits = append(exclude[["Nb_Fruits"]],  "Nature_Ancestor_F")
     #exclude$Flowering =  c("Nature_Ancestor_F")
@@ -826,20 +860,22 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
   }
 
   if (year == '05') {
-    monthgroups = list(Vegetative_Burst = list(6:12,1:2))
+    monthgroups = list(Vegetative_Burst = list(8:12,1:2))
     #exclude$Vegetative_Burst =  c("Position_A")
     exclude$Has_Apical_GU_Child = append(exclude[["Has_Apical_GU_Child"]],  c("Burst_Month"))
+    exclude$Nb_GU_Children = append(exclude[["Nb_GU_Children"]],  c("Nature_Ancestor_F"))
     
     #monthgroups$Has_Lateral_GU_Children = list( c(10,11,12,1), c(2,3))
     monthgroups$Has_Lateral_GU_Children = list( c(8,9), c(10,11,12,1))
     monthgroups$Nb_Lateral_GU_Children = list( 8:12, c(1,2))
+    #monthgroups$Nb_GU_Children = list( 8:12, c(1,2))
     
     monthgroups$Burst_Date_GU_Children = list(c(8,9,10), c(12, 1, 2) )
     monthgroups$Burst_Delta_Date_GU_Children = list( c(8,9,10), c(12, 1, 2) )
     #exclude$Burst_Date_Children = c("Position_A")
     monthgroups$Burst_Delta_Date_GU_Children_Poisson = list( c(10, 11) )
 
-    exclude$Burst_Date_GU_Children = c("Position_Ancestor_A")
+    exclude$Burst_Date_GU_Children = c("Position_Ancestor_A",'Position_A')
     #if(!NOFILTER)
     #  data = group_factor_values(data,'Burst_Date_GU_Children', list(c(10,11,12)))  
     exclude$Burst_Delta_Date_GU_Children = c("Position_Ancestor_A")
@@ -859,9 +895,9 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
 
     #exclude$Fruiting = append(exclude[["Fruiting"]],  "Position_A")
     #monthgroups$Fruiting = list(c(1,2) )
-    #exclude$Fruiting = append(exclude[["Fruiting"]],  c("Burst_Month"))
+    exclude$Fruiting = append(exclude[["Fruiting"]],  c("Burst_Month"))
     include$Fruiting =  c("Flowering_Week")
-    monthgroups$Fruiting = list( 1:6, 7:10, 11:12) # A corriger !!!!!
+    monthgroups$Fruiting = list( 1:3, 5:6, 7:9, 11:12) 
 
     #exclude$Fruit_Weight =  c("Nature_Ancestor_F")
     #include$Nb_Fruits = c("Flowering_Week")
@@ -871,6 +907,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     exclude$Harvest_Week = c("Burst_Month")
     include$Harvest_Week_Poisson = c("Flowering_Week","Nb_Inflorescences")
     exclude$Harvest_Week_Poisson = c("Burst_Month")
+    monthgroups$Harvest_Week_Poisson = list( 1:4, 8:9) 
     # ne marche pas : pas assez d'éléments ?
     datemultimode = FALSE # TRUE
   }
@@ -971,10 +1008,12 @@ determining_glm_tables_between_cycle = function(data, year, verbose = FALSE, sel
     if (year == '04to05') {
       monthgroups$Vegetative_Burst = list( c(9,10), c(1,2,3,4,5))
       exclude$Has_Apical_GU_Child = c('Position_A')
+      exclude$Nb_GU_Children = c('Burst_Month')
       monthgroups$Has_Apical_GU_Child = list( c(10,11,12), c(1,2), c(3,4,5))
       monthgroups$Has_Lateral_GU_Children = list( c(3,4,5))
       monthgroups$Nb_Lateral_GU_Children = list(c(10,11,12), c(3,4,5))
       monthgroups$Burst_Date_GU_Children = list(c(10,11,12), c(3,4,5))
+      
 
       #if (!NOFILTER) 
       #  data = group_factor_values(data,'Burst_Date_GU_Children', list(c(110,111,112)))
@@ -1060,7 +1099,7 @@ determining_glm_tables_between_cycle_for_year = function(input_dir, year, verbos
 
 test = function() {
   data = read.csv(paste(input_dir,"table_within_cycle_04.csv",sep=""),header = TRUE)
-  #data = read.csv(paste(input_dir,"table_between_cycle_03to0405.csv",sep=""),header = TRUE)
+  #data = read.csv(paste(input_dir,"table_between_cycle_04to05.csv",sep=""),header = TRUE)
   
   #data = prepare_data_factors(data, month_cycle_order)
   data$Burst_Month = as.factor(data$Burst_Month)
@@ -1110,10 +1149,7 @@ main()
 
 gen_constraint_glm = function() {
   initialvalue = EXCLUDE_FACTORS
-  EXCLUDE_FACTORS <<- c('Nature_F','Nature_Ancestor_F')
-  generate_outputdir(EXCLUDE_FACTORS)
-  main()
-  for (ef in c('Burst_Month','Position_A','Position_Ancestor_A','all')) {
+  for (ef in list(c('Burst_Month','Flowering_Week'), c('Nature_F','Nature_Ancestor_F'), 'Position_A','Position_Ancestor_A','all')) {
     EXCLUDE_FACTORS <<- ef
     generate_outputdir(ef)
     main()
@@ -1122,3 +1158,24 @@ gen_constraint_glm = function() {
 }
 
 gen_constraint_glm()
+
+gen_limited_glm = function() {
+  initialvalue = CONSIDER_FACTORS
+  for (ef in list(c('Burst_Month','Flowering_Week'), c('Nature_F','Nature_Ancestor_F'), 'Position_A','Position_Ancestor_A','all')) {
+    CONSIDER_FACTORS <<- ef
+    generate_outputdir(NULL,ef)
+    main()
+  }
+  CONSIDER_FACTORS <<- initialvalue
+}
+
+gen_limited_glm()
+
+#EXCLUDE_FACTORS <<- 'all'
+#generate_outputdir(EXCLUDE_FACTORS)
+#NOFILTER <<- TRUE
+
+#CONSIDER_FACTORS <<- c('Nature_F','Nature_Ancestor_F')
+#generate_outputdir(NULL, CONSIDER_FACTORS)
+#NOFILTER <<- TRUE
+#main()

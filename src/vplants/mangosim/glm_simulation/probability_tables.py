@@ -77,8 +77,19 @@ class ProbaTable:
                 if not f in ['Tree_Fruit_Load', 'Burst_Date', 'Position_A', 'Nature_F']:
                     raise ValueError('Invalid factor for Within cycle proba',f)
 
+    def check_cycle(self, cycle):
+        if 'Cycle' in self.factors:
+            cyclepos = self.factors.index('Cycle')
+            nvalue = {}
+            for key, val in self.values:
+                if key[cyclepos] == self.cycle:
+                    nkey = list(key)
+                    del nkey[cyclepos]
+                    nvalue[nkey] = val
+            self.values = nvalues
 
-def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm, restriction = None):
+
+def read_proba_tables(variety = 'cogshall', treename = 'all_trees', estimationtype = eCompleteGlm, restriction = None, repetedpattern = False):
     from os.path import exists, join
     probafilepath = get_probability_repository(variety, treename, estimationtype, restriction)
     if not exists(probafilepath): raise ValueError("Proba path repository does not exist", probafilepath)

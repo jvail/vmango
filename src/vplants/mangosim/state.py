@@ -25,11 +25,20 @@ eMeasuredMtg, eSimulatedMtg = 1,2
 eMonthMultinomialForWithin, eDeltaMultinomialForWithin, eDeltaPoissonForWithin = range(3)
 WithinDelayMethodName = {eMonthMultinomialForWithin : 'MonthMultinomial', eDeltaMultinomialForWithin : 'DeltaMultinomial', eDeltaPoissonForWithin : 'DeltaPoisson'}
 
-eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction, eAllRestriction = 1,2,4,8,15
-RestrictionName = { eBurstDateRestriction         : 'without_burst_month', 
+eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction = 1,2,4,8
+eBurstDateOnlyRestriction, ePositionAOnlyRestriction, ePositionAncestorAOnlyRestriction, eNatureFOnlyRestriction = 15 - eBurstDateRestriction, 15 -  ePositionARestriction, 15 - ePositionAncestorARestriction, 15 -  eNatureFRestriction
+eAllRestriction, eNoRestriction = 15,0
+
+RestrictionName = { eBurstDateRestriction         : 'without_burst_month_and_flowering_week', 
                     ePositionARestriction         : 'without_position_a', 
                     ePositionAncestorARestriction : 'without_position_ancestor_a',                    
                     eNatureFRestriction           : 'without_nature_f_and_nature_ancestor_f',
                     eAllRestriction               : 'without_all',
+                    eBurstDateOnlyRestriction         : 'with_only_burst_month_and_flowering_week', 
+                    ePositionAOnlyRestriction         : 'with_only_position_a', 
+                    ePositionAncestorAOnlyRestriction : 'with_only_position_ancestor_a',                    
+                    eNatureFOnlyRestriction           : 'with_only_nature_f_and_nature_ancestor_f',
+                    eAllRestriction               : 'without_all',
+                    eNoRestriction                : 'allfactors',
                     None                          : 'allfactors'
                     }

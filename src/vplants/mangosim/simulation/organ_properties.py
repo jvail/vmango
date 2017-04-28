@@ -443,7 +443,7 @@ class InfloManager (OrganManager):
         B = 50.853318687577556 # 1. / 0.0196644
         return FinalSize/(1+exp(-(T-self.t_ip_inflo)/B))
 
-    def step_growth(self, p, daystep, current_temperatures):
+    def pre_step_growth(self, p, daystep, current_temperatures):
         if daystep > 1:
             for ctemperature in current_temperatures:
                 p.growth_tts.accumulate(ctemperature)
@@ -455,6 +455,14 @@ class InfloManager (OrganManager):
       
         if p.pheno_tts.stage < 4 :
             p.length = self.growth_function(p.growth_tts.ttsum, p.final_length)
+
+    def post_step_growth(self, p, current_date):
+        Fruit = ModuleClass.get('Fruit')
+        if p.fruiting == False :
+            if p.nb_fruits > 0 and current_date >= p.fullbloom_date:
+                p.fruiting = True
+                for i in xrange(p.nb_fruits):
+                    nsproduce([SB(),RollToVert(),Left((-1**i)*(120/p.nb_fruits)*i),Fruit(self.fruitmanager.set_dimensions(p, current_date)),EB()])
 
     def init_growth(self, p, current_date):
         for day in date_xrange(p.burst_date, current_date+timedelta(days=1)):
@@ -511,7 +519,7 @@ class InfloManager (OrganManager):
                 nsproduce([ InterpolateColors(pheno_color_inflo[pheno_stage], pheno_color_inflo[pheno_stage+1] , pheno_rank) ])
               else:
                 nsproduce([SetColor(pheno_color_inflo[5])])
-              nsproduce([SetWidth(internode_radius),nF(length,internode_length)])
+              nsproduce([SetWidth(internode_radius),nF(length,internode_length),RollR(param.get('totalphyloangles',0))])
            else:
               nsproduce([f(0.3)])
               if ( pheno_stage >= 3 ):
@@ -526,6 +534,7 @@ class InfloManager (OrganManager):
                   
                   if not hasattr(param,'phyloangles'):
                      param.phyloangles = [ ((60 + randint(0,30)) if (i < 8 or i > 19) else 220) for i in xrange(NbAxe2) ]
+                     param.totalphyloangles = sum(param.phyloangles)
                      param.activeaxes = [True for i in xrange(NbAxe2)]
                      param.nbactiveaxes = NbAxe2
                      param.flowersinflo = [[] for i in xrange(NbAxe2)]
@@ -584,8 +593,13 @@ class InfloManager (OrganManager):
               
               # We use a logistic function
               sininterpolation = lambda x, coef : 1./(1+exp(-(x-(0.8-0.6*coef))/0.05))
+
+              if self.resolution == 1 : 
+                  nsproduce([InterpolateColors(pheno_color_flower[pheno_stage],pheno_color_flower[pheno_stage+1],pheno_rank),IncWidth(length/10),F(length,0.1)])
+                  return
               
               nsproduce([SetWidth(intradius)])
+
               
               if flower_info == []:
                 flower_info += [None for i in xrange(firstwhorl)]+[(randint(nbflower-1,nbflower+1), randint(-20,20), uniform(-0.1,0.1), uniform(0,1) < 0.2) for i in xrange(nbwhorl-firstwhorl-1)]+[(1,0,0, 1)]
@@ -768,20 +782,26 @@ class FruitManager (OrganManager):
 
     def plot(self, fruitparam, current_date):
         first_date = fruitparam.inflo_fullbloom_date
+        stage = 1
         if first_date < current_date <= fruitparam.maturity_date+timedelta(days=30):
             if current_date < fruitparam.growth_stage_date:
+                stage = 1
                 weight = fruitparam.initial_weight 
                 growthindex = (current_date - first_date).days/float((fruitparam.growth_stage_date-first_date).days)
                 #weight *= growthindex
                 #sininterpolation = lambda x : 1./(1+exp(-(x-(0.5))/0.15))
-                ep, larg, long = self.fruit_dimensions(weight)
-                ep *= growthindex
-                larg *= growthindex
-                long *= growthindex
+                dims = self.fruit_dimensions(weight)
+                mn = np.mean(dims)
+                mn *= growthindex
+                ratios = [d/mn for d in dims]
+                cratios = [1+(r-1)*growthindex for r in ratios]
+                ep, larg, long = [mn*r for r in cratios]
             elif current_date >= fruitparam.maturity_date:
+                stage = 3
                 weight = fruitparam.weight
                 ep, larg, long = self.fruit_dimensions(weight)
             else:
+                stage = 2
                 if fruitparam.hasattr('growth'):
                     weight = fruitparam.growth[current_date][0]
                     ep, larg, long = self.fruit_dimensions(weight)
@@ -790,8 +810,18 @@ class FruitManager (OrganManager):
                     weight = fruitparam.initial_weight + (fruitparam.weight-fruitparam.initial_weight)* growthindex                  
                     ep, larg, long = self.fruit_dimensions(weight)
 
-            phenoindex = (current_date - first_date).days/float((fruitparam.maturity_date-first_date).days)
-            if  current_date > fruitparam.maturity_date:
-                nsproduce([MoveTo(None,None,0),RollToHorizontal()])
+            phenoindex = (current_date - first_date).days/float((fruitparam.growth_stage_date-first_date).days)
             from openalea.plantgl.all import Scaled, Revolution
-            nsproduce([SB(),InterpolateColors(self.pheno_colors[0],self.pheno_colors[1],phenoindex),PglShape(Scaled(ep,larg,long, Revolution(self.profile, 8 if self.resolution < 2 else 30))),EB()])   
+            nsproduce([SB(),RollToVert(),F(5*min(1,phenoindex)),RollToHorizontal()])
+            if  current_date > fruitparam.maturity_date:
+                nsproduce([MoveTo(None,None,ep/2),])
+            else:
+                nsproduce([Down(90)])
+            if stage == 1:
+                nsproduce([SetColor(self.pheno_colors[0])])
+            elif stage == 2:
+                colphenoindex = (current_date - fruitparam.growth_stage_date).days/float((fruitparam.maturity_date-fruitparam.growth_stage_date).days)
+                nsproduce([InterpolateColors(self.pheno_colors[0],self.pheno_colors[1],colphenoindex)])
+            elif stage == 3:
+                nsproduce([SetColor(self.pheno_colors[1])])
+            nsproduce([PglShape(Scaled(ep,larg,long, Revolution(self.profile, 8 if self.resolution < 2 else 30))),EB()])   

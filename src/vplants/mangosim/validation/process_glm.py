@@ -10,6 +10,27 @@ from vplants.mangosim.util_path import get_glm_mtg_repository, mtgfname
 lsysfile = '../simulation/mango_simulation.lpy'
 
 
+def get_outdir(params, optionname = None):
+    if 'FRUITBRANCHSIZE' in params:
+        optionname = 'fruitbranchsize'+str(params['FRUITBRANCHSIZE'])
+    return get_glm_mtg_repository(params, optionname)
+
+def get_outfname(seed):
+    return mtgfname.format(str(seed).zfill(4))
+
+def eval_param(argv):
+    seed = int(argv[0])
+    params = eval_paramcmd(argv[1:])
+    return seed, params
+
+def eval_paramcmd(paramcmd):
+    params = dict()
+    assert len(paramcmd) % 2 == 0
+    for i in xrange(len(paramcmd)/2):
+        params[paramcmd[2*i]] = eval(paramcmd[2*i+1])
+    return params
+
+
 def generate_mtg(trees = range(3), params = dict()):
     from openalea.lpy import Lsystem
     from openalea.mtg import MTG
@@ -37,13 +58,11 @@ def generate_mtgs(trees = range(3),
     cwd = os.getcwd()
     os.chdir(dirname(lsysfile))
 
-    if 'FRUITBRANCHSIZE' in params:
-        optionname = 'fruitbranchsize'+str(params['FRUITBRANCHSIZE'])
-    outputdir = get_glm_mtg_repository(params, optionname)
+    outputdir = get_outdir(params, optionname)
     if not os.path.exists(outputdir): os.makedirs(outputdir)
 
     for seed in seeds:
-        fname = mtgfname.format(str(seed).zfill(4))
+        fname = get_outfname(seed)
         if not os.path.exists(join(outputdir,fname)):  
             print 'Generate trees with seed',seed
             nparams = params.copy()
@@ -65,19 +84,18 @@ def generate_mtgs(trees = range(3),
 def generate_all(nb = 10, fruitmodel = False):
     params = {'GLM_TYPE' : eInteractionGlm, 'FRUIT_MODEL' : fruitmodel}
     generate_mtgs(seeds = range(nb), params = params)
-    params = {'GLM_TYPE' : eSelectedGlm, 'FRUIT_MODEL' : fruitmodel}
-    generate_mtgs(seeds = range(nb), params = params)
-    params = {'GLM_TYPE' : eCompleteGlm, 'FRUIT_MODEL' : fruitmodel}
-    generate_mtgs(seeds = range(nb), params = params)
+    #params = {'GLM_TYPE' : eSelectedGlm, 'FRUIT_MODEL' : fruitmodel}
+    #generate_mtgs(seeds = range(nb), params = params)
+    #params = {'GLM_TYPE' : eCompleteGlm, 'FRUIT_MODEL' : fruitmodel}
+    #generate_mtgs(seeds = range(nb), params = params)
+
+def generate_all_restriction(nb = 1000):
+    generate_mtgs(seeds = range(nb))
 
 def generate_all(maxseed = 100, fruitmodel = False, minseed = 0):
     import itertools
     params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],[str(fruitmodel)]))
     process_set_of_simulations(params, True)
-
-def generate_all_restriction(nb = 1000):
-    generate_mtgs(seeds = range(nb))
-
 
 def _generate(params):
     import os, sys
@@ -90,14 +108,24 @@ def _generate(params):
     os.system(cmd0+cmd)
 
 def process_set_of_simulations(paramvalueslist, parallel = True):
-    import multiprocessing as mp
 
-    paramvalueslist = [' '.join(map(str,param)) for param in paramvalueslist]
+    #paramvalueslist = [' '.join(map(str,param)) for param in paramvalueslist]
+    nparamvalueslist = []
+    for params in paramvalueslist:
+            seed, nparams = params[0], eval_paramcmd(params[1:])
+            if not os.path.exists(join(get_outdir(nparams), get_outfname(seed))):
+                nparamvalueslist.append(' '.join(map(str,params)))
+    paramvalueslist = nparamvalueslist
+
     #print paramvalueslist
     if not parallel:
         for params in paramvalueslist:
-            _generate(params)
+            seed, params = eval_param(params.split())
+            if not os.path.exists(join(get_outdir(params), get_outfname(seed))):
+                generate_mtgs(seeds=[seed], params=params)
+                #_generate(params)
     else:
+        import multiprocessing as mp
         countcpus = mp.cpu_count()-2
         pool = mp.Pool(processes=countcpus)
         pool.map(_generate,paramvalueslist)
@@ -107,13 +135,14 @@ def process_restricted_models(maxseed=1000, fruitmodel = False, minseed = 0):
     import itertools
     params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['eBurstDateRestriction', 'ePositionARestriction', 'ePositionAncestorARestriction', 'eNatureFRestriction', 'eAllRestriction'],['FRUIT_MODEL'],[str(fruitmodel)]))
 
-    process_set_of_simulations(params, not fruitmodel)
+    process_set_of_simulations(params)
 
 def process_bfsize_models(maxseed=1000, fruitmodel = False, minseed = 0):
     import itertools
     params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],['True'],['FRUITBRANCHSIZE'],[str(i) for i in xrange(1,7)]))
 
-    process_set_of_simulations(params, not fruitmodel)
+    process_set_of_simulations(params)
+
 
 
 if __name__ == '__main__' :
@@ -121,12 +150,7 @@ if __name__ == '__main__' :
     import vplants.mangosim.utils.message as message
     if len(sys.argv) > 1 :
         if  '--process' == sys.argv[1]:
-            seed = int(sys.argv[2])
-            params = dict()
-            paramcmd = sys.argv[3:]
-            assert len(paramcmd) % 2 == 0
-            for i in xrange(len(paramcmd)/2):
-                params[paramcmd[2*i]] = eval(paramcmd[2*i+1])
+            seed, params = eval_param(sys.argv[2:])
             generate_mtgs(seeds=[seed],params=params)
         elif '--std' == sys.argv[1]:
             import time
@@ -180,7 +204,7 @@ if __name__ == '__main__' :
             print '--std [nb] [fruitmodel]'
             print '--restricted [nb] [fruitmodel]'
     else:
-        #generate_all(100, False)
-        generate_all(10, False)
-        #process_restricted_models(100)
+        #generate_all(1000, False)
+        #generate_all(10, False)
+        process_restricted_models(1000)
         message.send_msg('Simu','Done.')

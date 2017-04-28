@@ -60,11 +60,12 @@ class ProbaTable:
             else:
                 valindex = None
         else:
-            if 'number' in extrafactors : extrafactors.remove('number')
+            if 'number' in extrafactors and self.family != eGaussian: extrafactors.remove('number')
             lextrafactors = list(extrafactors)
             lextrafactors.remove('probability')
             if self.family == eGaussian:                
                 lextrafactors.remove('stderror')                
+                lextrafactors.remove('number')                
             if len(lextrafactors) != 0 :
                 raise ValueError('Unrecognized factors', self.name, self.fname, lextrafactors)
 
@@ -122,13 +123,14 @@ class ProbaTable:
     def realization(self, **args):
         from numpy import cumsum
         from numpy.random import binomial, poisson, uniform, normal
+        from math import sqrt
         probavalue = self.get_proba_value(args)
         if self.family == eBinomial:
             return bool( binomial(1,probavalue[0]) )
         elif self.family == ePoisson:
             return int( poisson(probavalue[0],1) )
         elif self.family == eGaussian:
-            return float( normal(probavalue[0],probavalue[1],1) )
+            return float( normal(probavalue[0],probavalue[1]*sqrt(probavalue[2]),1) )
         elif self.family == eMultinomial:
             check_compat = True
             if check_compat:
@@ -169,7 +171,21 @@ class ProbaTable:
         else:
             return range(len(self.answers))
 
-def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restriction = None):
+    def check_cycle(self, cycle):
+        if 'Cycle' in self.factors:
+            cyclepos = self.factors.index('Cycle')
+            nvalues = {}
+            for key, val in self.values.items():
+                if key[cyclepos] == self.cycle:
+                    nkey = list(key)
+                    del nkey[cyclepos]
+                    nkey = tuple(nkey)
+                    nvalues[nkey] = val
+            self.values = nvalues
+            del self.factors[cyclepos]
+            del self.factorsvalues['Cycle']
+
+def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restriction = None, repeatprobas = False):
     from os.path import exists, join
     probafilepath = get_probability_repository(variety, estimationtype, restriction)
     if not exists(probafilepath): raise ValueError("Proba path repository does not exist", probafilepath)
@@ -192,6 +208,7 @@ def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restr
                     p = ProbaTable(prop,family,propfile)
                     p.type = eWithinCycle
                     p.cycle = cycle
+                    p.check_cycle(cycle)
                     p.estimation = (variety, estimationtype)
                     p.check()
                     proba_within[prop] = p
@@ -204,6 +221,7 @@ def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restr
                     p = ProbaTable(prop,family,propfile)
                     p.type = eLaterCycle
                     p.cycle = cycle
+                    p.check_cycle(cycle)
                     p.estimation = (variety, estimationtype)
                     p.check()
                     proba_between[prop] = p
@@ -211,6 +229,8 @@ def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restr
                     import warnings
                     warnings.warn("Table '%s' for variety '%s' does not exist." % (prop+'_'+ext, variety))
         probacycle[cycle] = (proba_within, proba_between)
+    if repeatprobas:
+        pass
     return probacycle
 
 global_proba_tables = {}
@@ -395,19 +415,20 @@ class UnitDev:
     def find_closest_factor_values(self, name, cycle = eWithinCycle, factorname = 'Burst_Month'):
         import numpy as np
         proba_table = self.get_table(name, cycle)
-        refmonth = self.params[factorname]
+        refvalue = self.params[factorname]
+        keyordering = {'Burst_Month' : lambda v : MonthOrder.index(v)}
         if factorname in proba_table.factors:
             idx = proba_table.factors.index(factorname)
             existingvalues = list(np.unique([k[idx] for k in proba_table.values.keys()]))
-            return find_closest_values(refmonth, existingvalues, lambda v : MonthOrder.index(v))
+            return find_closest_values(refvalue, existingvalues, keyordering=keyordering.get(factorname))
         else:
-            return refmonth
+            return refvalue
 
     def get_realization_from_closestvalues(self, name, cycle = eWithinCycle, factorname = 'Burst_Month'):
         try:
             return self.get_realization(name, cycle = cycle)
         except KeyError, ke:
-            mth = self.find_closest_factor_values(name, cycle=cycle)
+            mth = self.find_closest_factor_values(name, cycle=cycle, factorname=factorname)
             p = (self.params if cycle == eWithinCycle else self.paramsdelayed)
             cm = p[factorname]
             if type(mth) == tuple:
@@ -502,7 +523,10 @@ class UnitDev:
             return False
 
     def nb_inflorescences(self):
-        return self.get_realization_from_closestvalues('nb_inflorescences')+1
+        val = 0
+        while not (1 <= val <=5):
+            val = int(self.get_realization_from_closestvalues('nb_inflorescences'))+1
+        return val
 
     def flowering_date(self):
         from random import randint
@@ -522,9 +546,9 @@ class UnitDev:
 
     def nb_fruits(self):
         try:
-            return self.get_realization('nb_fruits')+1
+            return int(self.get_realization('nb_fruits'))+1
         except KeyError:
-            return self.get_realization_from_closestvalues('nb_fruits', factorname = 'Nb_Inflorescences')+1
+            return int(self.get_realization_from_closestvalues('nb_fruits', factorname = 'Nb_Inflorescences'))+1
 
     def fruit_weight(self):
         return self.get_realization('fruit_weight')
@@ -596,7 +620,7 @@ class UnitDev:
                 nb_inflorescences = self.nb_inflorescences()
                 date_inflo_bloom, fweek  = self.flowering_date()
                 self.params['Flowering_Week'] = fweek
-                self.params['Nb_Inflorescences'] = min(5,nb_inflorescences)
+                self.params['Nb_Inflorescences'] = nb_inflorescences
                 if self.fruiting():
                     nb_fruits    = self.nb_fruits()
                     fruit_weight = self.fruit_weight()
@@ -618,6 +642,7 @@ class UnitDev:
 
                 date_children_burst = self.gu_burst_date_children(eLaterCycle)
 
+        assert 0 <= nb_inflorescences <= 5
         return apical_child, nb_lateral_gu_children, has_mi_child, nb_inflorescences, nb_fruits, fruit_weight, date_children_burst, date_inflo_bloom, mi_burst_date, harvest_date
             
 
