@@ -3,11 +3,12 @@ reload(mm)
 from vplants.mangosim.doralice_mtg.mtg_manipulation import *
 from vplants.mangosim.state import *
 from vplants.mangosim.tools import *
-from vplants.mangosim.util_path import get_glm_mtg_repository, mtgfname
+from vplants.mangosim.util_path import *
 import os
 from plot_distribution import *
 from numpy import mean
 import itertools
+import matplotlib.pyplot as plt
 
 
 figoutdir = 'figures'
@@ -28,31 +29,7 @@ def retrieve_mtgs(inputdir, nb = None):
     return mtgs
 
 
-from multiprocessing import Process, Pipe
-import itertools
-
-def spawn(f):
-    def fun(pipe,x):
-        pipe.send(f(x))
-        pipe.close()
-    return fun
-
-def parmap(f,X):
-    pipe=[Pipe() for x in X]
-    proc=[Process(target=spawn(f),args=(c,x)) for x,(p,c) in itertools.izip(X,pipe)]
-    [p.start() for p in proc]
-    [p.join() for p in proc]
-    return [p.recv() for (p,c) in pipe]
-
-def nparmap(f,X,n = 5):
-    from math import ceil
-    res = []
-    nbdata = len(X)
-    nbsteps =  int(ceil(float(nbdata) / n))
-    for j in xrange(nbsteps):
-        res += parmap(f,X[j*n:min(nbdata,(j+1)*n)])
-    return res
-
+from vplants.mangosim.utils.util_parallel import *
 
 class Evaluator:
     def __init__(self, name, func, reducefuncs, reference = True, verbose = True, fruitmodel = False):
@@ -60,33 +37,59 @@ class Evaluator:
         self.reducefuncs = reducefuncs
         if type(reducefuncs) != list : self.reducefuncs = [reducefuncs]
         self.name = name 
-        self.inputdirs = []
         self.reference = reference
         self.verbose = verbose
         self.funcargs = []
         self.funckwds = {}
         self.reduseargs = []
         self.reducekwds = {}
-        self.glmtargets = []
+        self.paramtargets = []
         self.target_tree = 'all'
         self.fruitmodel = fruitmodel
 
-    def target(self, glm = eInteractionGlm, restriction = None):
+    def addtarget(self, glm = eInteractionGlm, restriction = None, **args):
         if type(glm) != list: glm = [glm]
         if type(restriction) != list: restriction = [restriction]
-        glmtargets = list(itertools.product(glm, restriction))
-        for iglm, irestriction in glmtargets:
-            params = {'GLM_TYPE' : iglm, 'GLM_RESTRICTION' : irestriction, 'FRUIT_MODEL' : self.fruitmodel}
-            self.inputdirs.append((iglm, irestriction, get_glm_mtg_repository( params = params)))
-        self.glmtargets += glmtargets
+        baseparams = {'GLM_TYPE' : glm, 'GLM_RESTRICTION' : restriction}
+        if not 'FRUIT_MODEL' in args:
+            baseparams['FRUIT_MODEL'] = [self.fruitmodel]
+        for name, argval in args.items():
+            if type(argval) != list: baseparams[name] = [argval]
+            else : baseparams[name] = argval
+
+        paramtargets = list(itertools.product(*baseparams.values()))
+        for paramvalue in paramtargets:
+            params = dict(zip(baseparams.keys(),paramvalue))
+            self.paramtargets.append(params)
         return self
 
     def targettree(self, treename):
         self.target_tree = treename
 
     def allrestrictions(self, glm = eInteractionGlm):
-        self.target(restriction=[None, eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction, eAllRestriction])
+        self.addtarget(restriction=[None, eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction, eAllRestriction])
         return self
+
+    def get_param_targets(self):
+        if len(self.paramtargets) == 0:
+            return  [{'GLM_TYPE' : eInteractionGlm, 'GLM_RESTRICTION' : None, 'FRUIT_MODEL' : False}]
+        else:
+            return self.paramtargets
+
+    def fruitbranchsizetest(self, sizerange = None):
+        if sizerange is None:
+            path = get_option_glm_mtg_repository(fruitmodel = True, fruitbranchsize = 1)
+            fbs_prefix = 'fruitbranchsize'
+            while not os.path.basename(path).startswith(fbs_prefix):
+                path = os.path.dirname(path)
+            path = os.path.dirname(path)
+            import glob
+            pathes = glob.glob(os.path.join(path,fbs_prefix+'*'))
+            sizerange = [int(os.path.basename(lpath)[len(fbs_prefix):]) for lpath in pathes]
+            print 'Fruit Branch Size Range :', sizerange
+
+        self.addtarget(FRUIT_MODEL = True, FRUITBRANCHSIZE = sizerange)
+        pass
 
     def configure(self, *args, **kwds):
         self.funcargs = args
@@ -99,16 +102,19 @@ class Evaluator:
         return self
 
     def apply(self, nb = None, force = False, parallel = True, saving = False):
+        valuesset, refvalues = self.compute(nb, force, parallel)
+        self.reduce(valuesset, refvalues, saving)
+
+    def compute(self, nb = None, force = False, parallel = True):
         cachebasename = self.cachebasename()
         import time
-        if len(self.inputdirs) == 0: self.target()
-
-        valuesset = {}
+        valuesset = []
         if self.reference:
             refvalues = self._applyto(eMeasuredMtg)
         else:
             refvalues = None
-        for iglm, irestriction, inputdir in self.inputdirs:
+        for params in self.get_param_targets():
+            inputdir = get_glm_mtg_repository( params = params)
             cachefile = join(inputdir, cachebasename)
             computation = force or not exists(cachefile)
             if not computation :
@@ -129,15 +135,16 @@ class Evaluator:
                 dump_obj(values, cachebasename, inputdir)
             else:
                 values = load_obj(cachebasename, inputdir)
-            valuesset[(iglm, irestriction)] = values
+            valuesset.append( (params,values) )
+        return valuesset, refvalues
 
+    def reduce(self, valuesset, refvalues, saving):
         import matplotlib.pyplot as plt
         for func, filename in zip(self.reducefuncs, self.saved_filenames()):
             func(refvalues, valuesset, *self.reduseargs, **self.reducekwds)
             if saving:
-                lfigoutdir = os.path.join(figoutdir,'fruitmodel' if self.fruitmodel else 'nofruitmodel')
-                if not os.path.exists(lfigoutdir):
-                    os.makedirs(lfigoutdir)
+                if not os.path.exists(figoutdir):
+                    os.makedirs(figoutdir)
                 print 'Save',repr(filename)
                 plt.savefig(filename,  bbox_inches='tight')
                 plt.close()
@@ -150,28 +157,24 @@ class Evaluator:
         return 'cache_'+self.name+'_'+self.target_tree+'.pkl'
 
     def cache_files(self):
-        if len(self.inputdirs) == 0: self.target()
         cachebasename = self.cachebasename()
-        return [join(inputdir, cachebasename) for iglm, irestriction, inputdir in self.inputdirs]
+        return [join(inputdir, cachebasename) for iglm, irestriction, inputdir in self.get_param_targets()]
 
     def savedbasename(self):
-        if len(self.inputdirs) == 0: self.target()
-        fname = self.name+'_'+self.target_tree
-        if len(self.glmtargets) > 1:
-            fname += '_comp_'
-            if len(self.glmtargets) == 6:
-                fname +='all'
-            else:
-                fname += '_'.join([RestrictionName[r] for g,r in self.glmtargets])
+        fname = self.name+'_'+self.target_tree+'_'
+        glmtargets = self.get_param_targets()
+        if len(glmtargets) > 1:
+            fname += paramset_stringid(glmtargets)
+            #fname += '-comp-'
+            #fname += '-'.join([options_stringid(p) for p in glmtargets])
         else:
-            fname += '_'+RestrictionName[self.glmtargets[0][1]]
+            fname += '-'+param_stringid(glmtargets[0])
 
         return fname
 
     def saved_filenames(self):
-        lfigoutdir = os.path.join(figoutdir,'fruitmodel' if self.fruitmodel else 'nofruitmodel')
         fname = self.savedbasename()
-        fnames = [os.path.join(lfigoutdir,fname+str(i)+'.png') for i in xrange(len(self.reducefuncs))]
+        fnames = [os.path.join(figoutdir,fname+'--'+str(i)+'.png') for i in xrange(len(self.reducefuncs))]
         return fnames
 
     def isUptodate(self):
@@ -238,7 +241,7 @@ class Evaluator:
 
 
 def monthtranslate(txt):
-        m = [('janv','jan'),('fev','feb'),('mars','march'),('avril','april'),('mai','may'),('juin','june'),('juil','july'),('aout','aug')]
+        m = [('janv','jan.'),('fev','feb.'),('mars','mar.'),('avril','apr.'),('mai','may'),('juin','june'),('juil','july'),('aout','aug.'),('sept','sep.'),('oct','oct.'),('nov','nov.'),('dec','dec.')]
         for p,nm in m:
             txt = txt.replace(p,nm)
         return txt
@@ -263,25 +266,50 @@ def ks_2samp(hist1, hist2):
     print sum(allvalues[1]),allvalues[1]
     print ks_2samp(allvalues[0], allvalues[1])
 
-def histogram_distance(hist1, hist2):
+def normalize_histo(histo):
+    sh1 = float(sum(histo))
+    return [v1/sh1 for v1 in histo]
+
+def sym_kullback_leibler_divergence(hist1, hist2):
     from math import log
-    sh1 = float(sum(hist1))
-    sh2 = float(sum(hist2))
-    h1 = [v1/sh1 for v1 in hist1]
-    h2 = [v2/sh2 for v2 in hist2]
+    h1 = normalize_histo(hist1)
+    h2 = normalize_histo(hist2)
     divkl_h1_h2 = sum([v1 * log(v1/v2) for v1,v2 in zip(h1,h2) if abs(v1) > 0 and abs(v2) > 0] )
     divkl_h2_h1 = sum([v1 * log(v1/v2) for v1,v2 in zip(h2,h1) if abs(v1) > 0 and abs(v2) > 0] )
     return divkl_h1_h2+divkl_h2_h1
 
+def bhattacharyya_histo_distance(hist1, hist2):
+    from math import log, sqrt
+    h1 = normalize_histo(hist1)
+    h2 = normalize_histo(hist2)
+    return -log(sum([sqrt(p*q) for p,q in zip(h1,h2)]))
+
+def chi_squared_histo_distance(hist1, hist2):
+    h1 = normalize_histo(hist1)
+    h2 = normalize_histo(hist2)
+    return sum([pow(v1-v2,2)/(v1+v2) for v1,v2 in zip(h1,h2) if abs(v1) > 0 or abs(v2) > 0])/2.
+
+def l2_normed_histo_distance(hist1, hist2):
+    h1 = normalize_histo(hist1)
+    h2 = normalize_histo(hist2)
+    return l2_histo_distance(h1,h2) 
+
+def l2_histo_distance(hist1, hist2):
+    from math import sqrt
+    return sqrt(sum([pow(v1-v2,2) for v1,v2 in zip(hist1,hist2)]))
+
+def histogram_distance(hist1, hist2):
+    #return l2_normed_histo_distance(hist1, hist2)
+    return sym_kullback_leibler_divergence(hist1, hist2)
+    #return bhattacharyya_histo_distance(hist1, hist2)
 
 def histogram_distances(reference, allvalues, nullmodel = None ):
     results = []
-    for k,d in allvalues.items():
+    for k,d in allvalues:
         results.append((k,histogram_distance(reference,d)))
-    results = dict(results)
     if nullmodel:
-        nullmodelval = results[nullmodel]
-        results = dict([(k,v/nullmodelval)for k,v in results.items()])
+        nullmodelval = results[nullmodel][1]
+        results = [(k,v/nullmodelval)for k,v in results]
     return results
 
 def meanarray(values):
@@ -289,25 +317,42 @@ def meanarray(values):
     return [np.mean([v[i] for v in values]) for i in xrange(len(values[0]))]
 
 def meanarrays(kvalues):
-   return dict([(k,meanarray(a)) for k,a in kvalues.items()])
+    if type(kvalues) == dict:
+        return dict([(k,meanarray(a)) for k,a in kvalues.items()])
+    else:
+        return [(k,meanarray(a)) for k,a in kvalues]
 
 def flattenarray(values):
    from itertools import chain
    return list(chain(*[vi if type(vi) in [tuple,list] else [vi] for vi in values] ))
 
 def flattenarrays(kvalues):
-   return dict([(k,[flattenarray(values) for values in valuesset]) for k,valuesset in kvalues.items()])
+    if type(kvalues) == dict:
+       return dict([(k,[flattenarray(values) for values in valuesset]) for k,valuesset in kvalues.items()])
+    else:
+       return [(k,[flattenarray(values) for values in valuesset]) for k,valuesset in kvalues]
+
 
 def selectsubarray(values, indices):
     return [values[i] for i in indices]
 
 def selectsubarrays(kvalues, indices):
-   return dict([(k,[selectsubarray(values, indices) for values in valuesset])  for k,valuesset in kvalues.items()])
+    if type(kvalues) == dict:
+       return dict([(k,[selectsubarray(values, indices) for values in valuesset])  for k,valuesset in kvalues.items()])
+    else:
+       return [(k,[selectsubarray(values, indices) for values in valuesset])  for k,valuesset in kvalues]
 
+
+def maxlength(kvalues):
+    if type(kvalues) == dict:
+        return max([max(map(len,ivalues)) for ivalues in kvalues.values()])
+    else:    
+        return max([max(map(len,ivalues)) for iparam, ivalues in kvalues])
 
 def homogenize_histo_length(refvalues, kvalues):
-    maxl = max(max([max(map(len,ivalues)) for ivalues in kvalues.values()]), len(refvalues))
-    for ivalues in kvalues.values():
+    maxl = max(maxlength(kvalues), len(refvalues))
+    kvalueshistos = kvalues.values() if type(kvalues) == dict else [v for k,v in kvalues]
+    for ivalues in kvalueshistos:
         for v in ivalues:
             if len(v) < maxl: v += [0 for i in xrange(maxl-len(v))]
     if len(refvalues) < maxl:
@@ -321,13 +366,40 @@ def sortedvalues(kvalues):
 def sortedkeys(kvalues):
     return [(eInteractionGlm,r) for r in restrictions if (eInteractionGlm,r) in kvalues]
 
-def histodistance_legend(meankvalues):
-    d = dict(meankvalues)
-    del d[(eInteractionGlm,None)]
-    histo =  histogram_distances(meankvalues[(eInteractionGlm,None)], d, (eInteractionGlm,eAllRestriction))
-    histo[(eInteractionGlm,None)] = 0
-    skeys = sortedkeys(meankvalues)
-    return [str(histo[sk]) for sk in skeys]
+def find_param(kvalues, **paramvalues):
+    for i, (p,v) in enumerate(kvalues):
+        for pname, pvalue in paramvalues.items():
+            try:
+                assert p[pname] == pvalue
+            except:
+                break
+        else:
+            return i
+
+def histodistances(meankvalues, refsimu = {'GLM_RESTRICTION' : None}, nullsimu = {'GLM_RESTRICTION' : eAllRestriction}):
+    values = list(meankvalues)
+    if type(refsimu) == dict:
+        refsimuid =  find_param(meankvalues, **refsimu)
+        del values[refsimuid]
+        reference = meankvalues[refsimuid][1]
+    else:
+        reference = refsimu
+    if nullsimu:
+        nullsimuid = find_param(meankvalues, **nullsimu)
+        if not nullsimuid is None and type(refsimu) == dict: nullsimuid -= 1
+    else: 
+        nullsimuid = None
+    histo =  histogram_distances(reference, values, nullsimuid)
+    res = [v for k,v in histo]
+    if type(refsimu) == dict:
+        res.insert(refsimuid, 0)
+    print res
+    return res
+
+def histodistance_legend(meankvalues, refsimu = {'GLM_RESTRICTION' : None}, nullsimu = {'GLM_RESTRICTION' : eAllRestriction}):
+    res = histodistances(meankvalues, refsimu, nullsimu)
+    res = map(str,res) #['%.3f' % v for v in res]
+    return res 
 
 
 class organ_count_distribution(Evaluator):
@@ -335,7 +407,7 @@ class organ_count_distribution(Evaluator):
         Evaluator.__init__(self, name, func, reducefuncs)
         self.begcycle, self.maxcycle = 4,6
 
-    def plot_distributioni(self, refvalues, kvalues, labels, proprange = None):
+    def plot_distributioni(self, refvalues, kvalues, labels, proprange = None, legends = None):
         import numpy as np
         labels = flattenarray(labels)
         kvalues = flattenarrays(kvalues)
@@ -346,11 +418,11 @@ class organ_count_distribution(Evaluator):
             refvalues = selectsubarray(refvalues, proprange)
             kvalues = selectsubarrays(kvalues, proprange)
         if len(kvalues) == 1:
-            fig, ax = plot_histo(labels, kvalues.values()[0], self.maketitle('Characteritics'), refvalues, legendtag = kvalues.keys()[0], linestyle='o', titlelocation = 2)
+            fig, ax = plot_histo(labels, kvalues[0][1], self.maketitle('Characteritics'), refvalues, legendtag = kvalues[0][0], linestyle='o', titlelocation = 2)
         else:
-            fig, ax = plot_histos(labels, sortedvalues(kvalues), self.maketitle('Characteritics Comparison'), reference=refvalues, legendtags = sortedkeys(kvalues), titlelocation = 2)
+            fig, ax = plot_histos(labels, [v for k,v in kvalues], self.maketitle('Characteritics Comparison'), reference=refvalues, legendtags = [k for k,v in kvalues], legends= legends, titlelocation = 2)
             
-        fig.subplots_adjust(bottom=0.30, top = 0.94)
+        #fig.subplots_adjust(bottom=0.30, top = 0.94)
 
 class terminal_count_distribution(organ_count_distribution):
     def __init__(self):
@@ -392,8 +464,9 @@ class terminal_count_distribution(organ_count_distribution):
     
 
 class production(organ_count_distribution):
-    def __init__(self):
+    def __init__(self, plotrestriction = [4,5,6]): #[2,3,4,5,6]): #None):
         organ_count_distribution.__init__(self,'production',self.determine_distribution, self.plot_distribution2)
+        self.plotrestriction = plotrestriction
 
     def determine_distribution(self, mtg, mtgtype):
         inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
@@ -410,23 +483,47 @@ class production(organ_count_distribution):
         labels = ['Nb. Inflo. '+str(i) for i in xrange(begcycle, maxcycle)]
         labels += ['Nb. Fruits '+str(i) for i in xrange(begcycle, maxcycle)]
         labels += ['Production '+str(i)+' (100g)' for i in xrange(3, maxcycle)]
-        self.plot_distributioni(refvalues, kvalues, labels)
+        if self.plotrestriction:
+            refvalues = selectsubarray(refvalues, self.plotrestriction)
+            kvalues = selectsubarrays(kvalues, self.plotrestriction)
+            labels = selectsubarray(labels, self.plotrestriction)
+            if 5 in self.plotrestriction or 6 in self.plotrestriction or 4 in self.plotrestriction:
+                idx = [self.plotrestriction.index(i) for i in range(4,7) if i in self.plotrestriction]
+                refvalues = [(r/10. if i in idx else r) for i,r in enumerate(refvalues) ]
+                kvalues = [(p,[[(v/10. if i in idx else v) for i,v in enumerate(values)] for values in ivalues]) for p,ivalues in kvalues]
+                labels = [l.replace('(100g)','(kg)') for l in labels]
+        
+        if len(kvalues) > 1:
+            histos = histodistance_legend(meanarrays(kvalues)) #, refvalues)
+            legends = histos
+            #histos = [histodistance_legend(meanarrays(selectsubarrays(kvalues,(2*i,2*i+1))), selectsubarray(refvalues,(2*i,2*i+1))) for i in xrange(len(refvalues)/2)]
+            #legends = [' '.join([histos[i][j] for i in xrange(len(histos))]) for j in xrange(len(histos[0]))]
+        else : legends = None
+
+        self.plot_distributioni(refvalues, kvalues, labels, legends=legends)
+        #plt.xlabel('Number of Growth Units per Branch')
+        plt.ylabel('Number of Fruits / Production')
     
 
 
 
 def histogram(values):
-    from numpy import histogram
-    return list(histogram(values)[0])
+    #from numpy import histogram
+    #return list(histogram(values)[0])
+    from collections import Counter
+    c = Counter(values)
+    k = c.keys()
+    return [c.get(ki,0) for ki in xrange(min(k), max(k)+1)]
 
-def plot_histogram(refvalues, kvalues, xlabels, title, titlelocation = 2):
-    assert len(xlabels) == len(kvalues.values()[0][0]) == len(refvalues)
+def plot_histogram(refvalues, kvalues, xlabels, title, titlelocation = 2, xlabelrotation = 0):
+    assert len(xlabels) == len(kvalues[0][1][0]) == len(refvalues)
     if len(kvalues) == 1:
-        fig, ax = plot_histo(xlabels, allvalues=kvalues.values()[0], _title=title, reference=refvalues, legendtag = kvalues.keys()[0], titlelocation = titlelocation)
+        fig, ax = plot_histo(xlabels, allvalues=kvalues[0][1], _title=title, reference=refvalues, legendtag = kvalues[0][0], titlelocation = titlelocation, xlabelrotation = xlabelrotation)
     else:
         meankvalues = meanarrays(kvalues)
         legends = histodistance_legend(meankvalues)
-        fig, ax = plot_histos_means(xlabels, sortedvalues(meankvalues), title+' Comparison', reference=refvalues, legends = legends, legendtags = sortedkeys(meankvalues), titlelocation = titlelocation)
+        fig, ax = plot_histos_means(xlabels, [v for k,v in meankvalues], title+' Comparison', reference=refvalues, legends = legends, legendtags = [k for k,v in meankvalues], titlelocation = titlelocation, xlabelrotation = xlabelrotation)
+    return fig, ax
 
 class tree_branch_length(Evaluator):
     def __init__(self):
@@ -437,18 +534,23 @@ class tree_branch_length(Evaluator):
         def axial_axe_length(uc):
             cuc = uc
             l = 1
-            while mtg.parent(cuc) and mtg.edge_type(mtg.parent(cuc)) == '<':
-                cuc = mtg.parent(cuc)
+            parent = mtg.parent(cuc)
+            while parent and (mtg.edge_type(parent) == '<') and (get_unit_cycle(mtg, parent) > 3):
+                cuc = parent
+                parent = mtg.parent(cuc)
                 l += 1
             return l
-        last_apical_ucs = [uc for uc in ucs if len([is_apical(mtg,cuc) for cuc in vegetative_children(mtg,uc)]) == 0]
+        last_apical_ucs = [uc for uc in ucs if len([cuc for cuc in vegetative_children(mtg,uc) if is_apical(mtg,cuc)]) == 0]
         axial_axe_lengths = map(axial_axe_length, last_apical_ucs)
         histo = histogram(axial_axe_lengths)
         return histo
 
     def plot(self, refvalues,kvalues):
+        print refvalues
         maxl = homogenize_histo_length(refvalues,kvalues)
-        plot_histogram(refvalues, kvalues, range(1,maxl+1), self.maketitle('Branch Length'), titlelocation = 1)
+        fig, ax = plot_histogram(refvalues, kvalues, range(1,maxl+1), self.maketitle('Branch Length'), titlelocation = 1)
+        plt.xlabel('Number of Growth Units per Branch')
+        plt.ylabel('Number of Branches')
 
 
 class current_year_axe_length(Evaluator):
@@ -510,10 +612,17 @@ class bloom_date_distribution(Evaluator):
         #if strip : __strip_histo(histo_date)
         return histo_date.values()
 
-    def plot(self, refvalues,kvalues):
-        strdate = lambda d : str(d[1])+'/'+str(d[0]-2000)
+    def plot(self, refvalues, kvalues):
+        strdate = lambda d : str(d[1])# +'-'+str(d[0]-2000)
         dates     = map(strdate, self.daterange)
+        del refvalues[0:5]
+        del dates[0:5]
+        for k,valueset in kvalues:
+            for values in valueset: 
+                del values[0:5]
         plot_histogram(refvalues, kvalues, dates, self.maketitle('Bloom Dates'), titlelocation = 2)
+        plt.xlabel('Week')
+        plt.ylabel('Number of Inflorescences')
 
 class harvest_date_distribution(Evaluator):
 
@@ -546,9 +655,17 @@ class harvest_date_distribution(Evaluator):
         return histo_date.values()
 
     def plot(self, refvalues,kvalues):
-        strdate = lambda d : str(d[1])+'/'+str(d[0]-2000)
+        strdate = lambda d : str(d[1])#+'-'+str(d[0]-2000)
         dates     = map(strdate, self.daterange)
-        plot_histogram(refvalues, kvalues, dates, self.maketitle('Harvest Dates'), titlelocation = 2)
+        del refvalues[0:5]
+        del dates[0:5]
+        for k,valueset in kvalues:
+            for values in valueset: 
+                del values[0:5]
+        fig, ax = plot_histogram(refvalues, kvalues, dates, self.maketitle('Harvest Dates'), titlelocation = 2)
+        plt.xlabel('Week')
+        plt.ylabel('Number of harvested fruits')
+
 
 
 
@@ -575,7 +692,9 @@ class burst_date_distribution(Evaluator):
     def plot(self, refvalues,kvalues):
         strdate = lambda d : monthtranslate(self.Month[d[1]])+'-'+str(d[0])
         dates     = map(strdate, self.daterange)
-        plot_histogram(refvalues, kvalues, dates, self.maketitle('Burst Dates'), titlelocation = 2)
+        plot_histogram(refvalues, kvalues, dates, self.maketitle('Burst Dates'), titlelocation = 2, xlabelrotation = 80)
+        plt.xlabel('Month')
+        plt.ylabel('Number of new growth units')
 
 
 def get_treenames():
@@ -643,12 +762,44 @@ def make_report(force = False, comparison = True, fruitmodel = False):
     tx.compile()
     tx.view()
 
+def fruitbranchsizetest():
+    p = production([5,6])
+    p.fruitbranchsizetest()
+    p.addtarget(FRUIT_MODEL=False)
+    p()
+
+def test_production():
+    restriction = None #range(4)
+    p = production()
+    p.allrestrictions()
+    v1,r1 = p.compute()
+
+    #p.targettree('F2')
+
+    #p.targettree('B10')
+    #v2,r2 = p.compute()
+
+    #p.targettree('B12')
+    #v3,r3 = p.compute()
+
+
+    #r =  r1+r2+r3
+    #print r
+    v = [(v1[i][0],sum([meanarrays(v)[i][1] for v in [v1,v2,v3]],[])) for i in xrange(len(v1))]
+    #print v
+    if restriction:
+        r = selectsubarray(r, restriction)
+        v = [(k,selectsubarray(vi, restriction)) for k,vi in v]
+
+    print histodistance_legend(v)
+
 def main():
     import sys
     def help():
         print 'Available plots :',cmdflags.keys()
         print '-c  : Comparison mode'
         print '-fm : Use fruitmodel'
+        print '-ft : Fruit model test'
         print '-f  : Force reevaluation'
         print '-s  : Save figure'
         print '-sa : Save all figures'
@@ -688,6 +839,8 @@ def main():
         make_report(force=force, fruitmodel=fruitmodel)
     elif '-r1' in switches:
         make_report(force=force, comparison=False, fruitmodel=fruitmodel)
+    elif '-ft' in switches:
+        fruitbranchsizetest()
     else:
         if fruitmodel:
             for p in processes:
@@ -719,4 +872,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+    #test_production()
     pass

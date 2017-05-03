@@ -137,6 +137,12 @@ def process_restricted_models(maxseed=1000, fruitmodel = False, minseed = 0):
 
     process_set_of_simulations(params)
 
+def process_uniquefactor_models(maxseed=1000, fruitmodel = False, minseed = 0):
+    import itertools
+    params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['eBurstDateOnlyRestriction', 'ePositionAOnlyRestriction', 'ePositionAncestorAOnlyRestriction', 'eNatureFOnlyRestriction'],['FRUIT_MODEL'],[str(fruitmodel)]))
+
+    process_set_of_simulations(params)
+
 def process_bfsize_models(maxseed=1000, fruitmodel = False, minseed = 0):
     import itertools
     params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],['True'],['FRUITBRANCHSIZE'],[str(i) for i in xrange(1,7)]))
@@ -184,6 +190,22 @@ if __name__ == '__main__' :
                         extraval = eval(sys.argv[4])
             process_restricted_models(maxseed, fruitmodel, minseed=minseed)
             message.send_msg('Simu Restricted with'+('' if fruitmodel else 'out')+' fruit model',str(maxseed-minseed)+' simulations done in '+str(time.time()-stime)+' sec.')
+        elif '--uniquefactor' == sys.argv[1]:
+            import time
+            stime = time.time()
+            minseed = 0
+            maxseed = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+            fruitmodel = False
+            if len(sys.argv) > 3:
+                extraval = eval(sys.argv[3])
+                if type(extraval) == bool:
+                    fruitmodel = extraval
+                elif type(extraval) == int:
+                    minseed, maxseed = maxseed, extraval
+                    if len(sys.argv) > 4:
+                        extraval = eval(sys.argv[4])
+            process_restricted_models(maxseed, fruitmodel, minseed=minseed)
+            message.send_msg('Simu Unique Factor with'+('' if fruitmodel else 'out')+' fruit model',str(maxseed-minseed)+' simulations done in '+str(time.time()-stime)+' sec.')
         elif '--bfsize' == sys.argv[1]:
             import time
             stime = time.time()
@@ -203,6 +225,8 @@ if __name__ == '__main__' :
         elif '--help' == sys.argv[1] or '--h' == sys.argv[1]:
             print '--std [nb] [fruitmodel]'
             print '--restricted [nb] [fruitmodel]'
+            print '--uniquefactor [nb] [fruitmodel]'
+            print '--bfsize [nb] [fruitmodel]'
     else:
         #generate_all(1000, False)
         #generate_all(10, False)

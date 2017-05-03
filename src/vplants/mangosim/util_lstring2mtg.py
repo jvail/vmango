@@ -3,7 +3,7 @@ modules_to_export = ['Tree', 'GU','Inflorescence','Fruit']
 scales = [1,2,2,2]
 
 
-def export_to_mtg(lstring, lscene):
+def export_to_mtg(lstring):
   from openalea.mtg.io import axialtree2mtg
   # Name of the modules to export
   tree_parameters = ['treename','estimation','loading','variety','seed']
@@ -25,7 +25,7 @@ def export_to_mtg(lstring, lscene):
   assert not mtg is None
   return mtg
 
-def export_to_mtg_light(lstring, lscene):
+def export_to_mtg_light(lstring):
   from openalea.mtg.io import axialtree2mtg
   lmodules_to_export = modules_to_export+['InflorescenceBud']
   lscales = scales+[2]
@@ -38,7 +38,7 @@ def export_to_mtg_light(lstring, lscene):
   # Convert lstring into mtg
   mtg = axialtree2mtg(lstring,
                       scale = dict(zip(lmodules_to_export,lscales)),
-                      scene = lscene,
+                      scene = None,
                       parameters = dict(zip(lmodules_to_export,params_to_export)))
   labels =  mtg.property('label')
   toupdate  = [(v,'Inflorescence') for v,n in labels.items() if n =='InflorescenceBud']

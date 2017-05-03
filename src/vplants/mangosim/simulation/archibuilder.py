@@ -168,9 +168,10 @@ class GLMArchiBuilder(MTGArchiBuilder):
         MTGArchiBuilder.__init__(self, mtg, gumanager, inflomanager, verbose)
 
 
-    def init(self, rootid, current_date, estimationtype = eSelectedGlm, factorrestriction = None):
+    def init(self, rootid, current_date, estimationtype = eSelectedGlm, factorrestriction = None, repeatlastprobas = False):
         MTGArchiBuilder.init(self, rootid, current_date)
-        use_proba_table(estimationtype = estimationtype, restriction = factorrestriction)
+        use_proba_table(estimationtype = estimationtype, restriction = factorrestriction, repeatlastprobas=repeatlastprobas)
+        assert not pt.current_proba_table is None
 
     def starteach(self, current_date):
         self.current_date  = current_date
@@ -197,9 +198,10 @@ class GLMArchiBuilder(MTGArchiBuilder):
             branching_angle = self.gumanager.branching_angle
             
             param = param.copy()
+            cycle = get_vegetative_cycle(param.burst_date)
             param.set(nature = eFlowering if nb_inflorescences > 0 else eVegetative,
-                  nbdescendants = 1, 
-                  cycle = self.current_cycle)
+                      nbdescendants = 1, 
+                      cycle = cycle)
             guparam = self.gumanager.set_dimensions(param, current_date)
             nsproduce( [ RollL(phyllotaxy), GU(guparam) ] )
             
@@ -208,8 +210,8 @@ class GLMArchiBuilder(MTGArchiBuilder):
             anglebetweenchildren = phyllotaxy
             if not date_children_burst is None:
                 date_children_burst = date(year=date_children_burst[0], month=date_children_burst[1], day=15)
-                if date_children_burst > vegetative_cycle_end(5) and self.verbose:
-                    print('Invalid date of burst %s (after last date %s) of children with parent borned in %s (in cycle %i)' %(date_children_burst, vegetative_cycle_end(5),p.burst_date,current_cycle))
+                #if date_children_burst > vegetative_cycle_end(5) and self.verbose:
+                #    print('Invalid date of burst %s (after last date %s) of children with parent borned in %s (in cycle %i)' %(date_children_burst, vegetative_cycle_end(5),p.burst_date,current_cycle))
                 cyclechange = (get_vegetative_cycle(date_children_burst) != get_vegetative_cycle(param.burst_date))
                 baseparameter = ParameterSet(burst_date        = date_children_burst, 
                                              position_parent   = param.position,
@@ -228,7 +230,7 @@ class GLMArchiBuilder(MTGArchiBuilder):
                     inflo_nb_fruits = (1 if i < nb_fruiting_lat_inflo else 0)
                     p = ParameterSet(gu_burst_date = param.burst_date,
                                      bloom_date=date_inflo_bloom, 
-                                     cycle =  get_vegetative_cycle(param.burst_date), 
+                                     cycle =  cycle, 
                                      nb_fruits = inflo_nb_fruits)
                     if inflo_nb_fruits > 0:
                         p.set(fruits_maturity_date = harvest_date,
@@ -256,7 +258,7 @@ class GLMArchiBuilder(MTGArchiBuilder):
                 inflo_nb_fruits = nb_fruits - nb_fruiting_lat_inflo
                 p = ParameterSet(gu_burst_date = param.burst_date,
                                  bloom_date=date_inflo_bloom, 
-                                 cycle =  get_vegetative_cycle(param.burst_date), 
+                                 cycle =  cycle, 
                                  nb_fruits = inflo_nb_fruits)
                 if inflo_nb_fruits > 0:
                     p.set(fruits_maturity_date = harvest_date,

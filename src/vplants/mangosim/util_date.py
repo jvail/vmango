@@ -49,9 +49,15 @@ def in_vegetative_cycle(cdate, cycle):
 
 def get_vegetative_cycle(cdate):
     if type(cdate) != date: cdate = cdate.date()
+
     if cdate < vegetative_cycle_begin(4) : return 3
-    elif cdate < vegetative_cycle_begin(5) : return 4
-    else : return 5
+    else:
+        gcycle = cdate.year-2000
+        while True:
+            if cdate <= vegetative_cycle_end(gcycle): 
+                return gcycle
+            else:
+                gcycle += 1
 
 def get_semester(cdate):
     if cdate.month >= vegetative_cycle_begin(4).month : return 1
@@ -170,37 +176,37 @@ def get_weekday_from_date(date):
     return date.isocalendar()[2]
     
 
-#
-bloom_weeks_03 = { 0 : (date(2003,7,1),get_date_from_week(2003,31,7)) }
-bloom_weeks_03.update(dict([(i, (get_date_from_week(2003,31+i,1), get_date_from_week(2003,31+i,7))) for i in xrange(1,13)]))  
+bloom_weeks = {}
 
-bloom_weeks_04 = { 0 : (date(2004,7,1),get_date_from_week(2004,31,7)) }
-bloom_weeks_04.update(dict([(i, (get_date_from_week(2004,31+i,1), get_date_from_week(2004,31+i,7))) for i in xrange(1,13)]))  
-
-bloom_weeks_05 = { 0 : (date(2005,7,1),get_date_from_week(2005,31,7)) }
-bloom_weeks_05.update(dict([(i, (get_date_from_week(2005,31+i,1), get_date_from_week(2005,31+i,7))) for i in xrange(1,13)]))   
-
-bloom_weeks = {3 : bloom_weeks_03, 4 : bloom_weeks_04, 5 : bloom_weeks_05}
-
+def get_bloom_weeks(icycle):
+    if not icycle in bloom_weeks:
+        bloom_weeks_i = { 0 : (date(2000+icycle,7,1),get_date_from_week(2000+icycle,31,7)) }
+        bloom_weeks_i.update(dict([(i, (get_date_from_week(2000+icycle,31+i,1), get_date_from_week(2000+icycle,31+i,7))) for i in xrange(1,13)]))
+        bloom_weeks[icycle] = bloom_weeks_i
+    return bloom_weeks[icycle]
 
 def get_bloom_week(date, icycle = None):
+    global bloom_weeks
     if icycle is None:
         icycle = get_flowering_cycle(date)
-    bweeks = bloom_weeks[icycle]
+    bweeks = get_bloom_weeks(icycle)
     for periodid, period_beg_end  in bweeks.items():
         if period_beg_end[0] <= date <= period_beg_end[1]:
             return periodid
 
-harvest_weeks_03 = dict([(i, (get_date_from_week(cyear,cweek,1), get_date_from_week(cyear,cweek,7))) for i, (cyear, cweek) in enumerate(weekdate_xrange(date(2003, 12, 15), date(2004, 3, 15)))])
-harvest_weeks_04 = dict([(i, (get_date_from_week(cyear,cweek,1), get_date_from_week(cyear,cweek,7))) for i, (cyear, cweek) in enumerate(weekdate_xrange(date(2004, 12, 15), date(2005, 3, 15)))])
-harvest_weeks_05 = dict([(i, (get_date_from_week(cyear,cweek,1), get_date_from_week(cyear,cweek,7))) for i, (cyear, cweek) in enumerate(weekdate_xrange(date(2005, 12, 15), date(2006, 3, 15)))])
+harvest_weeks = {}
 
-harvest_weeks = {3 : harvest_weeks_03, 4 : harvest_weeks_04, 5 : harvest_weeks_05}
+def get_harvest_weeks(icycle):
+    if not icycle in harvest_weeks:
+        harvest_weeks_i = dict([(i, (get_date_from_week(cyear,cweek,1), get_date_from_week(cyear,cweek,7))) for i, (cyear, cweek) in enumerate(weekdate_xrange(date(2000+icycle, 12, 15), date(2001+icycle, 3, 15)))])
+        harvest_weeks[icycle] = harvest_weeks_i
+    return harvest_weeks[icycle]    
 
 def get_harvest_week(date, icycle = None):
+    global harvest_weeks
     if icycle is None:
         icycle = get_fruiting_cycle(date)
-    weeks = harvest_weeks[icycle]
+    weeks = get_harvest_weeks(icycle)
     for periodid, period_beg_end  in weeks.items():
         if period_beg_end[0] <= date <= period_beg_end[1]:
             return periodid

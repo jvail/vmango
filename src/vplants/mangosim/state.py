@@ -33,7 +33,6 @@ RestrictionName = { eBurstDateRestriction         : 'without_burst_month_and_flo
                     ePositionARestriction         : 'without_position_a', 
                     ePositionAncestorARestriction : 'without_position_ancestor_a',                    
                     eNatureFRestriction           : 'without_nature_f_and_nature_ancestor_f',
-                    eAllRestriction               : 'without_all',
                     eBurstDateOnlyRestriction         : 'with_only_burst_month_and_flowering_week', 
                     ePositionAOnlyRestriction         : 'with_only_position_a', 
                     ePositionAncestorAOnlyRestriction : 'with_only_position_ancestor_a',                    

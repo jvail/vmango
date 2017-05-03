@@ -61,6 +61,7 @@ def generate_bgeom(step = None, endstep = None):
         if step == firststep: lstring = l.derive(firststep+1)
         else: lstring = l.derive(lstring,step,1)
         lscene = l.sceneInterpretation(lstring)
+        lscene = l.abspath_imgs(lscene)
         fname = join(workingrep, bgeomfile.format(str(step).zfill(4)))
         lscene.save(tempbgeomfile)
         os.rename(tempbgeomfile,fname)

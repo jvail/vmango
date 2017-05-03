@@ -723,13 +723,13 @@ class FruitManager (OrganManager):
                                 growth_stage_date=growth_stage_date,
                                 initial_weight=mass)            
 
-    def applymodel(self, lstring, lscene, current_date):
+    def applymodel(self, lstring, current_date):
         if self.modelenabled :
             import vplants.mangosim.fruitmodel.fruitmodel as fm ; reload(fm)
             from vplants.mangosim.fruitmodel.fruitmodel import applymodel
             from vplants.mangosim.util_lstring2mtg import export_to_mtg_light
             print 'Fruit model evaluation', current_date
-            lmtg = export_to_mtg_light(lstring, None) # , lscene)
+            lmtg = export_to_mtg_light(lstring) # , lscene)
             applymodel(lmtg, get_flowering_cycle(current_date), self.branchsize, self.outputenabled, self.outputname)
         else:
             pass

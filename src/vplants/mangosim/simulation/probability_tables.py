@@ -185,7 +185,7 @@ class ProbaTable:
             del self.factors[cyclepos]
             del self.factorsvalues['Cycle']
 
-def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restriction = None, repeatprobas = False):
+def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restriction = None):
     from os.path import exists, join
     probafilepath = get_probability_repository(variety, estimationtype, restriction)
     if not exists(probafilepath): raise ValueError("Proba path repository does not exist", probafilepath)
@@ -229,8 +229,14 @@ def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restr
                     import warnings
                     warnings.warn("Table '%s' for variety '%s' does not exist." % (prop+'_'+ext, variety))
         probacycle[cycle] = (proba_within, proba_between)
-    if repeatprobas:
-        pass
+    return probacycle
+
+
+def make_repetition(proba_table, maxcycle = 10):
+    probacycle = proba_table.copy()
+    probacycle[5] = (probacycle[5][0],probacycle[4][1])
+    for cycle in range(6,min(6,maxcycle+1)):
+        probacycle[cycle] = probacycle[5]
     return probacycle
 
 global_proba_tables = {}
@@ -243,9 +249,11 @@ def get_proba_tables(variety = 'cogshall', estimationtype = eSelectedGlm, restri
         global_proba_tables[tableid] = read_proba_tables(variety, estimationtype, restriction)
     return global_proba_tables[tableid]
 
-def use_proba_table(variety = 'cogshall', estimationtype = eSelectedGlm, restriction = None):
+def use_proba_table(variety = 'cogshall', estimationtype = eSelectedGlm, restriction = None, repeatlastprobas = False):
     global current_proba_table
     current_proba_table = get_proba_tables(variety, estimationtype, restriction)
+    if repeatlastprobas:
+        current_proba_table = make_repetition(current_proba_table)
 
 def iterprobatables():
     for k, ps in global_proba_tables.items():
@@ -375,7 +383,7 @@ class UnitDev:
                                   #Tree_Fruit_Load = Tree_Fruit_Load
                                   )
 
-        self.proba_tables = current_proba_table[self.cycle]
+        self.proba_tables = current_proba_table.get(self.cycle)
         self.verbose = verbose
         global current_unitdev
         current_unitdev = self
@@ -386,6 +394,9 @@ class UnitDev:
 
     def get_name(self, name):
         return ('gu_' if self.unittype == eGU else 'mi_') + name
+
+    def has_table(self, cycle = eWithinCycle):
+        return not self.proba_tables is None and len(self.proba_tables[0 if cycle == eWithinCycle else 1]) > 0
 
     def get_table(self, name, cycle = eWithinCycle):
         name = self.get_name(name)
@@ -534,8 +545,8 @@ class UnitDev:
         try:
             fweek = int(self.get_realization('flowering_week'))
         except KeyError,e:
-            fweek = randint(0,max(bloom_weeks[self.cycle].keys()))
-        period_beg, period_end = bloom_weeks[self.cycle][fweek]
+            fweek = randint(0,max(get_bloom_weeks(self.cycle).keys()))
+        period_beg, period_end = get_bloom_weeks(self.cycle)[fweek]
         return period_beg + timedelta(days=randint(0,(period_end-period_beg).days)), fweek
 
     def fruiting(self):
@@ -559,8 +570,8 @@ class UnitDev:
         try:
             fweek = int(self.get_realization('harvest_week'))
         except KeyError,e:
-            fweek = randint(0,max(harvest_weeks[self.cycle].keys()))
-        period_beg, period_end = harvest_weeks[self.cycle][fweek]
+            fweek = randint(0,max(get_harvest_weeks(self.cycle).keys()))
+        period_beg, period_end = get_harvest_weeks(self.cycle)[fweek]
         return period_beg + timedelta(days=randint(0,(period_end-period_beg).days)), fweek
 
     def has_mixedinflo_child(self):
@@ -586,36 +597,39 @@ class UnitDev:
         nb_inflorescences, nb_fruits, fruit_weight =  0, 0, 0
         date_children_burst, date_inflo_bloom, harvest_date = None, None, None
 
-        veg_burst = self.vegetative_burst()
-        if self.cycle > 3 and veg_burst:
-            # Within steps.
-            try:
-                if self.unittype == eGU:
-                    date_children_burst = self.gu_burst_date_children()
-                else:
-                    date_children_burst = self.mi_burst_date_children()
-            except IncompatibleValues, iv:
-                self.log(eWithinCycle, 'burst_date_children', 'Incompatible children month burst value compared to parent burst month.')
-                veg_burst = False
-
+        if self.has_table():
+            veg_burst = self.vegetative_burst()
             if veg_burst:
-                apical_child = self.has_apical_gu_child()
-                
-                #nb_children  = self.nb_gu_children()
-                #nb_lateral_gu_children = nb_children - apical_child
+                # Within steps.
+                try:
+                    if self.unittype == eGU:
+                        date_children_burst = self.gu_burst_date_children()
+                    else:
+                        date_children_burst = self.mi_burst_date_children()
+                except IncompatibleValues, iv:
+                    self.log(eWithinCycle, 'burst_date_children', 'Incompatible children month burst value compared to parent burst month.')
+                    veg_burst = False
 
-                nb_lateral_gu_children = 0 
-                if not apical_child or self.has_lateral_gu_children():
-                    nb_lateral_gu_children += self.nb_lateral_gu_children()
+                if veg_burst:
+                    apical_child = self.has_apical_gu_child()
+                    
+                    #nb_children  = self.nb_gu_children()
+                    #nb_lateral_gu_children = nb_children - apical_child
+
+                    nb_lateral_gu_children = 0 
+                    if not apical_child or self.has_lateral_gu_children():
+                        nb_lateral_gu_children += self.nb_lateral_gu_children()
+        else :
+            veg_burst = False
 
 
         if not veg_burst and self.unittype == eGU:
             # Between steps
-            if self.has_mixedinflo_child():
+            if self.has_table() and self.has_mixedinflo_child():
                 has_mi_child = eApical if self.is_mixedinflo_apical() else eLateral
                 mi_burst_date = self.mixedinflo_burstdate()
 
-            if self.cycle > 3 and self.flowering():
+            if self.has_table() and self.flowering():
                 self.paramsdelayed['Nature_F'] = eFlowering                
                 nb_inflorescences = self.nb_inflorescences()
                 date_inflo_bloom, fweek  = self.flowering_date()
@@ -628,7 +642,7 @@ class UnitDev:
             else:
                 self.paramsdelayed['Nature_F'] = eVegetative
 
-            if self.cycle < 5 and self.vegetative_burst(eLaterCycle):
+            if self.has_table(eLaterCycle) and self.vegetative_burst(eLaterCycle):
 
                 apical_child = self.has_apical_gu_child(eLaterCycle) if has_mi_child != eApical else False
                 self.paramsdelayed['Has_Apical_GU_Child'] = apical_child
@@ -642,7 +656,6 @@ class UnitDev:
 
                 date_children_burst = self.gu_burst_date_children(eLaterCycle)
 
-        assert 0 <= nb_inflorescences <= 5
         return apical_child, nb_lateral_gu_children, has_mi_child, nb_inflorescences, nb_fruits, fruit_weight, date_children_burst, date_inflo_bloom, mi_burst_date, harvest_date
             
 

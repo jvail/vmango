@@ -108,7 +108,7 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         if len(gus) == 0 and len(mtg.vertices(scale=mtg.max_scale())) == 1:
             leaf_nbs    = 100
         else:
-            leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus])
+            leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus if not gu is None])
         nb_fruits   = sum([params[inflo].nb_fruits for inflo in inflos])
         #print nb_fruits
         somme_nb_fruits += nb_fruits
@@ -164,6 +164,7 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
             params[inflo].acides_organiques        = max(result["acides_organiques"])
             params[inflo].fruits_growth            = fruit_growth
             params[inflo].idsimu                   = idsimu
+            params[inflo].leaffruit_ratio          = leaf_nbs / float(nb_fruits)
              
     if dump:
         fstream = open(os.path.join(outdir,'fruitstructure.csv'),'w')

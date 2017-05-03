@@ -24,9 +24,14 @@ def get_last_day_for_temperature():
     from datetime import timedelta
     return __first_day+timedelta(days=len(__temperatures)-1)
 
-def get_temperature(date):
-    if type(date) == datetime:  return __temperatures[(date-__first_day).days]
-    else : return __temperatures[(date-__first_day.date()).days]
+def get_temperature(cdate):
+    if cdate > date(2006,3,1) : 
+        try:
+            cdate = date(2005, cdate.month, cdate.day)
+        except ValueError:
+            cdate = date(2005, cdate.month, cdate.day-1)
+    if type(cdate) == datetime:  return __temperatures[(cdate-__first_day).days]
+    else : return __temperatures[(cdate-__first_day.date()).days]
 
 if __name__ == '__main__':
     init_temperatures()
