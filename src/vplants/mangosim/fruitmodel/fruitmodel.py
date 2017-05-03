@@ -164,7 +164,7 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
             params[inflo].acides_organiques        = max(result["acides_organiques"])
             params[inflo].fruits_growth            = fruit_growth
             params[inflo].idsimu                   = idsimu
-            params[inflo].leaffruit_ratio          = leaf_nbs / float(nb_fruits)
+            params[inflo].leaffruit_ratio          = (leaf_nbs, nb_fruits)
              
     if dump:
         fstream = open(os.path.join(outdir,'fruitstructure.csv'),'w')

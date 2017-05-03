@@ -2,7 +2,9 @@ from vplants.mangosim.doralice_mtg.mtg_manipulation import *
 
 def neighbours(mtg, node):
     """ Gives the neighbours of a node in the mtg. In a tree graph, it is the parent and the children """
-    return [mtg.parent(node)]+vegetative_children(mtg,node)
+    parent = mtg.parent(node)
+    if parent: return [parent]+vegetative_children(mtg,node)
+    else: return vegetative_children(mtg,node)
 
 def nodes_at_distance(mtg, node, distance):
     """ Return all nodes at a distance of node in the mtg. A set is returned """
