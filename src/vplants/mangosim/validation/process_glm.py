@@ -145,7 +145,7 @@ def process_bfsize_models(maxseed=1000, fruitmodel = False, minseed = 0):
     import itertools
     params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],['True'],['FRUITBRANCHSIZE'],[str(i) for i in xrange(1,7)]))
 
-    process_set_of_simulations(params, False)
+    process_set_of_simulations(params)
 
 
 
