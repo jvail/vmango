@@ -270,7 +270,7 @@ class UnitDev:
         try:
             fweek = int(self.get_realization('flowering_week'))
         except KeyError,e:
-            fweek = 0      
+            fweek = 5      
         period_beg, period_end = bloom_weeks[self.cycle][fweek]
         return period_beg + timedelta(days=randint(0,(period_end-period_beg).days))
 

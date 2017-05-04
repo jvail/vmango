@@ -11,8 +11,6 @@ lsysfile = '../simulation/mango_simulation.lpy'
 
 
 def get_outdir(params, optionname = None):
-    if 'FRUITBRANCHSIZE' in params:
-        optionname = 'fruitbranchsize'+str(params['FRUITBRANCHSIZE'])
     return get_glm_mtg_repository(params, optionname)
 
 def get_outfname(seed):
@@ -204,7 +202,7 @@ if __name__ == '__main__' :
                     minseed, maxseed = maxseed, extraval
                     if len(sys.argv) > 4:
                         extraval = eval(sys.argv[4])
-            process_restricted_models(maxseed, fruitmodel, minseed=minseed)
+            process_uniquefactor_models(maxseed, fruitmodel, minseed=minseed)
             message.send_msg('Simu Unique Factor with'+('' if fruitmodel else 'out')+' fruit model',str(maxseed-minseed)+' simulations done in '+str(time.time()-stime)+' sec.')
         elif '--bfsize' == sys.argv[1]:
             import time

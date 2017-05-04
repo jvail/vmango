@@ -108,7 +108,14 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         if len(gus) == 0 and len(mtg.vertices(scale=mtg.max_scale())) == 1:
             leaf_nbs    = 100
         else:
-            leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus if not gu is None])
+            try:
+                leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus if not gu is None])
+            except AttributeError, ae:
+                for gu in gus :
+                    if not gu is None:
+                        if not params[gu].hasattr('final_length_leaves'):
+                            print gu, params[gu]
+                            params[gu].final_length_leaves
         nb_fruits   = sum([params[inflo].nb_fruits for inflo in inflos])
         #print nb_fruits
         somme_nb_fruits += nb_fruits
@@ -138,6 +145,7 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
                 for inflos, gus in fruiting_structures:
                     for inflo in inflos:
                         params[inflo].nb_fruits = 0
+                        params[inflo].fruits_weight
                 continue
 
         date_parser = lambda d : datetime.strptime(d, '%Y-%m-%d')
@@ -223,10 +231,16 @@ if __name__ == '__main__':
         launch_r()
     else:
         from vplants.mangosim.tools import load_obj
+
         from openalea.plantgl.all import Scene, Viewer
-        mtg = load_obj('fruitstructure.pkl','../shoot_growth')
-        sc = Scene('../shoot_growth/fruitstructure.bgeom')
-        fs = applymodel(mtg, 3, int(sys.argv[1]) if len(sys.argv) > 1 else 3) 
+        cycle=4
+        mtg = load_obj('structure-cycle'+str(cycle)+'.pkl')
+        sc = Scene('structure-cycle'+str(cycle)+'.bgeom')
+
+        import fruitingstructure as fsm
+        fs = fsm.determine_fruiting_structure(mtg, cycle=cycle, fruit_distance = int(sys.argv[1]) if len(sys.argv) > 1 else 4)
+
+        #fs = applymodel(mtg, 3, int(sys.argv[1]) if len(sys.argv) > 1 else 3) 
         print len(fs)
         for inflos, gus in fs:
             print inflos, list(gus)    

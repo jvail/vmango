@@ -2,8 +2,8 @@ from vplants.mangosim.state import *
 from vplants.mangosim.utils.util_plot import *
 from vplants.mangosim.util_path import common_options
 
-restrictions = [None, eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction, eAllRestriction]
-restrictionLabels = ['With All Factors', 'Without Burst Date', 'Without Position','Without Ancestor Position', 'Without Ancestor Fate', 'With No Factor']
+restrictions = [None, eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction, eAllRestriction, eBurstDateOnlyRestriction, ePositionAOnlyRestriction, ePositionAncestorAOnlyRestriction, eNatureFOnlyRestriction]
+restrictionLabels = ['With All Factors', 'Without Mother Burst Date', 'Without Mother Position','Without Ancestor Position', 'Without Ancestor Fate', 'With No Factor', 'With only Mother Burst Date', 'Without only Mother Position','With only Ancestor Position', 'With only Ancestor Fate']
 
 restrictionLabels = dict(zip(restrictions,restrictionLabels))
 

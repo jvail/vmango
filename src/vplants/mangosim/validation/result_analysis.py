@@ -70,6 +70,10 @@ class Evaluator:
         self.addtarget(restriction=[None, eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction, eAllRestriction])
         return self
 
+    def alluniquefactors(self, glm = eInteractionGlm):
+        self.addtarget(restriction=[None, eBurstDateOnlyRestriction, ePositionAOnlyRestriction, ePositionAncestorAOnlyRestriction, eNatureFOnlyRestriction, eAllRestriction])
+        return self
+
     def get_param_targets(self):
         if len(self.paramtargets) == 0:
             return  [{'GLM_TYPE' : eInteractionGlm, 'GLM_RESTRICTION' : None, 'FRUIT_MODEL' : False}]
@@ -270,15 +274,20 @@ def normalize_histo(histo):
     sh1 = float(sum(histo))
     return [v1/sh1 for v1 in histo]
 
+def kullback_leibler_divergence(hist1, hist2):
+    return sum([v1 * log(v1/v2) for v1,v2 in zip(hist1, hist2) if abs(v1) > 0 and abs(v2) > 0] )
+
 def sym_kullback_leibler_divergence(hist1, hist2):
+    assert len(hist1) == len(hist2)
     from math import log
     h1 = normalize_histo(hist1)
     h2 = normalize_histo(hist2)
-    divkl_h1_h2 = sum([v1 * log(v1/v2) for v1,v2 in zip(h1,h2) if abs(v1) > 0 and abs(v2) > 0] )
-    divkl_h2_h1 = sum([v1 * log(v1/v2) for v1,v2 in zip(h2,h1) if abs(v1) > 0 and abs(v2) > 0] )
+    divkl_h1_h2 = kullback_leibler_divergence(h1, h2)
+    divkl_h2_h1 = kullback_leibler_divergence(h2, h1)
     return divkl_h1_h2+divkl_h2_h1
 
 def bhattacharyya_histo_distance(hist1, hist2):
+    assert len(hist1) == len(hist2)
     from math import log, sqrt
     h1 = normalize_histo(hist1)
     h2 = normalize_histo(hist2)
@@ -294,13 +303,28 @@ def l2_normed_histo_distance(hist1, hist2):
     h2 = normalize_histo(hist2)
     return l2_histo_distance(h1,h2) 
 
+from math import sqrt
+
 def l2_histo_distance(hist1, hist2):
-    from math import sqrt
+    assert len(hist1) == len(hist2)
     return sqrt(sum([pow(v1-v2,2) for v1,v2 in zip(hist1,hist2)]))
 
+def rmsd(hist1, hist2):
+    assert len(hist1) == len(hist2)
+    return sqrt(sum([pow(v1-v2,2) for v1,v2 in zip(hist1,hist2)])/len(hist1))
+
+def normalized_rmsd(hist1, hist2):
+    assert len(hist1) == len(hist2)
+    hist1 = normalize_histo(hist1)
+    hist2 = normalize_histo(hist2)
+    return rmsd(hist1, hist2) # / (max(max(hist1),max(hist2)) - min(min(hist1),min(hist2)))
+
+
 def histogram_distance(hist1, hist2):
+    return rmsd(hist1, hist2)
+    #return normalized_rmsd(hist1, hist2)
     #return l2_normed_histo_distance(hist1, hist2)
-    return sym_kullback_leibler_divergence(hist1, hist2)
+    #return sym_kullback_leibler_divergence(hist1, hist2)
     #return bhattacharyya_histo_distance(hist1, hist2)
 
 def histogram_distances(reference, allvalues, nullmodel = None ):
@@ -393,7 +417,7 @@ def histodistances(meankvalues, refsimu = {'GLM_RESTRICTION' : None}, nullsimu =
     res = [v for k,v in histo]
     if type(refsimu) == dict:
         res.insert(refsimuid, 0)
-    print res
+    print '\t'.join(map(str,res))
     return res
 
 def histodistance_legend(meankvalues, refsimu = {'GLM_RESTRICTION' : None}, nullsimu = {'GLM_RESTRICTION' : eAllRestriction}):
@@ -798,6 +822,7 @@ def main():
     def help():
         print 'Available plots :',cmdflags.keys()
         print '-c  : Comparison mode'
+        print '-cu  : Comparison mode with unique factor'
         print '-fm : Use fruitmodel'
         print '-ft : Fruit model test'
         print '-f  : Force reevaluation'
@@ -848,6 +873,9 @@ def main():
         if '-c' in switches:
             for p in processes:
                 p.allrestrictions()
+        elif '-cu' in switches:
+            for p in processes:
+                p.alluniquefactors()
 
 
         treename = None

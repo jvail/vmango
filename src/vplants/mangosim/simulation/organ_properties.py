@@ -728,9 +728,12 @@ class FruitManager (OrganManager):
             import vplants.mangosim.fruitmodel.fruitmodel as fm ; reload(fm)
             from vplants.mangosim.fruitmodel.fruitmodel import applymodel
             from vplants.mangosim.util_lstring2mtg import export_to_mtg_light
-            print 'Fruit model evaluation', current_date
-            lmtg = export_to_mtg_light(lstring) # , lscene)
-            applymodel(lmtg, get_flowering_cycle(current_date), self.branchsize, self.outputenabled, self.outputname)
+            cycle = get_flowering_cycle(current_date)
+            print 'Fruit model evaluation', current_date, 'for cycle', cycle
+            lmtg = export_to_mtg_light(lstring, cycle) # , lscene)
+            applymodel(lmtg, cycle, self.branchsize, self.outputenabled, self.outputname)
+            #from vplants.mangosim.tools import dump_obj
+            #dump_obj(lmtg,'structure-cycle'+str(cycle)+'.pkl')
         else:
             pass
             #print 'No Fruit model evaluation'

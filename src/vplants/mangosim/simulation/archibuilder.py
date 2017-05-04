@@ -136,7 +136,9 @@ class MTGArchiBuilder (ArchiBuilder):
         if inflo_cycle is None:
             inflo_cycle = get_vegetative_cycle(guparam.burst_date) if guparam.burst_date else 3
         if not bloom_date: 
-            bloom_date = date(2000+inflo_cycle, 8, randint(1,31)) # We bloom the inflo in august
+            period_beg, period_end = get_bloom_weeks(inflo_cycle)[5][0], get_bloom_weeks(inflo_cycle)[7][0]
+            bloom_date = period_beg + timedelta(days=randint(0,(period_end-period_beg).days))
+            #bloom_date = date(2000+inflo_cycle, 9, randint(1,31)) # We bloom the inflo in august
         elif type(bloom_date) is list: 
             bloom_date = bloom_date[0]
         

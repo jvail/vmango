@@ -542,6 +542,7 @@ class UnitDev:
     def flowering_date(self):
         from random import randint
         from datetime import timedelta
+        fweek = 5
         try:
             fweek = int(self.get_realization('flowering_week'))
         except KeyError,e:
@@ -562,7 +563,10 @@ class UnitDev:
             return int(self.get_realization_from_closestvalues('nb_fruits', factorname = 'Nb_Inflorescences'))+1
 
     def fruit_weight(self):
-        return self.get_realization('fruit_weight')
+        try:
+            return int(self.get_realization('fruit_weight'))
+        except KeyError:
+            return int(self.get_realization_from_closestvalues('fruit_weight'))
 
     def harvest_date(self):
         from random import randint
