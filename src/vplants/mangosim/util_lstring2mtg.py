@@ -14,7 +14,7 @@ def export_to_mtg(lstring):
 
   params_to_export = [tree_parameters,
                       ['burst_date','cycle','mtgid','nature','mixed_inflo','final_length_gu','length','radius','final_length_leaves','nb_internodes'],
-                      ['burst_date','bloom_date','fullbloom_date','cycle','final_length','length','fruiting','nb_axes','nb_fruits','fruits_weight','fruits_maturity_date'],
+                      ['burst_date','bloom_date','fullbloom_date','cycle','final_length','length','fruiting','nb_axes','nb_fruits','fruits_weight','fruits_maturity_date','leaffruit_ratio'],
                       ['inflo_fullbloom_date','cycle','growth', 'maturity_date', 'growth_stage_date', 'initial_weight','weight']]
 
   # Convert lstring into mtg

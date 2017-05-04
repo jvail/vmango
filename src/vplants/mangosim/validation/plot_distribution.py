@@ -112,7 +112,7 @@ def plot_histos(keys, allvaluesset, _title = None, reference = None, legends = N
     uwidth = 1
     width = (nbplot+1) * uwidth * 1.2
     
-    listcolors = ['r','y','b','c','m','k']
+    listcolors = ['r','y','b','c','m','g','k']
     colors = lambda x: listcolors[x]
 
     legends = build_legends(legends, legendtags)
