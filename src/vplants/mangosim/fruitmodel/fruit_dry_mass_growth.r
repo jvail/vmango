@@ -1,6 +1,6 @@
 
 
-localdir = getSrcDirectory(function(x) {x})
+#localdir = getSrcDirectory(function(x) {x})
 
 
 ### Fonction MS ? partir Model MS Lechaudel, 2005
@@ -142,15 +142,18 @@ else {
             Reserve_Dif_Util_Feuille <- 0 
         } 
         else {
+            Reste.RE = 0
             failed = data.frame()
             write.csv(failed, file=paste(localdir,"/tmp/failed-",idsimu,".csv",sep=''))
             stop("Les parties vegetatives s'etouffent: le systeme meurt ...\n")
+            print("Les parties vegetatives s'etouffent: le systeme meurt ...\n")
             return (NULL)
         }
     }  
 }
 
-if (Reste.RE < RE.fruct) {                                                      ### Sitution d?favorable pour le fruit.
+if(is.nan( Reste.RE)) {  Reste.RE = 0 }
+if (  RE.fruct > Reste.RE   ) {                                                      ### Sitution d?favorable pour le fruit.
     besoin.fruit <- (Respiration_Fruit - Reste.RE) / cfruit 
     if (besoin.fruit >= MS_Fruit_Precedent) {
         failed = data.frame()

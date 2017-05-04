@@ -478,6 +478,8 @@ class InfloManager (OrganManager):
         return 0.05+0.30*(n_pheno/5)
 
     def plot(self, p, current_date):
+        import random
+        rstate = random.getstate()
 
         def Inflorescence(param):  
            def myratio(x):
@@ -664,7 +666,7 @@ class InfloManager (OrganManager):
             nsproduce([Sphere(radius)]) ; return
 
         Inflorescence(p)
-
+        random.setstate(rstate)
 
 class FruitManager (OrganManager):
 
@@ -732,8 +734,8 @@ class FruitManager (OrganManager):
             print 'Fruit model evaluation', current_date, 'for cycle', cycle
             lmtg = export_to_mtg_light(lstring, cycle) # , lscene)
             applymodel(lmtg, cycle, self.branchsize, self.outputenabled, self.outputname)
-            #from vplants.mangosim.tools import dump_obj
-            #dump_obj(lmtg,'structure-cycle'+str(cycle)+'.pkl')
+            from vplants.mangosim.tools import dump_obj
+            dump_obj(lmtg,'../fruitmodel/structure-cycle'+str(cycle)+'.pkl')
         else:
             pass
             #print 'No Fruit model evaluation'

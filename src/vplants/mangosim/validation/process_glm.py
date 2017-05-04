@@ -62,7 +62,7 @@ def generate_mtgs(trees = range(3),
     for seed in seeds:
         fname = get_outfname(seed)
         if not os.path.exists(join(outputdir,fname)):  
-            print 'Generate trees with seed',seed
+            print 'Generate trees with seed',seed,'and params',params
             nparams = params.copy()
             nparams.update({'SEED':seed})
             try :
@@ -145,7 +145,7 @@ def process_bfsize_models(maxseed=1000, fruitmodel = False, minseed = 0):
     import itertools
     params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],['True'],['FRUITBRANCHSIZE'],[str(i) for i in xrange(1,7)]))
 
-    process_set_of_simulations(params)
+    process_set_of_simulations(params, False)
 
 
 

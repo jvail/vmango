@@ -197,6 +197,7 @@ class Evaluator:
         if mtgtype == eSimulatedMtg : 
             if self.verbose : print 'Process', repr(os.path.basename(mtgfile))
             mtg = load_obj(mtgfile)
+            mtg.fname = mtgfile
         else : 
             if self.verbose : print 'Process reference'
             mtg = get_mtg()
@@ -720,6 +721,36 @@ class burst_date_distribution(Evaluator):
         plt.xlabel('Month')
         plt.ylabel('Number of new growth units')
 
+class leaf_fruit_ratio(organ_count_distribution):
+    def __init__(self):
+        organ_count_distribution.__init__(self,'leaf_fruit_ratio',self.determine_distribution, self.plot)
+
+    def determine_distribution(self, mtg, mtgtype):
+        if mtgtype == eMeasuredMtg:
+            mean_leaf_fruit_ratio = [0 for c in xrange(self.begcycle, self.maxcycle)]
+        else:
+            ratio = lambda x: x[0]/float(x[1]) if x[1] > 0 else 0
+            inflos = [(c,self.get_all_inflos_at_cycle(mtg, cycle=c)) for c in xrange(self.begcycle, self.maxcycle)]
+            leafruit = mtg.property('leaffruit_ratio')
+            mean_leaf_fruit_ratio = []
+            for c,inflocycle in inflos:
+                ratios = [ratio(leafruit[inflo]) for inflo in inflocycle if inflo in leafruit]
+                if len(ratios) > 0:
+                    mean_leaf_fruit_ratio.append(np.mean(ratios))
+                else:
+                    print mtg.fname,c,ratios, len(inflocycle), len([i for i in inflocycle if mtg.property('nb_fruits')[i] > 0])
+                    mean_leaf_fruit_ratio.append(None)
+
+            #mean_leaf_fruit_ratio = [np.mean([ratio(leafruit[inflo]) for inflo in inflocycle if inflo in leafruit]) for inflocycle in inflos ]
+        return mean_leaf_fruit_ratio
+
+    def plot(self, refvalues, kvalues):
+        begcycle, maxcycle = self.begcycle, self.maxcycle
+        labels = ['Leaf Fruit Ratio '+str(i) for i in xrange(begcycle, maxcycle)]
+        self.plot_distributioni(refvalues, kvalues, labels)
+
+
+
 
 def get_treenames():
     return get_treenames_of_variety(mm.get_mtg(),'cogshall',eLoaded)
@@ -731,7 +762,8 @@ cmdflags = OrderedDict([('burst' , burst_date_distribution),
                         ('branch' , tree_branch_length),
                         ('axe' , current_year_axe_length),
                         ('terminal' , terminal_count_distribution),
-                        ('production' , production)
+                        ('production' , production),
+                        ('lf', leaf_fruit_ratio)
                         ])
 cmdlabels = {
              'burst'    : 'Burst Date Distribution', 
@@ -740,7 +772,8 @@ cmdlabels = {
              'branch'   : 'Axial Branches Length Distribution', 
              'axe'      : 'Current Year Axe Length Distribution',
              'terminal' : 'Terminal GU Characteristics', 
-             'production' : 'Production'
+             'production' : 'Production',
+             'lf' : 'Leaf Fruit Ratio'
              }
 
 def saveall(fruitmodel=False, comparison = True, force=False):
@@ -792,6 +825,12 @@ def fruitbranchsizetest():
     p.addtarget(FRUIT_MODEL=False)
     p()
 
+def fruitbranchsizelf(force = False):
+    p = leaf_fruit_ratio()
+    p.fruitbranchsizetest()
+    #p.addtarget(FRUIT_MODEL=False)
+    p(nb = 10,force=force,parallel=False)
+
 def test_production():
     restriction = None #range(4)
     p = production()
@@ -825,6 +864,7 @@ def main():
         print '-cu  : Comparison mode with unique factor'
         print '-fm : Use fruitmodel'
         print '-ft : Fruit model test'
+        print '-flt : Fruit model leaf fruit ratio test'
         print '-f  : Force reevaluation'
         print '-s  : Save figure'
         print '-sa : Save all figures'
@@ -866,6 +906,8 @@ def main():
         make_report(force=force, comparison=False, fruitmodel=fruitmodel)
     elif '-ft' in switches:
         fruitbranchsizetest()
+    elif '-flt' in switches:
+        fruitbranchsizelf(force=force)
     else:
         if fruitmodel:
             for p in processes:

@@ -61,7 +61,6 @@ def generate_bgeom(step = None, endstep = None):
         if step == firststep: lstring = l.derive(firststep+1)
         else: lstring = l.derive(lstring,step,1)
         lscene = l.sceneInterpretation(lstring)
-        lscene = l.abspath_imgs(lscene)
         fname = join(workingrep, bgeomfile.format(str(step).zfill(4)))
         lscene.save(tempbgeomfile)
         os.rename(tempbgeomfile,fname)
@@ -132,16 +131,17 @@ union {
 '''
 
 
-def generate_pov(i=0,nbpovprocess=1):
+def generate_pov(i=0,nbpovprocess=1, maxstep = None):
     """ generate ith images modulo nbpovprocess """
     print 'Image generator ',i,' launched'
     from openalea.plantgl.all import Scene, Tesselator, PovFilePrinter
     print 'Look at',stepfile
     wait_for_file(stepfile)
-    nbsteps = int(open(stepfile,'r').read())
+    if maxstep is None:
+        maxstep = int(open(stepfile,'r').read())
     step = i
     os.chdir(workingrep)
-    while step < nbsteps:
+    while step < maxstep:
         bgeomfname = bgeomfile.format(str(step).zfill(4))
         steppovfile = povfile.format(str(step).zfill(4))
         stepimgfile = imgfile.format(str(step).zfill(4))
@@ -210,8 +210,8 @@ def main():
     elif stepflag in sys.argv:
         pfi = sys.argv.index(stepflag)
         numstep = int(sys.argv[pfi+1])
-        generate_bgeom(numstep)
-        generate_pov(numstep)
+        generate_bgeom(numstep,numstep+1)
+        generate_pov(numstep,1,numstep+1)
     elif len(sys.argv) > 1:
         raise ValueError(sys.argv[1:])
     else:

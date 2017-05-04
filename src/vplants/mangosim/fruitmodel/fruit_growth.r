@@ -112,7 +112,7 @@ for (i in 1:length(DATE)[1])
 
     if ( Croissance[i,"Saccharose"] >= 0.04)
     {
-    	cat("Le fruit est mur \n")
+      if(verbose) {cat("Le fruit est mur \n")}
     	break                         # sort de la boucle et arr?te les simulations 
     }  
     if(verbose) {setTxtProgressBar(pb,i) }

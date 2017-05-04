@@ -1,14 +1,12 @@
 
-localdir = getSrcDirectory(function(x) {x})
+#localdir = getSrcDirectory(function(x) {x})
 envdata = paste(localdir,"/../../../../share/environment/",sep='')
 
 ############################### Lancement des simulations pour x fruits #######################################################################
 ##### nom du fichier : Utilisation de la fonction MS MF_arbre_simp.r
-fruitmodel = function(bloom_date, nb_fruits, leaf_nbs,idsimu)
+fruitmodel = function(bloom_date, nb_fruits, leaf_nbs)
 
 {
-idsimu <<- idsimu
-set.seed(idsimu)
 #********************
 
 LF = leaf_nbs/nb_fruits
@@ -81,6 +79,5 @@ don$LF = rep(LF,dim(don)[[1]])
 don$environ_lum = rep(sum(k1_fruit)/24,dim(don)[[1]])
 don$DAB = Res$DAB[1:length(Res$Croissance$Date)]
 
-write.csv(don, file=paste(localdir,"/tmp/resultats-",idsimu,".csv",sep=''))
 return(don)
 }

@@ -38,7 +38,7 @@ def normalize_imgs(path = '../../../../share/textures'):
     mat = execContext().turtle.getMaterial(i)
     if mat.isTexture(): 
       image = mat.image
-      image.filename = os.path.join(path,os.path.basename(image.filename))
+      image.filename = os.path.abspath(os.path.join(path,os.path.basename(image.filename)))
 
 def abspath_imgs(lscene):
    for sh in lscene:
@@ -360,17 +360,17 @@ def __initialiseContext__(context):
 	Color_6 = pgl.Material("Color_6" , ambient = (71,91,46) , diffuse = 1.67033 , specular = (0,0,0) , )
 	Color_6.name = "Color_6"
 	context.turtle.setMaterial(6,Color_6)
-	PGL_140318980955920 = pgl.ImageTexture("PGL_140318980955920" , "../../../../share/textures/leaf.png" , )
+	PGL_140318980955920 = pgl.ImageTexture("PGL_140318980955920" , "/Users/fboudon/Develop/oagit/mangosim/share/textures/leaf.png" , )
 	PGL_140318980955920.name = "PGL_140318980955920"
 	Color_10 = pgl.Texture2D(image = PGL_140318980955920 , )
 	Color_10.name = "Color_10"
 	context.turtle.setMaterial(10,Color_10)
-	PGL_140675898004864 = pgl.ImageTexture("PGL_140675898004864" , "../../../../share/textures/leaf-bw.png" , )
+	PGL_140675898004864 = pgl.ImageTexture("PGL_140675898004864" , "/Users/fboudon/Develop/oagit/mangosim/share/textures/leaf-bw.png" , )
 	PGL_140675898004864.name = "PGL_140675898004864"
 	Color_11 = pgl.Texture2D(image = PGL_140675898004864 , )
 	Color_11.name = "Color_11"
 	context.turtle.setMaterial(11,Color_11)
-	PGL_140608034579296 = pgl.ImageTexture("PGL_140608034579296" , "../../../../share/textures/bark2.png" , )
+	PGL_140608034579296 = pgl.ImageTexture("PGL_140608034579296" , "/Users/fboudon/Develop/oagit/mangosim/share/textures/bark2.png" , )
 	PGL_140608034579296.name = "PGL_140608034579296"
 	Color_12 = pgl.Texture2D(image = PGL_140608034579296 , )
 	Color_12.name = "Color_12"
@@ -429,7 +429,7 @@ def __initialiseContext__(context):
 	context.animation_timestep = 0.1
 	context.options.setSelection('Module declaration',1)
 	context.options.setSelection('Warning with sharp module',0)
-	scalars = [('Geometry', 'Category'), ('RESOLUTION', 'Integer', 1, 0, 2), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('GENERALIZEDCYLINDER', 'Bool', True), ('TEXTURE', 'Bool', True), ('DISTINCT_MI', 'Bool', False), ('ELASTICITY', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', True), ('SAVE_MTG', 'Bool', False), ('FRUITMODEL_OUTPUT', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 1, 0, 2), ('SEED', 'Integer', 0, 0, 100), ('TIMESTEP', 'Integer', 180, 1, 180), ('FRUIT_MODEL', 'Bool', True), ('FRUITBRANCHSIZE', 'Integer', 4, 1, 10), ('REPEAT_LASTPROBAS', 'Bool', False), ('GLM', 'Category'), ('WITH_GLM', 'Bool', True), ('_GLM_TYPE', 'Integer', 3, 1, 3), ('_GLM_RESTRICTION', 'Integer', 0, 0, 6), ('Environment', 'Category'), ('TIMEBAR', 'Bool', False)]
+	scalars = [('Geometry', 'Category'), ('RESOLUTION', 'Integer', 1, 0, 2), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('GENERALIZEDCYLINDER', 'Bool', True), ('TEXTURE', 'Bool', True), ('DISTINCT_MI', 'Bool', False), ('ELASTICITY', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', True), ('SAVE_MTG', 'Bool', False), ('FRUITMODEL_OUTPUT', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 0, 0, 2), ('SEED', 'Integer', 22, 0, 100), ('TIMESTEP', 'Integer', 90, 1, 180), ('FRUIT_MODEL', 'Bool', True), ('FRUITBRANCHSIZE', 'Integer', 1, 1, 10), ('REPEAT_LASTPROBAS', 'Bool', False), ('GLM', 'Category'), ('WITH_GLM', 'Bool', True), ('_GLM_TYPE', 'Integer', 3, 1, 3), ('_GLM_RESTRICTION', 'Integer', 0, 0, 6), ('Environment', 'Category'), ('TIMEBAR', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
