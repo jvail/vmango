@@ -4,27 +4,38 @@ from datetime import *
 import os.path
 
 RScriptRepo = dirname(abspath(__file__))
+RWorkRepo = os.path.join(RScriptRepo,'tmp')
 
 EXTERNALPROCESS = True
 
-def execute_r_script(**params):
-    #for var, value in params.items():
-    #    launcher.write(var+" <- "+ repr(value)+'\n')
+def execute_r_script(idsimu, bloom_date, nb_fruits, nb_leaves):
+
+    params = { 'bloom_date' : bloom_date, 'nb_fruits' : nb_fruits, 'nb_leaves' : nb_leaves }
+
     script = '''
-out = file("fruitmodel.log",open="wt")
-sink(file = out, split = FALSE)
+localdir <<- "{}"
 
-source("fruit_model_main.r")
-fruitmodel({})
+idsimu <<- {}
+set.seed(idsimu)
 
-sink()
-close(out)
-'''.format(','.join([var+" = "+ repr(value).replace("'",'"') for var, value in params.items()]))
+#out = file("{}/fruitmodel-{}.log",open="wt")
+#sink(file = out, split = FALSE)
+
+source("{}/fruit_model_main.r")
+res = fruitmodel({})
+
+write.csv(res, file=paste(localdir,"/tmp/resultats-",idsimu,".csv",sep=''))
+
+#sink()
+#close(out)
+'''.format(RScriptRepo, idsimu, RWorkRepo,idsimu,RScriptRepo,' , '.join([var+" = "+ repr(value).replace("'",'"') for var, value in params.items()]))
     #print script
+    if not os.path.exists(RWorkRepo):
+        os.makedirs(RWorkRepo)
     if EXTERNALPROCESS:
-      launch_r(script)
+      launch_r(idsimu, script)
     else:
-      launch_rpy(script)
+      launch_rpy(idsimu, script)
 
 def get_R_cmd():
     import sys
@@ -36,11 +47,11 @@ def get_R_cmd():
         exe = 'Rscript'
     return exe
 
-def launch_r(script):
+def launch_r(idsimu, script):
     cwd = os.getcwd()
-    os.chdir(RScriptRepo)
+    os.chdir(RWorkRepo)
     
-    launchfile = 'modellauncher.r'
+    launchfile = 'modellauncher-'+str(idsimu)+'.r'
     launcher = file(launchfile,'w')
     launcher.write(script)
     launcher.close()
@@ -48,46 +59,81 @@ def launch_r(script):
     exe = get_R_cmd()
     command = '"'+exe +'" '+launchfile+''
     os.system(command)
+    
+    os.remove(launchfile)
+
+    logfile = "fruitmodel-{}.log".format(idsimu)
+    if os.path.exists(logfile): os.remove(logfile)
     os.chdir(cwd)
 
-def launch_rpy(script):
+def launch_rpy(idsimu, script):
   import rpy2.robjects as r
   return r.r(script)
 
-def get_fruitmodel_function():
-    def fruitmodel(**params):
-        execute_r_script(**params)
-    return fruitmodel
+#def get_fruitmodel_function():
+#    def fruitmodel(idsimu, **params):
+#        execute_r_script(idsimu, **params)
+#    return fruitmodel
 
+
+def wait_for_file(fname, timeout = 0.1):
+  import time
+  t = time.time()
+  while abs(t - time.time()) < timeout and not os.path.exists(fname) : pass
+  return os.path.exists(fname)
+
+def fruitmodel(idsimu, bloom_date, nb_fruits, nb_leaves, dumpdir = None):
+    #print 'Do simu', inflos
+    tempfile = os.path.join(RWorkRepo,"resultats-"+str(idsimu)+".csv")
+    if os.path.exists(tempfile): os.remove(tempfile)    
+
+    execute_r_script(idsimu, bloom_date, nb_fruits, nb_leaves)
+
+    if not wait_for_file(tempfile):
+        failedfile = os.path.join(RWorkRepo,"failed-"+str(idsimu)+".csv")
+        if os.path.exists(failedfile): os.remove(failedfile)
+        return 
+    else:
+        from pandas import read_csv
+        date_parser = lambda d : datetime.strptime(d, '%Y-%m-%d')
+        result = read_csv(tempfile, parse_dates=['Date'], date_parser=date_parser)
+        if dumpdir:
+            import shutil
+            shutil.copy(tempfile,os.path.join(dumpdir, 'meanfruit-'+'-'.join(map(str,inflos)))+'.csv')        
+        os.remove(tempfile)
+        return result
+
+def pfruitmodel(params): 
+    return fruitmodel(*params)
 
 from vplants.mangosim.tools import *
+from vplants.mangosim.utils.util_parallel import *
 
-def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
-    from pandas import read_csv
+def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None, parallel = True):
+
+    from random import randint
     verbose = False
-    if verbose :
-        print '*** Apply fruit model ***'
-        print " * Load R function"
-    fruitmodel = get_fruitmodel_function()
 
-    if verbose :
-        print " * Compute fruiting structures"
+    if verbose : print " * Compute fruiting structures"
     import fruitingstructure as fs; reload(fs)
+
     fruiting_structures = fs.determine_fruiting_structure(mtg, cycle, fruit_distance = fruit_distance)
 
-    if verbose :    
-        print " * Compute property of the structures"
+    #inflomtg = set([inflo for inflo,l in mtg.property('label').items() if l == 'Inflorescence' and mtg.property('nb_fruits')[inflo] > 0 and mtg.property('cycle')[inflo] == cycle] )
+    #inflostruct = set([inflo for inflos, gus in fruiting_structures for inflo in inflos])
+    #assert len(inflomtg.symmetric_difference(inflostruct)) == 0
+    #from collections import Counter
+    #c = Counter([inflo for inflos, gus in fruiting_structures for inflo in inflos])
+
+    if verbose : print " * Compute property of the structures"
+    
     params = mtg.property('p')
-    somme_nb_fruits = 0
-    somme_masse_fruit = 0
-    somme_sucres_solubles = 0
-    somme_acides_organiques = 0
 
     if dump:
         if dumptag :
-          outdir = 'fruitmodeloutput/fruitmodel-'+dumptag+'-cycle-'+str(cycle)+'-fdist-'+str(fruit_distance)
+            outdir = 'fruitmodeloutput/fruitmodel-'+dumptag+'-cycle-'+str(cycle)+'-fdist-'+str(fruit_distance)
         else:
-          outdir = 'fruitmodeloutput/fruitmodel-output-cycle-'+str(cycle)+'-fdist-'+str(fruit_distance)
+            outdir = 'fruitmodeloutput/fruitmodel-output-cycle-'+str(cycle)+'-fdist-'+str(fruit_distance)
         if os.path.exists(outdir) : 
             import shutil
             shutil.rmtree(outdir)
@@ -95,61 +141,82 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         dump_obj(mtg, 'fruitingtree.pkl', outdir) 
         dump_obj(fruiting_structures, 'fruitingbranches.pkl', outdir)
 
-    fruit_structures = []
+
+    parameters = []
     for inflos, gus in fruiting_structures:
-        bloom_dates = [params[inflo].bloom_date for inflo in inflos]
+        bloom_dates = [params[inflo].fullbloom_date for inflo in inflos]
         if len(gus) == 0 and len(mtg.vertices(scale=mtg.max_scale())) == 1:
-          leaf_nbs    = 100
+            nb_leaves    = 100
         else:
-          leaf_nbs    = sum([len(params[gu].final_length_leaves) for gu in gus])
+            nb_leaves    = sum([len(params[gu].final_length_leaves) for gu in gus if not gu is None])
+
         nb_fruits   = sum([params[inflo].nb_fruits for inflo in inflos])
-        #print nb_fruits
-        somme_nb_fruits += nb_fruits
+
         bloom_date  = bloom_dates[0] 
         bloom_date_date = bloom_date 
-        bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/'+str(bloom_date.year)
-        # call fruit model in r 
-        tempfile = os.path.join(RScriptRepo,"resultats.csv")
-        if os.path.exists(tempfile): os.remove(tempfile)
-        result = fruitmodel(bloom_date=bloom_date, nb_fruits=nb_fruits, leaf_nbs=leaf_nbs)
-        
-        def wait_for_file(fname, timeout = 5):
-          import time
-          t = time.time()
-          while abs(t - time.time()) < timeout and not os.path.exists(fname) : pass
-          return os.path.exists(fname)
-         
-        assert wait_for_file(tempfile)
-        date_parser = lambda d : datetime.strptime(d, '%Y-%m-%d')
-        result = read_csv(os.path.join(RScriptRepo,"resultats.csv"), parse_dates=['Date'], date_parser=date_parser)
-        if dump:
-          import shutil
-          shutil.copy(tempfile,os.path.join(outdir, 'meanfruit-'+'-'.join(map(str,inflos)))+'.csv')
-        
-        dates = result["Date"]
-        dates = map(lambda d:d.to_datetime(),dates)
-        newyear = bloom_date_date.year
-        dates = [date(d.year+1, d.month, d.day) for d in dates]
-        property = zip(result["Masse_Fruit"], result["sucres_solubles"],  result["acides_organiques"])
-        fruit_growth = dict(zip(dates,property))
-        fruit_structures.append((len(inflos), leaf_nbs,  nb_fruits, max(result["Masse_Fruit"]), inflos, [params[inflo].nb_fruits for inflo in inflos] ))
-        
-        for inflo in inflos:
-            params[inflo].fruit_appearance_date = min(dates)
-            params[inflo].fruit_maturity_date   = max(dates)
-            params[inflo].fruit_weight_min      = min(result["Masse_Fruit"])
-            params[inflo].fruit_weight          = max(result["Masse_Fruit"])
-            params[inflo].sucres_solubles       = max(result["sucres_solubles"])
-            params[inflo].acides_organiques     = max(result["acides_organiques"])
-            params[inflo].fruit_growth          = fruit_growth
+        cycledecal = bloom_date.year - 2002
+        bloom_date  = str(bloom_date.day)+'/'+str(bloom_date.month)+'/2002'
+
+        idsimu = randint(0,100000)
+        idsimu += fruit_distance*100000
+
+        parameters.append((idsimu, bloom_date, nb_fruits, nb_leaves, outdir if dump else None))
+
+    if parallel:
+        results = parmap(pfruitmodel, parameters)
+    else:
+        results = []
+        for idsimu, bloom_date, nb_fruits, nb_leaves, outdir in parameters:
+            results.append(fruitmodel(idsimu=idsimu, bloom_date=bloom_date, nb_fruits=nb_fruits, nb_leaves=nb_leaves, dumpdir=outdir))
+
+
+    fruit_results = []
+    for result, (inflos, gus) in zip(results, fruiting_structures):
+        if result is None:
+
+            # print 'Simu', idsimu, 'failed', inflos, nb_fruits
+            for inflo in inflos:
+                p = params[inflo]
+                p.nb_fruits = 0
+                p.fruits_weight = 0
+                p.idsimu        = idsimu
+                p.leaffruit_ratio = (nb_leaves, nb_fruits)
+            continue
+        else:
+
+            # print 'Simu', idsimu, 'succeed', inflos, nb_fruits 
+            dates = result["Date"]
+            dates = map(lambda d:d.to_pydatetime(),dates)
+            newyear = bloom_date_date.year
+            dates = [date(d.year+cycledecal, d.month, d.day) for d in dates]
+            fruitproperties = zip(result["Masse_Fruit"], result["sucres_solubles"],  result["acides_organiques"])
+
+            fruit_growth = dict(zip(dates,fruitproperties))
+            fruits_growth_stage_date, fruits_maturity_date = min(dates), max(dates)
+            fruits_initial_weight, fruits_weight = min(result["Masse_Fruit"]), max(result["Masse_Fruit"])
+            # print fruits_initial_weight, fruits_weight, fruits_growth_stage_date, fruits_maturity_date
+
+            fruit_results.append((len(inflos), nb_leaves,  nb_fruits, fruits_weight, inflos, [params[inflo].nb_fruits for inflo in inflos] ))
+
+            
+            for inflo in inflos:
+                p = params[inflo]
+                p.fruits_growth_stage_date = fruits_growth_stage_date
+                p.fruits_maturity_date     = fruits_maturity_date
+                p.fruits_initial_weight    = fruits_initial_weight
+                p.fruits_weight            = fruits_weight*p.nb_fruits
+                p.fruits_growth            = fruit_growth
+                p.idsimu                   = idsimu
+                p.leaffruit_ratio          = (nb_leaves, nb_fruits)
+
              
     if dump:
         fstream = open(os.path.join(outdir,'fruitstructure.csv'),'w')
-        maxbranch = max([len(inflos) for nbinflos, nbleaf, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_structures])
-        nbtotinflos = sum([nbinflos for nbinflos, nbleaf, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_structures])
-        nbtotleaf = sum([nbleaf for nbinflos, nbleaf, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_structures])
-        nbtotfruits = sum([nbfruits for nbinflos, nbleaf, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_structures])
-        masstotfruits = sum([massfruit*nbfruits for nbinflos, nbleaf, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_structures])
+        maxbranch     = max([len(inflos)        for nbinflos, nbleaf, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_results])
+        nbtotinflos   = sum([nbinflos           for nbinflos, nbleaf, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_results])
+        nbtotleaf     = sum([nbleaf             for nbinflos, nbleaf, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_results])
+        nbtotfruits   = sum([nbfruits           for nbinflos, nbleaf, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_results])
+        masstotfruits = sum([massfruit*nbfruits for nbinflos, nbleaf, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_results])
         
         fstream.write('Filename\tNbInflos\tNbLeaf\tNbFruits\tMeanMassFruit\tTotalMassFruit')
         fstream.write(''.join(['\tIdsInflos_'+str(i) for i in xrange(maxbranch)]) )
@@ -162,49 +229,6 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None):
         fstream.close()
     
     if dump:
-      return fruiting_structures, outdir
+        return fruiting_structures, outdir
     else:
-      return fruiting_structures
-
-def color_structures(fruiting_structures, mtg, scene):
-    import matplotlib.pyplot as plt
-    from openalea.plantgl.all import Material, Shape
-    nbcolors = len(fruiting_structures)
-    _colors = plt.get_cmap('jet',nbcolors)
-    colors = lambda x: _colors( x )
-
-    structures = dict()
-    idmap  = mtg.property('_axial_id')
-
-    i = 0
-    print 'determine colors'
-    for inflos, gus in fruiting_structures:
-        col = colors(i)
-        mat = Material([int(c*200) for c in col[:3]])
-        for j in inflos:
-            structures[idmap[j]] = mat
-        for j in gus:
-            structures[idmap[j]] = mat
-        i += 1
-
-    defmat = Material((0,0,0))
-    print 'compute colored scene'
-    nscene = Scene([Shape(sh.geometry,  structures.get(sh.id,defmat), sh.id, sh.parentId) for sh in scene ])
-    return nscene
-
-
-
-if __name__ == '__main__':
-    import sys
-    if '--R' in sys.argv:
-        launch_r()
-    else:
-        from vplants.mangosim.tools import load_obj
-        from openalea.plantgl.all import Scene, Viewer
-        mtg = load_obj('fruitstructure.pkl','../shoot_growth')
-        sc = Scene('../shoot_growth/fruitstructure.bgeom')
-        fs = applymodel(mtg, 3, int(sys.argv[1]) if len(sys.argv) > 1 else 3) 
-        print len(fs)
-        for inflos, gus in fs:
-            print inflos, list(gus)    
-        Viewer.display(color_structures(fs, mtg, sc))
+        return fruiting_structures

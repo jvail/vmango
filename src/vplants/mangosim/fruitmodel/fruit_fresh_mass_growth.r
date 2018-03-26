@@ -1,5 +1,4 @@
-
-# Modèle de croissance en Matière fraiche, Lechaudel (2007).
+# Mod?le de croissance en Mati?re fraiche, Lechaudel (2007).
 
 CROISSANCE_MF = function(   Date,
                             Temperature_Air,
@@ -11,23 +10,23 @@ CROISSANCE_MF = function(   Date,
                             MF_Init,
                             Eaupepu_Init,
                             Poids_Fruit_Init,
-                            H,                                                  # Pression Seuil Y ~ H * Volume Fruit, pour la croissance, Parametre à Estimer.
+                            H,                                                  # Pression Seuil Y ~ H * Volume Fruit, pour la croissance, Parametre ? Estimer.
                             Phiini,                                             #  Taux d'accroissement cellulaire
-                            DDini,                                              # DDJ à partir duquel extensibilité cellulaire (Phiini décroit).
-                            Tau,                                                # Tau de décroissance de l'extensibilité cellulaire.
-                            aLf                                                 # Parametre pour calculer la conductivité hydraulique
+                            DDini,                                              # DDJ ? partir duquel extensibilit? cellulaire (Phiini d?croit).
+                            Tau,                                                # Tau de d?croissance de l'extensibilit? cellulaire.
+                            aLf                                                 # Parametre pour calculer la conductivit? hydraulique
                         )
 
 {                                 
-#----------------------------- Initialisation des données de sorties et entrées
+#----------------------------- Initialisation des donn?es de sorties et entr?es
   
   MSpepu =    0.4086 * MSfruit[1]^0.7641 + 0.5219 * MSfruit[1]^1.0584                               # MS dans la peau et la pulpe.
-  Eaupepu =   Eaupepu_Init                                                                          # Eau dans la peau et la pulpe déterminée avec relation allométrique.
+  Eaupepu =   Eaupepu_Init                                                                          # Eau dans la peau et la pulpe d?termin?e avec relation allom?trique.
   partpepu =  0.4086*0.7641*(MSfruit[-1])^(0.7641-1) + 0.5219*1.0584*(MSfruit[-1])^(1.0584-1)
-  croissMS = partpepu * diff(MSfruit)                                                               # Dériviée de la matière sèche dans la peau et la pulpe.
+  croissMS = partpepu * diff(MSfruit)                                                               # D?rivi?e de la mati?re s?che dans la peau et la pulpe.
   croissMS[croissMS < 0] = 0
   Masse_Fruit = MF_Init                                                                             # Masse fraiche du fruit
-  Masse_Noyau = MF_Init - (MSpepu + Eaupepu)                                                        # Masse du noyau calculée avec relation empirique.
+  Masse_Noyau = MF_Init - (MSpepu + Eaupepu)                                                        # Masse du noyau calcul?e avec relation empirique.
 
 #Results_jour = data.frame( Potentiel_Hydrique = NA,
 #                           P_Turgescence = NA,
@@ -50,10 +49,10 @@ Results_jour_suivant = data.frame( Date = NA,
 #-------------------------- Determination de la Pression Osmotique (P_Osmotique)
 	
   degjour =   mean(ddj)
-	MSpu    =   0.8226 * MSpepu                                                   # Matière sèche dans la puple. Relation Allométrique.
+	MSpu    =   0.8226 * MSpepu                                                   # Mati?re s?che dans la puple. Relation Allom?trique.
 	Eaupu   =   0.8958 * Eaupepu
 	
-	#---- Calcul des proportion des différents composés en fonction des relation allométriques déterminées à partir de la matière sèche Pulpe et DDJ.
+	#---- Calcul des proportion des diff?rents compos?s en fonction des relation allom?triques d?termin?es ? partir de la mati?re s?che Pulpe et DDJ.
   propmal = 0.06620651 + (-0.0000538797) * degjour + (-0.002464413) * MSpu + 2.406565e-006 * MSpu * degjour
 	if (propmal < 0) {    	propmal = 0.0   	}
 	proppyr = 0.0006896104 + 1.613387e-006 * degjour + 0.00005063595 * MSpu + (-6.912509e-008) * MSpu * degjour
@@ -81,7 +80,7 @@ Results_jour_suivant = data.frame( Date = NA,
   propsac = 0.0 + (0.00017695) * degjour + (-0.007249) * MSpu + 9.03e-006 * MSpu * degjour
   if (propsac < 0) {    	propsac = 0.0   	} 
 
-  #---- Calcul de la masse et du nombre de mol des différents composés
+  #---- Calcul de la masse et du nombre de mol des diff?rents compos?s
 	mmal = propmal * MSpu;      nmal = mmal / 134 
 	mcit = propcit * MSpu;      ncit = mcit / 192
 	mpyr = proppyr * MSpu;      npyr = mpyr / 88
@@ -98,37 +97,39 @@ Results_jour_suivant = data.frame( Date = NA,
 
   ncompsol =     nmal + ncit + npyr + noxa + nK + nMg + nCa + nNH4 + nNa + nglc + nfrc + nsac
 	Cssm     =     ncompsol / Eaupu
-	R = 83                                                                        # R gaz constant (cm3 bar mol-1 °K-1
+	R = 83                                                                        # R gaz constant (cm3 bar mol-1 ?K-1
 	P_Osmotique = (R / 10) * (Temp_air_moy + 273.15) * Cssm  + 0.2                # Calcul de la pression osmotique (MPa)
-                                                                                #0.2 étant la pression osmotique due aux acides aminés, constant
+                                                                                #0.2 ?tant la pression osmotique due aux acides amin?s, constant
 
 	
 ###----- CALCUL DE LA TRANSPIRATION DU FRUIT -----------------        
 
-ro = 5544                                                                       # perméabilité cuticulaire en cm/jour (231 cm/h dans papier 2007)
-surfruit = 3.65 * (Masse_Fruit)^0.73                                            # calcul de la surface du fruit expérimental (en cm²)
+ro = 5544                                                                       # perm?abilit? cuticulaire en cm/jour (231 cm/h dans papier 2007)
+surfruit = 3.65 * (Masse_Fruit)^0.73                                            # calcul de la surface du fruit exp?rimental (en cm?)
 Petoile = 0.008048 * exp(0.0547 * Temp_air_moy)                                 # pression de vapeur saturante (Nobel, 1974)
-transpi.alpha = 18 * Petoile / (83 * (Temp_air_moy + 273.15))                  # concentration de vapeur d'eau à saturation
+transpi.alpha = 18 * Petoile / (83 * (Temp_air_moy + 273.15))                  # concentration de vapeur d'eau ? saturation
 
 # calcul de la transpiration du fruit (g/j)
-Transpiration_Fruit = surfruit * transpi.alpha * ro * (0.996 - (mean(humirela) / 100))       # 0.996 = HR dans les espaces remplis d'air à l'intérieur du fruit
+Transpiration_Fruit = surfruit * transpi.alpha * ro * (0.996 - (mean(humirela) / 100))       # 0.996 = HR dans les espaces remplis d'air ? l'int?rieur du fruit
         
 #----------------------------- Determination de la pression de turgescence (P_Turgescence)-----------------------------------------------------------------------------------------------------	
 	
   Potentiel_Hydrique_Arbre = 1.0 * mean(-0.6617105 + (-0.006940179 * Temperature_Air) + (0.007888208 * humirela) + (0.0000198265 * rayo)) # Calcul du potentiel hydrique arbre
 
-#  DDini = 20.769 * Poids_Fruit_Init + 518.87                                    # variante possible, DDini fonction P0.fruit
-                                                                                 
-	if (degjour > DDini) {Phi = Phiini * (Tau ^(degjour-DDini))}else{ Phi = Phiini}               #- Variation de Phi (accroissement volume en fonction de Taux à partir seuil DDJ).
+  DDini = 20.769 * Poids_Fruit_Init + 518.87                                    # variante possible, DDini fonction P0.fruit
+  #### MODIF MAY17
 
-#calcul de la conductivité globale
-  A_Lf = surfruit * aLf                                                         # produit de la surface et du ratio (membrane composite/surface du fruit du fruit = a) et de la conductivité hydraulique entre la tige et le fruit (Lf)
+                                                                                 
+	if (degjour > DDini) {Phi = Phiini * (Tau ^(degjour-DDini))}else{ Phi = Phiini}               #- Variation de Phi (accroissement volume en fonction de Taux ? partir seuil DDJ).
+
+#calcul de la conductivit? globale
+  A_Lf = surfruit * aLf                                                         # produit de la surface et du ratio (membrane composite/surface du fruit du fruit = a) et de la conductivit? hydraulique entre la tige et le fruit (Lf)
   
 # calcul du seuil de pression Y                                                 
-  Yo = 0 ; Vo = 0                                                               # paramètres papier 2007
+  Yo = 0 ; Vo = 0                                                               # param?tres papier 2007
   Y = Yo + H * (Eaupepu - Vo)
 
-#  Pturgescence à partir equation 13 sans l'élasticité
+#  Pturgescence ? partir equation 13 sans l'?lasticit?
   numerateur = Phi * Eaupepu * Y + A_Lf * (Potentiel_Hydrique_Arbre + P_Osmotique) - Transpiration_Fruit + croissMS / 1.60
   denominateur = Phi * Eaupepu + A_Lf
   P_Turgescence = numerateur / denominateur 
@@ -139,16 +140,16 @@ Transpiration_Fruit = surfruit * transpi.alpha * ro * (0.996 - (mean(humirela) /
 	  
 	Potentiel_Hydrique_Fruit = P_Turgescence - P_Osmotique                                   #- Calcul du potentiel hydrique du fruit.
 
-	Flux_Xyleme  = A_Lf * (Potentiel_Hydrique_Arbre - Potentiel_Hydrique_Fruit)                           #- Entrée d'eau par le xyleme
-	Flux_Phloeme = croissMS / 1.60                                                                        #- Entrée d'eau par le phloeme
+	Flux_Xyleme  = A_Lf * (Potentiel_Hydrique_Arbre - Potentiel_Hydrique_Fruit)                           #- Entr?e d'eau par le xyleme
+	Flux_Phloeme = croissMS / 1.60                                                                        #- Entr?e d'eau par le phloeme
 
-#---------------------------------- Bilan Hydrique et carboné ------------------
+#---------------------------------- Bilan Hydrique et carbon? ------------------
 
-	MSpepu_new       = MSpepu + croissMS                                           # Bilan carboné
+	MSpepu_new       = MSpepu + croissMS                                           # Bilan carbon?
   Eaupepu_new      = Eaupepu + Flux_Xyleme + Flux_Phloeme - Transpiration_Fruit  # Bilan hydrique
   Masse_Noyau_new  = 0.1167 * (MSpepu_new + Eaupepu_new)
   Masse_Fruit_new  = MSpepu_new + Eaupepu_new + Masse_Noyau_new  
-#---------------------------------- Sorties qualité ------------------
+#---------------------------------- Sorties qualit? ------------------
   Results_jour$sucres_solubles =                     (msa+mg+mf)/ Eaupu  # somme glucose, sacchrose, fructose
   Results_jour$acides_organiques =                     (mmal + mcit)/Eaupu # somme acide citrique et malique  
   

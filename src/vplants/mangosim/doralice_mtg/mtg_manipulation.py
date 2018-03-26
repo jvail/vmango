@@ -18,6 +18,7 @@ BurstDatePropertyName = 'date_burst'
 BloomPropertyName = 'flowering'
 NbFruitPropertyName = 'nb_fr'
 FruitWeightPropertyName = 'wgt_fr'
+FruitHarvestDatePropertyName = 'date_b_harv'
 CyclePropertyName = 'year'
 VarietyPropertyName = 'var'
 TreeNamePropertyName = 'code'
@@ -33,8 +34,11 @@ TreeScale = 1
 GUScale = 4
 
 def setMtgStyle(style):
-    global __MtgStyle, BurstDatePropertyName, BloomPropertyName, NbFruitPropertyName, CyclePropertyName, VarietyPropertyName, TreeNamePropertyName, MixedInfloPropertyName, LoadingPropertyName
-    global LoadedValue, NotLoadedValue, InfloLabel, FruitLabel
+    global __MtgStyle, BurstDatePropertyName, BloomPropertyName, FruitHarvestDatePropertyName
+    global NbFruitPropertyName, FruitWeightPropertyName
+    global CyclePropertyName, VarietyPropertyName, TreeNamePropertyName
+    global LoadingPropertyName, LoadedValue, NotLoadedValue
+    global InfloLabel, FruitLabel, MixedInfloPropertyName
     global TreeScale, GUScale
     if __MtgStyle != style:
         __MtgStyle = style
@@ -43,10 +47,11 @@ def setMtgStyle(style):
         BloomPropertyName = 'flowering'
         NbFruitPropertyName = 'nb_fr'
         FruitWeightPropertyName = 'wgt_fr'
+        FruitHarvestDatePropertyName = 'date_b_harv'
         CyclePropertyName = 'year'
         VarietyPropertyName = 'var'
         TreeNamePropertyName = 'code'
-        MixedInfloPropertyName = 'mixed_inflo' 
+        MixedInfloPropertyName = 'mixed_inflo'
         LoadingPropertyName = 'fr_load'
 
         LoadedValue = 'C'
@@ -60,15 +65,16 @@ def setMtgStyle(style):
         BurstDatePropertyName = 'burst_date'
         BloomPropertyName = 'bloom_date'
         NbFruitPropertyName = 'nb_fruits'
-        FruitWeightPropertyName = 'fruit_weight'
+        FruitWeightPropertyName = 'fruits_weight'
+        FruitHarvestDatePropertyName = 'fruits_maturity_date'
         CyclePropertyName = 'cycle'
         VarietyPropertyName = 'variety'
         TreeNamePropertyName = 'treename'
         MixedInfloPropertyName = 'mixed_inflo' 
         LoadingPropertyName = 'loading'
 
-        LoadedValue = 'C'
-        NotLoadedValue = 'NC'
+        LoadedValue = eLoaded
+        NotLoadedValue = eNotLoaded
         InfloLabel = 'Inflorescence'
         FruitLabel = 'Fruit'
 
@@ -99,9 +105,23 @@ def use_global_mtg(f):
 # Characterizing UCs
 @use_global_mtg
 def get_unit_cycle(mtg, unit):
-  """Return the cycle of the unit.  """
-  if mtg.label(unit) in 'MP' : return 3
-  else: return mtg.property(CyclePropertyName)[unit]
+    """Return the cycle of the unit.  """
+    if __MtgStyle == eMeasuredMtg:
+        if mtg.label(unit) in 'MP' : return 3
+        else: 
+            return mtg.property(CyclePropertyName)[unit]
+    else:
+        if unit in mtg.property(CyclePropertyName): return mtg.property(CyclePropertyName)[unit]
+        if is_gu(mtg, unit) : 
+            bdate = get_burst_date(mtg, unit)
+            if bdate is None: return 3
+            return get_vegetative_cycle(bdate)
+        elif is_inflorescence(mtg, unit) : 
+            bdate = get_bloom_date(mtg, unit)
+            if bdate is None: 
+                return 3
+            return get_flowering_cycle(bdate)
+        elif is_fruit(mtg,unit) : return get_fruiting_cycle(get_burst_date(mtg,unit))
 
 @use_global_mtg
 def get_burst_date(mtg, unit, default=None):
@@ -135,8 +155,14 @@ def get_bloom_date(mtg, inflo, default=None):
 def get_nb_fruits(mtg, inflo, default=0):
     return mtg.property(NbFruitPropertyName).get(inflo,default)
 
-def get_fruits_weight(mtg, inflo, default = None):
+@use_global_mtg
+def get_fruits_weight(mtg, inflo, default = 0):
     return mtg.property(FruitWeightPropertyName).get(inflo,default)
+
+
+@use_global_mtg
+def get_fruits_harvest_date(mtg, inflo, default = None):
+    return mtg.property(FruitHarvestDatePropertyName).get(inflo,default)
 
 @use_global_mtg
 def is_gu_dead_before_cycle_end(mtg, gu, cycle):
@@ -168,6 +194,7 @@ def is_gu_flowering(mtg, gu, inflocycle = None):
             if inflocycle is None or get_unit_cycle(mtg,ch) == inflocycle:
                 return True
             else : return False
+    return False
 
 @use_global_mtg
 def is_gu_fruiting(mtg, gu, inflocycle = None):
@@ -189,7 +216,10 @@ def nb_of_inflorescences(mtg, gu):
             if is_inflorescence(mtg, ch):
                 nbinflo += nb_of_inflorescences(mtg, ch)
     elif is_inflorescence(mtg, gu):
-        nbinflo = mtg.property('nb_inflo_t').get(gu,0) + mtg.property('nb_inflo_l').get(gu,0)
+        if __MtgStyle == eMeasuredMtg:
+            nbinflo = mtg.property('nb_inflo_t').get(gu,0) + mtg.property('nb_inflo_l').get(gu,0)
+        else:
+            nbinflo = 1
     return nbinflo
 
 @use_global_mtg
@@ -348,12 +378,15 @@ def get_all_treenames(mtg):
     return map(lambda tid: get_tree_name(mtg,tid), get_all_trees(mtg))
 
 @use_global_mtg
-def get_treenames_of_variety(mtg, variety = 'cogshall'):
-    return map(lambda tid: get_tree_name(mtg,tid), get_all_trees_of_variety(mtg, variety))
+def get_treenames_of_variety(mtg, variety = 'cogshall', loaded = None):
+    return map(lambda tid: get_tree_name(mtg,tid), get_all_trees_of_variety(mtg, variety, loaded))
 
 @use_global_mtg
-def get_all_trees_of_variety(mtg, variety = 'cogshall'):
-    return [k for k,v in mtg.property(VarietyPropertyName).items() if v == variety]
+def get_all_trees_of_variety(mtg, variety = 'cogshall', loaded = None):
+    if loaded is None:
+        return [k for k,v in mtg.property(VarietyPropertyName).items() if v == variety]
+    else:
+        return [k for k,v in mtg.property(VarietyPropertyName).items() if v == variety and load_state(mtg,k) == loaded]
 
 @use_global_mtg
 def get_variety(mtg, tree):
@@ -412,7 +445,7 @@ def get_all_gus_of_tree_at_cycle(mtg, tree, cycle):
   # Fred Question: Pourquoi on retrie sur les date de burst?
   if cycle != 3:
     date_burst = mtg.property(BurstDatePropertyName)
-    gus_tree_cycle = [gu for gu in gus_tree_cycle if in_cycle(date_burst[gu],cycle)]
+    gus_tree_cycle = [gu for gu in gus_tree_cycle if in_vegetative_cycle(date_burst[gu],cycle)]
   return gus_tree_cycle
 
 @use_global_mtg
@@ -475,7 +508,7 @@ def get_all_inflo_of_tree_at_cycle(mtg, tree, cycle):
   Parameters : 
     tree: the tree id.
   """
-  return [i for i in mtg.components_at_scale(tree,scale=GUScale) if is_inflorescence(mtg,i) and in_flowering_cycle(get_bloom_date(mtg,i),cycle) ]
+  return [i for i in mtg.components_at_scale(tree,scale=GUScale) if is_inflorescence(mtg,i) and get_unit_cycle(mtg,i) == cycle ]
 
 
 @use_global_mtg
@@ -490,6 +523,21 @@ def get_all_inflo_of_variety(mtg, loaded = None, variety = "cogshall"):
   trees = select_trees(mtg, loaded, variety)
   for tree in trees :
         inflos += get_all_inflo_of_tree(mtg, tree)
+  return inflos
+
+
+@use_global_mtg
+def get_all_inflo_of_variety_at_cycle(mtg, cycle, loaded = None, variety = "cogshall"):
+  """ 
+  Parameters : 
+    loaded : a booleen, if true, return trees which are loaded, if false, return trees which are not loaded.
+    variety : a string, the choice of variety is : 
+            'jose', 'irwin', 'cogshall', 'kent', 'tommyatkins', 'kensingtonpride', 'namdocmai' or "all" for all variety.
+  """
+  inflos = []
+  trees = select_trees(mtg, loaded, variety)
+  for tree in trees :
+        inflos += get_all_inflo_of_tree_at_cycle(mtg, tree, cycle)
   return inflos
 
 
@@ -1028,15 +1076,15 @@ if __name__ == '__main__' :
     # check_cycle_and_burst_date_coherence()
     #check_produce_within_and_next_cycle()
     # check_terminal3_producing_at_cycle5()
-    check_terminal_flowering_has_no_apical()
+    #check_terminal_flowering_has_no_apical()
     #check_terminal_non_flowering_has_no_apical()
     #check_if_has_lateral_has_apical()
     #check_if_within_has_lateral_has_apical()
     #check_apical_ratio_in_first_layer()
-    #check_mixed_inflo()
+    check_mixed_inflo()
     #check_inflo()
     #check_fruit_production()
-    check_pure_vegetative()
+    #check_pure_vegetative()
     pass
 
 # check reiteration

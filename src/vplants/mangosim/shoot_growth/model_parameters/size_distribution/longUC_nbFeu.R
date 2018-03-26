@@ -1,5 +1,5 @@
 #setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
-setwd("/Users/fboudon/Develop/vplants/branches/mangosim/src/vplants/mangosim/shoot_growth")
+setwd("/Users/fboudon/Develop/oagit/mangosim/src/vplants/mangosim/shoot_growth")
 
 # Etude de la taille des organes :
 #                           - distribution sur le nombre de feuilles
@@ -31,7 +31,7 @@ Tayllamin1=Tayllamin0[c(1:length(Tayllamin0$NbFeu))[!is.na(Tayllamin0$NbFeu)],]
 par(mfrow=c(1,2))
 boxplot(Tayllamin1$NbFeuChut)
 plot(Tayllamin1$NbFeuChut)
-title("Etude du nombre de feuilles chut?es",outer=TRUE,line=-1)
+title("Etude du nombre de feuilles chutées",outer=TRUE,line=-1)
 summary(Tayllamin1$NbFeuChut,na.rm=T)
 Tayllamin2=Tayllamin1[Tayllamin1$NbFeuChut < 7,]
 
@@ -89,7 +89,7 @@ TA_apic_port_lat=TA_apic[TA_apic$TypAxePo=="R",]  ; TA_lat_port_lat=TA_lat[TA_la
 ####   MA05  ####
 #################
 
-MA05_0=read.csv("data/_data/MA05.csv",header=TRUE,sep=";",dec=",")
+MA05_0=read.csv("data/size_data/MA05.csv",header=TRUE,sep=";",dec=",")
 
 ##### Suppression des donn?es aberrantes
 par(mfrow=c(1,2))
@@ -848,6 +848,7 @@ title("Etude de la corr?lation entre longueur d'UC et nbr de feuilles ",outer=TR
 
 apic.lm=lm(NbFeu_apic ~ Long_apic);summary(apic.lm)
 lat.lm=lm(NbFeu_lat ~ Long_lat);summary(lat.lm)
+lat.lm=lm(NbFeu_lat ~ Long_lat + 0);summary(lat.lm)
 
 
 # On trace les ICs pour la moyenne et pour les individus (d'apr?s Dagn?lie, Statistique th?orique et appliqu?e)
