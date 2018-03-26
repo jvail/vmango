@@ -80,7 +80,9 @@ PAR = RG * 0.5 * 4.6                                                            
       
 #----- calcul de la photosynth?se maximale, est fonction de la demande du fruit, surface folaire (la demande tient compte des co?ts (en C) de construction )
   Pmax <- (p1 * (Dfruit / Surf_Fol) * p2) / (p1 * (Dfruit / Surf_Fol) + p2)
-  if (Pmax >=15) {Pmax = 15}                                                    # Plafonnement de la demande du fruit
+  if (Pmax >=15) { Pmax = 15 }                                                    # Plafonnement de la demande du fruit
+  # if (Pmax < 5)  { Pmax = 5  }   # Si pas de fruit, on limite le Pmax à 5.
+  #### MODIF MAY17
 
 ###----- CALCUL DES ASSIMILATS SUR LA JOURNEE OFFRE DE LA JOURNEE, production et mobilisation des r?serves.
 
@@ -146,14 +148,14 @@ else {
             failed = data.frame()
             write.csv(failed, file=paste(localdir,"/tmp/failed-",idsimu,".csv",sep=''))
             stop("Les parties vegetatives s'etouffent: le systeme meurt ...\n")
-            print("Les parties vegetatives s'etouffent: le systeme meurt ...\n")
             return (NULL)
         }
     }  
 }
 
-if(is.nan( Reste.RE)) {  Reste.RE = 0 }
-if (  RE.fruct > Reste.RE   ) {                                                      ### Sitution d?favorable pour le fruit.
+#if(is.nan( Reste.RE)) {  Reste.RE = 0 }
+
+if ( Reste.RE < RE.fruct ) {                                                      ### Sitution d?favorable pour le fruit.
     besoin.fruit <- (Respiration_Fruit - Reste.RE) / cfruit 
     if (besoin.fruit >= MS_Fruit_Precedent) {
         failed = data.frame()

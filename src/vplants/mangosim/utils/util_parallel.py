@@ -7,21 +7,13 @@ def spawn(f):
         pipe.close()
     return fun
 
-def parmap(f,X):
+def lparmap(f,X):
     pipe=[Pipe() for x in X]
     proc=[Process(target=spawn(f),args=(c,x)) for x,(p,c) in itertools.izip(X,pipe)]
     [p.start() for p in proc]
     [p.join() for p in proc]
     return [p.recv() for (p,c) in pipe]
 
-def nparmap(f,X,n = 7):
-    from math import ceil
-    res = []
-    nbdata = len(X)
-    nbsteps =  int(ceil(float(nbdata) / n))
-    for j in xrange(nbsteps):
-        res += parmap(f,X[j*n:min(nbdata,(j+1)*n)])
-    return res
 
 def nparmap(f,X,n = None):
     if n is None:
@@ -30,7 +22,7 @@ def nparmap(f,X,n = None):
     ids = range(n)
     pipes = [Pipe() for x in xrange(n)]
     procs = [Process(target=spawn(f),args=(c,x)) for x,(p,c) in itertools.izip(X,pipes)]
-    [p.start() for p in procs]
+    for p in procs : p.start()
     results = [None for i in xrange(len(X))]
 
     nbdata = len(X)
@@ -61,3 +53,24 @@ def nparmap(f,X,n = None):
             else:
                 j += 1
     return results
+
+
+# def nparmap(f,X,n = None):
+#     if n is None:
+#         import multiprocessing as mp
+#         n = mp.cpu_count()-1
+#     from math import ceil
+#     res = []
+#     nbdata = len(X)
+#     nbsteps =  int(ceil(float(nbdata) / n))
+#     for j in xrange(nbsteps):
+#         res += parmap(f,X[j*n:min(nbdata,(j+1)*n)])
+#     return res
+
+def parmap(f,X,n = None):
+    import multiprocessing as mp
+    if n is None:
+        n = mp.cpu_count()-1
+    p = mp.Pool(n)
+    return p.map(f,X)
+

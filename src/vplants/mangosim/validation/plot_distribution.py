@@ -1,6 +1,7 @@
 from vplants.mangosim.state import *
 from vplants.mangosim.utils.util_plot import *
 from vplants.mangosim.util_path import common_options
+from vplants.mangosim.tools import isiterable
 
 restrictions = [None, eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction, eAllRestriction, eBurstDateOnlyRestriction, ePositionAOnlyRestriction, ePositionAncestorAOnlyRestriction, eNatureFOnlyRestriction]
 restrictionLabels = ['With All Factors', 'Without Mother Burst Date', 'Without Mother Position','Without Ancestor Position', 'Without Ancestor Fate', 'With No Factor', 'With only Mother Burst Date', 'Without only Mother Position','With only Ancestor Position', 'With only Ancestor Fate']
@@ -13,7 +14,7 @@ optionnameLabeling = {'GLM_RESTRICTION' : 'Factors', 'FRUIT_MODEL' : 'Fruit Grow
 
 DEFAULT_OPTION = {'GLM_TYPE' : eInteractionGlm, 'GLM_RESTRICTION' : None, 'FRUIT_MODEL' : False}
 
-def build_legends(legends, legendtags):
+def build_legends(legendoptions, legendtags):
     if legendtags:
         if len(legendtags) > 1:
             commons = set(common_options(legendtags))
@@ -45,17 +46,19 @@ def build_legends(legends, legendtags):
                     llegends.append(pname+' : '+pvalue)
                 plegends.append(', '.join(llegends))
 
-        if legends:
-            legends = [plegend+ (':' if len(plegend) > 0 else '')+leg  for leg, plegend in zip(legends,plegends)]
+        if legendoptions:
+            legends = [plegend+ (':' if len(plegend) > 0 else '')+leg  for leg, plegend in zip(legendoptions,plegends)]
         else:
             legends = plegends
+    else:
+        legends = legendoptions
     return legends
 
 
-def plot_histo(keys, allvalues, _title = None, reference = None, legendtag = None, linestyle = '-', titlelocation = 2, histocurve = False, xlabelrotation = 0):
+def plot_histo(keys, allvalues, _title = None, reference = None, legendtag = None, linestyle = '-', titlelocation = 2, histocurve = False, xlabelrotation = 0, figsize=(10,8)):
     import matplotlib.pyplot as plt
     import numpy as np
-    fig, ax = plt.subplots(figsize=(10,8))
+    fig, ax = plt.subplots(figsize=figsize)
     nbplot = len(allvalues)
     nbx = len(allvalues[0])
     width = 1
@@ -82,8 +85,6 @@ def plot_histo(keys, allvalues, _title = None, reference = None, legendtag = Non
         x,y = smoothcurve(ind, meanvalues)
         plt.plot(x, y, linestyle, color='k', label = legend, linewidth= 2)
     else:
-        print ind
-        print meanvalues
         ax.bar(ind, meanvalues, label = legend)
 
     bpdata = [[v[i] for v in allvalues] for i in range(nbx)]
@@ -101,28 +102,34 @@ def plot_histo(keys, allvalues, _title = None, reference = None, legendtag = Non
     #plt.show()
 
 
-def plot_histos(keys, allvaluesset, _title = None, reference = None, legends = None, legendtags = None, titlelocation = 2, xlabelrotation = 0, normalize = False):
+def plot_histos(keys, allvaluesset, _title = None, reference = None, legends = None, legendoptions = None, legendtags = None, titlelocation = 2, xlabelrotation = 0, normalize = False, figsize=(15,5)):
     import matplotlib.pyplot as plt
     import matplotlib.patches as mpatches
 
     import numpy as np
-    fig, ax = plt.subplots(figsize=(15,5))
+    fig, ax = plt.subplots(figsize=figsize, dpi=100)
     nbplot = len(allvaluesset)
     nbx = len(allvaluesset[0][0])
     uwidth = 1
-    width = (nbplot+1) * uwidth * 1.2
+    decal = 0.5
+    width = (nbplot) * uwidth + decal
     
-    listcolors = ['r','y','b','c','m','g','k']
+    listcolors = ['r','y','b','c','m','g','plum','k']
     colors = lambda x: listcolors[x]
 
-    legends = build_legends(legends, legendtags)
+    if not legends:
+        legends = build_legends(legendoptions, legendtags)
 
-    indg = np.arange(0,nbx*width,width)+width
+    centerdecal = (nbplot * uwidth)/2.
+    indg = np.arange(0,nbx*width,width) + centerdecal + decal
 
     legend_patches = []
     if reference:
         if normalize: reference = normalize_histo(reference)
-        refhandle, = plt.plot(indg, reference, 'o', color=(0.5,0.5,0.5,1),  label = 'Reference', linewidth= 3)
+        for indgi, refi in zip(indg,reference):
+            if isiterable(refi):
+                refi = np.mean(refi)
+            refhandle, = plt.plot([indgi-centerdecal,indgi+centerdecal], [refi,refi], '-', color=(0.5,0.5,0.5,1),  label = 'Measured', linewidth= 3)
         legend_patches.append(refhandle)
     
     if normalize:
@@ -134,22 +141,28 @@ def plot_histos(keys, allvaluesset, _title = None, reference = None, legends = N
 
 
     for i,allvalues in enumerate(nallvaluesset):
-        ind = indg+ (i+0.5 - nbplot/2)*uwidth
+        ind = indg+ (i+0.5 - nbplot/2.)*uwidth
         bpdata = [[v[j] for v in allvalues] for j in range(nbx)]
-        bp = ax.boxplot(bpdata, widths=uwidth, positions = ind)
-        #print bp.keys()
-        plt.setp(bp['boxes'], color=colors(i))
-        plt.setp(bp['medians'], color=colors(i))
-        legend_patches.append(mpatches.Patch(color=colors(i), label=legends[i]))
+        bp = ax.boxplot(bpdata, widths=0.9*uwidth, positions = ind)
+        colori = colors(i)
+        # print bp.keys()
+        linewith = 1.5
+        plt.setp(bp['boxes'], color=colori, linewidth=linewith)
+        plt.setp(bp['medians'], color=colori, linewidth=linewith)
+        plt.setp(bp['whiskers'], color=colori, linewidth=linewith)
+        plt.setp(bp['caps'], color=colori, linewidth=linewith)
+        plt.setp(bp['fliers'], color=colori, linewidth=linewith)
+        legend_patches.append(mpatches.Patch(facecolor=colori, edgecolor='k',label=legends[i]))
     
     #plt.legend()
 
-    plt.xlim(0, width*(nbx+1))
+    plt.xlim(0, width*nbx + decal)
 
     ax.set_xticks(indg)
     ax.set_xticklabels(keys, rotation=xlabelrotation)
     if _title: ax.set_title(_title)
     #fig.set_size_inches(1600,800)
+
     ax.legend(handles=legend_patches, loc=titlelocation)
     return fig, ax
     #plt.show()
@@ -159,14 +172,14 @@ def normalize_histo(histo):
     return [v1/sh1 for v1 in histo]
 
 
-def plot_histos_means(keys, allvalues, _title = None,  reference = None, legends = None, legendtags = None, linewidth = 1, linestyle = '-o', titlelocation = 1, xlabelrotation = 0, normalize = True):
+def plot_histos_means(keys, allvalues, _title = None,  reference = None, legends = None, legendtags = None, linewidth = 1, linestyle = '-o', titlelocation = 1, xlabelrotation = 0, normalize = True, figsize=(10,8)):
     import matplotlib.pyplot as plt
     import numpy as np
 
     legends = list(reversed(build_legends(legends, legendtags)))
 
     #fig, ax = plt.subplots()
-    fig = plt.figure(figsize=(10,8))
+    fig = plt.figure(figsize=figsize)
     ax = fig.add_subplot(111)
     nbplot = len(allvalues)
     nbx = len(allvalues[0])
@@ -186,7 +199,7 @@ def plot_histos_means(keys, allvalues, _title = None,  reference = None, legends
     if reference:
         if normalize : reference = normalize_histo(reference)
         x,y = smoothcurve(ind, reference)
-        plt.plot(x,y, linestyle = '-', color=(0.5,0.5,0.5,1), label = 'Reference', linewidth= linewidth+1)
+        plt.plot(x,y, linestyle = '-', color=(0.5,0.5,0.5,1), label = 'Measured', linewidth= linewidth+1)
         plt.plot(ind,reference, 'o', color=(0.5,0.5,0.5,1), linewidth= linewidth+1)
     ax.set_xticks(ind)
 
@@ -196,4 +209,4 @@ def plot_histos_means(keys, allvalues, _title = None,  reference = None, legends
     #plt.show()
     return fig, ax
 
-
+    

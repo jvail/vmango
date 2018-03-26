@@ -37,7 +37,8 @@ def generate_mtg(trees = range(3), params = dict()):
     for tree in trees:
         print 'Generate tree', tree
         nparams = params.copy()
-        nparams.update({'TREE':tree,'TIMESTEP': 180 if not params['FRUIT_MODEL'] else 90,'EXPORT_TO_MTG':True, 'WITH_GLM':True})
+        nparams.update({'TREE':tree,'TIMESTEP': 180 if not params['FRUIT_MODEL'] else 90,'EXPORT_TO_MTG':True, 'PARALLELFRUITMODEL':False})
+        nparams.setdefault('WITH_GLM',True)
         l = Lsystem(basename(lsysfile),  nparams)
         lstring = l.iterate()
         resmtg = l.resultmtg
@@ -141,9 +142,15 @@ def process_uniquefactor_models(maxseed=1000, fruitmodel = False, minseed = 0):
 
     process_set_of_simulations(params)
 
-def process_bfsize_models(maxseed=1000, fruitmodel = False, minseed = 0):
+def process_bfsize_models(maxseed=1000, minseed = 0):
     import itertools
-    params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],['True'],['FRUITBRANCHSIZE'],[str(i) for i in xrange(1,7)]))
+    params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],['True'],['FRUITBRANCHSIZE'],[str(i) for i in xrange(1,8)]))
+
+    process_set_of_simulations(params)
+
+def process_bfsize2_models(maxseed=1000, minseed = 0):
+    import itertools
+    params = list(itertools.product(range(minseed, maxseed),['WITH_GLM'],['False'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],['True'],['FRUITBRANCHSIZE'],[str(i) for i in xrange(1,8)]))
 
     process_set_of_simulations(params)
 
@@ -209,22 +216,27 @@ if __name__ == '__main__' :
             stime = time.time()
             minseed = 0
             maxseed = int(sys.argv[2]) if len(sys.argv) > 2 else 100
-            fruitmodel = False
             if len(sys.argv) > 3:
                 extraval = eval(sys.argv[3])
-                if type(extraval) == bool:
-                    fruitmodel = extraval
-                elif type(extraval) == int:
-                    minseed, maxseed = maxseed, extraval
-                    if len(sys.argv) > 4:
-                        extraval = eval(sys.argv[4])
-            process_bfsize_models(maxseed, fruitmodel, minseed=minseed)
-            message.send_msg('Simu Fruiting Branch Size with'+('' if fruitmodel else 'out')+' fruit model',str(maxseed-minseed)+' simulations done in '+str(time.time()-stime)+' sec.')
+                minseed, maxseed = maxseed, extraval
+            process_bfsize_models(maxseed, minseed=minseed)
+            message.send_msg('Simu Fruiting Branch Size',str(maxseed-minseed)+' simulations done in '+str(time.time()-stime)+' sec.')
+        elif '--bfsize2' == sys.argv[1]:
+            import time
+            stime = time.time()
+            minseed = 0
+            maxseed = int(sys.argv[2]) if len(sys.argv) > 2 else 100
+            if len(sys.argv) > 3:
+                extraval = eval(sys.argv[3])
+                minseed, maxseed = maxseed, extraval
+            process_bfsize2_models(maxseed, minseed=minseed)
+            message.send_msg('Simu Fruiting Branch Size On Fixed Archi',str(maxseed-minseed)+' simulations done in '+str(time.time()-stime)+' sec.')
         elif '--help' == sys.argv[1] or '--h' == sys.argv[1]:
             print '--std [nb] [fruitmodel]'
             print '--restricted [nb] [fruitmodel]'
             print '--uniquefactor [nb] [fruitmodel]'
-            print '--bfsize [nb] [fruitmodel]'
+            print '--bfsize [nb] '
+            print '--bfsize2 [nb] '
     else:
         #generate_all(1000, False)
         #generate_all(10, False)

@@ -26,7 +26,7 @@ class GUManager (OrganManager):
       OrganManager.__init__(self, **kwargs)
       
       # Initializing variables
-      self.t_ip_gu_mean = 79.40
+      self.t_ip_gu_mean = 79.40 # should be 178.8/2.
       self.t_ip_gu_sd   = 10.75
       self.t_ip_leaf    = 182.04/2.                           # Inflexion point of leaf growth curve
       
@@ -38,17 +38,17 @@ class GUManager (OrganManager):
       # Phenological stages definition
       self.pheno_base_temp   = [13.37766, 13.37766, 13.37766, 9.784431] #,0]   # stages DEF_G_H
       self.pheno_stade_temp  = [38.50,    47.61,    47.39,    316.376] #,999]   # temperatures of GU's stage change
-      self.pheno_change_temp = np.cumsum(self.pheno_stade_temp)
+      #self.pheno_change_temp = np.cumsum(self.pheno_stade_temp)
 
       self.base_color  = 14
 
       self.pheno_color = range(self.base_color, self.base_color+5)# [7,10,11,14,13]                         # color for each stage (GU)
       self.pheno_angle_values = [0,90,165,60,60]                        # angle between leaf and internode for each stage
-      self.nb_stades_pheno = len(self.pheno_change_temp)              # number of phenological stages
+      self.nb_stades_pheno = len(self.pheno_stade_temp)              # number of phenological stages
       
       self.pheno_angle = QuantisedFunction(NurbsCurve2D(Point3Array(list(enumerate(self.pheno_angle_values)),1), degree = 1 ) )
       
-      self.pheno_stadename =    {0: 'ABCD', 1 : 'E', 2 : 'F', 3 : 'G', 4: 'H' }
+      self.pheno_stadename =    [ 'ABCD', 'E', 'F', 'G', 'H' ]
       
       # Colors definition
       self.mixed_inflo_color = self.pheno_color[-1]
@@ -128,10 +128,18 @@ class GUManager (OrganManager):
     
     def internode_length_distribution(self, nb_internodes, gu_length):
       """ Internode length distribution """
+      
       lengths = [exp(-2.64 * i / float(nb_internodes-1)) for i in xrange(nb_internodes)]
       scaling = gu_length / sum(lengths)
       return [l*scaling for l in lengths]
     
+    def internode_length(self, i, nb_internodes, gu_length):
+        sl = -2.64
+        e = exp()
+        du = 1./nb_internodes
+        k = (1-pow(e,du))/(1-e)
+        return gu_length * exp(-sl*i*du)
+
     def length_before_first_leaf(self, position, final_length_gu):
       #length of space before the first leaf
       if position == eApical:
@@ -190,7 +198,7 @@ class GUManager (OrganManager):
           gu_growth_tts    = ThermalTimeAccumulator(self.base_temperature_gu - delta_base_temp)
           leaf_growth_tts  = ThermalTimeAccumulator(self.base_temperature_leaf - delta_base_temp)
           pheno_base_temp  = self.pheno_base_temp if not temperature_variability else [t - delta_base_temp  for t in self.pheno_base_temp]
-          gu_pheno_tts     = MultiPhaseThermalTimeAccumulator(pheno_base_temp, self.pheno_change_temp)
+          gu_pheno_tts     = MultiPhaseThermalTimeAccumulator(pheno_base_temp, self.pheno_stade_temp)
           
           for day in date_xrange(params.burst_date, current_date+timedelta(days=1)):
             daytemp = get_temperature(day)
@@ -345,10 +353,9 @@ class InfloManager (OrganManager):
         self.t_ip_inflo   = 346.03/2.                          # Inflexion point of inflorescence growth curve
         self.base_temperature = 11.12              # Base temperature of inflorescences
 
-        self.pheno_base_temp   = [11.10, 5.38,   8.67,   15.11, 16]  # base temperature for each phenological stage of inflorescence
+        self.pheno_base_temp   = [11.10, 8.67,   15.11, 16, 16]  # base temperature for each phenological stage of inflorescence
         self.pheno_stade_temp  = [70.56, 133.32, 230.42, 352.72, 500]
       
-        self.pheno_change_temp = np.cumsum (self.pheno_stade_temp)     # temperatures of inflorescence stage change
 
         self.base_color_inflo   = 20
         self.pheno_color_inflo  =  [0,0,1,1,2,3]  # color for each stage (inflorescence)
@@ -357,17 +364,18 @@ class InfloManager (OrganManager):
         self.pheno_color_flower =  range(self.base_color_flower,self.base_color_flower+6) # [45,46,47,48,49,50] 
         self.fruitcolor         = 32
 
-        self.pheno_stadename = {0: 'ABCD', 1 : 'E', 2 : 'F', 3 : 'G', 4 :'S' }
-        self.bloompos = [i for i,k in self.pheno_stadename.items() if k == 'F'][0]
+        self.pheno_stadename = [ 'ABCD', 'E', 'F', 'G', 'S' ]
+        self.bloompos = self.pheno_stadename.index('F')
 
-        self.mean_bloom_cum_temp    = self.pheno_change_temp[self.bloompos-1]+self.pheno_stade_temp[self.bloompos]/2.
-        self.full_bloom_cum_temp    = self.pheno_change_temp[self.bloompos]
+        pheno_change_temp = np.cumsum (self.pheno_stade_temp)     # temperatures of inflorescence stage change
+        self.mean_bloom_cum_temp    = pheno_change_temp[self.bloompos-1]+self.pheno_stade_temp[self.bloompos]/2.
+        self.full_bloom_cum_temp    = pheno_change_temp[self.bloompos]
 
         # Inflorescences length
         # Mean and Std dev of length distribution.       
         self.length_distrib       =  (23.15833, 6.767254)
 
-        self.nbaxes_length_ratio = 1.19
+        self.nbaxes_length_ratio = (0.9, 10.02)
 
         self.fruitmanager = fruitmanager
 
@@ -386,23 +394,23 @@ class InfloManager (OrganManager):
 
     def set_dimensions(self, params, current_date):
         final_length_inflo = get_realisation(self.length_distrib[0], self.length_distrib[1], 5, 44)
-        nb_axes = int(self.nbaxes_length_ratio*final_length_inflo)
+        nb_axes = int(self.nbaxes_length_ratio[0]*final_length_inflo + self.nbaxes_length_ratio[1])
       
         growth_tts   = ThermalTimeAccumulator(self.base_temperature)
-        pheno_tts    = MultiPhaseThermalTimeAccumulator(self.pheno_base_temp, self.pheno_change_temp, 0)
+        pheno_tts    = MultiPhaseThermalTimeAccumulator(self.pheno_base_temp, self.pheno_stade_temp, 0)
       
         # burst date should be computed from bloom date and pheno_tts reverse timing
         if params.hasattr('burst_date') and params.hasattr('bloom_date'):
             burst_date = params.burst_date
             bloom_date = params.bloom_date      
-            lpheno_tts    = MultiPhaseThermalTimeAccumulator(self.pheno_base_temp, self.pheno_change_temp, self.mean_bloom_cum_temp)
+            lpheno_tts    = MultiPhaseThermalTimeAccumulator(self.pheno_base_temp, self.pheno_stade_temp, self.mean_bloom_cum_temp)
             fullbloom_date = todatetime(lpheno_tts.find_date_of_accumulation(self.full_bloom_cum_temp, bloom_date, get_temperature))
         elif params.hasattr('burst_date'):
             fullbloom_date = todatetime(pheno_tts.find_date_of_accumulation(self.full_bloom_cum_temp, params.burst_date, get_temperature))
             bloom_date = todatetime(pheno_tts.find_date_of_accumulation(self.mean_bloom_cum_temp, params.burst_date, get_temperature))
             burst_date = params.burst_date
         elif params.hasattr('bloom_date'):
-            pheno_tts  = MultiPhaseThermalTimeAccumulator(self.pheno_base_temp, self.pheno_change_temp, self.mean_bloom_cum_temp)
+            pheno_tts  = MultiPhaseThermalTimeAccumulator(self.pheno_base_temp, self.pheno_stade_temp, self.mean_bloom_cum_temp)
             burst_date = todatetime(pheno_tts.reverse_from_finaldate(0, params.bloom_date, get_temperature))
             bloom_date = params.bloom_date 
             fullbloom_date = todatetime(pheno_tts.find_date_of_accumulation(self.full_bloom_cum_temp, burst_date, get_temperature))
@@ -535,7 +543,7 @@ class InfloManager (OrganManager):
                   if self.resolution <= 1 : nsproduce ([ SectionResolution(5) ])
                   
                   if not hasattr(param,'phyloangles'):
-                     param.phyloangles = [ ((60 + randint(0,30)) if (i < 8 or i > 19) else 220) for i in xrange(NbAxe2) ]
+                     param.phyloangles = [ ((60 + randint(0,30)) if (i < NbAxe2*0.136 or i > NbAxe2*0.555) else 220) for i in xrange(NbAxe2) ]
                      param.totalphyloangles = sum(param.phyloangles)
                      param.activeaxes = [True for i in xrange(NbAxe2)]
                      param.nbactiveaxes = NbAxe2
@@ -683,7 +691,7 @@ class FruitManager (OrganManager):
 
         self.__dict__.update(kwargs)
 
-    def set_parameters(self, profile, resolution, modelenabled, branchsize, outputenabled, outputname):
+    def set_parameters(self, profile, resolution, modelenabled, branchsize, outputenabled, outputname, parallelfruitmodel):
         # Graphic Parameters
         self.resolution = resolution
         self.profile = profile
@@ -694,6 +702,7 @@ class FruitManager (OrganManager):
         self.branchsize = branchsize
         self.outputenabled = outputenabled
         self.outputname = outputname
+        self.parallelfruitmodel = parallelfruitmodel
         #print 'Fruit Model Enabled :', modelenabled
 
 
@@ -705,7 +714,7 @@ class FruitManager (OrganManager):
         return MF_Init, MS_Init
 
     def retrieve_parameters(self, namespace):
-        self.set_parameters(namespace['fruitprofile'], namespace['RESOLUTION'], namespace['FRUIT_MODEL'], namespace['FRUITBRANCHSIZE'], namespace['FRUITMODEL_OUTPUT'], str(namespace['TREE'])+'-'+namespace['treename']+'-seed-'+str(namespace['SEED']))
+        self.set_parameters(namespace['fruitprofile'], namespace['RESOLUTION'], namespace['FRUIT_MODEL'], namespace['FRUITBRANCHSIZE'], namespace['FRUITMODEL_OUTPUT'], str(namespace['TREE'])+'-'+namespace['treename']+'-seed-'+str(namespace['SEED']),namespace['PARALLELFRUITMODEL'])
     
     def set_dimensions(self, infloparam, current_date):
         if self.modelenabled:
@@ -718,7 +727,7 @@ class FruitManager (OrganManager):
         else:
             mass, drymass = self.generate_initial_masses()
             fruit_growth_tts   = ThermalTimeAccumulator(self.pheno_base_temp[0])
-            growth_stage_date = todatetime(fruit_growth_tts.find_date_of_accumulation(self.pheno_stade_temp[0], infloparam.fullbloom_date, get_temperature)) 
+            growth_stage_date = todatetime(fruit_growth_tts.find_date_of_accumulation(self.pheno_stade_temp[0], infloparam.fullbloom_date)) 
             return ParameterSet(inflo_fullbloom_date=infloparam.fullbloom_date,
                                 maturity_date=infloparam.fruits_maturity_date,
                                 weight = infloparam.fruits_weight / infloparam.nb_fruits,
@@ -733,9 +742,9 @@ class FruitManager (OrganManager):
             cycle = get_flowering_cycle(current_date)
             print 'Fruit model evaluation', current_date, 'for cycle', cycle
             lmtg = export_to_mtg_light(lstring, cycle) # , lscene)
-            applymodel(lmtg, cycle, self.branchsize, self.outputenabled, self.outputname)
-            from vplants.mangosim.tools import dump_obj
-            dump_obj(lmtg,'../fruitmodel/structure-cycle'+str(cycle)+'.pkl')
+            applymodel(lmtg, cycle, self.branchsize, self.outputenabled, self.outputname, self.parallelfruitmodel)
+            #from vplants.mangosim.tools import dump_obj
+            #dump_obj(lmtg,'../fruitmodel/structure-cycle'+str(cycle)+'.pkl')
         else:
             pass
             #print 'No Fruit model evaluation'
@@ -779,10 +788,10 @@ class FruitManager (OrganManager):
         pass
 
     def fruit_dimensions(self, weight):
-        sizefactor = 0.1
-        ep = (9.8*pow(weight,0.3398))*sizefactor
-        larg = (12.5*pow(weight,0.3203))*sizefactor
-        long = (22.3*pow(weight,0.2896))*sizefactor 
+        sizefactor = 1
+        ep = (0.98*pow(weight,0.3398))*sizefactor
+        larg = (1.25*pow(weight,0.3203))*sizefactor
+        long = (2.23*pow(weight,0.2896))*sizefactor 
         return ep, larg, long
 
     def plot(self, fruitparam, current_date):
@@ -815,6 +824,7 @@ class FruitManager (OrganManager):
                     weight = fruitparam.initial_weight + (fruitparam.weight-fruitparam.initial_weight)* growthindex                  
                     ep, larg, long = self.fruit_dimensions(weight)
 
+            if fruitparam.growth_stage_date == first_date: print fruitparam
             phenoindex = (current_date - first_date).days/float((fruitparam.growth_stage_date-first_date).days)
             from openalea.plantgl.all import Scaled, Revolution
             nsproduce([SB(),RollToVert(),F(5*min(1,phenoindex)),RollToHorizontal()])

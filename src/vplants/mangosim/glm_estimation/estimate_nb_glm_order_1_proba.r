@@ -885,6 +885,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     monthgroups$Flowering = list( c(8,9), c(11,12,1),c(2,3))
     
     exclude$Flowering_Week_Poisson = c("Position_Ancestor_A")
+    exclude$Flowering_Week = c("Nature_Ancestor_F")
     monthgroups$Flowering_Week = list( c(2,3))
 
     #exclude$Nb_Inflorescences = c("Burst_Month")

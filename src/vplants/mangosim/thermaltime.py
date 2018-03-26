@@ -1,16 +1,35 @@
+from temperature import get_temperature
 
-class ThermalTimeAccumulator:
-    def __init__(self, basetemperature, initsum = 0):
-        self.ttsum = initsum # the thermal time sum
-        self.basetemperature = basetemperature
+class AbstractThermalTimeAccumulator:
+    def __init__(self, initttsum = 0):
+        self.ttsum = initttsum # the thermal time sum
 
     def accumulate(self, temperature, duration = 1):
-        self.ttsum += max(0,temperature - self.basetemperature) * duration
+        raise NotImplementedError()
 
-    def find_date_of_accumulation(self, targetttsum, initialdate, get_temperature):
+    def release(self, temperature, duration = 1):
+        raise NotImplementedError()
+
+    def get_ttsum(self):
+        return self.ttsum
+
+    def set_ttsum(self, value):        
+        self.ttsum = value
+
+
+    def accumulate_daytemperature(self, day, get_temperature = get_temperature):
+        self.accumulate(get_temperature(day))
+
+    def accumulate_dayrange_temperature(self, firstday, lastday, get_temperature = get_temperature):
+        for day in date_xrange(firstday, lastday+timedelta(days=1)):
+            self.accumulate(get_temperature(day),1)
+  
+    def find_date_of_accumulation(self, targetttsum, initialdate, get_temperature = get_temperature, initialtsum = None):
         from datetime import timedelta
 
-        initialtsum = self.ttsum
+        previoustsum = self.get_ttsum()
+        if not initialtsum is None:
+            self.set_ttsum(initialtsum)
         
         temp = get_temperature(initialdate)
         self.accumulate(temp)
@@ -21,21 +40,52 @@ class ThermalTimeAccumulator:
             temp = get_temperature(cdate)
             self.accumulate(temp)
 
-        self.ttsum = initialtsum
+        self.set_ttsum(previoustsum)
 
         return cdate
 
-class MultiPhaseThermalTimeAccumulator:
-    def __init__(self, basetemperatures, stagechangetempsum, initsum = 0):
 
+    def reverse_from_finaldate(self, targetttsum, finaldate, get_temperature = get_temperature):
+        from datetime import timedelta
+        temp = get_temperature(finaldate)
+        self.release(temp)
+        cdate = finaldate
+        while self.ttsum > targetttsum:
+            cdate -= timedelta(days=1)
+            temp = get_temperature(cdate)
+            self.release(temp)
+        self.set_ttsum(targetttsum)
+        return cdate
+
+
+
+class ThermalTimeAccumulator (AbstractThermalTimeAccumulator):
+    def __init__(self, basetemperature, initsum = 0):
+        AbstractThermalTimeAccumulator.__init__(self, initsum)
+        self.basetemperature = basetemperature
+
+    def accumulate(self, temperature, duration = 1):
+        self.ttsum += max(0,temperature - self.basetemperature) * duration
+
+    def release(self, temperature, duration = 1):
+        self.ttsum -= max(0,temperature - self.basetemperature) * duration
+
+
+
+class MultiPhaseThermalTimeAccumulator (AbstractThermalTimeAccumulator):
+    def __init__(self, basetemperatures, stage_tempsum, initsum = 0, stagesnames = None):
+        AbstractThermalTimeAccumulator.__init__(self, initsum)
+        import numpy as np
         self.basetemperatures = basetemperatures
-        self.stagechangetempsum = stagechangetempsum
+        self.stage_tempsum = stage_tempsum
+        self.stagechangetempsum = np.cumsum(stage_tempsum)
         self.nbstagechange = len(self.stagechangetempsum)
         self.accumafter = (len(self.basetemperatures) == self.nbstagechange+1)
+        self.stagesnames = stagesnames
 
-        self.setTTSum(initsum)
+        self.set_ttsum(initsum)
 
-    def setTTSum(self, ttsum = 0 ):
+    def set_ttsum(self, ttsum = 0 ):
         self.ttsum = ttsum # the thermal time sum
         self.stage = self.find_stage(ttsum)
 
@@ -89,35 +139,20 @@ class MultiPhaseThermalTimeAccumulator:
                     return st+1
             return 0
 
-    def reverse_from_finaldate(self, targetttsum, finaldate, get_temperature):
-        from datetime import timedelta
-        temp = get_temperature(finaldate)
-        self.release(temp)
-        cdate = finaldate
-        while self.ttsum > targetttsum:
-            cdate -= timedelta(days=1)
-            temp = get_temperature(cdate)
-            self.release(temp)
-        self.setTTSum(targetttsum)
-        return cdate
+    def find_date_of_stage_begin(self, stagename, initialdate, get_temperature = get_temperature, initialtsum = None):
+        if self.stagesnames:
+            stagepos = self.stagesnames.index(stagename)
+        else : stagepos = stagename
+        targetttsum = self.stagechangetempsum[stagepos-1] if stagepos > 0 else 0
+        return self.find_date_of_accumulation(targetttsum, initialdate, get_temperature)
 
-    def find_date_of_accumulation(self, targetttsum, initialdate, get_temperature):
-        from datetime import timedelta
+    def find_date_of_stage_end(self, stagename, initialdate, get_temperature = get_temperature, initialtsum = None):
+        if self.stagesnames:
+            stagepos = self.stagesnames.index(stagename)
+        else : stagepos = stagename
+        targetttsum = self.stagechangetempsum[stagepos]
+        return self.find_date_of_accumulation(targetttsum, initialdate, get_temperature)
 
-        initialtsum = self.ttsum
-        
-        temp = get_temperature(initialdate)
-        self.accumulate(temp)
-        cdate = initialdate
-
-        while self.ttsum < targetttsum:
-            cdate += timedelta(days=1)
-            temp = get_temperature(cdate)
-            self.accumulate(temp)
-
-        self.setTTSum(initialtsum)
-
-        return cdate
 
 
 

@@ -28,15 +28,27 @@ def retrieve_mtgs(inputdir, nb = None):
         mtgs.append(load_obj(mtgfile))
     return mtgs
 
+def mykeyhandler(event):
+    if event.key == 'escape': plt.close()
+    else: print('you pressed', event.key, event.xdata, event.ydata)
 
 from vplants.mangosim.utils.util_parallel import *
 
-class Evaluator:
-    def __init__(self, name, func, reducefuncs, reference = True, verbose = True, fruitmodel = False):
+
+class Invokable:
+    def __init__(self, name, title):
+        self.name = name 
+        self.title = title
+
+    def __call__(self, *args, **kwd):
+        pass
+        
+class Evaluator (Invokable):
+    def __init__(self, name, func, reducefuncs, title, reference = True, verbose = True, fruitmodel = False):
+        Invokable.__init__(self, name, title)
         self.func = func
         self.reducefuncs = reducefuncs
         if type(reducefuncs) != list : self.reducefuncs = [reducefuncs]
-        self.name = name 
         self.reference = reference
         self.verbose = verbose
         self.funcargs = []
@@ -76,13 +88,14 @@ class Evaluator:
 
     def get_param_targets(self):
         if len(self.paramtargets) == 0:
+            #return  [{'GLM_TYPE' : eInteractionGlm, 'GLM_RESTRICTION' : eAllRestriction, 'FRUIT_MODEL' : False}]
             return  [{'GLM_TYPE' : eInteractionGlm, 'GLM_RESTRICTION' : None, 'FRUIT_MODEL' : False}]
         else:
             return self.paramtargets
 
     def fruitbranchsizetest(self, sizerange = None):
         if sizerange is None:
-            path = get_option_glm_mtg_repository(fruitmodel = True, fruitbranchsize = 1)
+            path = get_option_glm_mtg_repository(fruitmodel = True, estimationtype = None, fruitbranchsize = 1)
             fbs_prefix = 'fruitbranchsize'
             while not os.path.basename(path).startswith(fbs_prefix):
                 path = os.path.dirname(path)
@@ -92,7 +105,7 @@ class Evaluator:
             sizerange = [int(os.path.basename(lpath)[len(fbs_prefix):]) for lpath in pathes]
             print 'Fruit Branch Size Range :', sizerange
 
-        self.addtarget(FRUIT_MODEL = True, FRUITBRANCHSIZE = sizerange)
+        self.addtarget(WITH_GLM = False, FRUIT_MODEL = True, FRUITBRANCHSIZE = sizerange)
         pass
 
     def configure(self, *args, **kwds):
@@ -153,6 +166,8 @@ class Evaluator:
                 plt.savefig(filename,  bbox_inches='tight')
                 plt.close()
             else:
+                fig = plt.gcf()
+                fig.canvas.mpl_connect('key_press_event', mykeyhandler)
                 plt.show()
 
         return self
@@ -162,7 +177,7 @@ class Evaluator:
 
     def cache_files(self):
         cachebasename = self.cachebasename()
-        return [join(inputdir, cachebasename) for iglm, irestriction, inputdir in self.get_param_targets()]
+        return [join(get_glm_mtg_repository( params = params), cachebasename) for params in self.get_param_targets()]
 
     def savedbasename(self):
         fname = self.name+'_'+self.target_tree+'_'
@@ -267,9 +282,36 @@ def __strip_histo(histo):
 
 def ks_2samp(hist1, hist2):
     from scipy.stats import ks_2samp
-    print sum(allvalues[0]),allvalues[0]
-    print sum(allvalues[1]),allvalues[1]
-    print ks_2samp(allvalues[0], allvalues[1])
+    res = ks_2samp(hist1, hist2)
+    return res[0],res[1]
+
+def chisquare(hist1, hist2):
+    from scipy.stats import chisquare
+    #print len(hist1), len(hist2)
+    h1, h2 = [],[]
+    for v1,v2 in zip(hist1,hist2):
+        if v1 < 5 or v2 < 5:
+            if v1 == v2: pass
+            elif len(h1) == 0 :
+                h1.append(v1)
+                h2.append(v2)
+            else: 
+                h1[-1] += v1
+                h2[-1] += v2
+        else:
+            if len(h1) > 0 and (h1[-1] < 5 or h2[-1] < 5):
+                h1[-1] += v1
+                h2[-1] += v2
+            else:
+                h1.append(v1)
+                h2.append(v2)
+    print
+    #print hist1
+    #print hist2
+    print h1
+    print h2
+    res = chisquare(h1, f_exp=h2)
+    return res[0],res[1]
 
 def normalize_histo(histo):
     sh1 = float(sum(histo))
@@ -312,7 +354,7 @@ def l2_histo_distance(hist1, hist2):
 
 def rmsd(hist1, hist2):
     assert len(hist1) == len(hist2)
-    return sqrt(sum([pow(v1-v2,2) for v1,v2 in zip(hist1,hist2)])/len(hist1))
+    return sqrt(np.mean([pow(v1-v2,2) for v1,v2 in zip(hist1,hist2)]))
 
 def normalized_rmsd(hist1, hist2):
     assert len(hist1) == len(hist2)
@@ -320,6 +362,9 @@ def normalized_rmsd(hist1, hist2):
     hist2 = normalize_histo(hist2)
     return rmsd(hist1, hist2) # / (max(max(hist1),max(hist2)) - min(min(hist1),min(hist2)))
 
+def normalized_rmsd2(hist1, hist2):
+    assert len(hist1) == len(hist2)
+    return rmsd(hist1, hist2)  / (max(max(hist1),max(hist2)) - min(min(hist1),min(hist2)))
 
 def histogram_distance(hist1, hist2):
     return rmsd(hist1, hist2)
@@ -426,112 +471,6 @@ def histodistance_legend(meankvalues, refsimu = {'GLM_RESTRICTION' : None}, null
     res = map(str,res) #['%.3f' % v for v in res]
     return res 
 
-
-class organ_count_distribution(Evaluator):
-    def __init__(self, name, func, reducefuncs):
-        Evaluator.__init__(self, name, func, reducefuncs)
-        self.begcycle, self.maxcycle = 4,6
-
-    def plot_distributioni(self, refvalues, kvalues, labels, proprange = None, legends = None):
-        import numpy as np
-        labels = flattenarray(labels)
-        kvalues = flattenarrays(kvalues)
-        refvalues = flattenarray(refvalues)
-        if not proprange is None:
-            for pr in proprange:
-                if pr > len(refvalues) : raise ValueError(pr, len(refvalues))
-            refvalues = selectsubarray(refvalues, proprange)
-            kvalues = selectsubarrays(kvalues, proprange)
-        if len(kvalues) == 1:
-            fig, ax = plot_histo(labels, kvalues[0][1], self.maketitle('Characteritics'), refvalues, legendtag = kvalues[0][0], linestyle='o', titlelocation = 2)
-        else:
-            fig, ax = plot_histos(labels, [v for k,v in kvalues], self.maketitle('Characteritics Comparison'), reference=refvalues, legendtags = [k for k,v in kvalues], legends= legends, titlelocation = 2)
-            
-        #fig.subplots_adjust(bottom=0.30, top = 0.94)
-
-class terminal_count_distribution(organ_count_distribution):
-    def __init__(self):
-        organ_count_distribution.__init__(self,'terminals',self.determine_distribution, self.plot_distribution1)
-
-    def determine_distribution(self, mtg, mtgtype):
-        terminals = [self.get_terminal_gus_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
-        nbterminals = map(lambda t : (len ([gu for gu in t if mtg.edge_type(gu) == '<']),len ([gu for gu in t if mtg.edge_type(gu) == '+'])),terminals)
-        nbfloterminals = [(len([gu for gu in cterminals if len(inflorescence_children(mtg,gu)) > 0 and mtg.edge_type(gu) == '<']),
-                           len([gu for gu in cterminals if len(inflorescence_children(mtg,gu)) > 0 and mtg.edge_type(gu) == '+'])) for cterminals in terminals]
-        return nbterminals+nbfloterminals
-
-    def print_distribution(self, refvalues, kvalues):
-        import numpy as np
-        begcycle, maxcycle = self.begcycle, self.maxcycle
-        labels = ['Nb Terminals '+str(i) for i in xrange(begcycle, maxcycle)]+['Nb Flowering Terminals '+str(i) for i in xrange(begcycle, maxcycle)]+['Nb Inflos '+str(i) for i in xrange(begcycle, maxcycle)]+['Nb Fruits '+str(i) for i in xrange(begcycle, maxcycle)]
-        for k,values in kvalues.items():
-            glm, restriction = k
-            print RestrictionName[restriction]
-            for i in xrange(len(refvalues)):
-                print labels[i],'\t',
-                print refvalues[i],'\t',
-                if type(values[0][i]) != tuple:
-                    print np.mean([val[i] for val in values]),'+-',
-                    print np.std([val[i] for val in values])
-                else:
-                    print '(',
-                    for j in xrange(len(values[0][i])):
-                        print np.mean([val[i][j] for val in values]),'+-',
-                        print np.std([val[i][j] for val in values]),',',
-                    print ')'
-
-
-    def plot_distribution1(self, refvalues, kvalues):
-        begcycle, maxcycle = self.begcycle, self.maxcycle
-        labels =  [('Nb. Ter. Api. '+str(i),'Nb. Ter. Lat. '+str(i)) for i in xrange(begcycle, maxcycle)]
-        labels += [('Nb. Flo. Ter. Api. '+str(i),'Nb. Flo. Ter. Lat. '+str(i)) for i in xrange(begcycle, maxcycle)]
-        self.plot_distributioni(refvalues, kvalues, labels)
-    
-
-class production(organ_count_distribution):
-    def __init__(self, plotrestriction = [4,5,6]): #[2,3,4,5,6]): #None):
-        organ_count_distribution.__init__(self,'production',self.determine_distribution, self.plot_distribution2)
-        self.plotrestriction = plotrestriction
-
-    def determine_distribution(self, mtg, mtgtype):
-        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
-        nbinflos = [sum([mm.nb_of_inflorescences(mtg,inflo) for inflo in inflocycle]) for inflocycle in inflos]
-        if mtgtype == eMeasuredMtg:
-            nbinflos[0] = len(inflos[0])
-        nbfruits = [sum([mm.get_nb_fruits(mtg,inflo) for inflo in inflocycle]) for inflocycle in inflos]
-        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=3)]+inflos
-        production = [sum([mm.get_fruits_weight(mtg,inflo,0) for inflo in inflocycle if not mm.get_fruits_weight(mtg,inflo,0) is None])/100. for inflocycle in inflos]
-        return nbinflos+nbfruits+production
-
-    def plot_distribution2(self, refvalues, kvalues):
-        begcycle, maxcycle = self.begcycle, self.maxcycle
-        labels = ['Nb. Inflo. '+str(i) for i in xrange(begcycle, maxcycle)]
-        labels += ['Nb. Fruits '+str(i) for i in xrange(begcycle, maxcycle)]
-        labels += ['Production '+str(i)+' (100g)' for i in xrange(3, maxcycle)]
-        if self.plotrestriction:
-            refvalues = selectsubarray(refvalues, self.plotrestriction)
-            kvalues = selectsubarrays(kvalues, self.plotrestriction)
-            labels = selectsubarray(labels, self.plotrestriction)
-            if 5 in self.plotrestriction or 6 in self.plotrestriction or 4 in self.plotrestriction:
-                idx = [self.plotrestriction.index(i) for i in range(4,7) if i in self.plotrestriction]
-                refvalues = [(r/10. if i in idx else r) for i,r in enumerate(refvalues) ]
-                kvalues = [(p,[[(v/10. if i in idx else v) for i,v in enumerate(values)] for values in ivalues]) for p,ivalues in kvalues]
-                labels = [l.replace('(100g)','(kg)') for l in labels]
-        
-        if len(kvalues) > 1:
-            histos = histodistance_legend(meanarrays(kvalues)) #, refvalues)
-            legends = histos
-            #histos = [histodistance_legend(meanarrays(selectsubarrays(kvalues,(2*i,2*i+1))), selectsubarray(refvalues,(2*i,2*i+1))) for i in xrange(len(refvalues)/2)]
-            #legends = [' '.join([histos[i][j] for i in xrange(len(histos))]) for j in xrange(len(histos[0]))]
-        else : legends = None
-
-        self.plot_distributioni(refvalues, kvalues, labels, legends=legends)
-        #plt.xlabel('Number of Growth Units per Branch')
-        plt.ylabel('Number of Fruits / Production')
-    
-
-
-
 def histogram(values):
     #from numpy import histogram
     #return list(histogram(values)[0])
@@ -540,78 +479,61 @@ def histogram(values):
     k = c.keys()
     return [c.get(ki,0) for ki in xrange(min(k), max(k)+1)]
 
-def plot_histogram(refvalues, kvalues, xlabels, title, titlelocation = 2, xlabelrotation = 0):
+def histogram_comparison(refvalues, kvalues):
+    meankvalues = meanarrays(kvalues)
+    print 'RMSD :', rmsd(refvalues, meankvalues[0][1])
+    print 'N RMSD :', normalized_rmsd(refvalues, meankvalues[0][1])
+    print 'N2 RMSD :', normalized_rmsd2(refvalues, meankvalues[0][1])
+    print 'Kol-Simrnov :', ks_2samp(refvalues, meankvalues[0][1])
+    print 'Chi-Square :', chisquare(meankvalues[0][1], refvalues)
+    print rmsd(refvalues, meankvalues[0][1]),'\t',normalized_rmsd(refvalues, meankvalues[0][1]),'\t',ks_2samp(refvalues, meankvalues[0][1])[0],'\t',ks_2samp(refvalues, meankvalues[0][1])[1]
+
+def plot_histogram(refvalues, kvalues, xlabels, title, titlelocation = 2, xlabelrotation = 0, figsize = None):
     assert len(xlabels) == len(kvalues[0][1][0]) == len(refvalues)
     if len(kvalues) == 1:
-        fig, ax = plot_histo(xlabels, allvalues=kvalues[0][1], _title=title, reference=refvalues, legendtag = kvalues[0][0], titlelocation = titlelocation, xlabelrotation = xlabelrotation)
+        histogram_comparison(refvalues, kvalues)
+        fig, ax = plot_histo(xlabels, allvalues=kvalues[0][1], _title=title, reference=refvalues, legendtag = kvalues[0][0], titlelocation = titlelocation, xlabelrotation = xlabelrotation, figsize = figsize)
     else:
+        print 'trace'
         meankvalues = meanarrays(kvalues)
-        legends = histodistance_legend(meankvalues)
-        fig, ax = plot_histos_means(xlabels, [v for k,v in meankvalues], title+' Comparison', reference=refvalues, legends = legends, legendtags = [k for k,v in meankvalues], titlelocation = titlelocation, xlabelrotation = xlabelrotation)
+        legends = histodistance_legend(meankvalues, refvalues)
+        fig, ax = plot_histos_means(xlabels, [v for k,v in meankvalues], title+' Comparison', reference=refvalues, legends = legends, legendtags = [k for k,v in meankvalues], titlelocation = titlelocation, xlabelrotation = xlabelrotation, figsize = None)
     return fig, ax
 
-class tree_branch_length(Evaluator):
-    def __init__(self):
-        Evaluator.__init__(self,'branch_length',self.determine_histogram, self.plot)
 
-    def determine_histogram(self, mtg, mtgype):
+################################## Evaluator ##############################
+
+from vplants.mangosim.util_date import Month
+class burst_date_distribution(Evaluator):
+    def __init__(self):
+        Evaluator.__init__(self, 'burst',self.determine_distribution, self.plot, 'Burst Date Distribution')
+        self.Month = dict([(i,v) for v,i in Month.items()])
+        self.daterange = monthdate_range(vegetative_cycle_end(3),vegetative_cycle_begin(6))
+
+    def determine_distribution(self, mtg, mtgype):
+        from collections import OrderedDict
+        histo_date = OrderedDict([(d,0) for d in self.daterange])
         ucs =  self.get_all_gus(mtg)
-        def axial_axe_length(uc):
-            cuc = uc
-            l = 1
-            parent = mtg.parent(cuc)
-            while parent and (mtg.edge_type(parent) == '<') and (get_unit_cycle(mtg, parent) > 3):
-                cuc = parent
-                parent = mtg.parent(cuc)
-                l += 1
-            return l
-        last_apical_ucs = [uc for uc in ucs if len([cuc for cuc in vegetative_children(mtg,uc) if is_apical(mtg,cuc)]) == 0]
-        axial_axe_lengths = map(axial_axe_length, last_apical_ucs)
-        histo = histogram(axial_axe_lengths)
-        return histo
+        for uc in ucs:
+            try:
+                d = get_burst_date(mtg,uc)
+                m = d.month
+                y = d.year
+                histo_date[(y,m)] += 1
+            except : pass
+        return histo_date.values()
 
     def plot(self, refvalues,kvalues):
-        print refvalues
-        maxl = homogenize_histo_length(refvalues,kvalues)
-        fig, ax = plot_histogram(refvalues, kvalues, range(1,maxl+1), self.maketitle('Branch Length'), titlelocation = 1)
-        plt.xlabel('Number of Growth Units per Branch')
-        plt.ylabel('Number of Branches')
-
-
-class current_year_axe_length(Evaluator):
-    def __init__(self):
-        Evaluator.__init__(self,'axe_length',self.determine_histogram, self.plot)
-
-    def determine_histogram(self, mtg, mtgype):
-        ucs = [uc for uc in self.get_all_gus(mtg) if get_unit_cycle(mtg, uc) > 3]
-        roots = [uc for uc in ucs if get_unit_cycle(mtg,uc) != get_unit_cycle(mtg,mtg.parent(uc))]
-        groupid = dict([(uc,uc) for uc in  roots])
-
-        for uc in ucs :       
-            if not uc in groupid:
-                parents = []
-                while not uc in groupid:
-                    parents.append(uc)
-                    uc = mtg.parent(uc)
-                gid = groupid[uc]
-                for p in parents:
-                    groupid[p] = gid
-        groupidcount = {}
-        for gid in groupid.values():
-            groupidcount.setdefault(gid, 0)
-            groupidcount[gid] += 1
-        histo = histogram(groupidcount.values())
-        return histo
-
-    def plot(self, refvalues,kvalues):
-        maxl = homogenize_histo_length(refvalues,kvalues)
-        plot_histogram(refvalues, kvalues, range(1,maxl+1), self.maketitle('Current Year Axe Length'), titlelocation = 1)
-
+        strdate = lambda d : monthtranslate(self.Month[d[1]])+'-'+str(d[0])
+        dates     = map(strdate, self.daterange)
+        plot_histogram(refvalues, kvalues, dates, self.maketitle('Burst Dates'), titlelocation = 2, xlabelrotation = 80, figsize=(10,4))
+        plt.xlabel('Month')
+        plt.ylabel('Number of new growth units')
 
 class bloom_date_distribution(Evaluator):
 
     def __init__(self):
-        Evaluator.__init__(self,'bloom_dates',self.date_week_distribution, self.plot)
+        Evaluator.__init__(self,'bloom',self.date_week_distribution, self.plot, 'Bloom Date Distributon')
         self.daterange = (#[(2003,None)]+weekdate_range(flowering_cycle_begin(3),flowering_cycle_end(3))+
                  #[(2004,None)]+weekdate_range(flowering_cycle_begin(4),flowering_cycle_end(4))+
                  [(2005,None)]+weekdate_range(flowering_cycle_begin(5),flowering_cycle_end(5)))
@@ -645,14 +567,16 @@ class bloom_date_distribution(Evaluator):
         for k,valueset in kvalues:
             for values in valueset: 
                 del values[0:5]
-        plot_histogram(refvalues, kvalues, dates, self.maketitle('Bloom Dates'), titlelocation = 2)
+        plot_histogram(refvalues, kvalues, dates, self.maketitle('Bloom Dates'), titlelocation = 2, figsize=(5.5,4))
         plt.xlabel('Week')
-        plt.ylabel('Number of Inflorescences')
+        plt.ylabel('Number of Blooming Inflorescences')
+
+
 
 class harvest_date_distribution(Evaluator):
 
     def __init__(self):
-        Evaluator.__init__(self,'harvest_dates',self.date_week_distribution, self.plot)
+        Evaluator.__init__(self,'harvest',self.date_week_distribution, self.plot, 'Harvest Date Distributon')
         self.daterange = (#[(2003,None)]+weekdate_range(fruiting_cycle_begin(3),fruiting_cycle_end(3))+
                  #[(2004,None)]+weekdate_range(fruiting_cycle_begin(4),fruiting_cycle_end(4))+
                  weekdate_range(fruiting_cycle_begin(5),fruiting_cycle_end(5)))
@@ -693,37 +617,309 @@ class harvest_date_distribution(Evaluator):
 
 
 
-
-from vplants.mangosim.util_date import Month
-class burst_date_distribution(Evaluator):
+class tree_branch_length(Evaluator):
     def __init__(self):
-        Evaluator.__init__(self, 'burst_dates',self.determine_distribution, self.plot)
-        self.Month = dict([(i,v) for v,i in Month.items()])
-        self.daterange = monthdate_range(vegetative_cycle_end(3),vegetative_cycle_begin(6))
+        Evaluator.__init__(self,'branch',self.determine_histogram, self.plot, 'Axial Branches Length Distribution')
 
-    def determine_distribution(self, mtg, mtgype):
-        from collections import OrderedDict
-        histo_date = OrderedDict([(d,0) for d in self.daterange])
+    def determine_histogram(self, mtg, mtgype):
         ucs =  self.get_all_gus(mtg)
-        for uc in ucs:
-            try:
-                d = get_burst_date(mtg,uc)
-                m = d.month
-                y = d.year
-                histo_date[(y,m)] += 1
-            except : pass
-        return histo_date.values()
+        def axial_axe_length(uc):
+            cuc = uc
+            l = 1
+            parent = mtg.parent(cuc)
+            while parent and (mtg.edge_type(parent) == '<') and (get_unit_cycle(mtg, parent) > 3):
+                cuc = parent
+                parent = mtg.parent(cuc)
+                l += 1
+            return l
+        last_apical_ucs = [uc for uc in ucs if len([cuc for cuc in vegetative_children(mtg,uc) if is_apical(mtg,cuc)]) == 0]
+        axial_axe_lengths = map(axial_axe_length, last_apical_ucs)
+        histo = histogram(axial_axe_lengths)
+        return histo
 
     def plot(self, refvalues,kvalues):
-        strdate = lambda d : monthtranslate(self.Month[d[1]])+'-'+str(d[0])
-        dates     = map(strdate, self.daterange)
-        plot_histogram(refvalues, kvalues, dates, self.maketitle('Burst Dates'), titlelocation = 2, xlabelrotation = 80)
-        plt.xlabel('Month')
-        plt.ylabel('Number of new growth units')
+        print refvalues
+        maxl = homogenize_histo_length(refvalues,kvalues)
+        fig, ax = plot_histogram(refvalues, kvalues, range(1,maxl+1), self.maketitle('Branch Length'), titlelocation = 1, figsize=(8,4))
+        plt.xlabel('Number of Growth Units per Branch')
+        plt.ylabel('Number of Branches')
+
+
+
+class current_year_axe_length(Evaluator):
+    def __init__(self):
+        Evaluator.__init__(self,'axe',self.determine_histogram, self.plot, 'Current Year Axe Length Distribution')
+
+    def determine_histogram(self, mtg, mtgype):
+        ucs = [uc for uc in self.get_all_gus(mtg) if get_unit_cycle(mtg, uc) > 3]
+        roots = [uc for uc in ucs if get_unit_cycle(mtg,uc) != get_unit_cycle(mtg,mtg.parent(uc))]
+        groupid = dict([(uc,uc) for uc in  roots])
+
+        for uc in ucs :       
+            if not uc in groupid:
+                parents = []
+                while not uc in groupid:
+                    parents.append(uc)
+                    uc = mtg.parent(uc)
+                gid = groupid[uc]
+                for p in parents:
+                    groupid[p] = gid
+        groupidcount = {}
+        for gid in groupid.values():
+            groupidcount.setdefault(gid, 0)
+            groupidcount[gid] += 1
+        histo = histogram(groupidcount.values())
+        return histo
+
+    def plot(self, refvalues,kvalues):
+        maxl = homogenize_histo_length(refvalues,kvalues)
+        plot_histogram(refvalues, kvalues, range(1,maxl+1), self.maketitle('Current Year Axe Length'), titlelocation = 1)
+
+
+
+
+
+class organ_count_distribution(Evaluator):
+    def __init__(self, name, func, reducefuncs, title):
+        Evaluator.__init__(self, name, func, reducefuncs, title)
+        self.begcycle, self.maxcycle = 4,6
+
+    def plot_distributioni(self, refvalues, kvalues, labels, proprange = None, legends = None, titlelocation = 2, figsize = (10,7)):
+        import numpy as np
+        labels = flattenarray(labels)
+        kvalues = flattenarrays(kvalues)
+        if refvalues:
+            refvalues = flattenarray(refvalues)
+        if not proprange is None:
+            for pr in proprange:
+                if pr > len(refvalues) : raise ValueError(pr, len(refvalues))
+            refvalues = selectsubarray(refvalues, proprange)
+            kvalues = selectsubarrays(kvalues, proprange)
+        if len(kvalues) == 1:
+            histogram_comparison(refvalues, kvalues)
+            fig, ax = plot_histo(labels, kvalues[0][1], self.maketitle('Characteritics'), refvalues, legendtag = kvalues[0][0], linestyle='o', titlelocation = titlelocation, figsize = figsize)
+        else:
+            meankvalues = meanarrays(kvalues)
+            histodistance_legend(meankvalues)
+            fig, ax = plot_histos(labels, [v for k,v in kvalues], self.maketitle('Characteritics Comparison'), reference=refvalues, legendtags = [k for k,v in kvalues], legends= legends, titlelocation = titlelocation, figsize = figsize)
+            
+        #fig.subplots_adjust(bottom=0.30, top = 0.94)
+
+
+class terminal_count_distribution(organ_count_distribution):
+    def __init__(self):
+        organ_count_distribution.__init__(self,'terminal',self.determine_distribution, self.plot_distribution1, 'Terminal GU Characteristics')
+
+    def determine_distribution(self, mtg, mtgtype):
+        terminals = [self.get_terminal_gus_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
+        nbterminals = map(lambda t : (len ([gu for gu in t if mtg.edge_type(gu) == '<']),len ([gu for gu in t if mtg.edge_type(gu) == '+'])),terminals)
+        nbfloterminals = [(len([gu for gu in cterminals if len(inflorescence_children(mtg,gu)) > 0 and mtg.edge_type(gu) == '<']),
+                           len([gu for gu in cterminals if len(inflorescence_children(mtg,gu)) > 0 and mtg.edge_type(gu) == '+'])) for cterminals in terminals]
+        return nbterminals+nbfloterminals
+
+    def print_distribution(self, refvalues, kvalues):
+        import numpy as np
+        begcycle, maxcycle = self.begcycle, self.maxcycle
+        labels = ['Nb Terminals '+str(i) for i in xrange(begcycle, maxcycle)]+['Nb Flowering Terminals '+str(i) for i in xrange(begcycle, maxcycle)]+['Nb Inflos '+str(i) for i in xrange(begcycle, maxcycle)]+['Nb Fruits '+str(i) for i in xrange(begcycle, maxcycle)]
+        for k,values in kvalues.items():
+            glm, restriction = k
+            print RestrictionName[restriction]
+            for i in xrange(len(refvalues)):
+                print labels[i],'\t',
+                print refvalues[i],'\t',
+                if type(values[0][i]) != tuple:
+                    print np.mean([val[i] for val in values]),'+-',
+                    print np.std([val[i] for val in values])
+                else:
+                    print '(',
+                    for j in xrange(len(values[0][i])):
+                        print np.mean([val[i][j] for val in values]),'+-',
+                        print np.std([val[i][j] for val in values]),',',
+                    print ')'
+
+
+    def plot_distribution1(self, refvalues, kvalues):
+        begcycle, maxcycle = self.begcycle, self.maxcycle
+        labels =  [('Nb. Ter. Api. '+str(i),'Nb. Ter. Lat. '+str(i)) for i in xrange(begcycle, maxcycle)]
+        labels += [('Nb. Flo. Ter. Api. '+str(i),'Nb. Flo. Ter. Lat. '+str(i)) for i in xrange(begcycle, maxcycle)]
+        self.plot_distributioni(refvalues, kvalues, labels)
+    
+class nbinflos(organ_count_distribution):
+    def __init__(self, plotrestriction = None): 
+        organ_count_distribution.__init__(self,'nbinflos',self.determine_distribution, self.plot_distribution2, 'Number of Inflorescences')
+        self.plotrestriction = plotrestriction
+
+    def determine_distribution(self, mtg, mtgtype):
+        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
+        nbinflos = [sum([mm.nb_of_inflorescences(mtg,inflo) for inflo in inflocycle]) for inflocycle in inflos]
+        if mtgtype == eMeasuredMtg:
+            nbinflos[0] = len(inflos[0])
+        return nbinflos
+
+    def plot_distribution2(self, refvalues, kvalues):
+        begcycle, maxcycle = self.begcycle, self.maxcycle
+        labels =  ['Nb. Inflorescences of cycle '+str(i) for i in xrange(begcycle, maxcycle)]
+        if self.plotrestriction:
+            refvalues = selectsubarray(refvalues, self.plotrestriction)
+            kvalues = selectsubarrays(kvalues, self.plotrestriction)
+            labels = selectsubarray(labels, self.plotrestriction)
+        
+        legends = None
+
+        self.plot_distributioni(refvalues, kvalues, labels, legends=legends)
+        plt.ylabel('Number of Inflorescences')
+    
+
+
+class nbfruits(organ_count_distribution):
+    def __init__(self, plotrestriction = None): 
+        organ_count_distribution.__init__(self,'nbfruits',self.determine_distribution, self.plot_distribution2, 'Number of Fruits')
+        self.plotrestriction = plotrestriction
+        self.begcycle, self.maxcycle = 3,6
+
+    def determine_distribution(self, mtg, mtgtype):
+        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
+        nbfruits = [sum([mm.get_nb_fruits(mtg,inflo) for inflo in inflocycle]) for inflocycle in inflos]
+        return nbfruits
+
+    def plot_distribution2(self, refvalues, kvalues):
+        begcycle, maxcycle = self.begcycle, self.maxcycle
+        labels = ['Cycle '+str(i) for i in xrange(begcycle, maxcycle)]
+        if self.plotrestriction:
+            refvalues = selectsubarray(refvalues, self.plotrestriction)
+            kvalues = selectsubarrays(kvalues, self.plotrestriction)
+            labels = selectsubarray(labels, self.plotrestriction)
+        
+        legends = None
+
+        self.plot_distributioni(refvalues, kvalues, labels, legends=legends, figsize=(5,4))
+        plt.ylabel('Number of Fruits')
+    
+
+class production(organ_count_distribution):
+    def __init__(self, plotrestriction = None): 
+        organ_count_distribution.__init__(self,'production',self.determine_distribution, self.plot_distribution2, 'Production')
+        self.plotrestriction = plotrestriction
+        self.begcycle, self.maxcycle = 3,6
+
+    def determine_distribution(self, mtg, mtgtype):
+        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
+        production = [sum([mm.get_fruits_weight(mtg,inflo,0) for inflo in inflocycle])/1000. for inflocycle in inflos]
+        return production
+
+    def plot_distribution2(self, refvalues, kvalues):
+        begcycle, maxcycle = self.begcycle, self.maxcycle
+        labels = ['Cycle '+str(i) for i in xrange(3, maxcycle)]
+        if self.plotrestriction:
+            refvalues = selectsubarray(refvalues, self.plotrestriction)
+            kvalues = selectsubarrays(kvalues, self.plotrestriction)
+            labels = selectsubarray(labels, self.plotrestriction)
+        
+        if len(kvalues) > 1:
+            #histodistances(meanarrays(kvalues))
+            print meanarrays(kvalues)
+            legends = ['Fruiting Branch Size : '+str(i) for i in xrange(1,8)]+['Stochastic Production']
+        else : 
+            legends = None
+
+        self.plot_distributioni(refvalues, kvalues, labels, legends=legends, figsize=(5,6.5))
+        plt.ylabel('Production (Kg)')
+    
+
+
+    
+
+class meanfruitweight(organ_count_distribution):
+    def __init__(self, plotrestriction = [1,2]): 
+        organ_count_distribution.__init__(self,'meanfruitweight',self.determine_distribution, self.plot_distribution, 'Mean Fruit Weight')
+        self.begcycle, self.maxcycle = 3,6
+        self.plotrestriction = plotrestriction
+        self.fruitbranchsizetest()
+        #self.addtarget(FRUIT_MODEL=False)
+
+
+    def determine_distribution(self, mtg, mtgtype):
+        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
+        #if mtgtype == eMeasuredMtg:
+        production = [np.mean([mm.get_fruits_weight(mtg,inflo,0)/mm.get_nb_fruits(mtg,inflo) for inflo in inflocycle for j in xrange(mm.get_nb_fruits(mtg,inflo)) if not mm.get_fruits_weight(mtg,inflo) is None]) for inflocycle in inflos]
+        #else:
+        #    production = [np.mean([mm.get_fruits_weight(mtg,inflo,0) for inflo in inflocycle for j in xrange(mm.get_nb_fruits(mtg,inflo)) if not mm.get_fruits_weight(mtg,inflo) is None]) for inflocycle in inflos]
+        return production
+
+    def plot_distribution(self, refvalues, kvalues):
+        begcycle, maxcycle = self.begcycle, self.maxcycle
+        labels = ['Cycle '+str(i) for i in xrange(begcycle, maxcycle)]
+        if self.plotrestriction:
+            refvalues = selectsubarray(refvalues, self.plotrestriction)
+            kvalues = selectsubarrays(kvalues, self.plotrestriction)
+            labels = selectsubarray(labels, self.plotrestriction)
+        
+        if len(kvalues) > 1:
+            print meanarrays(kvalues)
+            print refvalues
+            legends = ['Size : '+str(i) for i in xrange(1,8)]+['Stochastic Production']
+        else : legends = None
+
+        self.plot_distributioni(refvalues, kvalues, labels, legends=legends, titlelocation = 0, figsize=(5,6.5))
+        #plt.xlabel('Number of Growth Units per Branch')
+        plt.ylabel('Mean fruit weight (g)')
+    
+class fruitweight(organ_count_distribution):
+    def __init__(self, plotrestriction = [1,2]): 
+        organ_count_distribution.__init__(self,'fruitweight',self.determine_distribution, self.plot_distribution, 'Fruit Weight')
+        self.begcycle, self.maxcycle = 3,6
+        self.plotrestriction = plotrestriction
+        self.fruitbranchsizetest()
+        #self.addtarget(FRUIT_MODEL=False)
+
+
+    def determine_distribution(self, mtg, mtgtype):
+        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
+        production = [np.array([mm.get_fruits_weight(mtg,inflo,0)/mm.get_nb_fruits(mtg,inflo) for inflo in inflocycle for j in xrange(mm.get_nb_fruits(mtg,inflo)) if not mm.get_fruits_weight(mtg,inflo) is None]) for inflocycle in inflos]
+        return production
+
+    def plot_distribution(self, refvalues, kvalues):
+        begcycle, maxcycle = self.begcycle, self.maxcycle
+        labels = ['Cycle '+str(i) for i in xrange(begcycle, maxcycle)]
+        if self.plotrestriction:
+            refvalues = selectsubarray(refvalues, self.plotrestriction)
+            kvalues = selectsubarrays(kvalues, self.plotrestriction)
+            labels = selectsubarray(labels, self.plotrestriction)
+        
+        if len(kvalues) > 1:
+            #print refvalues
+            legends = ['Size : '+str(i) for i in xrange(1,8)]+['Stochastic Production']
+        else : legends = None
+
+        self.plot_distributioni(refvalues, kvalues, labels, legends=legends, titlelocation = 0, figsize=(5,6.5))
+        #plt.xlabel('Number of Growth Units per Branch')
+        plt.ylabel('Fruit weight (g)')
+    
+    def plot_distributioni(self, refvalues, kvalues, labels, proprange = None, legends = None, titlelocation = 2, figsize = (10,7)):
+        import numpy as np
+        labels = flattenarray(labels)
+        #print kvalues
+        #from IPython import embed
+        #embed()
+        kvalues = [(p, ( reduce(lambda a,b : np.concatenate((a,b)), [vi[0] for vi in v]), reduce(lambda a,b : np.concatenate((a,b)),[vi[1] for vi in v])  ) ) for p,v in kvalues]
+        #if refvalues:
+        #    refvalues = flattenarray(refvalues)
+        if len(kvalues) == 1:
+            histogram_comparison(refvalues, kvalues)
+            fig, ax = plot_histo(labels, kvalues[0][1], self.maketitle('Characteritics'), refvalues, legendtag = kvalues[0][0], linestyle='o', titlelocation = titlelocation, figsize = figsize)
+        else:
+            #meankvalues = meanarrays(kvalues)
+            #histodistance_legend(meankvalues)
+
+            fig, ax = plot_histos(labels, [v for k,v in kvalues], self.maketitle('Characteritics Comparison'), reference=refvalues, legendtags = [k for k,v in kvalues], legends= legends, titlelocation = titlelocation, figsize = figsize)
+
 
 class leaf_fruit_ratio(organ_count_distribution):
-    def __init__(self):
-        organ_count_distribution.__init__(self,'leaf_fruit_ratio',self.determine_distribution, self.plot)
+    def __init__(self, plotrestriction = [1,2]):
+        organ_count_distribution.__init__(self,'leaf_fruit_ratio',self.determine_distribution, self.plot, 'Leaf Fruit Ratio')
+        self.begcycle, self.maxcycle = 3,6        
+        self.fruitbranchsizetest()
+        self.plotrestriction = plotrestriction
 
     def determine_distribution(self, mtg, mtgtype):
         if mtgtype == eMeasuredMtg:
@@ -746,47 +942,341 @@ class leaf_fruit_ratio(organ_count_distribution):
 
     def plot(self, refvalues, kvalues):
         begcycle, maxcycle = self.begcycle, self.maxcycle
-        labels = ['Leaf Fruit Ratio '+str(i) for i in xrange(begcycle, maxcycle)]
-        self.plot_distributioni(refvalues, kvalues, labels)
+        labels = ['Cycle '+str(i) for i in xrange(begcycle, maxcycle)]
+        legends = ['Fruiting Branch Size : '+str(i) for i in xrange(1,len(kvalues)+1)]
+        if self.plotrestriction:
+            refvalues = selectsubarray(refvalues, self.plotrestriction)
+            kvalues = selectsubarrays(kvalues, self.plotrestriction)
+            labels = selectsubarray(labels, self.plotrestriction)
+        self.plot_distributioni(None, kvalues, labels, legends=legends, titlelocation=0, figsize=(5,5))
+        plt.ylabel('Number of Leaves per Fruit')
+
+mycolorbar = None
+def heatmap(data, monthrange, xlabelling = True, ylabelling = True, withcolorbar = True):
+        from numpy import log10, arange, amax
+        data = log10(data+1)
+        mx = amax(data)
+        data /= mx
+        for i,(y,m) in enumerate(monthrange):
+            ld = lastday_in_month(y,m)
+            for d in xrange(1,32-ld):
+                data[i,ld+d-1] = [1,1,1]
+
+        #for i,j in itertools.product(*[range(d) for d in data.shape]):
+        #    if data[i,j] == 0: data[i,j] = None
+
+        ax = plt.gca()
+        nbmonth = data.shape[0]
+        #view = ax.matshow(data, cmap=plt.cm.jet,extent=[0,31,nbmonth,0]) 
+        view = ax.imshow(data, extent=[0,31,nbmonth,0]) 
+        #a.xaxis.set_major_formatter(ticker.NullFormatter())
+        ax.set_xticks(range(31), minor = False)
+        ax.set_xticklabels('')
+        if xlabelling:
+            ax.set_xticks(arange(0.5,31.5,0.5), minor = True)
+            ax.set_xticklabels( [ str(i) if j == 0 else '' for i in range(1,32) for j in xrange(2)], minor = True )
+
+        invmonth = dict([(i,v if len(v)<= 4 else v[:3]+'.') for v,i in MonthEn.items()])
+        strdate = lambda d : invmonth[d[1]]+'-'+str(d[0])
+        ax.set_yticks(range(len(monthrange)))
+        ax.set_yticklabels('')
+        if ylabelling:
+            ax.set_yticks(arange(0.5,len(monthrange)+0.5,0.5), minor = True)
+            ax.set_yticklabels( [ strdate(d) if j == 0 else '' for d in monthrange  for j in xrange(2)], minor = True )
+
+        plt.grid(linestyle='--')
+        print nbmonth // 12
+        for i in xrange(0,(nbmonth // 12)+1):
+            plt.plot([0,31],[12*i,12*i], color='blue', linewidth=2)
+
+
+def heatmap_colormap(vmin, vmax):
+    from math import ceil, floor
+    from numpy import log10, array
+    import numpy
+    ax = plt.gca()
+    ax.yaxis.tick_right()
+
+    def color(i, intensity, maxi):
+        stripl = 0.2*maxi
+        if i <  stripl : return [0,intensity,0]
+        elif i > 4*stripl : return [intensity,0,0]
+        elif 2*stripl < i < 3*stripl : return [intensity,intensity,0]
+        elif i <= 2*stripl:
+            c = i/stripl - 1
+            return [intensity*c,intensity,0]
+        elif i >= 3*stripl:
+            c = (i-3*stripl)/stripl
+            return [intensity,intensity*(1-c),0]
+
+    length = 800
+    width = 100
+
+    data = array([[color(i,(length-j)/float(length),width) for i in xrange(width)] for j in xrange(length)]).astype(float)
+    view = ax.imshow(data) 
+
+    vmaxlog = log10(vmax)
+    ticklength = int(length / vmaxlog)
+    ax.set_yticks([length-1-i*ticklength for i in xrange(int(floor(vmaxlog))+1)])
+    ax.set_xticks([])
+
+    ticklabels = []
+    for k in xrange(int(floor(vmaxlog))+1):
+        ticklabels += [str(10**k if k > 0 else 0)]
+    ax.set_yticklabels(ticklabels)
 
 
 
+
+
+class stage_evaluator(Evaluator):
+    def __init__(self):
+        Evaluator.__init__(self, 'stage',self.determine_distribution, self.plot, 'Sensible Phenological Stage Distribution')
+        self.begindate = vegetative_cycle_begin(4)
+        self.enddate   = flowering_cycle_end(5)+timedelta(days=1)
+        self.monthrange = monthdate_range(self.begindate,self.enddate)
+        from vplants.mangosim.temperature import init_temperatures
+        init_temperatures()
+
+    def date_to_dayid(self, date):
+        if self.begindate <= date <=  self.enddate:
+            dm = month_difference(date, self.begindate)
+            return dm * 31 + date.day - 1
+        elif self.begindate > date: return 0
+        else : return (len(self.monthrange)*31) - 1
+
+    def dayid_to_date(self, did):
+        nbm = did / 31
+        nbd = did % 31
+        nbyear = nbm / 12
+        nbm = nbm % 12
+        ayear = self.begindate.year+nbyear
+        amonth = self.begindate.month+nbm
+        aday = self.begindate.day+nbd
+        if lastday_in_month(ayear,amonth) >= aday:
+            return date(ayear, amonth, aday)
+        else:
+            return (ayear, amonth, aday)
+
+    def daterange_to_dayids(self, datebeg, dateend):
+        fid = self.date_to_dayid(datebeg)
+        lid = self.date_to_dayid(dateend)
+        if datebeg.year != dateend.year or datebeg.month != dateend.month:
+            result = range(fid,fid+(lastday_in_month(datebeg.year,datebeg.month)-datebeg.day)+1)
+            mrange = monthdate_range(datebeg,dateend)
+            mrange.pop(0)
+            for m,y in mrange:
+                result += range(self.date_to_dayid(date(y,m,1)),self.date_to_dayid(date(y,m,lastday_in_month(y,m))))
+            result += range(self.date_to_dayid(date(dateend.year,dateend.month,1)),lid+1)
+            return result
+        else:
+            return range(fid, lid)
+
+    def determine_distribution(self, mtg, mtgype):
+        from vplants.mangosim.thermaltime import MultiPhaseThermalTimeAccumulator
+        from vplants.mangosim.simulation.organ_properties import GUManager, InfloManager
+        from random import randint
+        result = [0 for m in self.monthrange for i in xrange(31)]
+        gumanager = GUManager()
+        inflomanager = InfloManager()
+        ucs =  self.get_all_gus(mtg)
+        ucrdate = {}
+        decal = 1000
+        for uc in ucs:
+            try:
+                begdate = get_burst_date(mtg,uc)
+            except : 
+                pass
+            else:
+                if begdate and self.begindate <= begdate <= self.enddate:
+                    if uc in ucrdate:
+                        begdate = ucrdate[uc]
+                    else:
+                        rdate = random_date_in_month(begdate.year,begdate.month)
+                        parent = mtg.parent(uc)
+                        if parent:
+                            for sister in vegetative_children(mtg,parent):
+                                if get_burst_date(mtg,sister) == begdate:
+                                    ucrdate[sister] = rdate
+                        begdate = rdate 
+
+                    gu_pheno_tts     = MultiPhaseThermalTimeAccumulator(gumanager.pheno_base_temp, gumanager.pheno_stade_temp,stagesnames=gumanager.pheno_stadename)
+                    enddate = gu_pheno_tts.find_date_of_stage_end('E',begdate)
+                    for did in self.daterange_to_dayids(begdate, enddate):
+                        result[did] += 1
+        inflos =  self.get_all_inflos(mtg)
+        for inflo in inflos:
+            try:
+                if mtgype == eMeasuredMtg:
+                    begdate = get_bloom_date(mtg,inflo)
+                else:
+                    begdate = get_burst_date(mtg,inflo)
+            except : 
+                pass
+            else:
+                if begdate and self.begindate <= begdate <= self.enddate:
+                    if mtgype == eMeasuredMtg:
+                        inflo_pheno_tts     = MultiPhaseThermalTimeAccumulator(inflomanager.pheno_base_temp, inflomanager.pheno_stade_temp, inflomanager.mean_bloom_cum_temp,stagesnames=inflomanager.pheno_stadename)
+                        begdate = inflo_pheno_tts.reverse_from_finaldate(0,begdate)
+                    else:
+                        inflo_pheno_tts     = MultiPhaseThermalTimeAccumulator(inflomanager.pheno_base_temp, inflomanager.pheno_stade_temp,stagesnames=inflomanager.pheno_stadename)
+                    enddate = inflo_pheno_tts.find_date_of_stage_end('E',begdate)
+                    for did in self.daterange_to_dayids(begdate, enddate):
+                        result[did] += decal
+        return result
+
+    def plot(self, refvalues,kvalues):
+        from math import ceil
+        from numpy import  amax
+        withref = False
+
+        fig = plt.figure(figsize=(18,8))
+        
+        nbmonth = int(len(refvalues)/31.)
+
+        def toarray(v): 
+            return np.reshape([[a/1000,a%1000,0] for a in v], (nbmonth,31,3))
+
+        nbplots = len(kvalues)+withref
+        nbcols = ceil(sqrt(nbplots))
+        nbrows = int(ceil(nbplots/nbcols))
+        nbcols = int(nbcols)
+
+        plt.subplot(nbrows, nbcols+1,1)
+        if withref:
+            heatmap(toarray(refvalues).astype(float), self.monthrange)
+        for i,(p, valueset) in enumerate(kvalues):
+            plt.subplot(nbrows, nbcols+1,i+1+withref)
+            data = toarray(valueset[0]).astype(float)
+            for v in valueset[1:]:
+                data += toarray(v)
+            data /= len(valueset)*3
+            heatmap(data, self.monthrange) #, xlabelling = i <= nbcols, ylabelling = (((i+1) % nbcols) == 0))
+            mx = amax(data)
+
+        plt.subplot(nbrows, nbcols+1,nbcols+1)
+        heatmap_colormap(0, mx)
+        plt.subplots_adjust(wspace=0, hspace=0)
+        #plt.subplots_adjust(left=5, bottom=5, right=95, top=95, wspace=0, hspace=0)
+
+
+
+class stage_duration(Invokable):
+    def __init__(self, gu = True):
+        Invokable.__init__(self,'stageduration','Development Duration')
+        self.gu = gu
+        from vplants.mangosim.temperature import init_temperatures
+        init_temperatures()
+
+        from vplants.mangosim.thermaltime import MultiPhaseThermalTimeAccumulator
+        from vplants.mangosim.simulation.organ_properties import GUManager, InfloManager
+        if self.gu:
+            gumanager = GUManager()
+            self.pheno = MultiPhaseThermalTimeAccumulator(gumanager.pheno_base_temp, gumanager.pheno_stade_temp,stagesnames=gumanager.pheno_stadename)
+        else:
+            inflomanager = InfloManager()
+            self.pheno = MultiPhaseThermalTimeAccumulator(inflomanager.pheno_base_temp, inflomanager.pheno_stade_temp,stagesnames=inflomanager.pheno_stadename)
+
+        self.monthrange = []
+        for cycle in range(3,6):
+            if self.gu:
+                begindate = vegetative_cycle_begin(cycle)
+                enddate   = vegetative_cycle_end(cycle)+timedelta(days=1)
+            else:
+                begindate = flowering_cycle_begin(cycle)
+                enddate   = flowering_cycle_end(cycle)+timedelta(days=1)
+            self.monthrange += monthdate_range(begindate,enddate)
+
+
+    def compute(self):
+        from random import randint
+        result = [[None for i in xrange(31)] for m in self.monthrange]
+        for i,(y,m) in enumerate(self.monthrange):
+            for d in xrange(1,lastday_in_month(y,m)):
+                    begdate = date(y,m,d)
+                    enddate = self.pheno.find_date_of_stage_end('F',begdate)
+                    result[i][d-1] = (enddate-begdate).days
+        return result
+
+    def plot(self, values):
+        self.heatmap(values, self.monthrange)
+
+    def heatmap(self, data, monthrange, xlabelling = True, ylabelling = True):
+        import numpy as np
+        data = np.array(data).astype(float)
+        print np.nanmin(data), np.nanmax(data)
+        #for i,j in itertools.product(*[range(d) for d in data.shape]):
+        #    if data[i,j] == 0: data[i,j] = None
+
+        ax = plt.gca()
+        nbmonth = len(data)
+        jet = plt.cm.jet
+        rjet = jet.from_list('rjet',list(reversed(map(jet,range(jet.N)))),jet.N)
+        view = ax.matshow(data, cmap=rjet, extent=[0,31,nbmonth,0]) 
+        #view = ax.imshow(data, extent=[0,31,nbmonth,0]) 
+
+        ax.set_xticks(range(31), minor = False)
+        ax.set_xticklabels('')
+        if xlabelling:
+            ax.set_xticks(np.arange(0.5,31.5,0.5), minor = True)
+            ax.set_xticklabels( [ str(i) if j == 0 else '' for i in range(1,32) for j in xrange(2)], minor = True )
+
+        invmonth = dict([(i,v if len(v)<= 4 else v[:3]+'.') for v,i in MonthEn.items()])
+        strdate = lambda d : invmonth[d[1]]+'-'+str(d[0])
+        ax.set_yticks(range(len(monthrange)))
+        ax.set_yticklabels('')
+        if ylabelling:
+            ax.set_yticks(np.arange(0.5,len(monthrange)+0.5,0.5), minor = True)
+            ax.set_yticklabels( [ strdate(d) if j == 0 else '' for d in monthrange  for j in xrange(2)], minor = True )
+        plt.gcf().colorbar(view)
+        plt.show()
+
+    def __call__(self):
+        self.plot(self.compute())
+     
 
 def get_treenames():
     return get_treenames_of_variety(mm.get_mtg(),'cogshall',eLoaded)
 
-from collections import OrderedDict        
-cmdflags = OrderedDict([('burst' , burst_date_distribution), 
-                        ('bloom' , bloom_date_distribution),
-                        ('harvest' , harvest_date_distribution),                        
-                        ('branch' , tree_branch_length),
-                        ('axe' , current_year_axe_length),
-                        ('terminal' , terminal_count_distribution),
-                        ('production' , production),
-                        ('lf', leaf_fruit_ratio)
-                        ])
-cmdlabels = {
-             'burst'    : 'Burst Date Distribution', 
-             'bloom'    : 'Bloom Date Distributon', 
-             'harvest'  : 'Harvest Date Distributon', 
-             'branch'   : 'Axial Branches Length Distribution', 
-             'axe'      : 'Current Year Axe Length Distribution',
-             'terminal' : 'Terminal GU Characteristics', 
-             'production' : 'Production',
-             'lf' : 'Leaf Fruit Ratio'
-             }
+from collections import OrderedDict
+
+def class_lineno(mclass):
+    return mclass.__init__.im_func.func_code.co_firstlineno
+
+def build_cmddict():
+    import inspect
+    cmdflags = []
+    for name, obj in globals().items():
+        if inspect.isclass(obj)  and issubclass(obj, Invokable) : 
+            try:
+                instance = obj()
+            except:
+                pass
+            else:
+                cmdflags += [(instance.name,obj)]                
+    cmdflags.sort(cmp=lambda a,b :cmp(class_lineno(a[1]),class_lineno(b[1])))
+    print [class_lineno(a[1]) for a in cmdflags]
+    return OrderedDict(cmdflags)
+
+cmdflags = build_cmddict()
+
 
 def saveall(fruitmodel=False, comparison = True, force=False):
     for tree in ['all']+get_treenames():
-        for restriction in [None, 'all']:
+        for restriction in [None, 'all'] :
             for cmd in cmdflags.values():
                 p = cmd()
-                p.fruitmodel = fruitmodel
-                if restriction == 'all':
-                    p.allrestrictions()
-                if tree != 'all':
-                    p.targettree(tree)
-                p(force=force, saving=True)
+                if issubclass(p, Evaluator):
+                    if restriction == 'all':
+                        p.allrestrictions()
+                    if tree != 'all':
+                        p.targettree(tree)
+                    p(force=force, saving=True)
+    for cmd in cmdflags.values():
+        p = cmd()
+        if not issubclass(p, Evaluator):
+            p(force=force, saving=True)
+
 
 def make_report(force = False, comparison = True, fruitmodel = False):
     from vplants.mangosim.utils.util_report import TexReportGenerator
@@ -798,7 +1288,8 @@ def make_report(force = False, comparison = True, fruitmodel = False):
     if comparison: restrictions.append('all')
 
     for cmdname, cmd in cmdflags.items():
-        tx.add_section(cmdlabels[cmdname])
+        p = cmd()
+        tx.add_section(p.title)
         for restriction in restrictions:
             tx.add_subsection('Simulation from GLM' if restriction is None else 'Factor Sensitivity Test')
             for tree in ['all']+get_treenames():
@@ -819,17 +1310,21 @@ def make_report(force = False, comparison = True, fruitmodel = False):
     tx.compile()
     tx.view()
 
-def fruitbranchsizetest():
-    p = production([5,6])
+def fruitbranchsizetest(force = False):
+    p = production([1,2])
     p.fruitbranchsizetest()
-    p.addtarget(FRUIT_MODEL=False)
-    p()
+    #p.addtarget(FRUIT_MODEL=False)
+    p(force=force)
 
 def fruitbranchsizelf(force = False):
     p = leaf_fruit_ratio()
-    p.fruitbranchsizetest()
     #p.addtarget(FRUIT_MODEL=False)
-    p(nb = 10,force=force,parallel=False)
+    p(force=force,parallel=False)
+
+def fruitbranchsizeweight(force = False):
+    p = meanfruitweight()
+    #p.addtarget(FRUIT_MODEL=False)
+    p(force=force,parallel=False)
 
 def test_production():
     restriction = None #range(4)
@@ -905,13 +1400,16 @@ def main():
     elif '-r1' in switches:
         make_report(force=force, comparison=False, fruitmodel=fruitmodel)
     elif '-ft' in switches:
-        fruitbranchsizetest()
+        fruitbranchsizetest(force=force)
     elif '-flt' in switches:
         fruitbranchsizelf(force=force)
+    elif '-sd' in switches:
+        return stage_duration()()
     else:
         if fruitmodel:
             for p in processes:
                 p.fruitmodel=True
+                p.fruitbranchsizetest()
         if '-c' in switches:
             for p in processes:
                 p.allrestrictions()
@@ -932,7 +1430,7 @@ def main():
 
         saving = '-s' in switches
         for i,p in enumerate(processes):
-            print cmdlabels[cmds[i]]
+            print p.title
             p(force=force or p.isUptodate(), saving=saving)
 
         if treename:

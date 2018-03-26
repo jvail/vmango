@@ -116,7 +116,9 @@ Transpiration_Fruit = surfruit * transpi.alpha * ro * (0.996 - (mean(humirela) /
 	
   Potentiel_Hydrique_Arbre = 1.0 * mean(-0.6617105 + (-0.006940179 * Temperature_Air) + (0.007888208 * humirela) + (0.0000198265 * rayo)) # Calcul du potentiel hydrique arbre
 
-#  DDini = 20.769 * Poids_Fruit_Init + 518.87                                    # variante possible, DDini fonction P0.fruit
+  DDini = 20.769 * Poids_Fruit_Init + 518.87                                    # variante possible, DDini fonction P0.fruit
+  #### MODIF MAY17
+
                                                                                  
 	if (degjour > DDini) {Phi = Phiini * (Tau ^(degjour-DDini))}else{ Phi = Phiini}               #- Variation de Phi (accroissement volume en fonction de Taux ? partir seuil DDJ).
 

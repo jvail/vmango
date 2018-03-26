@@ -13,6 +13,7 @@ import os, sys
 from vplants.mangosim.devlaw_description import *
 
 share_dir = '../../../../share/'
+proba_dir = join(share_dir,'glm_output_proba/cogshall/')
 #data_dir = join(share_dir,'glm_output_proba/cogshall/allfactors/interaction_glm')
 #tmprep = 'interactionreport'
 
@@ -24,8 +25,14 @@ if len(sys.argv) > 1:
             print proba_factors
             break 
 
-data_dir = join(share_dir,'glm_output_proba/cogshall/'+proba_factors+'/interaction_glm')
-assert os.path.exists(data_dir)
+data_dir = join(proba_dir,proba_factors,'interaction_glm')
+if not os.path.exists(data_dir):
+    l = os.listdir(proba_dir)
+    l = [d for d in l if isdir(join(proba_dir,d))]
+    print 'Invalid value :', repr(proba_factors)
+    print 'Valid values :',', '.join(map(repr,l))
+    raise ValueError(data_dir)
+
 tmprep = 'report_'+proba_factors
 
 periodtags = [ 'within_04', 'within_05'] #,'within_0405',]  
@@ -307,7 +314,8 @@ def curves_of_date(data, name = name, type = 'probability', check = False):
     #if plotset:
     #    plt.xticks(range(nbdates), dates) #, [monthnamemap[int(v)] for v in data.columns[nbfactors:]] )
     #else:
-    if date_factor != 'Flowering_Week':
+    print name
+    if date_factor != 'Flowering_Week' and not 'flowering_week' in name:
         xdates = [convertmonth(v) for v in dates]
     else:
         xdates = dates

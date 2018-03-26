@@ -4,12 +4,12 @@ envdata = paste(localdir,"/../../../../share/environment/",sep='')
 
 ############################### Lancement des simulations pour x fruits #######################################################################
 ##### nom du fichier : Utilisation de la fonction MS MF_arbre_simp.r
-fruitmodel = function(bloom_date, nb_fruits, leaf_nbs)
+fruitmodel = function(bloom_date, nb_fruits, nb_leaves)
 
 {
 #********************
 
-LF = leaf_nbs/nb_fruits
+LF = nb_leaves/nb_fruits
 MS_Init = 0.97 * rnorm(1,mean=13.9,sd=4.1) + 0.03 * rnorm(1,mean=29.2,sd=0.66)   # bimodale de ML
 k1runquant = read.table(paste(envdata,"k1runquant.txt",sep=''), header=T, sep="\t")
 envirlum <- cbind(k1runquant[,"q10"],k1runquant[,"q25"],k1runquant[,"q50"],k1runquant[,"q75"],k1runquant[,"q90"])

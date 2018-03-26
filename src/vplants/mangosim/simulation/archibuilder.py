@@ -211,7 +211,8 @@ class GLMArchiBuilder(MTGArchiBuilder):
             nb_fruiting_lat_inflo = min(nb_lat_inflo, max(0, nb_fruits - int(not apical_child)))
             anglebetweenchildren = phyllotaxy
             if not date_children_burst is None:
-                date_children_burst = date(year=date_children_burst[0], month=date_children_burst[1], day=15)
+                date_children_burst = random_date_in_month(*date_children_burst)
+                #date(year=date_children_burst[0], month=date_children_burst[1], day=randint(1,lastday_of_month(date_children_burst[0],date_children_burst[1])))
                 #if date_children_burst > vegetative_cycle_end(5) and self.verbose:
                 #    print('Invalid date of burst %s (after last date %s) of children with parent borned in %s (in cycle %i)' %(date_children_burst, vegetative_cycle_end(5),p.burst_date,current_cycle))
                 cyclechange = (get_vegetative_cycle(date_children_burst) != get_vegetative_cycle(param.burst_date))
@@ -241,7 +242,7 @@ class GLMArchiBuilder(MTGArchiBuilder):
                     nsproduce( [ RollL(phyllotaxy), SB(), Down(branching_angle), InflorescenceBud(p), EB() ] )
             
             if mi_child:
-                date_mi_child_burst = date(year=mi_burst_date[0], month=mi_burst_date[1], day=15)
+                date_mi_child_burst = random_date_in_month(*mi_burst_date) #date(year=mi_burst_date[0], month=mi_burst_date[1], day=15)
                 cyclechange = (get_vegetative_cycle(date_mi_child_burst) != get_vegetative_cycle(param.burst_date))
                 p = ParameterSet(burst_date        = date_mi_child_burst, 
                                  position_parent   = param.position,

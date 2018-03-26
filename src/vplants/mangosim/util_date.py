@@ -1,15 +1,17 @@
 from datetime import date, timedelta
 
 
+######################################################################@
+
 Month = {'janv' : 1, 'fev' : 2, 'mars' : 3,
          'avril' : 4, 'mai' : 5, 'juin' : 6,
          'juil' : 7, 'aout' : 8, 'sept' : 9,
          'oct' : 10, 'nov' : 11, 'dec' : 12 }
 
-MonthEn = {'jan' : 1, 'feb' : 2, 'march' : 3,
+MonthEn = {'january' : 1, 'february' : 2, 'march' : 3,
          'april' : 4, 'may' : 5, 'june' : 6,
-         'july' : 7, 'august' : 8, 'sept' : 9,
-         'oct' : 10, 'nov' : 11, 'dec' : 12 }
+         'july' : 7, 'august' : 8, 'september' : 9,
+         'october' : 10, 'november' : 11, 'december' : 12 }
 
 
 MonthName = dict([(v,k) for k,v in Month.items()])
@@ -25,6 +27,9 @@ def date_from_string(string):
     date_ = date(2000+int(y), Month[m], 1)
     return date_
 
+def todatetime(d): return d
+
+######################################################################@
 
 def month_difference(d1,d2):
     return (d1.year-d2.year)*12 + (d1.month-d2.month)
@@ -33,63 +38,35 @@ def week_difference(d1,d2):
     from math import ceil
     return ceil((d2 -d1).days/7.)
 
-# Fred note : The actual cycle seems to start at beginning of June
-def vegetative_cycle_begin(cycle):
-    return date(2000+cycle-1,6,1)
-    # return date(2000+cycle-1,7,1)
+def get_date_from_week(year, week, weekday):
+    from datetime import datetime
+    assert 1 <= weekday <= 7
+    return datetime.strptime(str(year)+'/'+str(week)+'/'+str(weekday%7),'%Y/%W/%w').date()
 
-def vegetative_cycle_end(cycle):
-   return date(2000+cycle,5,31)
-   # return date(2000+cycle,6,30)
-
-def in_vegetative_cycle(cdate, cycle):
-    if type(cdate) != date: cdate = cdate.date()
-    return vegetative_cycle_begin(cycle) <= cdate <= vegetative_cycle_end(cycle)
-
-
-def get_vegetative_cycle(cdate):
-    if type(cdate) != date: cdate = cdate.date()
-
-    if cdate < vegetative_cycle_begin(4) : return 3
-    else:
-        gcycle = cdate.year-2000
-        while True:
-            if cdate <= vegetative_cycle_end(gcycle): 
-                return gcycle
-            else:
-                gcycle += 1
+def get_week_from_date(date):
+    return date.isocalendar()[1]
+    
+def get_weekday_from_date(date):
+    return date.isocalendar()[2]
 
 def get_semester(cdate):
     if cdate.month >= vegetative_cycle_begin(4).month : return 1
     else : return 2
 
-def flowering_cycle_begin(cycle):
-    return date(2000+cycle, 7, 1)
+def lastday_in_month(year, month):
+    from calendar import monthrange
+    return monthrange(year,month)[1]
 
-def flowering_cycle_end(cycle):
-    return date(2000+cycle, 10, 31)
+def nbofdays_in_year(year):
+    return (date(year,12,31)-date(year,1,1)).days
 
-def in_flowering_cycle(cdate, cycle):
-    if type(cdate) != date: cdate = cdate.date()
-    return flowering_cycle_begin(cycle) <= cdate <= flowering_cycle_end(cycle)
+######################################################################@
 
-def get_flowering_cycle(date):
-    return date.year - 2000
+def random_date_in_month(year, month):
+    from random import randint
+    return date(year,month, randint(1,lastday_in_month(year,month)))
 
-def fruiting_cycle_begin(cycle):
-    return date(2000+cycle, 11, 1)
-
-def fruiting_cycle_end(cycle):
-    return date(2000+cycle+1, 3, 31)
-
-def in_fruiting_cycle(cdate, cycle):
-    if type(cdate) != date: cdate = cdate.date()
-    return fruiting_cycle_begin(cycle) <= cdate <= fruiting_cycle_end(cycle)
-
-def get_fruiting_cycle(date):
-    c = get_flowering_cycle(date)
-    if in_fruiting_cycle(date,c) : return c
-    else : return c - 1
+######################################################################@
 
 def date_range(begindate, enddate, daystep = 1):
     if enddate <= begindate: return []
@@ -161,19 +138,66 @@ def weekdate_xrange(begindate, enddate):
             currentweek -= maxweek
             maxweek = get_week_from_date(date(currentyear, 12, 28))
 
+######################################################################@
+
+# Fred note : The actual cycle seems to start at beginning of June
+def vegetative_cycle_begin(cycle):
+    return date(2000+cycle-1,6,1)
+    # return date(2000+cycle-1,7,1)
+
+def vegetative_cycle_end(cycle):
+   return date(2000+cycle,5,31)
+   # return date(2000+cycle,6,30)
+
+def in_vegetative_cycle(cdate, cycle):
+    if type(cdate) != date: cdate = cdate.date()
+    return vegetative_cycle_begin(cycle) <= cdate <= vegetative_cycle_end(cycle)
+
+
+def get_vegetative_cycle(cdate):
+    if type(cdate) != date: cdate = cdate.date()
+
+    if cdate < vegetative_cycle_begin(4) : return 3
+    else:
+        gcycle = cdate.year-2000
+        while True:
+            if cdate <= vegetative_cycle_end(gcycle): 
+                return gcycle
+            else:
+                gcycle += 1
+
+def flowering_cycle_begin(cycle):
+    return date(2000+cycle, 7, 1)
+
+def flowering_cycle_end(cycle):
+    return date(2000+cycle, 10, 31)
+
+def in_flowering_cycle(cdate, cycle):
+    if type(cdate) != date: cdate = cdate.date()
+    return flowering_cycle_begin(cycle) <= cdate <= flowering_cycle_end(cycle)
+
+def get_flowering_cycle(date):
+    return date.year - 2000
+
+def fruiting_cycle_begin(cycle):
+    return date(2000+cycle, 11, 1)
+
+def fruiting_cycle_end(cycle):
+    return date(2000+cycle+1, 3, 31)
+
+def in_fruiting_cycle(cdate, cycle):
+    if type(cdate) != date: cdate = cdate.date()
+    return fruiting_cycle_begin(cycle) <= cdate <= fruiting_cycle_end(cycle)
+
+def get_fruiting_cycle(date):
+    c = get_flowering_cycle(date)
+    if in_fruiting_cycle(date,c) : return c
+    else : return c - 1
 
 #beg_end_period = {'E' : (7,8,9,10), 'I' : (11,12,1,2), 'L' : (3,4,5,6)}
 
-def get_date_from_week(year, week, weekday):
-    from datetime import datetime
-    assert 1 <= weekday <= 7
-    return datetime.strptime(str(year)+'/'+str(week)+'/'+str(weekday%7),'%Y/%W/%w').date()
+######################################################################@
 
-def get_week_from_date(date):
-    return date.isocalendar()[1]
-    
-def get_weekday_from_date(date):
-    return date.isocalendar()[2]
     
 
 bloom_weeks = {}
@@ -211,4 +235,5 @@ def get_harvest_week(date, icycle = None):
         if period_beg_end[0] <= date <= period_beg_end[1]:
             return periodid
 
-def todatetime(d): return d
+######################################################################@
+

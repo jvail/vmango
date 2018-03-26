@@ -1,13 +1,14 @@
-setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
+#setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_growth")
+setwd("/Users/fboudon/Develop/oagit/mangosim/src/vplants/mangosim/shoot_growth")
 
 # Etude de la taille des feuilles en fonction de leur position le long de l'UC
 
-# Ce script nous a permis d'étudier la distribution des surfaces foliaires mais surtout d'en déduire la distribution
-#de leurs longueurs grâce à une relation allométrique.
-# Section 4.3 "Données relatives à la morphologie des UCs" du rapport
+# Ce script nous a permis d'?tudier la distribution des surfaces foliaires mais surtout d'en d?duire la distribution
+#de leurs longueurs gr?ce ? une relation allom?trique.
+# Section 4.3 "Donn?es relatives ? la morphologie des UCs" du rapport
 
 #################################################################
-############   Récupération et mise en forme des données  
+############   R?cup?ration et mise en forme des donn?es  
 ##########################
 
 
@@ -17,7 +18,7 @@ setwd("C:/Users/Anne-Sarah/Desktop/stage/mangosim/src/vplants/mangosim/shoot_gro
 
 MA05_0=read.csv("data/size_data/MA05.csv",header=TRUE,sep=";",dec=",")
 
-##### Suppression des données aberrantes
+##### Suppression des donn?es aberrantes
 par(mfrow=c(1,2))
 boxplot(MA05_0$NbFeu)
 plot(MA05_0$NbFeu)
@@ -30,7 +31,7 @@ title("Etude de la longueur des Ucs",outer=TRUE,line=-1)
 summary(MA05_0$Long,na.rm=T)
 MA=MA05_0[(MA05_0$Long <25 & MA05_0$Long >1),]
 
-# Séparation des UCs en fonction de leur type
+# S?paration des UCs en fonction de leur type
 MA_apic=MA[MA$position=="A",];MA_lat=MA[MA$position=="L",];
 MA_apicSfol=MA_apic$fbsfol   ;MA_latSfol=MA_lat$fbsfol
 
@@ -53,7 +54,7 @@ summary(sfolMA,na.rm=T)
 
 Sfol20060=read.csv("data/size_data/Sfol2006.csv",header=TRUE,sep=";",dec=",")
 
-##### Etude préliminaire
+##### Etude pr?liminaire
 par(mfrow=c(1,2))
 boxplot(Sfol20060$Area)
 plot(Sfol20060$Area)
@@ -62,7 +63,7 @@ summary(Sfol20060$Area,na.rm=T)
 Sfol6=Sfol20060
 Sfol6$Area=Sfol20060$Area/100
 
-# Distinction apicale latérale
+# Distinction apicale lat?rale
 Sfol6_apic=Sfol6[Sfol6$position=="A",]
 Sfol6_lat=Sfol6[Sfol6$position=="L",]
 
@@ -73,7 +74,7 @@ Sfol6_lat=Sfol6[Sfol6$position=="L",]
 
 Sfol20040=read.csv("data/size_data/Sfol2004.csv",header=TRUE,sep=";",dec=",")
 
-##### Etude préliminaire
+##### Etude pr?liminaire
 par(mfrow=c(1,2))
 boxplot(Sfol20040$Area)
 plot(Sfol20040$Area)
@@ -82,7 +83,7 @@ summary(Sfol20040$Area,na.rm=T)
 Sfol4=Sfol20040
 Sfol4$Area=Sfol20040$Area/100
 
-# Distinction apicale latérale
+# Distinction apicale lat?rale
 Sfol4_apic=Sfol4[Sfol4$position=="A",]
 Sfol4_lat=Sfol4[Sfol4$position=="L",]
 
@@ -93,14 +94,14 @@ Sfol4_lat=Sfol4[Sfol4$position=="L",]
 
 BMA=read.csv("data/size_data/CogshallBMA.csv",header=TRUE,sep=";",dec=",")
 
-##### Etude préliminaire
+##### Etude pr?liminaire
 par(mfrow=c(1,2))
 boxplot(BMA$Area)
 plot(BMA$Area)
 title("Etude de l'aire des feuilles",outer=TRUE,line=-1)
 summary(BMA$Area,na.rm=T)
 
-# Distinction apicale latérale
+# Distinction apicale lat?rale
 BMA_apic=BMA[BMA$position=="A",]
 BMA_lat=BMA[BMA$position=="L",]
 
@@ -112,14 +113,14 @@ BMA_lat=BMA[BMA$position=="L",]
 
 GFOND=read.csv("data/size_data/CogshallGFOND.csv",header=TRUE,sep=";",dec=",")
 
-##### Etude préliminaire
+##### Etude pr?liminaire
 par(mfrow=c(1,2))
 boxplot(GFOND$Area)
 plot(GFOND$Area)
 title("Etude de l'aire des feuilles",outer=TRUE,line=-1)
 summary(GFOND$Area,na.rm=T)
 
-# Distinction apicale latérale
+# Distinction apicale lat?rale
 GFOND_apic=GFOND[GFOND$position=="A",]
 GFOND_lat=GFOND[GFOND$position=="L",]
 
@@ -160,7 +161,7 @@ Sfol6.aov=aov(Sfol6$Area ~ Sfol6$position)
 summary(Sfol6.aov)
 
 
-##### Détection des dernières feuilles
+##### D?tection des derni?res feuilles
 plot(Sfol6$Area,type='l')
 
 
@@ -291,13 +292,13 @@ hist(GFOND_apic$Area,freq=FALSE,xlim=c(0,150),ylim=c(0,0.035),breaks=seq(0,150,8
 hist(BMA_apic$Area,freq=FALSE,xlim=c(0,150),ylim=c(0,0.035),breaks=seq(0,150,10),xlab="Surface foliaire",main="CogshallBMA, UCs apicales");
 	#curve(dnorm(x,mean(BMA$Area),sd(BMA$Area)),add=TRUE,col=2)
 
-hist(Sfol6_lat$Area,freq=FALSE,xlim=c(0,150),ylim=c(0,0.035),breaks=seq(0,150,8),xlab="Surface foliaire",main="Surface foliaire 6, UCs latérales");
+hist(Sfol6_lat$Area,freq=FALSE,xlim=c(0,150),ylim=c(0,0.035),breaks=seq(0,150,8),xlab="Surface foliaire",main="Surface foliaire 6, UCs lat?rales");
 	#curve(dnorm(x,mean(Sfol6_lat$Area),sd(Sfol6_lat$Area)),add=TRUE,col=2)
-hist(Sfol4_lat$Area,freq=FALSE,xlim=c(0,150),ylim=c(0,0.035),breaks=seq(0,150,8),xlab="Surface foliaire",main="Surface foliaire 4, UCs latérales");
+hist(Sfol4_lat$Area,freq=FALSE,xlim=c(0,150),ylim=c(0,0.035),breaks=seq(0,150,8),xlab="Surface foliaire",main="Surface foliaire 4, UCs lat?rales");
 	#curve(dnorm(x,mean(Sfol4_lat$Area),sd(Sfol4_lat$Area)),add=TRUE,col=2)
-hist(GFOND_lat$Area,freq=FALSE,xlim=c(0,150),ylim=c(0,0.035),breaks=seq(0,150,8),xlab="Surface foliaire",main="CogshallGFOND, UCs latérales");
+hist(GFOND_lat$Area,freq=FALSE,xlim=c(0,150),ylim=c(0,0.035),breaks=seq(0,150,8),xlab="Surface foliaire",main="CogshallGFOND, UCs lat?rales");
 	#curve(dnorm(x,mean(GFOND_lat$Area),sd(GFOND_lat$Area)),add=TRUE,col=2)
-hist(BMA$Area,freq=FALSE,xlim=c(0,150),ylim=c(0,0.035),breaks=seq(0,150,10),xlab="Surface foliaire",main="CogshallBMA, UCs latérales");
+hist(BMA$Area,freq=FALSE,xlim=c(0,150),ylim=c(0,0.035),breaks=seq(0,150,10),xlab="Surface foliaire",main="CogshallBMA, UCs lat?rales");
 	#curve(dnorm(x,mean(BMA$Area),sd(BMA$Area)),add=TRUE,col=2)
 
 
@@ -319,7 +320,7 @@ SFol_base=c(rep(1,length(GFOND$position)),rep(2,length(Sfol4$position)),rep(3,le
 SFol_apic=SFol[SFol_pos==1]
 SFol_lat=SFol[SFol_pos==2]
 
-# anova pour étudier l'influence de la base de donnée et de la position des UCs sur la surface foliaire
+# anova pour ?tudier l'influence de la base de donn?e et de la position des UCs sur la surface foliaire
 summary(aov(SFol ~ SFol_base*SFol_pos ))
 
 par(mfrow=c(2,2))
@@ -327,12 +328,12 @@ par(mfrow=c(2,2))
 #qqnorm(SFol);qqline(SFol,col=2)
 hist(SFol_apic,main="position apicale",freq=FALSE,breaks=seq(0,150,5),xlim=c(0,150));curve(dnorm(x,mean(SFol_apic),sd(SFol_apic)),add=TRUE,col=2)
 #qqnorm(SFol_apic);qqline(SFol_apic,col=2)
-hist(SFol_lat,main="position latérale",freq=FALSE,breaks=seq(0,150,5),xlim=c(0,150));curve(dnorm(x,mean(SFol_lat),sd(SFol_lat)),add=TRUE,col=2)
+hist(SFol_lat,main="position lat?rale",freq=FALSE,breaks=seq(0,150,5),xlim=c(0,150));curve(dnorm(x,mean(SFol_lat),sd(SFol_lat)),add=TRUE,col=2)
 #qqnorm(SFol_lat);qqline(SFol_lat,col=2)
 
 plot(ecdf(SFol_apic),main="position apicale",xlim=c(0,150))
 	curve(pnorm(x,mean(SFol_apic),sd(SFol_apic)),add=TRUE,col=2)
-plot(ecdf(SFol_lat),main="position latérale",xlim=c(0,150))
+plot(ecdf(SFol_lat),main="position lat?rale",xlim=c(0,150))
 	curve(pnorm(x,mean(SFol_lat),sd(SFol_lat)),add=TRUE,col=2)
 
 
@@ -358,7 +359,7 @@ plot(GFOND$Area,col=GFOND$UC-3);abline(h=25,col=2)
 plot(BMA$Area);abline(h=20,col=2)
 
 
-# Pour chaque feuille renvoit le numéro de l'UC qui la porte (nouvelle numérotation continue)
+# Pour chaque feuille renvoit le num?ro de l'UC qui la porte (nouvelle num?rotation continue)
 num_UC=function(base){
 UC=c(1);ram=1
 for (i in 2:(length(base$Area)-1)){
@@ -398,7 +399,7 @@ mean(pct_GFOND$min2,na.rm=T)         ;mean(pct_GFOND$min,na.rm=T)
 mean(pct_Sfol4$min2,na.rm=T)         ;mean(pct_Sfol4$min,na.rm=T)
 mean(pct_Sfol6$min2,na.rm=T)         ;mean(pct_Sfol6$min,na.rm=T)
 
-# Pourcentages de perte de surface moyen par base de donnée
+# Pourcentages de perte de surface moyen par base de donn?e
 mean(c(pct_BMA$min2,pct_GFOND$min2,pct_Sfol4$min2,pct_Sfol6$min2),na.rm=T)  ;                      # 0.5206125
 	mean(c(pct_BMA$min,pct_GFOND$min,pct_Sfol4$min,pct_Sfol6$min),na.rm=T)                           # 0.3790924
 mean(c(pct_BMA_apic$min2,pct_GFOND_apic$min2,pct_Sfol4_apic$min2,pct_Sfol6_apic$min2),na.rm=T)  ;  # 0.4994172 
@@ -418,17 +419,17 @@ par(mfrow=c(2,2))  # dist_Sfol
 hist(Feu_apic,breaks=20,freq=F,xlim=c(0,120),ylim=c(0,0.04),xlab="Surface foliaire",main="UCs en position apicale")
 	curve(dnorm(x,mean(Feu_apic),sd(Feu_apic)),add=TRUE,col=2)
 legend("topright",lty=1,col=2,"N(56.13,21.83)",bty="n")
-hist(Feu_lat,breaks=20,freq=F,xlim=c(0,120),ylim=c(0,0.04),xlab="Surface foliaire",main="UCs en position latérale")
+hist(Feu_lat,breaks=20,freq=F,xlim=c(0,120),ylim=c(0,0.04),xlab="Surface foliaire",main="UCs en position lat?rale")
 	curve(dnorm(x,mean(Feu_lat),sd(Feu_lat)),add=TRUE,col=2)
 legend("topright",lty=1,col=2,"N(41.05,15.78)",bty="n")
 plot(ecdf(Feu_apic),xlim=c(0,120),xlab="Surface foliaire",main="UCs en position apicale")
 	curve(pnorm(x,mean(Feu_apic),sd(Feu_apic)),add=TRUE,col=2)
-plot(ecdf(Feu_lat),xlim=c(0,120),xlab="Surface foliaire",main="UCs en position latérale")
+plot(ecdf(Feu_lat),xlim=c(0,120),xlab="Surface foliaire",main="UCs en position lat?rale")
 	curve(pnorm(x,mean(Feu_lat),sd(Feu_lat)),add=TRUE,col=2)
 
 
 #qqnorm(Feu);qqline(Feu,col=2)  ; 
-# qqnorm(Feu_apic,main="UCs en position apicale");qqline(Feu_apic,col=2)  ;  qqnorm(Feu_lat,main="UCs en position latérale");qqline(Feu_lat,col=2)
+# qqnorm(Feu_apic,main="UCs en position apicale");qqline(Feu_apic,col=2)  ;  qqnorm(Feu_lat,main="UCs en position lat?rale");qqline(Feu_lat,col=2)
 
 
 mean(Feu_apic)     # 56.13
@@ -436,7 +437,7 @@ sd(Feu_apic)       # 21.83
 mean(Feu_lat)      # 41.05
 sd(Feu_lat)        # 15.78
 
-# Tests de normalité
+# Tests de normalit?
 ks.test(Feu_apic,mean(Feu_apic),sd(Feu_apic))                 # 0.907
 ks.test(Feu_lat,mean(Feu_lat),sd(Feu_lat))                    # 0.8865
 
@@ -447,16 +448,16 @@ res.aov=leaf.aov$res
 aov.apic=leaf.aov$res[1:length(Feu_apic)]
 aov.lat=leaf.aov$res[(length(Feu_apic)+1):(length(Feu_apic)+length(Feu_lat))]
 
-# Test d'homoscédasticité
+# Test d'homosc?dasticit?
 g = factor(rep(1:2, c(length(Feu_apic),length(Feu_lat))), labels = c("apic","lat"))
 leveneTest(c(Feu_apic,Feu_lat),g)                                        #n=722  F=14.754   p-value=0.0001333
 
 par(mfrow=c(2,3))
 hist(aov.apic,freq=F,main="Histogramme",xlab="cas apical");curve(dnorm(x,0,sd(res.aov)),col=2,add=T)
-plot(ecdf(aov.apic),main="Fonction de répartition empirique");curve(pnorm(x,0,sd(res.aov)),col=2,add=T)
+plot(ecdf(aov.apic),main="Fonction de r?partition empirique");curve(pnorm(x,0,sd(res.aov)),col=2,add=T)
 qqnorm(aov.apic,main="Droite de Henry");qqline(aov.apic,col=2)
-hist(aov.lat,freq=F,main="Histogramme",xlab="cas latéral");curve(dnorm(x,0,sd(res.aov)),col=2,add=T)
-plot(ecdf(aov.lat),main="Fonction de répartition empirique");curve(pnorm(x,0,sd(res.aov)),col=2,add=T)
+hist(aov.lat,freq=F,main="Histogramme",xlab="cas lat?ral");curve(dnorm(x,0,sd(res.aov)),col=2,add=T)
+plot(ecdf(aov.lat),main="Fonction de r?partition empirique");curve(pnorm(x,0,sd(res.aov)),col=2,add=T)
 qqnorm(aov.lat,main="Droite de Henry");qqline(aov.lat,col=2)
 
 ks.test(aov.apic,0,sd(res.aov));ks.test(aov.lat,0,sd(res.aov))
@@ -470,7 +471,7 @@ kruskal.test(c(Feu_apic,Feu_lat)~rep(1:2, c(length(Feu_apic),length(Feu_lat)))  
 ############   Conversion des aires en longeur  
 ########################
 
-# utilisation des résultats obtenus dans "allometries.R"
+# utilisation des r?sultats obtenus dans "allometries.R"
 Longueur=2.36*sqrt(Feu)
 Long_apic=2.36*sqrt(Feu_apic)
 Long_lat=2.36*sqrt(Feu_lat)
@@ -491,26 +492,26 @@ legend("topright",lty=1,col=2,"N(17.37,3.26)",bty = "n")
 #curve(pnorm(x,mean(Long_apic),sd(Long_apic)),add=TRUE,col=2)
 #qqnorm(Long_apic);qqline(Long_apic,col=2)
 
-hist(Long_lat,freq=FALSE,main="Histogramme",xlim=c(8,28),breaks=seq(1,30,1),xlab="Longueur des Feuilles en position latérale")     ;curve(dnorm(x,mean(Long_lat),sd(Long_lat)),add=TRUE,col=2)
+hist(Long_lat,freq=FALSE,main="Histogramme",xlim=c(8,28),breaks=seq(1,30,1),xlab="Longueur des Feuilles en position lat?rale")     ;curve(dnorm(x,mean(Long_lat),sd(Long_lat)),add=TRUE,col=2)
 legend("topright",lty=1,col=2,"N(14.87,2.72)",bty = "n")
 #plot(ecdf(Long_lat),xlim=c(8,28))
 #curve(pnorm(x,mean(Long_lat),sd(Long_lat)),add=TRUE,col=2)
 #qqnorm(Long_lat);qqline(Long_lat,col=2)
 
-plot(ecdf(Long_apic),xlim=c(8,28),main="Fonction de répartition empirique")     ;
+plot(ecdf(Long_apic),xlim=c(8,28),main="Fonction de r?partition empirique")     ;
 	curve(pnorm(x,mean(Long_apic),sd(Long_apic)),add=TRUE,col=2)
-plot(ecdf(Long_apic),xlim=c(8,28),main="Fonction de répartition empirique")     ;
+plot(ecdf(Long_apic),xlim=c(8,28),main="Fonction de r?partition empirique")     ;
 	curve(pnorm(x,mean(Long_apic),sd(Long_apic)),add=TRUE,col=2)
 
 
 
 mean(Long_apic)    # 17.06102
-sd(Long_apic)      # 2.689568
+sd(Long_apic)      # 3.263412
 mean(Long_lat)     # 14.87
 sd(Long_lat)       # 2.72
 
-# Tests de normalité
-ks.test(Long_apic,17.1,2.7)   # 0.9464
+# Tests de normalit?
+ks.test(Long_apic,17.1,3.26)   # 0.9464
 ks.test(Long_lat,14.87,2.72)  # 0.9327
 shapiro.test(Long_apic)
 shapiro.test(Long_lat)

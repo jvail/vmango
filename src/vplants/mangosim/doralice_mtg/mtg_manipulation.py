@@ -1076,15 +1076,15 @@ if __name__ == '__main__' :
     # check_cycle_and_burst_date_coherence()
     #check_produce_within_and_next_cycle()
     # check_terminal3_producing_at_cycle5()
-    check_terminal_flowering_has_no_apical()
+    #check_terminal_flowering_has_no_apical()
     #check_terminal_non_flowering_has_no_apical()
     #check_if_has_lateral_has_apical()
     #check_if_within_has_lateral_has_apical()
     #check_apical_ratio_in_first_layer()
-    #check_mixed_inflo()
+    check_mixed_inflo()
     #check_inflo()
     #check_fruit_production()
-    check_pure_vegetative()
+    #check_pure_vegetative()
     pass
 
 # check reiteration

@@ -55,15 +55,31 @@ DAB_sim = unique(Tab_horaire_fruit$DAB)
 ###----------------------------------------------------------------------------------------------------
 
 #---Initialisation des valeurs des param?tres
+Reserve_Feuille = 0.8 * 0.074 * LF * 0.4051
+Reserve_Rameau  = 0.1 * 0.4387 * (41.83 + 77.41)/2
+#### MODIF MAY17
 
-Croissance = data.frame(Date = DATE[1], Masse_Fruit = MF_Init, MS_Fruit = MS_Debut_Sim,
-                        Eaupepu = 0.4086 * (MF_Init - MS_Debut_Sim)^0.7428 + 0.5874 * (MF_Init - MS_Debut_Sim)^1.0584, Potentiel_Hydrique = NA,
-                        P_Turgescence = NA, P_Osmotique = NA, Xyleme = NA, Phloeme = NA, Transpiration = NA, Saccharose = NA, sucres_solubles = NA,
+Croissance = data.frame(Date = DATE[1], 
+                        Masse_Fruit = MF_Init, 
+                        MS_Fruit = MS_Debut_Sim,
+                        Eaupepu = 0.4086 * (MF_Init - MS_Debut_Sim)^0.7428 + 0.5874 * (MF_Init - MS_Debut_Sim)^1.0584,
+                        #### MODIF MAY17
+                        Reserve_Feuille = Reserve_Feuille,
+                        Reserve_Rameau =  Reserve_Rameau, 
+                        #### MODIF MAY17
+                        Potentiel_Hydrique = NA,
+                        P_Turgescence = NA, 
+                        P_Osmotique = NA, 
+                        Xyleme = NA, 
+                        Phloeme = NA, 
+                        Transpiration = NA, 
+                        Saccharose = NA, 
+                        sucres_solubles = NA,
                         acides_organiques = NA)
                         
 MS =          list( MS_Fruit =        MS_Debut_Sim,
-                    Reserve_Feuille = 0.1 * 0.4387 * (41.83 + 77.41)/2,
-                    Reserve_Rameau =  0.8 * 0.074 * LF * 0.4051 )  
+                    Reserve_Feuille = Reserve_Feuille,
+                    Reserve_Rameau =  Reserve_Rameau )  
 
 #--------------------------------------------------------- DEBUT DE LA BOUCLE ----------------------------------------------------------------------------------------------------------------- 
 
@@ -99,7 +115,7 @@ for (i in 1:length(DATE)[1])
                           MSfruit =           c(MS_Fruit_Precedent, MS$MS_Fruit),
                           MF_Init =           Croissance[dim(Croissance)[1],"Masse_Fruit"],
                           Eaupepu_Init =      Croissance[dim(Croissance)[1],"Eaupepu"],
-                          Poids_Fruit_Init =   MS_Init_Division_Cellulaire,         # Poids du fruit ? la fin de la division cellulaire en gramme de MS
+                          Poids_Fruit_Init =  MS_Init_Division_Cellulaire,         # Poids du fruit ? la fin de la division cellulaire en gramme de MS
                           H = 0.002027 ,                                            # Pression Seuil Y ~ H * Volume Fruit, pour la croissance, Parametre ? Estimer.
                           Phiini = 0.414,                                           #  Taux d'accroissement cellulaire (MPa / jour, article 2007)
                           DDini = 2000,                                             # DDJ ? partir duquel extensibilit? cellulaire (Phiini d?croit).
@@ -107,8 +123,12 @@ for (i in 1:length(DATE)[1])
                           aLf = 0.3732                                              # Parametres pour calculer la conductivit? hydraulique (param papier 2007 * 24)
                          )
 
-      Croissance[i,5:13]  = MF[["Results_jour"]]
+      Croissance[i,7:13]  = MF[["Results_jour"]]
       Croissance[i+1,1:4] = MF[["Results_jour_suivant"]]
+      
+      #### MODIF MAY17
+      Croissance[i+1,5] = MS$Reserve_Feuille
+      Croissance[i+1,6] = MS$Reserve_Rameau
 
     if ( Croissance[i,"Saccharose"] >= 0.04)
     {
