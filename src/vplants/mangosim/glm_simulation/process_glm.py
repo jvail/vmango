@@ -1,3 +1,9 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import map
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import vplants.mangosim.doralice_mtg.mtg_manipulation as mm
 reload(mm) 
 from vplants.mangosim.doralice_mtg.mtg_manipulation import *
@@ -10,7 +16,7 @@ from vplants.mangosim.util_path import get_glm_mtg_repository, mtgfname
 lsysfile = 'mango_glm.lpy'
 
 
-def generate_mtg(trees = range(5), params = dict()):
+def generate_mtg(trees = list(range(5)), params = dict()):
     from openalea.lpy import Lsystem
     from openalea.mtg.algo import union
     g = None
@@ -27,16 +33,16 @@ def generate_mtg(trees = range(5), params = dict()):
     return g
 
 
-def generate_mtgs(trees = range(5), 
+def generate_mtgs(trees = list(range(5)), 
                   params = dict(), 
-                  seeds = range(10), 
+                  seeds = list(range(10)), 
                   optionname = None):
     outputdir = get_glm_mtg_repository(trees, params, optionname, lsysfile)
     if not os.path.exists(outputdir): os.makedirs(outputdir)
     for seed in seeds:
       fname = mtgfname.format(str(seed).zfill(4))
       if not os.path.exists(join(outputdir,fname)):  
-        print 'Generate trees with seed',seed
+        print('Generate trees with seed',seed)
         nparams = params.copy()
         nparams.update({'SEED':seed})
         try :
@@ -46,16 +52,16 @@ def generate_mtgs(trees = range(5),
             traceback.print_exc()
             continue      
         dump_obj(mtg,fname, outputdir)
-        print "Write "+repr(str(join(outputdir,fname)))
+        print("Write "+repr(str(join(outputdir,fname))))
 
 
 def generate_all(nb = 1000, withindelaymethods = [eMonthMultiVariateForWithin, eDeltaMultiVariateForWithin, eDeltaPoissonForWithin]):
     for withindelaymethod in withindelaymethods:
-        generate_mtgs(params = {'WITHINDELAYMETHOD' : withindelaymethod}, seeds = range(nb))
+        generate_mtgs(params = {'WITHINDELAYMETHOD' : withindelaymethod}, seeds = list(range(nb)))
 
 def generate_all_restriction(nb = 1000):
     for withindelaymethod in withindelaymethods:
-        generate_mtgs(params = {'WITHINDELAYMETHOD' : withindelaymethod}, seeds = range(nb))
+        generate_mtgs(params = {'WITHINDELAYMETHOD' : withindelaymethod}, seeds = list(range(nb)))
 
 
 def _generate(params):
@@ -74,14 +80,14 @@ def process_set_of_simulations(paramvalueslist):
 
 def process_null_models(nb=1000):
     import itertools
-    params = list(itertools.product(range(nb),['ESTIMATIONTYPE'],['eNullGlm'],['WITHINDELAYMETHOD'],['eMonthMultiVariateForWithin', 'eDeltaMultiVariateForWithin', 'eDeltaPoissonForWithin']))
+    params = list(itertools.product(list(range(nb)),['ESTIMATIONTYPE'],['eNullGlm'],['WITHINDELAYMETHOD'],['eMonthMultiVariateForWithin', 'eDeltaMultiVariateForWithin', 'eDeltaPoissonForWithin']))
 
     process_set_of_simulations(params)
 
 
 def process_restricted_models(nb=1000):
     import itertools
-    params = list(itertools.product(range(nb),['ESTIMATIONTYPE'],['eSelectedGlm'],['WITHINDELAYMETHOD'],['eMonthMultiVariateForWithin'],['FACTORRESTRICTION'],['eBurstDateRestriction', 'ePositionARestriction', 'ePositionAncestorARestriction', 'eNatureFRestriction']))
+    params = list(itertools.product(list(range(nb)),['ESTIMATIONTYPE'],['eSelectedGlm'],['WITHINDELAYMETHOD'],['eMonthMultiVariateForWithin'],['FACTORRESTRICTION'],['eBurstDateRestriction', 'ePositionARestriction', 'ePositionAncestorARestriction', 'eNatureFRestriction']))
 
     process_set_of_simulations(params)
 
@@ -93,7 +99,7 @@ if __name__ == '__main__' :
         params = dict()
         paramcmd = sys.argv[2:]
         assert len(paramcmd) % 2 == 0
-        for i in xrange(len(paramcmd)/2):
+        for i in range(old_div(len(paramcmd),2)):
             params[paramcmd[2*i]] = eval(paramcmd[2*i+1])
         generate_mtgs(seeds=[seed],params=params)
     else:

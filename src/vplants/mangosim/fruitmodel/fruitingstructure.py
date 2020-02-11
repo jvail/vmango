@@ -1,4 +1,10 @@
+from __future__ import print_function
+from __future__ import absolute_import
+from past.builtins import cmp
+from builtins import str
+from builtins import range
 from vplants.mangosim.doralice_mtg.mtg_manipulation import *
+from functools import reduce
 
 def neighbours(mtg, node):
     """ Gives the neighbours of a node in the mtg. In a tree graph, it is the parent and the children """
@@ -10,7 +16,7 @@ def nodes_at_distance(mtg, node, distance):
     """ Return all nodes at a distance of node in the mtg. A set is returned """
     orderi = neighbours(mtg, node)
     res = set(orderi)
-    for j in xrange(1,distance):
+    for j in range(1,distance):
         orderj = []
         for ni in orderi:
             if j < distance:
@@ -46,7 +52,7 @@ def determine_fruiting_structure(mtg, cycle, fruit_distance):
     while i < len(inflo_support):
         # We first test if inflo_support[i] has common elements with others.
         tomerge = []
-        for j in xrange(i+1,len(inflo_support)):
+        for j in range(i+1,len(inflo_support)):
             if len(inflo_support[i][1] & inflo_support[j][1]) > 0 : 
                 # The 2 sets have elements in common
                 tomerge.append(j)
@@ -71,8 +77,8 @@ def lowest_common_ancestor(mtg, nodei, nodej):
     """ Return the lowest common ancestor lca of nodei and nodej in the mtg and the distance of nodei and nodej to lca"""
     ancestorsi = dict([(v,i) for i,v in enumerate(mtg.Ancestors(nodei)) ])
     ancestorsj = dict([(v,i) for i,v in enumerate(mtg.Ancestors(nodej)) ])
-    print ancestorsi
-    print ancestorsj
+    print(ancestorsi)
+    print(ancestorsj)
     
     commonancestors = list(set(ancestorsi.keys()) & set(ancestorsj.keys()))
     commonancestors.sort(cmp = lambda x,y : cmp(ancestorsi[x],ancestorsi[y]))
@@ -103,8 +109,8 @@ def inflo_positions(fruiting_structures, mtg, scene):
 def central_inflo(inflos, mtg, scene):
     from openalea.plantgl.all import Point3Array
     pos = infloset_positions(inflos, mtg, scene)
-    center = Point3Array(pos.values()).getCenter()
-    a = pos.keys()
+    center = Point3Array(list(pos.values())).getCenter()
+    a = list(pos.keys())
     a.sort(cmp = lambda a,b : cmp(pos[a]-center,pos[b]-center))
     return a[0]
 
@@ -124,8 +130,8 @@ def c_determine_colorindex(fruiting_structures, mtg, scene):
     distances -= mindist
     distances /= (maxdist- mindist)
     nbcolors = len(pos)
-    index = range(nbcolors)
-    print distances
+    index = list(range(nbcolors))
+    print(distances)
     def cost(index, distances):
         return sum([sum([distances[i,j]*abs(vi-vj) for j,vj in enumerate(index)]) for i,vi in enumerate(index)])
 
@@ -140,8 +146,8 @@ def c_determine_colorindex(fruiting_structures, mtg, scene):
     def bestswap(index, distances):
         bcost = cost(index, distances)
         bindex = index
-        for i in xrange(len(index)-2):
-            for j in xrange(i+1,len(index)-1):
+        for i in range(len(index)-2):
+            for j in range(i+1,len(index)-1):
                 nindex = swap(index,i,j)
                 ccost = cost(nindex, distances)
                 if ccost < bcost:
@@ -152,7 +158,7 @@ def c_determine_colorindex(fruiting_structures, mtg, scene):
     def bestswapi(index, distances, i):
         bcost = cost(index, distances)
         bindex = index
-        for j in xrange(0,len(index)-1):
+        for j in range(0,len(index)-1):
             if j != i:
                 nindex = swap(index,i,j)
                 ccost = cost(nindex, distances)
@@ -169,10 +175,10 @@ def c_determine_colorindex(fruiting_structures, mtg, scene):
 
 
     bcost = cost(index, distances)
-    print bcost
+    print(bcost)
     bindex = index
     bestiter = None
-    for i in xrange(10):
+    for i in range(10):
         success = True
         index = shuffle(index)
         icost = cost(index, distances)
@@ -182,16 +188,16 @@ def c_determine_colorindex(fruiting_structures, mtg, scene):
             if cicost < icost:
                 index = nindex
                 icost = cicost
-                print icost
+                print(icost)
             else:
                 success = False
         if icost < bcost:
             bcost = icost
             bindex = index
-            print 'bestiter',i
+            print('bestiter',i)
             bestiter = i
 
-    print bcost
+    print(bcost)
     result = {}
     i = 0
     for inflos, gus in fruiting_structures:
@@ -199,7 +205,7 @@ def c_determine_colorindex(fruiting_structures, mtg, scene):
             result[inflo] = index[i]
             i+=1
         nindex.append(result[inflos[0]])
-    print bestiter
+    print(bestiter)
     #print result
     return result
 
@@ -208,7 +214,7 @@ def determine_colorindex(fruiting_structures, mtg, scene):
     from vplants.mangosim.tools import load_obj, dump_obj
     cache = 'cache_colorinflo.pkl'
     result = None
-    allinflos1 = set([vid for vid,lid in mtg.property('_axial_id').items() if mtg.label(vid) == 'Inflorescence' and mtg.property('nb_fruits')[vid] > 0])
+    allinflos1 = set([vid for vid,lid in list(mtg.property('_axial_id').items()) if mtg.label(vid) == 'Inflorescence' and mtg.property('nb_fruits')[vid] > 0])
     allinflos = set(sum([inflos for inflos, gus in fruiting_structures],[]))
     if os.path.exists(cache):
         result = load_obj(cache)
@@ -241,10 +247,10 @@ def color_structures(fruiting_structures, mtg, scene):
     structures = dict()
     idmap  = mtg.property('_axial_id')
 
-    print 'determine colors'
+    print('determine colors')
     colindex = determine_colorindex(fruiting_structures, mtg, scene)
-    print colindex
-    allinflos = [lid for vid,lid in idmap.items() if mtg.label(vid) == 'Inflorescence']
+    print(colindex)
+    allinflos = [lid for vid,lid in list(idmap.items()) if mtg.label(vid) == 'Inflorescence']
     for inflos, gus in fruiting_structures:
         i = colindex.pop(0)
         col = colors(i)
@@ -253,7 +259,7 @@ def color_structures(fruiting_structures, mtg, scene):
             structures[idmap[j]] = mat
         for j in gus:
             structures[idmap[j]] = mat
-        print col, inflos
+        print(col, inflos)
 
     definfmat = Material((50,50,50))
     for inf in allinflos:
@@ -261,7 +267,7 @@ def color_structures(fruiting_structures, mtg, scene):
             structures[inf] = definfmat
 
     defmat = Material((0,0,0))
-    print 'compute colored scene'
+    print('compute colored scene')
     nscene = Scene([Shape(sh.geometry,  structures.get(sh.id,defmat), sh.id, sh.parentId) for sh in scene ])
     return nscene
     Viewer.display(nsc)
@@ -286,35 +292,35 @@ if __name__ == '__main__':
     mtg = load_obj('structure-cycle'+str(cycle)+('b' if lowres else '')+'.pkl')
     #Viewer.display(sc)
 
-    import fruitingstructure as fsm
-    distances = [int(sys.argv[1])] if len(sys.argv) > 1 else range(1,10)
+    from . import fruitingstructure as fsm
+    distances = [int(sys.argv[1])] if len(sys.argv) > 1 else list(range(1,10))
     if len(sys.argv) > 2:
-        distances = range(distances[0], int(sys.argv[2]))
+        distances = list(range(distances[0], int(sys.argv[2])))
 
     params = mtg.property('p')
     for distance in distances:
         fs = fsm.determine_fruiting_structure(mtg, cycle=cycle, fruit_distance = distance)
-        print
-        print 'Nb of groups',len(fs)
+        print()
+        print('Nb of groups',len(fs))
         #lfr = leaf_fruit_ratio(mtg, fs)
         #print [l/float(f) for l,f in lfr]
         #print np.mean([l/float(f) for l,f in lfr])
         nbgus = [len(gus) for inflos,gus in fs]
         #print nbgus
-        print np.mean(nbgus), np.std(nbgus)
+        print(np.mean(nbgus), np.std(nbgus))
 
         radii = [max([params[gu].radius for gu in gus]) for inflos,gus in fs]
         #print radii
-        print np.mean(radii), np.std(radii)
+        print(np.mean(radii), np.std(radii))
 
 
     #fs = applymodel(mtg, 3, int(sys.argv[1]) if len(sys.argv) > 1 else 3) 
     colorrepresentation = False
     if colorrepresentation:
         sc = Scene('structure-cycle'+str(cycle)+('b' if lowres else '')+'.bgeom')
-        print 'Start coloring'
+        print('Start coloring')
         nsc = color_structures(fs, mtg, sc)
-        print 'End coloring'
+        print('End coloring')
         nsc.save('structure-cycle'+str(cycle)+'-dist'+str(distance)+'.bgeom')
         #Viewer.display(nsc)
         nsc.save('structure-cycle'+str(cycle)+'-dist'+str(distance)+'-core.pov')

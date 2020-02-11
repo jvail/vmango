@@ -1,11 +1,17 @@
+from __future__ import division
 
 
 
+from past.builtins import cmp
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 def retrieveCurves(globals):
   from openalea.plantgl.all import BezierCurve2D
   # Determine the set of curve representing axis at different time. 
   # Look for object in global namespace name axisX 
-  curves = [(n,v) for n,v in globals.items() if 'axis' in n and type(v) == BezierCurve2D ]
+  curves = [(n,v) for n,v in list(globals.items()) if 'axis' in n and type(v) == BezierCurve2D ]
   
   # sort curves according to their names
   for n,v in curves: v.name = n
@@ -17,8 +23,8 @@ def retrieveCurves(globals):
 def ProfileInterpolation(curves, knotlist = None, degree = 3, resolution = 10):
     from openalea.plantgl.all import Point4Matrix, NurbsPatch, NurbsCurve2D, BezierCurve2D
     nbcurves = len(curves)
-    if knotlist is None: knotlist = [i/float(nbcurves-1) for i in xrange(nbcurves)]
-    k = [knotlist[0] for i in xrange(degree-1)]+knotlist+[knotlist[-1] for i in xrange(degree-1)]
+    if knotlist is None: knotlist = [i/float(nbcurves-1) for i in range(nbcurves)]
+    k = [knotlist[0] for i in range(degree-1)]+knotlist+[knotlist[-1] for i in range(degree-1)]
     pts = [[(i.x,i.y,0,1) for i in c.ctrlPointList] for c in curves]
     ppts = Point4Matrix(pts)
     p = NurbsPatch(ctrlPointList=ppts,udegree=degree,vdegree=3)
@@ -31,7 +37,7 @@ def ProfileInterpolation(curves, knotlist = None, degree = 3, resolution = 10):
     return p
 
 
-class SymbolManager:
+class SymbolManager(object):
     def __init__(self, axiscurves, knotlist, maxstage, section, length, dlength, radius = 1, radiusvariation = None):
       self.axiscurves = axiscurves
       self.axisfunc = ProfileInterpolation(axiscurves, knotlist)
@@ -58,8 +64,8 @@ class SymbolManager:
             return self.leafsmbfinal
         try:
             return self.leafsmbdb[nstage]
-        except KeyError, e:
-            cleafsmb = self.sweepSymbol(self.axisfunc.getAt(min(nstage/self.maxstage, 1.)))
+        except KeyError as e:
+            cleafsmb = self.sweepSymbol(self.axisfunc.getAt(min(old_div(nstage,self.maxstage), 1.)))
             self.leafsmbdb[nstage] = cleafsmb
             cleafsmb.name = 'leaf_'+str(nstage).replace('.','_')
             return cleafsmb

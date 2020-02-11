@@ -1,3 +1,9 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import map
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import vplants.mangosim.doralice_mtg.mtg_manipulation as mm
 reload(mm) 
 from vplants.mangosim.doralice_mtg.mtg_manipulation import *
@@ -24,18 +30,18 @@ def eval_param(argv):
 def eval_paramcmd(paramcmd):
     params = dict()
     assert len(paramcmd) % 2 == 0
-    for i in xrange(len(paramcmd)/2):
+    for i in range(old_div(len(paramcmd),2)):
         params[paramcmd[2*i]] = eval(paramcmd[2*i+1])
     return params
 
 
-def generate_mtg(trees = range(3), params = dict()):
+def generate_mtg(trees = list(range(3)), params = dict()):
     from openalea.lpy import Lsystem
     from openalea.mtg import MTG
     from openalea.mtg.algo import union
     g = None
     for tree in trees:
-        print 'Generate tree', tree
+        print('Generate tree', tree)
         nparams = params.copy()
         nparams.update({'TREE':tree,'TIMESTEP': 180 if not params['FRUIT_MODEL'] else 90,'EXPORT_TO_MTG':True, 'PARALLELFRUITMODEL':False})
         nparams.setdefault('WITH_GLM',True)
@@ -50,9 +56,9 @@ def generate_mtg(trees = range(3), params = dict()):
     return g
 
 
-def generate_mtgs(trees = range(3), 
+def generate_mtgs(trees = list(range(3)), 
                   params = dict(), 
-                  seeds = range(10), 
+                  seeds = list(range(10)), 
                   optionname = None):
     cwd = os.getcwd()
     os.chdir(dirname(lsysfile))
@@ -63,7 +69,7 @@ def generate_mtgs(trees = range(3),
     for seed in seeds:
         fname = get_outfname(seed)
         if not os.path.exists(join(outputdir,fname)):  
-            print 'Generate trees with seed',seed,'and params',params
+            print('Generate trees with seed',seed,'and params',params)
             nparams = params.copy()
             nparams.update({'SEED':seed})
             try :
@@ -73,27 +79,27 @@ def generate_mtgs(trees = range(3),
                 traceback.print_exc()
                 continue      
             dump_obj(mtg,fname, outputdir)
-            print "Write "+repr(str(join(outputdir,fname)))
+            print("Write "+repr(str(join(outputdir,fname))))
         else:
-            print join(outputdir,fname),'already exists.'
+            print(join(outputdir,fname),'already exists.')
 
     os.chdir(cwd)
 
 
 def generate_all(nb = 10, fruitmodel = False):
     params = {'GLM_TYPE' : eInteractionGlm, 'FRUIT_MODEL' : fruitmodel}
-    generate_mtgs(seeds = range(nb), params = params)
+    generate_mtgs(seeds = list(range(nb)), params = params)
     #params = {'GLM_TYPE' : eSelectedGlm, 'FRUIT_MODEL' : fruitmodel}
     #generate_mtgs(seeds = range(nb), params = params)
     #params = {'GLM_TYPE' : eCompleteGlm, 'FRUIT_MODEL' : fruitmodel}
     #generate_mtgs(seeds = range(nb), params = params)
 
 def generate_all_restriction(nb = 1000):
-    generate_mtgs(seeds = range(nb))
+    generate_mtgs(seeds = list(range(nb)))
 
 def generate_all(maxseed = 100, fruitmodel = False, minseed = 0):
     import itertools
-    params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],[str(fruitmodel)]))
+    params = list(itertools.product(list(range(minseed, maxseed)),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],[str(fruitmodel)]))
     process_set_of_simulations(params, True)
 
 def _generate(params):
@@ -132,25 +138,25 @@ def process_set_of_simulations(paramvalueslist, parallel = True):
 
 def process_restricted_models(maxseed=1000, fruitmodel = False, minseed = 0):
     import itertools
-    params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['eBurstDateRestriction', 'ePositionARestriction', 'ePositionAncestorARestriction', 'eNatureFRestriction', 'eAllRestriction'],['FRUIT_MODEL'],[str(fruitmodel)]))
+    params = list(itertools.product(list(range(minseed, maxseed)),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['eBurstDateRestriction', 'ePositionARestriction', 'ePositionAncestorARestriction', 'eNatureFRestriction', 'eAllRestriction'],['FRUIT_MODEL'],[str(fruitmodel)]))
 
     process_set_of_simulations(params)
 
 def process_uniquefactor_models(maxseed=1000, fruitmodel = False, minseed = 0):
     import itertools
-    params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['eBurstDateOnlyRestriction', 'ePositionAOnlyRestriction', 'ePositionAncestorAOnlyRestriction', 'eNatureFOnlyRestriction'],['FRUIT_MODEL'],[str(fruitmodel)]))
+    params = list(itertools.product(list(range(minseed, maxseed)),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['eBurstDateOnlyRestriction', 'ePositionAOnlyRestriction', 'ePositionAncestorAOnlyRestriction', 'eNatureFOnlyRestriction'],['FRUIT_MODEL'],[str(fruitmodel)]))
 
     process_set_of_simulations(params)
 
 def process_bfsize_models(maxseed=1000, minseed = 0):
     import itertools
-    params = list(itertools.product(range(minseed, maxseed),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],['True'],['FRUITBRANCHSIZE'],[str(i) for i in xrange(1,8)]))
+    params = list(itertools.product(list(range(minseed, maxseed)),['GLM_TYPE'],['eInteractionGlm'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],['True'],['FRUITBRANCHSIZE'],[str(i) for i in range(1,8)]))
 
     process_set_of_simulations(params)
 
 def process_bfsize2_models(maxseed=1000, minseed = 0):
     import itertools
-    params = list(itertools.product(range(minseed, maxseed),['WITH_GLM'],['False'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],['True'],['FRUITBRANCHSIZE'],[str(i) for i in xrange(1,8)]))
+    params = list(itertools.product(list(range(minseed, maxseed)),['WITH_GLM'],['False'],['GLM_RESTRICTION'],['None'],['FRUIT_MODEL'],['True'],['FRUITBRANCHSIZE'],[str(i) for i in range(1,8)]))
 
     process_set_of_simulations(params)
 
@@ -232,11 +238,11 @@ if __name__ == '__main__' :
             process_bfsize2_models(maxseed, minseed=minseed)
             message.send_msg('Simu Fruiting Branch Size On Fixed Archi',str(maxseed-minseed)+' simulations done in '+str(time.time()-stime)+' sec.')
         elif '--help' == sys.argv[1] or '--h' == sys.argv[1]:
-            print '--std [nb] [fruitmodel]'
-            print '--restricted [nb] [fruitmodel]'
-            print '--uniquefactor [nb] [fruitmodel]'
-            print '--bfsize [nb] '
-            print '--bfsize2 [nb] '
+            print('--std [nb] [fruitmodel]')
+            print('--restricted [nb] [fruitmodel]')
+            print('--uniquefactor [nb] [fruitmodel]')
+            print('--bfsize [nb] ')
+            print('--bfsize2 [nb] ')
     else:
         #generate_all(1000, False)
         #generate_all(10, False)

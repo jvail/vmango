@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from builtins import range
+from builtins import object
 from openalea.lpy import *
 import vplants.mangosim.doralice_mtg.mtg_manipulation  as mm
 import vplants.mangosim.util_date as ud
@@ -5,7 +8,7 @@ from datetime import datetime, date
 from random import randint
 
 
-class ArchiBuilder:
+class ArchiBuilder(object):
     def __init__(self, gumanager, inflomanager, verbose = True):
         self.gumanager = gumanager
         self.inflomanager = inflomanager
@@ -93,7 +96,7 @@ class MTGArchiBuilder (ArchiBuilder):
                 nsproduce( [ A( self.gu_parameters_from_mtg(ch) ) ] )
             nsproduce( [ EB() ] )
         if len(inflo) > 0 :
-            for i in xrange(0 if has_apical_gu else 1,nb_inflorescences):
+            for i in range(0 if has_apical_gu else 1,nb_inflorescences):
                 p = self.inflo_parameters_from_mtg(inflo[i], guparam)
                 self.inflomanager.set_dimensions(p, current_date)
                 nsproduce( [ SB(), RollL(phyllotaxy*nb_proc_lat), Down(branching_angle), InflorescenceBud(p), EB() ] )
@@ -161,8 +164,8 @@ class MTGArchiBuilder (ArchiBuilder):
                   fruits_maturity_date = fruit_maturity_date)
         return p
 
-import probability_tables as pt ; reload(pt)
-from probability_tables import *
+from . import probability_tables as pt ; reload(pt)
+from .probability_tables import *
 
 
 class GLMArchiBuilder(MTGArchiBuilder):
@@ -224,12 +227,12 @@ class GLMArchiBuilder(MTGArchiBuilder):
                 if nb_lat_children > 0:
                     latparam = baseparameter.copy()
                     latparam.set(position = eLateral)
-                    for i in xrange(nb_lat_children):
+                    for i in range(nb_lat_children):
                         p = latparam.copy()
                         nsproduce( [ RollL(phyllotaxy), SB(), Down(branching_angle), A(p), EB() ] )
                   
             if nb_lat_inflo > 0:
-                for i in xrange(nb_lat_inflo):
+                for i in range(nb_lat_inflo):
                     inflo_nb_fruits = (1 if i < nb_fruiting_lat_inflo else 0)
                     p = ParameterSet(gu_burst_date = param.burst_date,
                                      bloom_date=date_inflo_bloom, 

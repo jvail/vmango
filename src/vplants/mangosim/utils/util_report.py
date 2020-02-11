@@ -1,4 +1,6 @@
 
+from builtins import str
+from builtins import object
 LARGE_REPORT_HEADER =  """\documentclass[10pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -34,7 +36,7 @@ TITLE_PAGE = """
 import os
 pdffilename = lambda texfilename: os.path.splitext(texfilename)[0]+'.pdf'
 
-class TexReportGenerator:
+class TexReportGenerator(object):
     def __init__(self, fname, title, subtitle = ''):
         self.fname = fname
         self.compiled = False

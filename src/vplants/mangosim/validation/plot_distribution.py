@@ -1,3 +1,8 @@
+from __future__ import division
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
 from vplants.mangosim.state import *
 from vplants.mangosim.utils.util_plot import *
 from vplants.mangosim.util_path import common_options
@@ -6,7 +11,7 @@ from vplants.mangosim.tools import isiterable
 restrictions = [None, eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction, eAllRestriction, eBurstDateOnlyRestriction, ePositionAOnlyRestriction, ePositionAncestorAOnlyRestriction, eNatureFOnlyRestriction]
 restrictionLabels = ['With All Factors', 'Without Mother Burst Date', 'Without Mother Position','Without Ancestor Position', 'Without Ancestor Fate', 'With No Factor', 'With only Mother Burst Date', 'Without only Mother Position','With only Ancestor Position', 'With only Ancestor Fate']
 
-restrictionLabels = dict(zip(restrictions,restrictionLabels))
+restrictionLabels = dict(list(zip(restrictions,restrictionLabels)))
 
 
 optionvalueLabeling = {'GLM_RESTRICTION' : restrictionLabels}
@@ -80,7 +85,7 @@ def plot_histo(keys, allvalues, _title = None, reference = None, legendtag = Non
     legend = str(len(allvalues))+' Simulations'
     legend = build_legends([legend], [legendtag])[0]
 
-    meanvalues = [np.mean([v[i] for v in allvalues]) for i in xrange(nbx)]
+    meanvalues = [np.mean([v[i] for v in allvalues]) for i in range(nbx)]
     if histocurve:
         x,y = smoothcurve(ind, meanvalues)
         plt.plot(x, y, linestyle, color='k', label = legend, linewidth= 2)
@@ -169,7 +174,7 @@ def plot_histos(keys, allvaluesset, _title = None, reference = None, legends = N
 
 def normalize_histo(histo):
     sh1 = float(sum(histo))
-    return [v1/sh1 for v1 in histo]
+    return [old_div(v1,sh1) for v1 in histo]
 
 
 def plot_histos_means(keys, allvalues, _title = None,  reference = None, legends = None, legendtags = None, linewidth = 1, linestyle = '-o', titlelocation = 1, xlabelrotation = 0, normalize = True, figsize=(10,8)):

@@ -1,3 +1,9 @@
+from __future__ import print_function
+from past.builtins import cmp
+from builtins import zip
+from builtins import map
+from builtins import str
+from builtins import range
 import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.collections import PolyCollection
@@ -22,15 +28,15 @@ if len(sys.argv) > 1:
     for argv in sys.argv[1:]:
         if not argv.startswith('-'):
             proba_factors = argv
-            print proba_factors
+            print(proba_factors)
             break 
 
 data_dir = join(proba_dir,proba_factors,'interaction_glm')
 if not os.path.exists(data_dir):
     l = os.listdir(proba_dir)
     l = [d for d in l if isdir(join(proba_dir,d))]
-    print 'Invalid value :', repr(proba_factors)
-    print 'Valid values :',', '.join(map(repr,l))
+    print('Invalid value :', repr(proba_factors))
+    print('Valid values :',', '.join(map(repr,l)))
     raise ValueError(data_dir)
 
 tmprep = 'report_'+proba_factors
@@ -77,7 +83,7 @@ def has_date_factor(factors):
     return nb_date_factor(factors) > 0
 
 def get_date_factors(factors):
-    return filter(lambda f : f in date_factors, factors)
+    return [f for f in factors if f in date_factors]
 
 
 def convertmonth(mvalue):
@@ -93,7 +99,7 @@ import vplants.mangosim.utils.util_report as ur ; reload(ur)
 def sort_burst_date(data, date_factor):
     if date_factor == 'Flowering_Week': return data
     if data[date_factor].dtype.name != 'category':
-        gmonthids = range(6,13)+range(6)
+        gmonthids = list(range(6,13))+list(range(6))
         monthids = np.unique(data[date_factor])
         if  monthids.dtype == object:
             def mcmp(a, b) : return cmp(gmonthids.index(int(a.split('-')[0])), gmonthids.index(int(b.split('-')[0])))
@@ -159,7 +165,7 @@ def simplify_factor_name(name):
 gsummary = None
 
 def build_factor_summary(names, simplified = True):
-    print knowfactors
+    print(knowfactors)
     global gsummary
     summary = []
     for name in names:
@@ -168,9 +174,9 @@ def build_factor_summary(names, simplified = True):
             dataprob = pd.read_csv(fname)
             summary.append([name]+['X' if factor in dataprob.columns else '' for factor in knowfactors])
 
-    summary = pd.DataFrame(summary, columns=['Variables']+(knowfactors if not simplified else map(simplify_factor_name,knowfactors)))
+    summary = pd.DataFrame(summary, columns=['Variables']+(knowfactors if not simplified else list(map(simplify_factor_name,knowfactors))))
     gsummary = summary
-    for v in  (knowfactors if not simplified else map(simplify_factor_name,knowfactors)):
+    for v in  (knowfactors if not simplified else list(map(simplify_factor_name,knowfactors))):
         if sum(summary[v] == 'X') == 0:
             del summary[v]
     return summary
@@ -194,7 +200,7 @@ def barplot_from_date_matrix(data, name = name, valuename = 'Probability'):
     ax = fig.gca(projection='3d')
     for i, v in enumerate(data.iloc[:,0]):
         rowdata = data.iloc[nbdata-i-1,nbfactors:]
-        ax.bar(range(len(rowdata)), rowdata, zs=i, zdir='y', color = colors[ i % len(colors)])
+        ax.bar(list(range(len(rowdata))), rowdata, zs=i, zdir='y', color = colors[ i % len(colors)])
 
     def mxlabel(idx, labels):
         if idx % 1 == 0:    return labels.get(int(idx),'')
@@ -212,12 +218,12 @@ def barplot_from_date_matrix(data, name = name, valuename = 'Probability'):
         xlabels = dict([(i,v) for i,v in enumerate(data.columns.values[nbfactors:])])
     else:
         xlabels = dict([(i,v) for i,v in enumerate(data.columns.values[nbfactors:])])
-    ax.set_xticklabels( map(lambda x : mxlabel(x,xlabels), ax.get_xticks()) , ha ='center', rotation = 20 )
+    ax.set_xticklabels( [mxlabel(x,xlabels) for x in ax.get_xticks()] , ha ='center', rotation = 20 )
 
 
     ylabels = dict([(i,convertmonth(v)) for i,v in enumerate(data.values[:,factors.index(date_factor)])])
     ax.set_ylabel(date_factor, labelpad = 10)
-    ax.set_yticklabels(map(lambda y : mylabel(y,ylabels), ax.get_yticks()) , ha ='center' )
+    ax.set_yticklabels([mylabel(y,ylabels) for y in ax.get_yticks()] , ha ='center' )
 
     ax.set_zlabel(valuename)
 
@@ -289,7 +295,7 @@ def curves_of_date(data, name = name, type = 'probability', check = False):
 
     def repet(dataline):
         assert len(dataline) == len(nbrepetitions)
-        return sum([[v for i in xrange(nb)] for v,nb in zip(dataline, nbrepetitions)],[])
+        return sum([[v for i in range(nb)] for v,nb in zip(dataline, nbrepetitions)],[])
 
 
 
@@ -307,19 +313,19 @@ def curves_of_date(data, name = name, type = 'probability', check = False):
 
         if plotset:
             assert len(mdata) == 1
-            ax.plot(range(nbdates),repet(mdata.values[0,nbfactors:]), label=','.join(label),linewidth=2)
+            ax.plot(list(range(nbdates)),repet(mdata.values[0,nbfactors:]), label=','.join(label),linewidth=2)
         else:
-            ax.plot(range(nbdates),repet(mdata[type]), label=','.join(label),linewidth=2)
+            ax.plot(list(range(nbdates)),repet(mdata[type]), label=','.join(label),linewidth=2)
 
     #if plotset:
     #    plt.xticks(range(nbdates), dates) #, [monthnamemap[int(v)] for v in data.columns[nbfactors:]] )
     #else:
-    print name
+    print(name)
     if date_factor != 'Flowering_Week' and not 'flowering_week' in name:
         xdates = [convertmonth(v) for v in dates]
     else:
         xdates = dates
-    plt.xticks(range(nbdates), xdates )
+    plt.xticks(list(range(nbdates)), xdates )
     if not plotset:
         ax.set_xlabel(date_factor)
     elif name in variable_translate:
@@ -410,12 +416,12 @@ class MyReportGenerator(ur.TexReportGenerator):
 
         while True:
             try:
-                improb1, improb2, improb3, caption1 =  iterimgprob.next()
-            except StopIteration, e:
+                improb1, improb2, improb3, caption1 =  next(iterimgprob)
+            except StopIteration as e:
                 break
-            imnb1, imnb2, imnb3, caption2 =  iterimgnb.next()
-            label1, mdataprob =  iterprob.next()     
-            label2, mdatanb =  iternb.next()
+            imnb1, imnb2, imnb3, caption2 =  next(iterimgnb)
+            label1, mdataprob =  next(iterprob)     
+            label2, mdatanb =  next(iternb)
             if caption1:
                 self.add_subsection(caption1)
             else :
@@ -450,7 +456,7 @@ class MyReportGenerator(ur.TexReportGenerator):
         for data in datas:
             if len(data) > 40:
                 factors = get_factors(data)
-                print factors
+                print(factors)
                 values = data[factors[0]].unique()
                 for value in values:
                     data1 = data.loc[data[factors[0]] == value]
@@ -604,7 +610,7 @@ class MyReportGenerator(ur.TexReportGenerator):
             else:
                 self.make_dev_proba_section(name, dataprob, regenerateall)
         else:
-            print "File '"+fname+"' does not exist."
+            print("File '"+fname+"' does not exist.")
             self.make_section(name)
             self.write('No data\n\n')
 
@@ -632,13 +638,13 @@ class MyReportGenerator(ur.TexReportGenerator):
                 self.write('\n\\end{verbatim}\n')
                 self.write('}\n')
             else:
-                print 'Cannot find',repr(fname)
+                print('Cannot find',repr(fname))
 
     def make_sections(self,names, regenerateall= False):
         self.make_factor_summary_section(names)
 
         for name in names:
-            print 'process', name
+            print('process', name)
             self.make_dev_section(name, regenerateall = regenerateall)
 
     def make_sections_parallel(self,names, regenerateall= False):

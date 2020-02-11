@@ -1,3 +1,4 @@
+from builtins import range
 from multiprocessing import Process, Pipe
 import itertools
 
@@ -9,7 +10,7 @@ def spawn(f):
 
 def lparmap(f,X):
     pipe=[Pipe() for x in X]
-    proc=[Process(target=spawn(f),args=(c,x)) for x,(p,c) in itertools.izip(X,pipe)]
+    proc=[Process(target=spawn(f),args=(c,x)) for x,(p,c) in zip(X,pipe)]
     [p.start() for p in proc]
     [p.join() for p in proc]
     return [p.recv() for (p,c) in pipe]
@@ -19,11 +20,11 @@ def nparmap(f,X,n = None):
     if n is None:
         import multiprocessing as mp
         n = mp.cpu_count()-1
-    ids = range(n)
-    pipes = [Pipe() for x in xrange(n)]
-    procs = [Process(target=spawn(f),args=(c,x)) for x,(p,c) in itertools.izip(X,pipes)]
+    ids = list(range(n))
+    pipes = [Pipe() for x in range(n)]
+    procs = [Process(target=spawn(f),args=(c,x)) for x,(p,c) in zip(X,pipes)]
     for p in procs : p.start()
-    results = [None for i in xrange(len(X))]
+    results = [None for i in range(len(X))]
 
     nbdata = len(X)
     timeout = 0.1

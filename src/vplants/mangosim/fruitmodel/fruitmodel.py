@@ -1,3 +1,11 @@
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import str
+from builtins import zip
+from builtins import map
+from builtins import range
+from past.utils import old_div
 from os.path import join, abspath, dirname
 import os
 from datetime import *
@@ -28,7 +36,7 @@ write.csv(res, file=paste(localdir,"/tmp/resultats-",idsimu,".csv",sep=''))
 
 #sink()
 #close(out)
-'''.format(RScriptRepo, idsimu, RWorkRepo,idsimu,RScriptRepo,' , '.join([var+" = "+ repr(value).replace("'",'"') for var, value in params.items()]))
+'''.format(RScriptRepo, idsimu, RWorkRepo,idsimu,RScriptRepo,' , '.join([var+" = "+ repr(value).replace("'",'"') for var, value in list(params.items())]))
     #print script
     if not os.path.exists(RWorkRepo):
         os.makedirs(RWorkRepo)
@@ -114,8 +122,8 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None, para
     from random import randint
     verbose = False
 
-    if verbose : print " * Compute fruiting structures"
-    import fruitingstructure as fs; reload(fs)
+    if verbose : print(" * Compute fruiting structures")
+    from . import fruitingstructure as fs; reload(fs)
 
     fruiting_structures = fs.determine_fruiting_structure(mtg, cycle, fruit_distance = fruit_distance)
 
@@ -125,7 +133,7 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None, para
     #from collections import Counter
     #c = Counter([inflo for inflos, gus in fruiting_structures for inflo in inflos])
 
-    if verbose : print " * Compute property of the structures"
+    if verbose : print(" * Compute property of the structures")
     
     params = mtg.property('p')
 
@@ -186,12 +194,12 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None, para
 
             # print 'Simu', idsimu, 'succeed', inflos, nb_fruits 
             dates = result["Date"]
-            dates = map(lambda d:d.to_pydatetime(),dates)
+            dates = [d.to_pydatetime() for d in dates]
             newyear = bloom_date_date.year
             dates = [date(d.year+cycledecal, d.month, d.day) for d in dates]
-            fruitproperties = zip(result["Masse_Fruit"], result["sucres_solubles"],  result["acides_organiques"])
+            fruitproperties = list(zip(result["Masse_Fruit"], result["sucres_solubles"],  result["acides_organiques"]))
 
-            fruit_growth = dict(zip(dates,fruitproperties))
+            fruit_growth = dict(list(zip(dates,fruitproperties)))
             fruits_growth_stage_date, fruits_maturity_date = min(dates), max(dates)
             fruits_initial_weight, fruits_weight = min(result["Masse_Fruit"]), max(result["Masse_Fruit"])
             # print fruits_initial_weight, fruits_weight, fruits_growth_stage_date, fruits_maturity_date
@@ -219,13 +227,13 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None, para
         masstotfruits = sum([massfruit*nbfruits for nbinflos, nbleaf, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_results])
         
         fstream.write('Filename\tNbInflos\tNbLeaf\tNbFruits\tMeanMassFruit\tTotalMassFruit')
-        fstream.write(''.join(['\tIdsInflos_'+str(i) for i in xrange(maxbranch)]) )
-        fstream.write(''.join(['\tNbFruitsPerInflos_'+str(i) for i in xrange(maxbranch)]))
+        fstream.write(''.join(['\tIdsInflos_'+str(i) for i in range(maxbranch)]) )
+        fstream.write(''.join(['\tNbFruitsPerInflos_'+str(i) for i in range(maxbranch)]))
         fstream.write('\n')
         for nbinflos, nbleaf, nbfruits, massfruit, inflos, nbfruitsperinflo in fruit_structures:
             fstream.write('meanfruit-'+'-'.join(map(str,inflos))+'\t'+str(nbinflos)+'\t'+str(nbleaf)+'\t'+str(nbfruits)+'\t'+str(massfruit)+'\t'+str(massfruit*nbfruits)+'\t'+'\t'.join(map(str,inflos))+'\t'*(1+maxbranch-len(inflos))+'\t'.join(map(str,nbfruitsperinflo))+'\t'*(maxbranch-len(inflos))+'\n' )
         
-        fstream.write('TOTAL\t'+str(nbtotinflos)+'\t'+str(nbtotleaf)+'\t'+str(nbtotfruits)+'\t'+str(masstotfruits/nbtotfruits)+'\t'+str(masstotfruits)+'\n')
+        fstream.write('TOTAL\t'+str(nbtotinflos)+'\t'+str(nbtotleaf)+'\t'+str(nbtotfruits)+'\t'+str(old_div(masstotfruits,nbtotfruits))+'\t'+str(masstotfruits)+'\n')
         fstream.close()
     
     if dump:

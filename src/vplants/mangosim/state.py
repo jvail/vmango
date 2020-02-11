@@ -1,28 +1,29 @@
 
 
 # Type of units of the mango
-eGU, eInflorescence, eMixedInflorescence, eFruit, eLeaf, eInternode = range(6)
+from builtins import range
+eGU, eInflorescence, eMixedInflorescence, eFruit, eLeaf, eInternode = list(range(6))
 # Type of positions of units
 eLateral, eApical = 0,1
 # Type of GU
-eVegetative, eFlowering, eFruiting = range(3)
+eVegetative, eFlowering, eFruiting = list(range(3))
 # Load state of a tree
 eLoaded, eNotLoaded = 1, 0
 
-eBinomial, ePoisson, eMultinomial, eGaussian = range(1,5)
+eBinomial, ePoisson, eMultinomial, eGaussian = list(range(1,5))
 
 eCompleteGlm, eSelectedGlm, eInteractionGlm = 1,2,3
 GlmTypeName = {eCompleteGlm : 'complete_glm', eSelectedGlm : 'selected_glm', eInteractionGlm :'interaction_glm'} 
 
 
-eWithinCycle, eLaterCycle = range(2)
+eWithinCycle, eLaterCycle = list(range(2))
 
 #eTreeBased, eManagementTypeBased, eVarietyBased = range(3)
 #EstimationBaseName = {eTreeBased : 'TreeBasedEstimation', eManagementTypeBased : 'ManagementTypeBasedEstimation', eVarietyBased : 'VarietyBasedEstimation' }
 
 eMeasuredMtg, eSimulatedMtg = 1,2
 
-eMonthMultinomialForWithin, eDeltaMultinomialForWithin, eDeltaPoissonForWithin = range(3)
+eMonthMultinomialForWithin, eDeltaMultinomialForWithin, eDeltaPoissonForWithin = list(range(3))
 WithinDelayMethodName = {eMonthMultinomialForWithin : 'MonthMultinomial', eDeltaMultinomialForWithin : 'DeltaMultinomial', eDeltaPoissonForWithin : 'DeltaPoisson'}
 
 eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction = 1,2,4,8

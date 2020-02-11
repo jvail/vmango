@@ -47,7 +47,7 @@ def dev_variables_from_children(mtg, gu, children):
         Nb_Lateral_Children = len(lateral_children)
 
         dates_daugther = dict(collections.Counter([get_burst_date(mtg,child) for child in children if has_burst_date(mtg,child)]))
-        mostFrequentDate = dates_daugther.items()[0][0]
+        mostFrequentDate = list(dates_daugther.items())[0][0]
         cycle_diff = get_vegetative_cycle(mostFrequentDate)-get_unit_cycle(mtg,gu)
 
         if not  cycle_diff in [0,1,2]:

@@ -15,27 +15,27 @@ def normalize_property(g):
     """
     def convert_prop_to(mtg, name, mtype = int):
         oldproperty = mtg.property(name)
-        if type(oldproperty.values()[0]) != mtype:
-            newproperty = dict([(vid, mtype(v)) for vid,v in oldproperty.items() if len(v) > 0 and v != 'NA'])
+        if type(list(oldproperty.values())[0]) != mtype:
+            newproperty = dict([(vid, mtype(v)) for vid,v in list(oldproperty.items()) if len(v) > 0 and v != 'NA'])
             mtg.properties()[name] = newproperty
 
     def convert_prop_to_date(mtg, name, refdate = date(1900,1,1)):
         oldproperty = mtg.property(name)
-        if type(oldproperty.values()[0]) != date:
-            newproperty = dict([(vid, refdate + timedelta(days=int(v))) for vid,v in oldproperty.items() if type(v) is str and len(v) > 0 and v != 'NA'])
-            newproperty.update(dict([(vid, refdate + timedelta(days=int(v))) for vid,v in oldproperty.items() if type(v) is date]))
+        if type(list(oldproperty.values())[0]) != date:
+            newproperty = dict([(vid, refdate + timedelta(days=int(v))) for vid,v in list(oldproperty.items()) if type(v) is str and len(v) > 0 and v != 'NA'])
+            newproperty.update(dict([(vid, refdate + timedelta(days=int(v))) for vid,v in list(oldproperty.items()) if type(v) is date]))
             mtg.properties()[name] = newproperty
 
     def convert_prop_to_monthdate(mtg, name, refyear = 2000):
         oldproperty = mtg.property(name)
-        if type(oldproperty.values()[0]) != date:
-            newproperty = dict([(vid, date_from_string(v)) for vid,v in oldproperty.items() if len(v) > 0])
+        if type(list(oldproperty.values())[0]) != date:
+            newproperty = dict([(vid, date_from_string(v)) for vid,v in list(oldproperty.items()) if len(v) > 0])
             mtg.properties()[name] = newproperty
 
     def convert_prop_to_datelist(mtg, name):
         oldproperty = mtg.property(name)
         newproperty = {}
-        for vid, mdates in oldproperty.items():
+        for vid, mdates in list(oldproperty.items()):
             if len(mdates) > 0:
                 dates = []
                 mdates = mdates.split("+")

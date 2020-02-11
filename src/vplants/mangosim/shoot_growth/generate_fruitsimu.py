@@ -1,3 +1,6 @@
+from __future__ import print_function
+from builtins import str
+from builtins import range
 from os.path import join, basename, dirname
 import glob
 
@@ -11,18 +14,18 @@ def generate(seed = 0, tree = 0, fdist = 4, regenerate = False):
     import os
     rep = glob.glob(pattern.format(tree, seed, '*' , fdist))
     if len(rep) == 2 and not regenerate: 
-        print 'Do not regenerate', seed, tree, fdist
+        print('Do not regenerate', seed, tree, fdist)
         return True
     l = Lsystem(lsysfile,{'RESOLUTION' : 1, 'daystep' : 30, 'TIMEBAR' : False, 'LEAFY' : True, 'WITH_INFLO' : True, 'EXPORT_TO_MTG' : False, 'TREE' : tree, 'SEED' : seed, 'FRUITBRANCHSIZE' : fdist})
     if l.tree_load:
-        print 'Generate', seed, tree, fdist
+        print('Generate', seed, tree, fdist)
         try:
             lstring = l.derive()
             return True
         except:
             return False
     else :
-        print 'Not loaded tree', tree
+        print('Not loaded tree', tree)
         return False
 
 
@@ -78,7 +81,7 @@ def process_result(result,i):
     fname = join(inputdir, 'result-fdist-'+str(i)+'.csv')
     stream = file(fname,'w')
     stream.write('Tree\tCycle\tNbInflos\tNbFruits\tNbLeaves\tTotalMassFruit\n')
-    for tree, res in result.items():
+    for tree, res in list(result.items()):
         res3, res4 = res
         stream.write(tree+'\t3\t'+meansd(res3,0)+'\t'+meansd(res3,1)+'\t'+meansd(res3,2)+'\t'+meansd(res3,3)+'\n')
         stream.write(tree+'\t4\t'+meansd(res4,0)+'\t'+meansd(res4,1)+'\t'+meansd(res4,2)+'\t'+meansd(res3,3)+'\n')
@@ -86,5 +89,5 @@ def process_result(result,i):
 
 
 if __name__ == '__main__':
-    for i in xrange(1,6):
+    for i in range(1,6):
         process_result(generate_range(100,i),i)

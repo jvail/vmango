@@ -1,3 +1,11 @@
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
+from builtins import zip
+from builtins import str
+from builtins import range
+from past.utils import old_div
+from builtins import object
 from vplants.mangosim.temperature import *
 from random import *
 from vplants.mangosim.state import *
@@ -16,7 +24,7 @@ def get_realisation(mean, sd, minval, maxval, rfunc = gauss):
         val = rfunc(mean, sd)
     return val
 
-class OrganManager:
+class OrganManager(object):
     def __init__(self, **kwargs):
         self.phyllotaxy = 144  # +randint(-2,2)          # mango phyllotaxie
         pass
@@ -42,7 +50,7 @@ class GUManager (OrganManager):
 
       self.base_color  = 14
 
-      self.pheno_color = range(self.base_color, self.base_color+5)# [7,10,11,14,13]                         # color for each stage (GU)
+      self.pheno_color = list(range(self.base_color, self.base_color+5))# [7,10,11,14,13]                         # color for each stage (GU)
       self.pheno_angle_values = [0,90,165,60,60]                        # angle between leaf and internode for each stage
       self.nb_stades_pheno = len(self.pheno_stade_temp)              # number of phenological stages
       
@@ -111,7 +119,7 @@ class GUManager (OrganManager):
               self.PetioleRes    = 3 
 
           leafsection.stride = self.LeafWidthRes
-          from leafgeometry import SymbolManager
+          from .leafgeometry import SymbolManager
 
           self.leafwidth = leafwidth
           self.leafwidthgrowth = leafwidthgrowth
@@ -119,7 +127,7 @@ class GUManager (OrganManager):
           self.leafSymbol = SymbolManager(leafaxis,[0,0.1,0.5,0.6,0.7,0.8], 3, leafsection, 1., 1./self.LeafLengthRes, self.leaf_width_length_ratio, leafwidth)
 
     def retrieve_parameters(self, namespace):
-        from leafgeometry import retrieveCurves
+        from .leafgeometry import retrieveCurves
         curves = retrieveCurves(namespace)
         self.set_parameters(curves, namespace['leafsection'], namespace['leafwidth'], namespace['leafwidthgrowth'], namespace['petioleCurve'], namespace['RESOLUTION'])
 
@@ -129,15 +137,15 @@ class GUManager (OrganManager):
     def internode_length_distribution(self, nb_internodes, gu_length):
       """ Internode length distribution """
       
-      lengths = [exp(-2.64 * i / float(nb_internodes-1)) for i in xrange(nb_internodes)]
-      scaling = gu_length / sum(lengths)
+      lengths = [exp(-2.64 * i / float(nb_internodes-1)) for i in range(nb_internodes)]
+      scaling = old_div(gu_length, sum(lengths))
       return [l*scaling for l in lengths]
     
     def internode_length(self, i, nb_internodes, gu_length):
         sl = -2.64
         e = exp()
         du = 1./nb_internodes
-        k = (1-pow(e,du))/(1-e)
+        k = old_div((1-pow(e,du)),(1-e))
         return gu_length * exp(-sl*i*du)
 
     def length_before_first_leaf(self, position, final_length_gu):
@@ -169,7 +177,7 @@ class GUManager (OrganManager):
       nb_internodes = max(int(round(intercept + ratio*final_length_gu)),1)
       
       mean, sd = self.leaf_length_distrib[position]
-      final_length_leaves = [get_realisation(mean, sd, 5, 34) * self.leaflength(i/float(nb_internodes-1)) for i in xrange(nb_internodes)]
+      final_length_leaves = [get_realisation(mean, sd, 5, 34) * self.leaflength(i/float(nb_internodes-1)) for i in range(nb_internodes)]
       
       LEPF = self.length_before_first_leaf(position, final_length_gu)
       final_length_internodes = [LEPF] + self.internode_length_distribution(nb_internodes-1, final_length_gu)
@@ -224,12 +232,12 @@ class GUManager (OrganManager):
         # maxGR = 0.0111513*FinalSize                     
         # B = FinalSize/(4*maxGR) 
         B = 22.41891079963771 # 1. / 0.0446052
-        return FinalSize/(1+exp(-(T-t_ip)/B))        # sigmoid equation
+        return old_div(FinalSize,(1+exp(old_div(-(T-t_ip),B))))        # sigmoid equation
         
     def leaf_growth_function(self, T,  FinalSize):
         maxGR = -0.0188725+0.0147985*FinalSize
-        B = FinalSize/(4*maxGR)
-        return FinalSize/(1+exp(-(T-self.t_ip_leaf)/B))
+        B = old_div(FinalSize,(4*maxGR))
+        return old_div(FinalSize,(1+exp(old_div(-(T-self.t_ip_leaf),B))))
         
     def gu_growth(self, params, daystep, current_temperatures):
         if not params.basestructure:
@@ -298,7 +306,7 @@ class GUManager (OrganManager):
 
         def Petiole(length,radius):
             if self.resolution > 0:
-                nsproduce([ SetWidth(radius), SetGuide(self.petioleCurve,length), nF(length, length/self.PetioleRes,radius) ])
+                nsproduce([ SetWidth(radius), SetGuide(self.petioleCurve,length), nF(length, old_div(length,self.PetioleRes),radius) ])
             else:
                 nsproduce([ SetWidth(radius),SetGuide(self.petioleCurve,length), F(length) ])
 
@@ -310,9 +318,9 @@ class GUManager (OrganManager):
             finalleaf = False
             pheno_stage       = p.gu_pheno_tts.stage
             pheno_rank        = p.gu_pheno_tts.rank_in_stage()
-            gu_growth_ratio   = p.length_gu / p.final_length_gu
+            gu_growth_ratio   = old_div(p.length_gu, p.final_length_gu)
             leaf_ttsum        = p.leaf_growth_tts.ttsum
-            leaf_growth_ratio = self.leaf_growth_function(leaf_ttsum, p.final_length_leaves[0])/p.final_length_leaves[0]
+            leaf_growth_ratio = old_div(self.leaf_growth_function(leaf_ttsum, p.final_length_leaves[0]),p.final_length_leaves[0])
             nsproduce([EndGC(), SetColor(self.stem_color), StartGC()])
           else: 
             gu_growth_ratio   = 1
@@ -361,7 +369,7 @@ class InfloManager (OrganManager):
         self.pheno_color_inflo  =  [0,0,1,1,2,3]  # color for each stage (inflorescence)
         self.pheno_color_inflo  = [c+self.base_color_inflo for c in self.pheno_color_inflo ]
         self.base_color_flower  = 25
-        self.pheno_color_flower =  range(self.base_color_flower,self.base_color_flower+6) # [45,46,47,48,49,50] 
+        self.pheno_color_flower =  list(range(self.base_color_flower,self.base_color_flower+6)) # [45,46,47,48,49,50] 
         self.fruitcolor         = 32
 
         self.pheno_stadename = [ 'ABCD', 'E', 'F', 'G', 'S' ]
@@ -442,14 +450,14 @@ class InfloManager (OrganManager):
 
     def second_order_length(self, param, mainlength, upos):
         final_second_order = param.final_length * 0.687 - 3.97
-        ratio = final_second_order / param.final_length
+        ratio = old_div(final_second_order, param.final_length)
         return (mainlength * ratio)*(1-upos)
 
     # Function who return an organ (Leaf, Internode or GU) length 
     def growth_function(self, T,  FinalSize):
         """ Sigmoid function used to compute growth of organs """
         B = 50.853318687577556 # 1. / 0.0196644
-        return FinalSize/(1+exp(-(T-self.t_ip_inflo)/B))
+        return old_div(FinalSize,(1+exp(old_div(-(T-self.t_ip_inflo),B))))
 
     def pre_step_growth(self, p, daystep, current_temperatures):
         if daystep > 1:
@@ -469,8 +477,8 @@ class InfloManager (OrganManager):
         if p.fruiting == False :
             if p.nb_fruits > 0 and current_date >= p.fullbloom_date:
                 p.fruiting = True
-                for i in xrange(p.nb_fruits):
-                    nsproduce([SB(),RollToVert(),Left((-1**i)*(120/p.nb_fruits)*i),Fruit(self.fruitmanager.set_dimensions(p, current_date)),EB()])
+                for i in range(p.nb_fruits):
+                    nsproduce([SB(),RollToVert(),Left((-1**i)*(old_div(120,p.nb_fruits))*i),Fruit(self.fruitmanager.set_dimensions(p, current_date)),EB()])
 
     def init_growth(self, p, current_date):
         for day in date_xrange(p.burst_date, current_date+timedelta(days=1)):
@@ -483,7 +491,7 @@ class InfloManager (OrganManager):
         pass
 
     def radius(self, n_pheno):
-        return 0.05+0.30*(n_pheno/5)
+        return 0.05+0.30*(old_div(n_pheno,5))
 
     def plot(self, p, current_date):
         import random
@@ -492,13 +500,13 @@ class InfloManager (OrganManager):
         def Inflorescence(param):  
            def myratio(x):
               from math import exp
-              return (log(x+1))/(log(2))
+              return old_div((log(x+1)),(log(2)))
               
            length = param.length
            if length <= 1e-3: return
            
            NbAxe2 = param.nb_axes
-           internode_length = length/NbAxe2
+           internode_length = old_div(length,NbAxe2)
            growth_ttsum = param.growth_tts.ttsum
            
            pheno_color_inflo = self.pheno_color_inflo
@@ -543,11 +551,11 @@ class InfloManager (OrganManager):
                   if self.resolution <= 1 : nsproduce ([ SectionResolution(5) ])
                   
                   if not hasattr(param,'phyloangles'):
-                     param.phyloangles = [ ((60 + randint(0,30)) if (i < NbAxe2*0.136 or i > NbAxe2*0.555) else 220) for i in xrange(NbAxe2) ]
+                     param.phyloangles = [ ((60 + randint(0,30)) if (i < NbAxe2*0.136 or i > NbAxe2*0.555) else 220) for i in range(NbAxe2) ]
                      param.totalphyloangles = sum(param.phyloangles)
-                     param.activeaxes = [True for i in xrange(NbAxe2)]
+                     param.activeaxes = [True for i in range(NbAxe2)]
                      param.nbactiveaxes = NbAxe2
-                     param.flowersinflo = [[] for i in xrange(NbAxe2)]
+                     param.flowersinflo = [[] for i in range(NbAxe2)]
                   elif pheno_stage == 3 and pheno_rank > 0.5:
                      nbactiveaxe = NbAxe2 - int(2*(pheno_rank-0.5)*NbAxe2)
                      while nbactiveaxe < param.nbactiveaxes:
@@ -563,7 +571,7 @@ class InfloManager (OrganManager):
                        param.nbactiveaxes -= 1
                   if pheno_stage < 1:
                     bract_level = max(0,(2*(pheno_rank-0.5)))
-                  for k in xrange(0,NbAxe2):
+                  for k in range(0,NbAxe2):
                     pos = k/float(NbAxe2)
                     # On choisit la couleur en fonction du stade et de son avancement
                     cpos = pos if pheno_stage > 2 else (1-pos)
@@ -581,7 +589,7 @@ class InfloManager (OrganManager):
                       Pedicel(pos, length, axelength, nbwhorl, pheno_stage, pheno_rank, param.flowersinflo[k])
                       nsproduce([EB()]) 
               else:
-                  nsproduce([InterpolateColors(pheno_color_flower[pheno_stage],pheno_color_flower[pheno_stage+1],pheno_rank),IncWidth(length/10),F(length,0.1)])
+                  nsproduce([InterpolateColors(pheno_color_flower[pheno_stage],pheno_color_flower[pheno_stage+1],pheno_rank),IncWidth(old_div(length,10)),F(length,0.1)])
            # produce ]
 
 
@@ -592,8 +600,8 @@ class InfloManager (OrganManager):
               nbflower = 3
               
               intlength = length/float(nbwhorl)
-              latintlength = length / 20
-              intradius = self.radius(npheno)/2
+              latintlength = old_div(length, 20)
+              intradius = old_div(self.radius(npheno),2)
               firstwhorl = 4
               
               ppos = 1 - pos
@@ -605,18 +613,18 @@ class InfloManager (OrganManager):
               sininterpolation = lambda x, coef : 1./(1+exp(-(x-(0.8-0.6*coef))/0.05))
 
               if self.resolution == 1 : 
-                  nsproduce([InterpolateColors(pheno_color_flower[pheno_stage],pheno_color_flower[pheno_stage+1],pheno_rank),IncWidth(length/10),F(length,0.1)])
+                  nsproduce([InterpolateColors(pheno_color_flower[pheno_stage],pheno_color_flower[pheno_stage+1],pheno_rank),IncWidth(old_div(length,10)),F(length,0.1)])
                   return
               
               nsproduce([SetWidth(intradius)])
 
               
               if flower_info == []:
-                flower_info += [None for i in xrange(firstwhorl)]+[(randint(nbflower-1,nbflower+1), randint(-20,20), uniform(-0.1,0.1), uniform(0,1) < 0.2) for i in xrange(nbwhorl-firstwhorl-1)]+[(1,0,0, 1)]
+                flower_info += [None for i in range(firstwhorl)]+[(randint(nbflower-1,nbflower+1), randint(-20,20), uniform(-0.1,0.1), uniform(0,1) < 0.2) for i in range(nbwhorl-firstwhorl-1)]+[(1,0,0, 1)]
                 
               flowerradius = 0.05 + sininterpolation(npheno/3.,0.2) * 0.45
               
-              for k in xrange(0,nbwhorl):
+              for k in range(0,nbwhorl):
                   pos = k/float(nbwhorl)
                   iradius = intradius * (2-pos)/2.
 
@@ -641,11 +649,11 @@ class InfloManager (OrganManager):
                       # A flowering probability that takes into account pheno, 
                       # pos on primary axis and pos on secondary axis
                       #flowering_index = max(0,0.2 + (npheno-2) - (((age * pos) + (length * k/float(nbwhorl -1.))) / age))
-                      colinterpolation = sininterpolation(pheno_rank,(ppos+kpos)/2) 
+                      colinterpolation = sininterpolation(pheno_rank,old_div((ppos+kpos),2)) 
                       
                     
-                    for d in xrange (nbflower):
-                        nsproduce([SB(),RollR(floangle*d + k*2 +angdiv),Down(90),f(iradius),Up(90),Down(75 if nbflower > 1 else 0),SetWidth(min(flowerradius, intradius/2)),F(latintlength * kpos )])
+                    for d in range (nbflower):
+                        nsproduce([SB(),RollR(floangle*d + k*2 +angdiv),Down(90),f(iradius),Up(90),Down(75 if nbflower > 1 else 0),SetWidth(min(flowerradius, old_div(intradius,2))),F(latintlength * kpos )])
                         if not colinterpolation: colinterpolation = flowering_index
                         nsproduce([InterpolateColors(pheno_color_flower[pheno_stage], pheno_color_flower[pheno_stage+1], colinterpolation)]) 
                         Flower(iradius, flowerradius, pheno_stage, pheno_rank, withfruit)
@@ -656,18 +664,18 @@ class InfloManager (OrganManager):
         def Flower(iradius, radius, pheno_stage, pheno_rank, withfruit):
           if pheno_stage >= 2:
             nbpetal = 4 
-            petalangle = 360 / nbpetal
+            petalangle = old_div(360, nbpetal)
             incl = 90 # 10 + 50 * (pheno_stage+pheno_rank -1)/2.
             nsproduce([Elasticity(0)]) 
-            for i in xrange(nbpetal):
+            for i in range(nbpetal):
               nsproduce([SB(),RollL(i*petalangle),Down(incl)])  
-              for i in xrange(3) :
-                nsproduce([Down(-incl/5),Quad(radius/3, radius*0.7*(i+1)/3.)])  
+              for i in range(3) :
+                nsproduce([Down(old_div(-incl,5)),Quad(old_div(radius,3), radius*0.7*(i+1)/3.)])  
               nsproduce([EB()]) 
             if withfruit and pheno_stage > 2:
               sininterpolation = lambda x : 1./(1+exp(-(x-(0.2))/0.05))
               
-              nsproduce([SetColor(self.fruitcolor),f(iradius),Sphere(radius/8+(radius/2)*sininterpolation(pheno_rank))]) ; return
+              nsproduce([SetColor(self.fruitcolor),f(iradius),Sphere(old_div(radius,8)+(old_div(radius,2))*sininterpolation(pheno_rank))]) ; return
               pass
           else:
             # nproduce f(radius) 
@@ -721,7 +729,7 @@ class FruitManager (OrganManager):
             return ParameterSet(inflo_fullbloom_date=infloparam.fullbloom_date,
                                 growth=infloparam.fruits_growth, 
                                 maturity_date=infloparam.fruits_maturity_date,
-                                weight = infloparam.fruits_weight / infloparam.nb_fruits,
+                                weight = old_div(infloparam.fruits_weight, infloparam.nb_fruits),
                                 growth_stage_date=infloparam.fruits_growth_stage_date,
                                 initial_weight=infloparam.fruits_initial_weight)
         else:
@@ -730,7 +738,7 @@ class FruitManager (OrganManager):
             growth_stage_date = todatetime(fruit_growth_tts.find_date_of_accumulation(self.pheno_stade_temp[0], infloparam.fullbloom_date)) 
             return ParameterSet(inflo_fullbloom_date=infloparam.fullbloom_date,
                                 maturity_date=infloparam.fruits_maturity_date,
-                                weight = infloparam.fruits_weight / infloparam.nb_fruits,
+                                weight = old_div(infloparam.fruits_weight, infloparam.nb_fruits),
                                 growth_stage_date=growth_stage_date,
                                 initial_weight=mass)            
 
@@ -740,7 +748,7 @@ class FruitManager (OrganManager):
             from vplants.mangosim.fruitmodel.fruitmodel import applymodel
             from vplants.mangosim.util_lstring2mtg import export_to_mtg_light
             cycle = get_flowering_cycle(current_date)
-            print 'Fruit model evaluation', current_date, 'for cycle', cycle
+            print('Fruit model evaluation', current_date, 'for cycle', cycle)
             lmtg = export_to_mtg_light(lstring, cycle) # , lscene)
             applymodel(lmtg, cycle, self.branchsize, self.outputenabled, self.outputname, self.parallelfruitmodel)
             #from vplants.mangosim.tools import dump_obj
@@ -764,14 +772,14 @@ class FruitManager (OrganManager):
             #    raise ValueError('The flush will not process all inflos', self.inflo_flush_start, infloparam.burst_date)
 
     def has_fruiting_in_period(self, begin_period, end_period):
-        for year in xrange(begin_period.year, end_period.year+1):
-            if self.inflo_flush_start.has_key(year) and begin_period < self.get_fruiting_start_date(year) <= end_period:
+        for year in range(begin_period.year, end_period.year+1):
+            if year in self.inflo_flush_start and begin_period < self.get_fruiting_start_date(year) <= end_period:
                 return True
         return False
 
     def get_first_fruiting_start_date(self, begin_period, end_period):
-        for year in xrange(begin_period.year, end_period.year+1):
-            if self.inflo_flush_start.has_key(year):
+        for year in range(begin_period.year, end_period.year+1):
+            if year in self.inflo_flush_start:
                 fdate = self.get_fruiting_start_date(year)
                 if begin_period < fdate <= end_period:
                     return fdate
@@ -792,7 +800,7 @@ class FruitManager (OrganManager):
         ep = (0.98*pow(weight,0.3398))*sizefactor
         larg = (1.25*pow(weight,0.3203))*sizefactor
         long = (2.23*pow(weight,0.2896))*sizefactor 
-        return ep, larg, long
+        return ep, larg, int
 
     def plot(self, fruitparam, current_date):
         first_date = fruitparam.inflo_fullbloom_date
@@ -807,29 +815,29 @@ class FruitManager (OrganManager):
                 dims = self.fruit_dimensions(weight)
                 mn = np.mean(dims)
                 mn *= growthindex
-                ratios = [d/mn for d in dims]
+                ratios = [old_div(d,mn) for d in dims]
                 cratios = [1+(r-1)*growthindex for r in ratios]
-                ep, larg, long = [mn*r for r in cratios]
+                ep, larg, int = [mn*r for r in cratios]
             elif current_date >= fruitparam.maturity_date:
                 stage = 3
                 weight = fruitparam.weight
-                ep, larg, long = self.fruit_dimensions(weight)
+                ep, larg, int = self.fruit_dimensions(weight)
             else:
                 stage = 2
                 if fruitparam.hasattr('growth'):
                     weight = fruitparam.growth[current_date][0]
-                    ep, larg, long = self.fruit_dimensions(weight)
+                    ep, larg, int = self.fruit_dimensions(weight)
                 else:
                     growthindex = (current_date - fruitparam.growth_stage_date).days/float((fruitparam.maturity_date - fruitparam.growth_stage_date).days)
                     weight = fruitparam.initial_weight + (fruitparam.weight-fruitparam.initial_weight)* growthindex                  
-                    ep, larg, long = self.fruit_dimensions(weight)
+                    ep, larg, int = self.fruit_dimensions(weight)
 
-            if fruitparam.growth_stage_date == first_date: print fruitparam
+            if fruitparam.growth_stage_date == first_date: print(fruitparam)
             phenoindex = (current_date - first_date).days/float((fruitparam.growth_stage_date-first_date).days)
             from openalea.plantgl.all import Scaled, Revolution
             nsproduce([SB(),RollToVert(),F(5*min(1,phenoindex)),RollToHorizontal()])
             if  current_date > fruitparam.maturity_date:
-                nsproduce([MoveTo(None,None,ep/2),])
+                nsproduce([MoveTo(None,None,old_div(ep,2)),])
             else:
                 nsproduce([Down(90)])
             if stage == 1:
@@ -839,4 +847,4 @@ class FruitManager (OrganManager):
                 nsproduce([InterpolateColors(self.pheno_colors[0],self.pheno_colors[1],colphenoindex)])
             elif stage == 3:
                 nsproduce([SetColor(self.pheno_colors[1])])
-            nsproduce([PglShape(Scaled(ep,larg,long, Revolution(self.profile, 8 if self.resolution < 2 else 30))),EB()])   
+            nsproduce([PglShape(Scaled(ep,larg,int, Revolution(self.profile, 8 if self.resolution < 2 else 30))),EB()])   

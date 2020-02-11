@@ -1,4 +1,11 @@
+from __future__ import division
+from __future__ import print_function
 #from vplants.mangosim.tools import share_dir
+from builtins import zip
+from builtins import map
+from builtins import range
+from past.utils import old_div
+from builtins import object
 from vplants.mangosim.state import *
 from vplants.mangosim.util_date import *
 import vplants.mangosim.util_path as up; reload(up)
@@ -12,11 +19,11 @@ def has_concatenated_values(array):
     return False
 
 def deconcatenate_values(array):
-    val = [map(int,f.split('-')) if type(f) == str and '-' in f else [int(f)] for f in array]
+    val = [list(map(int,f.split('-'))) if type(f) == str and '-' in f else [int(f)] for f in array]
     index = []
     i = 0
     for v in val:
-        for j in xrange(len(v)):
+        for j in range(len(v)):
             index.append(i)
         i += 1
     val = sum(val,[])
@@ -26,13 +33,13 @@ class IncompatibleValues(Exception):
     pass
 
 
-month_order = range(6,13)+range(6)
+month_order = list(range(6,13))+list(range(6))
 month_position = dict([(m,i+1) for i,m in enumerate(month_order)])
 
 def target_monthes(parentmonth):
     return set(month_order[month_position[parentmonth]:])
 
-class ProbaTable:
+class ProbaTable(object):
     def __init__(self, name, family, fname = None):
         self.name = name
         self.family = family
@@ -73,7 +80,7 @@ class ProbaTable:
         subset_table_probas = tablevalues[extrafactors]
         self.values = {}
         self.factorsvalues = dict([(f,set()) for f in self.factors])
-        for ind in xrange(len(tablevalues)):
+        for ind in range(len(tablevalues)):
             factorv = tuple(subset_table_factor.iloc[ind])
             probvalue = list(subset_table_probas.iloc[ind])
             if self.family == eMultinomial and not valindex is None:
@@ -91,7 +98,7 @@ class ProbaTable:
                 for fv,f in zip(factorv, self.factors):
                     self.factorsvalues[f].add(fv)
             else:
-                factorvl = [map(int,f.split('-')) if type(f) == str and '-' in f else [int(f)] for f in factorv]
+                factorvl = [list(map(int,f.split('-'))) if type(f) == str and '-' in f else [int(f)] for f in factorv]
                 for factorvi in itertools.product(*factorvl):
                     self.values[factorvi] = probvalue
                     for fv,f in zip(factorvi, self.factors):
@@ -101,7 +108,7 @@ class ProbaTable:
     def get_proba_value(self, args):
         if len(args) < len(self.factors): 
             raise ValueError('Invalid number of factors.',args, self.factors)
-        for arg, value in args.items():
+        for arg, value in list(args.items()):
             if arg in self.factorsvalues and not value in self.factorsvalues[arg]: 
                 #print arg, value
                 if arg in ['Nature_F','Nature_Ancestor_F'] and value == eFruiting:
@@ -111,12 +118,12 @@ class ProbaTable:
                 raise KeyError('Invalid value for factor of test',value,arg,self.name)
         try:
             factoractualvalue = tuple([args[f] for f in self.factors])
-        except KeyError, e:
+        except KeyError as e:
             #print self.factors, args, self.type, self.name
             raise e
         try:
             return self.values[factoractualvalue]
-        except KeyError, e:
+        except KeyError as e:
             # print self.factors, factoractualvalue, self.type, self.name
             raise KeyError(self.factors, e.args)            
 
@@ -169,13 +176,13 @@ class ProbaTable:
             targetanswers = target_monthes(args['Burst_Month'])
             return [i for i,a in enumerate(self.answers) if int(a) in targetanswers]
         else:
-            return range(len(self.answers))
+            return list(range(len(self.answers)))
 
     def check_cycle(self, cycle):
         if 'Cycle' in self.factors:
             cyclepos = self.factors.index('Cycle')
             nvalues = {}
-            for key, val in self.values.items():
+            for key, val in list(self.values.items()):
                 if key[cyclepos] == self.cycle:
                     nkey = list(key)
                     del nkey[cyclepos]
@@ -199,7 +206,7 @@ def read_proba_tables(variety = 'cogshall', estimationtype = eCompleteGlm, restr
                                     gu_vegetative_proba_family+gu_vegetative_proba_within_family+gu_flowering_proba_family+gu_fruiting_proba_family+mi_vegetative_proba_family+mi_vegetative_proba_within_family):
                 if prop.startswith('mi_'): ext = 'within_0405'
                 propfile = join(probafilepath,prop+'_'+ext+'.csv')
-                if not exists(propfile) and replacement.has_key(prop+'_'+ext):
+                if not exists(propfile) and prop+'_'+ext in replacement:
                     propfile = join(probafilepath,replacement[prop+'_'+ext]+'.csv')
                 if not exists(propfile):
                     import warnings
@@ -256,12 +263,12 @@ def use_proba_table(variety = 'cogshall', estimationtype = eSelectedGlm, restric
         current_proba_table = make_repetition(current_proba_table)
 
 def iterprobatables():
-    for k, ps in global_proba_tables.items():
-        for cycle, pbs in ps.items():
+    for k, ps in list(global_proba_tables.items()):
+        for cycle, pbs in list(ps.items()):
             wpbs, lpbs =  pbs
-            for pbname, pb in wpbs.items():
+            for pbname, pb in list(wpbs.items()):
                 yield pb
-            for pbname, pb in lpbs.items():
+            for pbname, pb in list(lpbs.items()):
                 yield pb
 
 def check_proba_tables():
@@ -269,7 +276,7 @@ def check_proba_tables():
         if factor in pb.factors:
             idx = pb.factors.index(factor)
             res = set()
-            for key, prob in pb.values.items():
+            for key, prob in list(pb.values.items()):
                 if prob[0] > 0.01:
                     res.add(key[idx])
         else:
@@ -283,7 +290,7 @@ def check_proba_tables():
         else:
             res = set(values)
             idx = pb.factors.index(factor)
-            for key, prob in pb.values.items():
+            for key, prob in list(pb.values.items()):
                 res.discard(key[idx])
             return list(res)
 
@@ -293,15 +300,15 @@ def check_proba_tables():
             refvalues = check_which_values(pbinit, factor)
             #print 'Values of',factor,'in',repr(probanames[0]),':',refvalues
             for pbname in probanames[1:]:
-                if tables.has_key(pbname):
+                if pbname in tables:
                     incompatvalues = check_values_incompatibility(tables[pbname], factor, refvalues)
                     if len(incompatvalues):
-                        print 'Incompatible values coverage of ',repr(factor),'between',repr(probanames[0]),'and', repr(pbname), ':',incompatvalues
+                        print('Incompatible values coverage of ',repr(factor),'between',repr(probanames[0]),'and', repr(pbname), ':',incompatvalues)
                 else:
-                    print 'Cannot find', repr(pbname)
+                    print('Cannot find', repr(pbname))
 
-    for cycle, pbs in current_proba_table.items():
-        print 'Examining cycle',cycle
+    for cycle, pbs in list(current_proba_table.items()):
+        print('Examining cycle',cycle)
         wpbs, lpbs =  pbs
         if len(wpbs) > 0:
             check_consistency(wpbs, gu_vegetative_proba+gu_vegetative_proba_within+[gu_flowering_proba[0],gu_fruiting_proba[0]])
@@ -352,7 +359,7 @@ def find_closest_values(value, existingvalues, keyordering = None):
     elif valueindex == (len(existingvalues) -1): return existingvalues[-2]
     else: return (existingvalues[valueindex-1],existingvalues[valueindex+1])
 
-class UnitDev:
+class UnitDev(object):
     def __init__(self, Burst_Date, 
                        Position_A, 
                        Nature_F = None, 
@@ -390,7 +397,7 @@ class UnitDev:
 
     def log(self, cycle, processname, msg):
         if self.verbose:
-            print self.cycle,'Within' if cycle == eWithinCycle else 'Delayed','>',processname,':', msg
+            print(self.cycle,'Within' if cycle == eWithinCycle else 'Delayed','>',processname,':', msg)
 
     def get_name(self, name):
         return ('gu_' if self.unittype == eGU else 'mi_') + name
@@ -403,13 +410,13 @@ class UnitDev:
         return self.proba_tables[0 if cycle == eWithinCycle else 1][name]
 
     def get_realization(self, name, cycle = eWithinCycle):
-        if self.trace: print 'Test',self.cycle,'Within' if cycle == eWithinCycle else 'Delayed',name
+        if self.trace: print('Test',self.cycle,'Within' if cycle == eWithinCycle else 'Delayed',name)
         p = (self.params if cycle == eWithinCycle else self.paramsdelayed)
         #print 'current_proba_table[',self.cycle,'][', 0 if cycle == eWithinCycle else 1,"]['"+self.get_name(name)+"']"
         proba_table = self.get_table(name, cycle)
         try:
             return proba_table.realization(**p)
-        except KeyError, ie:
+        except KeyError as ie:
             self.log(cycle, name, repr(ie))
             raise ie
 
@@ -420,7 +427,7 @@ class UnitDev:
             return False
         try:
             return self.get_realization('vegetative_burst',cycle)
-        except KeyError, ie: # some month may not be fulfilled.
+        except KeyError as ie: # some month may not be fulfilled.
             return False
 
     def find_closest_factor_values(self, name, cycle = eWithinCycle, factorname = 'Burst_Month'):
@@ -430,7 +437,7 @@ class UnitDev:
         keyordering = {'Burst_Month' : lambda v : MonthOrder.index(v)}
         if factorname in proba_table.factors:
             idx = proba_table.factors.index(factorname)
-            existingvalues = list(np.unique([k[idx] for k in proba_table.values.keys()]))
+            existingvalues = list(np.unique([k[idx] for k in list(proba_table.values.keys())]))
             return find_closest_values(refvalue, existingvalues, keyordering=keyordering.get(factorname))
         else:
             return refvalue
@@ -438,7 +445,7 @@ class UnitDev:
     def get_realization_from_closestvalues(self, name, cycle = eWithinCycle, factorname = 'Burst_Month'):
         try:
             return self.get_realization(name, cycle = cycle)
-        except KeyError, ke:
+        except KeyError as ke:
             mth = self.find_closest_factor_values(name, cycle=cycle, factorname=factorname)
             p = (self.params if cycle == eWithinCycle else self.paramsdelayed)
             cm = p[factorname]
@@ -448,7 +455,7 @@ class UnitDev:
                 res1 = self.get_realization(name, cycle)
                 p[factorname] = mth2
                 res2 = self.get_realization(name, cycle)
-                res = (res1+res2)/2
+                res = old_div((res1+res2),2)
             else:
                 p[factorname] = mth
                 res = self.get_realization(name, cycle)
@@ -466,7 +473,7 @@ class UnitDev:
             try:
                 burst_index = int(self.get_realization('burst_date_gu_children',cycle))
                 burst_year, burst_month = appenddeltaindex(self.burst_date, burst_index)
-            except KeyError, ie: # some month may not be fulfilled.
+            except KeyError as ie: # some month may not be fulfilled.
                 if cycle == eLaterCycle:
                     burst_index = int(self.get_realization_from_closestvalues('burst_date_gu_children', cycle))
                     burst_year, burst_month = appenddeltaindex(self.burst_date, burst_index)
@@ -505,32 +512,32 @@ class UnitDev:
     def has_apical_gu_child(self, cycle = eWithinCycle):
         try:
             return self.get_realization('has_apical_gu_child',cycle)
-        except KeyError, ie:
+        except KeyError as ie:
             return True
 
     def has_lateral_gu_children(self, cycle = eWithinCycle):
         try:
             return self.get_realization('has_lateral_gu_children',cycle)
-        except KeyError, ie:
+        except KeyError as ie:
             return False
 
     def nb_lateral_gu_children(self, cycle = eWithinCycle):
         try:
             return self.get_realization('nb_lateral_gu_children',cycle)+1
-        except KeyError, ie:
+        except KeyError as ie:
             return 1
 
     def nb_gu_children(self, cycle = eWithinCycle):
         
         try:
             return self.get_realization('nb_gu_children',cycle)+1
-        except KeyError, ie:
+        except KeyError as ie:
             return 1
 
     def flowering(self):
         try:
             return self.get_realization('flowering')
-        except KeyError, ie:
+        except KeyError as ie:
             return False
 
     def nb_inflorescences(self):
@@ -545,7 +552,7 @@ class UnitDev:
         fweek = 5
         try:
             fweek = int(self.get_realization('flowering_week'))
-        except KeyError,e:
+        except KeyError as e:
             fweek = randint(0,max(get_bloom_weeks(self.cycle).keys()))
         period_beg, period_end = get_bloom_weeks(self.cycle)[fweek]
         return period_beg + timedelta(days=randint(0,(period_end-period_beg).days)), fweek
@@ -553,7 +560,7 @@ class UnitDev:
     def fruiting(self):
         try:
             return self.get_realization('fruiting')
-        except KeyError, ie:
+        except KeyError as ie:
             return False
 
     def nb_fruits(self):
@@ -573,7 +580,7 @@ class UnitDev:
         from datetime import timedelta
         try:
             fweek = int(self.get_realization('harvest_week'))
-        except KeyError,e:
+        except KeyError as e:
             fweek = randint(0,max(get_harvest_weeks(self.cycle).keys()))
         period_beg, period_end = get_harvest_weeks(self.cycle)[fweek]
         return period_beg + timedelta(days=randint(0,(period_end-period_beg).days)), fweek
@@ -581,13 +588,13 @@ class UnitDev:
     def has_mixedinflo_child(self):
         try:
             return self.get_realization('mixedinflo_burst')
-        except KeyError, ie:
+        except KeyError as ie:
             return False
     
     def is_mixedinflo_apical(self):
         try:
             return self.get_realization('has_apical_mi_children')
-        except KeyError, ie:
+        except KeyError as ie:
             return True
 
     def mixedinflo_burstdate(self):
@@ -610,7 +617,7 @@ class UnitDev:
                         date_children_burst = self.gu_burst_date_children()
                     else:
                         date_children_burst = self.mi_burst_date_children()
-                except IncompatibleValues, iv:
+                except IncompatibleValues as iv:
                     self.log(eWithinCycle, 'burst_date_children', 'Incompatible children month burst value compared to parent burst month.')
                     veg_burst = False
 

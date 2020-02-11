@@ -1,4 +1,5 @@
-from tools import * 
+from __future__ import absolute_import
+from .tools import * 
 
 freq_weeks_inflo_file = join( share_dir, "parameters_data_for_graphic_model", "Cogshall" , "freq_weeks_inflo.pkl")
 

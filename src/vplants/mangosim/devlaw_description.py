@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import range
 from vplants.mangosim.state import *
 
 vegetative_proba = ['vegetative_burst','has_apical_gu_child','has_lateral_gu_children','nb_lateral_gu_children','nb_gu_children']
@@ -41,7 +43,7 @@ mi_vegetative_proba_within_family = vegetative_proba_between_family
 
 
 def check_probadef_consistency():
-    for objname, obj in globals().items():
+    for objname, obj in list(globals().items()):
         if objname.endswith('_family'):
             cobj = globals()[objname.replace('_family','')]
             if len(cobj) != len(obj):
@@ -53,5 +55,5 @@ within_extension = {3 : None, 4 : 'within_04', 5 : 'within_05'}
 between_extension = {3 : 'between_03to0405', 4 : 'between_04to05', 5 : None }
 
 allfactors = ['Burst_Month', 'Position_A', 'Position_Ancestor_A', 'Nature_Ancestor_F', 'Nature_F', 'Cycle', 'Flowering_Week', 'Has_Apical_GU_Child','Nb_Inflorescences']
-factorsvalues = [range(6,13)+range(6), [eApical,eLateral], [eApical,eLateral], [eVegetative, eFlowering, eFruiting], [eVegetative, eFlowering], [3,4,5], range(0,13), [0,1],range(1,6)]
-factorsvalues = dict(zip(allfactors,factorsvalues))
+factorsvalues = [list(range(6,13))+list(range(6)), [eApical,eLateral], [eApical,eLateral], [eVegetative, eFlowering, eFruiting], [eVegetative, eFlowering], [3,4,5], list(range(0,13)), [0,1],list(range(1,6))]
+factorsvalues = dict(list(zip(allfactors,factorsvalues)))

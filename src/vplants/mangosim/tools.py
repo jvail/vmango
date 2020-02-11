@@ -1,7 +1,9 @@
+from future import standard_library
+standard_library.install_aliases()
 from os.path import join, exists
 
 def load_obj(filename, dirname = '.'):
-  import cPickle as pickle
+  import pickle as pickle
   gfname = join(dirname,filename)
   if exists(gfname ):
     pkl_file = open(gfname,'rb')
@@ -12,7 +14,7 @@ def load_obj(filename, dirname = '.'):
     raise ValueError(gfname)
 
 def dump_obj(obj,filename, dirname = '.'):
-  import cPickle as pickle
+  import pickle as pickle
   gfname = join(dirname,filename)
   pkl_file = open(gfname,'wb')
   pickle.dump(obj,pkl_file, pickle.HIGHEST_PROTOCOL)

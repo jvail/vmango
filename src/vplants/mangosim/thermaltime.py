@@ -1,6 +1,10 @@
-from temperature import get_temperature
+from __future__ import division
+from __future__ import absolute_import
+from past.utils import old_div
+from builtins import object
+from .temperature import get_temperature
 
-class AbstractThermalTimeAccumulator:
+class AbstractThermalTimeAccumulator(object):
     def __init__(self, initttsum = 0):
         self.ttsum = initttsum # the thermal time sum
 
@@ -124,9 +128,9 @@ class MultiPhaseThermalTimeAccumulator (AbstractThermalTimeAccumulator):
     def rank_in_stage(self):
         if self.stage >= self.nbstagechange: return 0
         elif self.stage == 0:
-            return self.ttsum / self.stagechangetempsum[0]
+            return old_div(self.ttsum, self.stagechangetempsum[0])
         else: 
-            return (self.ttsum - self.stagechangetempsum[self.stage-1]) / (self.stagechangetempsum[self.stage]  - self.stagechangetempsum[self.stage-1])
+            return old_div((self.ttsum - self.stagechangetempsum[self.stage-1]), (self.stagechangetempsum[self.stage]  - self.stagechangetempsum[self.stage-1]))
     
     def find_stage(self, ttsum):
         if ttsum < self.stagechangetempsum[0]:

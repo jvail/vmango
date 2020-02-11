@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import print_function
+from past.utils import old_div
 from openalea.mtg import MTG
 import openalea.mtg.plantframe as opf; reload(opf) 
 from openalea.mtg.plantframe.plantframe import PlantFrame
@@ -7,13 +10,13 @@ from openalea.plantgl.all import *
 
 def pos_prop(mtg):
     xx,yy,zz = mtg.property("XX"),mtg.property("YY"),mtg.property("ZZ")
-    return dict ([(node,(x,yy[node],-zz[node])) for node,x in xx.items()])
+    return dict ([(node,(x,yy[node],-zz[node])) for node,x in list(xx.items())])
 
 from math import radians, degrees
 
 def orientation_prop(mtg):
     aa,bb,cc = mtg.property("AA"),mtg.property("BB"),mtg.property("CC")
-    return dict ([(node,(radians(a),radians(bb[node]),radians(cc[node]))) for node,a in aa.items()])
+    return dict ([(node,(radians(a),radians(bb[node]),radians(cc[node]))) for node,a in list(aa.items())])
 
 
 matrixmethod = True
@@ -49,7 +52,7 @@ def plot(mtg, mtgname, leaves = True):
         pf.algo_diameter(1,4)
 
     diameters = pf.compute_diameter()
-    pf.points = dict([(node,Vector3(pos)-pf.origin) for node,pos in pf.points.items()])
+    pf.points = dict([(node,Vector3(pos)-pf.origin) for node,pos in list(pf.points.items())])
     #pf.points = dict([(node,Vector3(pos)) for node,pos in pf.points.items()])
 
     leafdiam = QuantisedFunction(NurbsCurve2D(Point3Array([Vector3(0,0.0846264,1),Vector3(0.239002,1.00091,1),Vector3(0.485529,0.991241,1),Vector3(0.718616,1.00718,1),Vector3(0.877539,0.231273,1),Vector3(1,0.00332359,1)])))
@@ -60,9 +63,9 @@ def plot(mtg, mtgname, leaves = True):
     heights = dict([(v,mtg.Height(v)) for v in mtg.vertices(scale=mtg.max_scale())])
     maxh = float(max(heights.values()))
 
-    leavelength = [l for n,l in mtg.property('Long').items() if 'F' in mtg.label(n)]
+    leavelength = [l for n,l in list(mtg.property('Long').items()) if 'F' in mtg.label(n)]
     if len(leavelength) > 0:
-        meanleaflength = sum(leavelength)/(len(leavelength)*10.)
+        meanleaflength = old_div(sum(leavelength),(len(leavelength)*10.))
     else:
         meanleaflength = 20
 
@@ -94,8 +97,8 @@ def plot(mtg, mtgname, leaves = True):
                 turtle.startGC().sweep(leafpath,leafsection,l,l/10.,3,leafdiam)
                 turtle.pop()
             else:
-                if pt.z < 0 : print v, 'lineTo', pt, radius
-                turtle.interpolateColors(1,2,heights[v]/maxh)
+                if pt.z < 0 : print(v, 'lineTo', pt, radius)
+                turtle.interpolateColors(1,2,old_div(heights[v],maxh))
                 turtle.lineTo(pt, radius)
     pf.plot(origins=[(0,0,0)],visitor=plantframe_visitor,gc=False)
     return pf
@@ -114,6 +117,6 @@ if __name__ == '__main__':
     if len(sys.argv) >= 3:
         leaf = eval(sys.argv[2])
     else : leaf = True
-    print 'Process MTG',repr(mtgname)
+    print('Process MTG',repr(mtgname))
     mtg = getMTG(mtgname+'.mtg')
     pf = plot(mtg,mtgname,leaf)

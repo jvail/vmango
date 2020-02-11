@@ -1,4 +1,8 @@
+from __future__ import division
+from __future__ import print_function
 
+from builtins import zip
+from past.utils import old_div
 from openalea.plantgl.all import Viewer,eStatic,eAnimatedScene, eAnimatedPrimitives
 from openalea.fractalysis.light.directLight import directionalInterception
 from openalea.fractalysis.light.sunDome import getSkyTurtleSize, skyTurtle, getSkyTurtleAt, getSkyTurtleDir, weights, getDirectLight, plotDirect
@@ -36,7 +40,7 @@ def get_day_meteo(day):
     day_radiation.loc[:,"Rayonnement diffus"] =  day_radiation["Rayonnement"] * DIF
     day_radiation.loc[:,"Rayonnement direct"] =  day_radiation["Rayonnement"] * DIRN
     sum_diffuse_radiation_per_day = sum(day_radiation["Rayonnement diffus"]) # totalité du rayonnement diffus dans une journée
-    return zip(day_radiation.HEURE, day_radiation["Rayonnement direct"]), sum_diffuse_radiation_per_day
+    return list(zip(day_radiation.HEURE, day_radiation["Rayonnement direct"])), sum_diffuse_radiation_per_day
 
 def get_day_diffuse_light(day):
     day_radiation = get_day_total_light(day) 
@@ -46,7 +50,7 @@ def get_day_diffuse_light(day):
 def get_day_direct_light(day):
     day_radiation = get_day_total_light(day) 
     day_radiation.loc[:,"Rayonnement direct"] =  day_radiation["Rayonnement"] * DIRN
-    return zip(day_radiation.HEURE, day_radiation["Rayonnement direct"])
+    return list(zip(day_radiation.HEURE, day_radiation["Rayonnement direct"]))
 
 def convert_jourJUL(day):
     # transforme la date en jours julien (nième jour de l'année)
@@ -66,19 +70,19 @@ def get_diffus_light(mtg, scene, day):
     # pour chacune des directions du ciel:
     weights = [w for a,e,w in skyTurtle()] # extrait les valeurs de weigths dans skyTurtle
     sumweigths = sum(weights)
-    nskyturtle = [(a,e,w/sumweigths) for a,e,w in skyTurtle()] # recrée un tableau skyTurtle avec les nouvelles valeurs de weights
+    nskyturtle = [(a,e,old_div(w,sumweigths)) for a,e,w in skyTurtle()] # recrée un tableau skyTurtle avec les nouvelles valeurs de weights
     diffus = get_day_diffuse_light(day) # calcul le rayonnement diffus pour un jour donné
     Interception_diffus = directionalInterception(scene, nskyturtle) # donne une surface par élément qui reçoit la lumière (ou une quantité d'énergie) 
-    Diffus_light = dict([(uc_id, interception * diffus) for uc_id, interception in Interception_diffus.items()]) # crée un nouveau dictionnaire en multipliant la surface par le rayonnement diffus pour chaque élément de l'arbre
+    Diffus_light = dict([(uc_id, interception * diffus) for uc_id, interception in list(Interception_diffus.items())]) # crée un nouveau dictionnaire en multipliant la surface par le rayonnement diffus pour chaque élément de l'arbre
     return Diffus_light         
 
 def get_direct_light(mtg, day):
     directlight = get_day_direct_light(day)    
     direct_w = [w for h, w in directlight]  # le poids est égal au rayonnement direct                                                                                                # somme des surfaces percues par feuille avec coef lié a l'importance de chaque angle.
-    print len(direct_w)
+    print(len(direct_w))
     start = min([h for h,par in directlight]) # première heure avec du rayonnement
     stop = max([h for h,par in directlight])
-    print start, stop
+    print(start, stop)
     # calculer course du soleil
     jourJul = convert_jourJUL(day)
     longitude = 55.50
@@ -88,11 +92,11 @@ def get_direct_light(mtg, day):
     import openalea.fractalysis.light.sunPositions as sp
 
     seq = sp.Sequence()
-    print seq.heureTSV(jourJul, start, decalSun, decalGMT, longitude)
-    print seq.heureTSV(jourJul, stop, decalSun, decalGMT, longitude)
+    print(seq.heureTSV(jourJul, start, decalSun, decalGMT, longitude))
+    print(seq.heureTSV(jourJul, stop, decalSun, decalGMT, longitude))
     ddl = getDirectLight( latitude = -21.32, longitude = 55.50, jourJul = convert_jourJUL(day), startH = start , stopH = stop, step= 60, decalSun = decalSun, decalGMT = +4) # donne les positions du soleil
-    print len(ddl)
-    print ddl
+    print(len(ddl))
+    print(ddl)
     #ndir =[(ddl[i][0],ddl[i][1],direct_w[i]) for i in xrange(len(ddl))]
     #print ndir
 

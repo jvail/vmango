@@ -1,4 +1,6 @@
+from __future__ import print_function
 
+from builtins import range
 def plot_histo(keys, allvalues, _title = None, reference = None):
     import matplotlib.pyplot as plt
     import numpy as np
@@ -15,7 +17,7 @@ def plot_histo(keys, allvalues, _title = None, reference = None):
         ax.set_xticks(ind+(nbplot+1)*width/2.)
     else:
         ind = np.arange(0,nbx*width,width)+width
-        print ind
+        print(ind)
         #if reference : ax.bar(ind-width/4., reference, width/2., color='r' )
         bpdata = [[v[i] for v in allvalues] for i in range(nbx)]
         ax.boxplot(bpdata, widths=0.5)
@@ -23,7 +25,7 @@ def plot_histo(keys, allvalues, _title = None, reference = None):
 
     # 'k--'
     plt.plot(ind, reference, color=(0.5,0.5,0.5,1),  label = 'Reference', linewidth= 3)
-    plt.plot(ind, [np.mean([v[i] for v in allvalues]) for i in xrange(nbx)], 'k', label ='1000 Simulations', linewidth= 2)
+    plt.plot(ind, [np.mean([v[i] for v in allvalues]) for i in range(nbx)], 'k', label ='1000 Simulations', linewidth= 2)
 
     ax.set_xticklabels(keys, rotation=90)
     if _title: ax.set_title(_title)
@@ -38,7 +40,7 @@ def plot_histo_curve(keys, allvalues, _title = None,  legends = None, linewidth 
     #fig, ax = plt.subplots()
     fig = plt.figure(figsize=(20,10))
     ax = fig.add_subplot(111)
-    print 'ax', ax
+    print('ax', ax)
     nbplot = len(allvalues)
     nbx = len(allvalues[0])
     width = 1

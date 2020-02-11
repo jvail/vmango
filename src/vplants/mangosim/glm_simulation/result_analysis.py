@@ -1,3 +1,12 @@
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
+from past.builtins import cmp
+from builtins import zip
+from builtins import str
+from builtins import map
+from builtins import range
+from past.utils import old_div
 import vplants.mangosim.doralice_mtg.mtg_manipulation as mm
 reload(mm) 
 from vplants.mangosim.doralice_mtg.mtg_manipulation import *
@@ -5,7 +14,7 @@ from vplants.mangosim.state import *
 from vplants.mangosim.tools import *
 from vplants.mangosim.util_path import get_glm_mtg_repository, mtgfname
 import os
-from plot_distribution import *
+from .plot_distribution import *
 from numpy import mean
 import itertools
 
@@ -18,7 +27,7 @@ def monthtranslate(txt):
 
 def __strip_histo(histo):
     # We remove the first and last part of the histo if it is equal to 0.
-    keyvalues = histo.keys()
+    keyvalues = list(histo.keys())
     for d in keyvalues:
         if histo[d] == 0:
             del histo[d]
@@ -31,9 +40,9 @@ def __strip_histo(histo):
 
 def burst_date_cycle_distribution(mtg, ucs, strip = True):
     from vplants.mangosim.util_date import Month
-    Month = dict([(i,v) for v,i in Month.items()])
+    Month = dict([(i,v) for v,i in list(Month.items())])
     from collections import OrderedDict
-    histo_date = OrderedDict([(i,0) for i in xrange(3,6)])
+    histo_date = OrderedDict([(i,0) for i in range(3,6)])
     for uc in ucs:
         if has_burst_date(mtg,uc):
             c = get_cycle(get_burst_date(mtg,uc))
@@ -43,7 +52,7 @@ def burst_date_cycle_distribution(mtg, ucs, strip = True):
 
 def date_month_distribution(mtg, ucs, strip = True, date_accessor = get_burst_date):
     from vplants.mangosim.util_date import Month
-    Month = dict([(i,v) for v,i in Month.items()])
+    Month = dict([(i,v) for v,i in list(Month.items())])
     from collections import OrderedDict
     daterange = monthdate_range(cycle_end(3),cycle_begin(6))
     histo_date = OrderedDict([(d,0) for d in daterange])
@@ -68,7 +77,7 @@ def date_week_distribution(mtg, ucs, strip = True, date_accessor = get_burst_dat
             y = d[0]
             histo_date[(w,y)] = histo_date.get((w,y),0) + 1
         except : pass
-    dates = histo_date.keys()
+    dates = list(histo_date.keys())
     dates.sort(cmp=lambda a,b: cmp((a[1],a[0]),(b[1],b[0])))
     sorted_histo_date = OrderedDict([(d,histo_date[d]) for d in dates])
     return sorted_histo_date
@@ -76,7 +85,7 @@ def date_week_distribution(mtg, ucs, strip = True, date_accessor = get_burst_dat
 #@use_global_mtg
 def estimate_burst_date_distribution_from_mtgs(mtgs = None, variety = 'cogshall', reference = True, exclude = None, consider = None):
     from vplants.mangosim.util_date import Month
-    Month = dict([(i,v) for v,i in Month.items()])
+    Month = dict([(i,v) for v,i in list(Month.items())])
     histo_date = []
     if type(mtgs) == MTG: mtgs = [mtgs] 
 
@@ -95,16 +104,16 @@ def estimate_burst_date_distribution_from_mtgs(mtgs = None, variety = 'cogshall'
         ref_histo_date = date_month_distribution(mtg, ucs, False )
         setMtgStyle(currentmtgstyle)
 
-        return [Month[m]+'-'+str(y) for m,y in histo_date[0].keys()],[h.values() for h in histo_date], ref_histo_date.values()
+        return [Month[m]+'-'+str(y) for m,y in list(histo_date[0].keys())],[list(h.values()) for h in histo_date], list(ref_histo_date.values())
     else:
-        return [Month[m]+'-'+str(y) for m,y in histo_date[0].keys()],[h.values() for h in histo_date]
+        return [Month[m]+'-'+str(y) for m,y in list(histo_date[0].keys())],[list(h.values()) for h in histo_date]
 
 def estimate_bloom_date_distribution(mtgs = None, variety = 'cogshall', reference = True, showallweeks = False):
     from vplants.mangosim.util_date import Month
-    Month = dict([(i,v) for v,i in Month.items()])
+    Month = dict([(i,v) for v,i in list(Month.items())])
     histo_date = []
     if variety is None:
-        inflo_selector = lambda mtg : mtg.property(BloomPropertyName).keys()
+        inflo_selector = lambda mtg : list(mtg.property(BloomPropertyName).keys())
     else:
         inflo_selector = lambda mtg : get_all_inflo_of_variety(mtg, None, variety)
 
@@ -117,23 +126,23 @@ def estimate_bloom_date_distribution(mtgs = None, variety = 'cogshall', referenc
         setMtgStyle(eMeasuredMtg)
         mtg = get_mtg()
         if variety is None:
-            inflo_selector = lambda mtg : mtg.property(BloomPropertyName).keys()
+            inflo_selector = lambda mtg : list(mtg.property(BloomPropertyName).keys())
         ref_histo_date = date_week_distribution(mtg, inflo_selector(mtg), False, get_bloom_date )
         setMtgStyle(currentmtgstyle)
 
-        return [str(w)+'/'+strdate(w,y) for w,y in histo_date[0].keys()],[h.values() for h in histo_date], ref_histo_date.values()
+        return [str(w)+'/'+strdate(w,y) for w,y in list(histo_date[0].keys())],[list(h.values()) for h in histo_date], list(ref_histo_date.values())
     else:
-        return [str(w)+'/'+strdate(w,y) for w,y in histo_date[0].keys()],[h.values() for h in histo_date]
+        return [str(w)+'/'+strdate(w,y) for w,y in list(histo_date[0].keys())],[list(h.values()) for h in histo_date]
 
 def retrieve_mtgs(inputdir, nb = None):
-    print 'Dir:',inputdir
+    print('Dir:',inputdir)
     import glob
     mtgfiles = glob.glob(join(inputdir,mtgfname.format('*')))
     mtgfiles.sort()
     if nb: mtgfiles = mtgfiles[:nb]
     mtgs = []
     for  mtgfile in mtgfiles:
-        print 'Retreive '+repr(os.path.basename(mtgfile))
+        print('Retreive '+repr(os.path.basename(mtgfile)))
         mtgs.append(mtgfile)
     return mtgs
 
@@ -145,20 +154,20 @@ def burst_date_distribution(i=0, glmestimation = eNullGlm):
     inputdir = get_glm_mtg_repository( params = params)
     distrib_file = join(inputdir, gu_distrib_fname)
     if not os.path.exists(distrib_file):
-        print 'Retrieve MTGs'
+        print('Retrieve MTGs')
         mtgs = retrieve_mtgs(inputdir)
         setMtgStyle(eSimulatedMtg)
-        print 'Estimate burst date distribution'
+        print('Estimate burst date distribution')
         months,values,refvalues = estimate_burst_date_distribution_from_mtgs(mtgs, reference = True)
         dump_obj((months,values,refvalues),gu_distrib_fname,inputdir)
     else:
-        print 'Retreive burst date distribution from',repr(str(join(inputdir,gu_distrib_fname)))
+        print('Retreive burst date distribution from',repr(str(join(inputdir,gu_distrib_fname))))
         months,values,refvalues = load_obj(gu_distrib_fname,inputdir)
     assert len(months) == len(values[0]) == len(refvalues)
     #print months
     #print [mean([values[j][i] for j in range(len(values))] ) for i in range(len(values[0]))]
     #print refvalues
-    plot_histo(map(monthtranslate,months),values,'',refvalues)
+    plot_histo(list(map(monthtranslate,months)),values,'',refvalues)
 
 
 def estimate_tree_burst_date_distribution(parameters):
@@ -175,27 +184,27 @@ def estimate_tree_burst_date_distribution(parameters):
     if exclude: ucs = [uc for uc in ucs if not exclude(mtg,uc)]
     if consider: ucs = [uc for uc in ucs if consider(mtg,uc)]
     result[mtgfname] = date_month_distribution(mtg, ucs, False )
-    print 'Done',repr(mtgfname), '...'
+    print('Done',repr(mtgfname), '...')
 
 
 
 def tree_burst_date_distribution(treename = 'B10', i=0, glmestimation = eNullGlm):
     from multiprocessing import Pool, Manager, cpu_count
     from vplants.mangosim.util_date import MonthEn
-    Month = dict( [(mi,v) for v,mi in MonthEn.items()] )
+    Month = dict( [(mi,v) for v,mi in list(MonthEn.items())] )
 
     params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[i],  'ESTIMATIONTYPE' : glmestimation}
     inputdir = get_glm_mtg_repository( params = params)
     distrib_file = join(inputdir, treename+'_'+gu_distrib_fname)
     if not os.path.exists(distrib_file):
-        print 'Retrieve MTGs'
+        print('Retrieve MTGs')
         if not os.path.exists(join(inputdir,treename+'_collect_'+gu_distrib_fname)):
             mtgs = retrieve_mtgs(inputdir)
             m = Manager()
             result = m.dict()
             params = [[result, mtg, treename, None, None] for mtg in mtgs]
             p = Pool(processes = cpu_count())
-            print 'Estimate burst date distribution'
+            print('Estimate burst date distribution')
             p.map(estimate_tree_burst_date_distribution, params)
             estimate_tree_burst_date_distribution([result,'reference',treename, None, None])
             # months,values,refvalues = estimate_burst_date_distribution_from_mtgs(mtgs, reference = True)
@@ -203,17 +212,17 @@ def tree_burst_date_distribution(treename = 'B10', i=0, glmestimation = eNullGlm
             dump_obj(dict(result),treename+'_collect_'+gu_distrib_fname,inputdir)
         else: result = load_obj(treename+'_collect_'+gu_distrib_fname,inputdir)
         values = []
-        print len(result)
-        for k,v in result.items():
+        print(len(result))
+        for k,v in list(result.items()):
             if k == 'reference':
-                print 'found reference'
-                refvalues = v.values()
-                months = [Month[m]+'-'+str(y) for m,y in v.keys()]
+                print('found reference')
+                refvalues = list(v.values())
+                months = [Month[m]+'-'+str(y) for m,y in list(v.keys())]
             else:
-                values.append(v.values())        
+                values.append(list(v.values()))        
         dump_obj((months,values,refvalues),treename+'_'+gu_distrib_fname,inputdir)
     else:
-        print 'Retreive burst date distribution from',repr(str(join(inputdir,gu_distrib_fname)))
+        print('Retreive burst date distribution from',repr(str(join(inputdir,gu_distrib_fname))))
         months,values,refvalues = load_obj(gu_distrib_fname,inputdir)
     assert len(months) == len(values[0]) == len(refvalues)
     #print months
@@ -233,26 +242,26 @@ def estimate_variety_burst_date_distribution(parameters):
     if exclude: ucs = [uc for uc in ucs if not exclude(mtg,uc)]
     if consider: ucs = [uc for uc in ucs if consider(mtg,uc)]
     result[mtgfname] = date_month_distribution(mtg, ucs, False )
-    print 'Done',repr(mtgfname), '...'
+    print('Done',repr(mtgfname), '...')
 
 
 def restricted_burst_date_distribution(restriction = None):
     from multiprocessing import Pool, Manager, cpu_count
     from vplants.mangosim.util_date import MonthEn
-    Month = dict( [(mi,v) for v,mi in MonthEn.items()] )
+    Month = dict( [(mi,v) for v,mi in list(MonthEn.items())] )
 
     params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[0],  'ESTIMATIONTYPE' : eSelectedGlm, 'FACTORRESTRICTION' : restriction}
     inputdir = get_glm_mtg_repository( params = params)
     distrib_file = join(inputdir, gu_distrib_fname)
     if not os.path.exists(distrib_file):
-        print 'Retrieve MTGs'
+        print('Retrieve MTGs')
         if not os.path.exists(join(inputdir,'collect_'+gu_distrib_fname)):
             mtgs = retrieve_mtgs(inputdir)
             m = Manager()
             result = m.dict()
             params = [[result, mtg,  None, None] for mtg in mtgs]
             p = Pool(processes = cpu_count())
-            print 'Estimate burst date distribution'
+            print('Estimate burst date distribution')
             p.map(estimate_variety_burst_date_distribution, params)
             estimate_variety_burst_date_distribution([result,'reference', None, None])
             # months,values,refvalues = estimate_burst_date_distribution_from_mtgs(mtgs, reference = True)
@@ -260,29 +269,29 @@ def restricted_burst_date_distribution(restriction = None):
             dump_obj(dict(result),'collect_'+gu_distrib_fname,inputdir)
         else: result = load_obj('collect_'+gu_distrib_fname,inputdir)
         values = []
-        print len(result)
-        for k,v in result.items():
+        print(len(result))
+        for k,v in list(result.items()):
             if k == 'reference':
-                print 'found reference'
-                refvalues = v.values()
-                months = [Month[m]+'-'+str(y) for m,y in v.keys()]
+                print('found reference')
+                refvalues = list(v.values())
+                months = [Month[m]+'-'+str(y) for m,y in list(v.keys())]
             else:
-                values.append(v.values())        
+                values.append(list(v.values()))        
         dump_obj((months,values,refvalues),gu_distrib_fname,inputdir)
     else:
-        print 'Retreive burst date distribution from',repr(str(join(inputdir,gu_distrib_fname)))
+        print('Retreive burst date distribution from',repr(str(join(inputdir,gu_distrib_fname))))
         months,values,refvalues = load_obj(gu_distrib_fname,inputdir)
     assert len(months) == len(values[0]) == len(refvalues)
 
 def get_burst_date_distributions(treename = None, verbose = False):
     allvalues = []
-    for glmtype, withindelaymethodval,restriction in itertools.product([eSelectedGlm],[eMonthMultiVariateForWithin],[None]+RestrictionName.keys()):
+    for glmtype, withindelaymethodval,restriction in itertools.product([eSelectedGlm],[eMonthMultiVariateForWithin],[None]+list(RestrictionName.keys())):
         params = {'WITHINDELAYMETHOD' : eMonthMultiVariateForWithin, 'ESTIMATIONTYPE' : eSelectedGlm, 'FACTORRESTRICTION' : restriction}
         inputdir = get_glm_mtg_repository( params = params)
         if not treename is None: lgu_distrib_fname = treename+'_'+gu_distrib_fname
         else: lgu_distrib_fname = gu_distrib_fname
         distrib_file = join(inputdir, lgu_distrib_fname)
-        if verbose : print 'Retreive burst date distribution from',repr(str(distrib_file))
+        if verbose : print('Retreive burst date distribution from',repr(str(distrib_file)))
         months,values,refvalues = load_obj(lgu_distrib_fname,inputdir)
         if len(allvalues) == 0: allvalues.append(refvalues)
         allvalues.append([mean([values[j][i] for j in range(len(values))] ) for i in range(len(values[0]))])
@@ -293,10 +302,10 @@ def get_burst_date_distributions(treename = None, verbose = False):
         if not treename is None: lgu_distrib_fname = treename+'_'+gu_distrib_fname
         else: lgu_distrib_fname = gu_distrib_fname
         distrib_file = join(inputdir, lgu_distrib_fname)
-        if verbose : print 'Retreive burst date distribution from',repr(str(distrib_file))
+        if verbose : print('Retreive burst date distribution from',repr(str(distrib_file)))
         months,values,refvalues = load_obj(lgu_distrib_fname,inputdir)
         allvalues.append([mean([values[j][i] for j in range(len(values))] ) for i in range(len(values[0]))])
-    legends = ['Reference','GLM']+[a+' '+b for a,b in itertools.product(['GLM'],[m.replace('_',' ') for m in RestrictionName.values()])]+['Null GLM']
+    legends = ['Reference','GLM']+[a+' '+b for a,b in itertools.product(['GLM'],[m.replace('_',' ') for m in list(RestrictionName.values())])]+['Null GLM']
     return  months, allvalues, legends
 
 
@@ -308,16 +317,16 @@ def burst_date_distribution_comparison0(treename = None):
         if not treename is None: lgu_distrib_fname = treename+'_'+gu_distrib_fname
         else: lgu_distrib_fname = gu_distrib_fname
         distrib_file = join(inputdir, lgu_distrib_fname)
-        print 'Retreive burst date distribution from',repr(str(distrib_file))
+        print('Retreive burst date distribution from',repr(str(distrib_file)))
         months,values,refvalues = load_obj(lgu_distrib_fname,inputdir)
         if len(allvalues) == 0: allvalues.append(refvalues)
         allvalues.append([mean([values[j][i] for j in range(len(values))] ) for i in range(len(values[0]))])
-        print allvalues[-1]
+        print(allvalues[-1])
 
     legends = ['Reference','GLM','Null GLM']
-    print legends
+    print(legends)
 
-    months = map(monthtranslate, months)
+    months = list(map(monthtranslate, months))
     plot_histo_curve(months, allvalues, 'Distribution of burst dates of growth units'+ (' in '+treename if treename else ''), legends=legends,linewidth=2)
 
 def burst_date_distribution_ks_test(treename = None):
@@ -328,27 +337,27 @@ def burst_date_distribution_ks_test(treename = None):
         if not treename is None: lgu_distrib_fname = treename+'_'+gu_distrib_fname
         else: lgu_distrib_fname = gu_distrib_fname
         distrib_file = join(inputdir, lgu_distrib_fname)
-        print 'Retreive burst date distribution from',repr(str(distrib_file))
+        print('Retreive burst date distribution from',repr(str(distrib_file)))
         months,values,refvalues = load_obj(lgu_distrib_fname,inputdir)
         if len(allvalues) == 0: allvalues.append(refvalues)
         allvalues.append([mean([values[j][i] for j in range(len(values))] ) for i in range(len(values[0]))])
 
     legends = ['Reference','GLM']
     from scipy.stats import ks_2samp
-    print sum(allvalues[0]),allvalues[0]
-    print sum(allvalues[1]),allvalues[1]
-    print ks_2samp(allvalues[0], allvalues[1])
+    print(sum(allvalues[0]),allvalues[0])
+    print(sum(allvalues[1]),allvalues[1])
+    print(ks_2samp(allvalues[0], allvalues[1]))
 
 def burst_date_distribution_comparison(treename = None):
 
-    months = map(monthtranslate, months)
+    months = list(map(monthtranslate, months))
     plot_histo_curve(months, allvalues, 'Distribution of burst dates of growth units'+ (' in '+treename if treename else ''), legends=legends,linewidth=2)
 
 
 def burst_date_distribution_comparison1(treename = None):
     months,allvalues,legends = get_burst_date_distributions(treename)
     del allvalues[0] ; del legends[0]
-    months = map(monthtranslate, months)
+    months = list(map(monthtranslate, months))
     allvalues.insert(1,allvalues[-1])
     del allvalues[-1]
     allvalues.insert(-2,allvalues[3])
@@ -365,14 +374,14 @@ def bloom_date_distribution():
     inputdir = get_glm_mtg_repository( params = params)
     distrib_file = join(inputdir, inflo_distrib_fname)
     if not os.path.exists(distrib_file):
-        print 'Retrieve MTGs'
+        print('Retrieve MTGs')
         mtgs = retrieve_mtgs(inputdir, 10)
         setMtgStyle(eSimulatedMtg)
-        print 'Estimate bloom date distribution'
+        print('Estimate bloom date distribution')
         months,values,refvalues = estimate_bloom_date_distribution(mtgs, reference = True)
         #dump_obj((months,values,refvalues),distrib_fname,inputdir)
     else:
-        print 'Retreive bloom date distribution from',repr(str(distrib_file))
+        print('Retreive bloom date distribution from',repr(str(distrib_file)))
         months,values,refvalues = load_obj(inflo_distrib_fname,inputdir)
     assert len(months) == len(values[0]) == len(refvalues)
     #print months
@@ -388,14 +397,14 @@ def burst_date_distribution_layer1(i=0, glmestimation = eSelectedGlm):
     distrib_file = join(inputdir, gu_distrib_layer1_fname)
     consider = lambda mtg, uc: rank_within_cycle(mtg,uc) == 0
     if not os.path.exists(distrib_file):
-        print 'Retrieve MTGs'
+        print('Retrieve MTGs')
         mtgs = retrieve_mtgs(inputdir)
         setMtgStyle(eSimulatedMtg)
-        print 'Estimate burst date distribution'
+        print('Estimate burst date distribution')
         months,values,refvalues = estimate_burst_date_distribution(mtgs, reference = True, consider=consider)
         dump_obj((months,values,refvalues),gu_distrib_layer1_fname,inputdir)
     else:
-        print 'Retreive burst date distribution from',repr(str(join(inputdir,gu_distrib_layer1_fname)))
+        print('Retreive burst date distribution from',repr(str(join(inputdir,gu_distrib_layer1_fname))))
         months,values,refvalues = load_obj(gu_distrib_layer1_fname,inputdir)
     assert len(months) == len(values[0]) == len(refvalues)
     #plot_histo(months,values,'Distribution of burst date of gu',refvalues,consider=consider)
@@ -408,20 +417,20 @@ def process_burst_date_distribution():
 
     #print paramvalueslist
     # _generate(paramvalueslist[2])
-    params = list(itertools.product(range(3),[eSelectedGlm,eNullGlm]))
+    params = list(itertools.product(list(range(3)),[eSelectedGlm,eNullGlm]))
     pool = Pool(processes=min(cpu_count()-1,3))
-    print params
+    print(params)
     pool.map(_burst_date_distribution_layer1,params)
 
 def histogram_distance(hist1, hist2):
     from math import log
     sh1 = float(sum(hist1))
     sh2 = float(sum(hist2))
-    print sh1, sh2
-    h1 = [v1/sh1 for v1 in hist1]
-    h2 = [v2/sh2 for v2 in hist2]
-    divkl_h1_h2 = sum([v1 * log(v1/v2) for v1,v2 in zip(h1,h2) if abs(v1) > 0 and abs(v2) > 0] )
-    divkl_h2_h1 = sum([v1 * log(v1/v2) for v1,v2 in zip(h2,h1) if abs(v1) > 0 and abs(v2) > 0] )
+    print(sh1, sh2)
+    h1 = [old_div(v1,sh1) for v1 in hist1]
+    h2 = [old_div(v2,sh2) for v2 in hist2]
+    divkl_h1_h2 = sum([v1 * log(old_div(v1,v2)) for v1,v2 in zip(h1,h2) if abs(v1) > 0 and abs(v2) > 0] )
+    divkl_h2_h1 = sum([v1 * log(old_div(v1,v2)) for v1,v2 in zip(h2,h1) if abs(v1) > 0 and abs(v2) > 0] )
     return divkl_h1_h2+divkl_h2_h1
 
 
@@ -432,13 +441,13 @@ def histogram_distances(allvalues, legends):
     results = []
     for d in allvalues[2:]:
         results.append(histogram_distance(ref,d))
-    res = [(r/results[-1]) for r in results]
+    res = [(old_div(r,results[-1])) for r in results]
     for l,r in zip(legends[2:], res):
-        print l,r
+        print(l,r)
 
 def burst_date_histogram_distances():
     months, allvalues, legends = get_burst_date_distributions()
-    print legends
+    print(legends)
     histogram_distances(allvalues, legends)
 
 
@@ -458,12 +467,12 @@ def branch_length_histogram(mtgfname = 'reference'):
             l += 1
         return l
     last_apical_ucs = [uc for uc in ucs if len([is_apical(mtg,cuc) for cuc in vegetative_children(mtg,uc)]) == 0]
-    axial_axe_lengths = map(axial_axe_length, last_apical_ucs)
+    axial_axe_lengths = list(map(axial_axe_length, last_apical_ucs))
     maxlength = max(axial_axe_lengths)
-    histo = [0 for i in xrange(maxlength+1)]
+    histo = [0 for i in range(maxlength+1)]
     for l in axial_axe_lengths:
         histo[l] += 1    
-    print 'Done',repr(mtgfname), '...'
+    print('Done',repr(mtgfname), '...')
     return histo
 
 def p_branch_length_histogram(params):
@@ -475,13 +484,13 @@ axe_length_distrib_fname = 'axe_length_distribution.pkl'
 def restricted_branch_length_histogram(glm = eSelectedGlm, restriction = None, plotting = False):
     from multiprocessing import Pool, Manager, cpu_count
     from vplants.mangosim.util_date import MonthEn
-    Month = dict( [(mi,v) for v,mi in MonthEn.items()] )
+    Month = dict( [(mi,v) for v,mi in list(MonthEn.items())] )
 
     params = {'WITHINDELAYMETHOD' : WITHINDELAYMETHODVALUES[0],  'ESTIMATIONTYPE' : glm, 'FACTORRESTRICTION' : restriction}
     inputdir = get_glm_mtg_repository( params = params)
     distrib_file = join(inputdir, axe_length_distrib_fname)
     if not os.path.exists(distrib_file):
-        print 'Retrieve MTGs'
+        print('Retrieve MTGs')
         if not os.path.exists(join(inputdir,'collect_'+axe_length_distrib_fname)):
             mtgs = retrieve_mtgs(inputdir)
             m = Manager()
@@ -489,31 +498,31 @@ def restricted_branch_length_histogram(glm = eSelectedGlm, restriction = None, p
             p_branch_length_histogram([result,'reference'])
             params = [[result, mtg] for mtg in mtgs]
             p = Pool(processes = cpu_count())
-            print 'Estimate branch_length_histogram'
+            print('Estimate branch_length_histogram')
             p.map(p_branch_length_histogram, params)
             dump_obj(dict(result),'collect_'+axe_length_distrib_fname,inputdir)
         else: result = load_obj('collect_'+axe_length_distrib_fname,inputdir)
         values = []
-        print len(result)
-        for k,v in result.items():
+        print(len(result))
+        for k,v in list(result.items()):
             if k == 'reference':
                 refvalues = v
             else:
                 values.append(v)        
         dump_obj((values,refvalues),axe_length_distrib_fname,inputdir)
     else:
-        print 'Retreive branch_length_histogram from',repr(str(join(inputdir,axe_length_distrib_fname)))
+        print('Retreive branch_length_histogram from',repr(str(join(inputdir,axe_length_distrib_fname))))
         values, refvalues = load_obj(axe_length_distrib_fname,inputdir)
     if plotting :
-        maxl = max(max(map(len,values)),len(refvalues))
-        print maxl
+        maxl = max(max(list(map(len,values))),len(refvalues))
+        print(maxl)
         for v in values:
             del v[0]
-            if len(v) < maxl: v += [0 for i in xrange(maxl-len(v))]
+            if len(v) < maxl: v += [0 for i in range(maxl-len(v))]
         del refvalues[0]
         if len(refvalues) < maxl:
-             refvalues += [0 for i in xrange(maxl-len(refvalues))]
-        plot_histo(range(1,maxl), values, '', refvalues) #'Branch length', refvalues)
+             refvalues += [0 for i in range(maxl-len(refvalues))]
+        plot_histo(list(range(1,maxl)), values, '', refvalues) #'Branch length', refvalues)
 
 
 def get_branch_length_histograms(treename = None, verbose = False):
@@ -521,24 +530,24 @@ def get_branch_length_histograms(treename = None, verbose = False):
 
     allsetvalues = []
     grefvalues = None
-    for glmtype, withindelaymethodval,restriction in list(itertools.product([eSelectedGlm],[eMonthMultiVariateForWithin],[None]+RestrictionName.keys()))+[(eNullGlm,eMonthMultiVariateForWithin, None )]:
+    for glmtype, withindelaymethodval,restriction in list(itertools.product([eSelectedGlm],[eMonthMultiVariateForWithin],[None]+list(RestrictionName.keys())))+[(eNullGlm,eMonthMultiVariateForWithin, None )]:
     #for glmtype, withindelaymethodval,restriction in [(eSelectedGlm,eMonthMultiVariateForWithin, None ),(eNullGlm,eMonthMultiVariateForWithin, None )]:
         params = {'WITHINDELAYMETHOD' : withindelaymethodval, 'ESTIMATIONTYPE' : glmtype, 'FACTORRESTRICTION' : restriction}
         inputdir = get_glm_mtg_repository( params = params)
         if not treename is None: laxe_length_distrib_fname = treename+'_'+axe_length_distrib_fname
         else: laxe_length_distrib_fname = axe_length_distrib_fname
         distrib_file = join(inputdir, laxe_length_distrib_fname)
-        if verbose : print 'Retreive burst date distribution from',repr(str(distrib_file))
+        if verbose : print('Retreive burst date distribution from',repr(str(distrib_file)))
         values, refvalues = load_obj(laxe_length_distrib_fname,inputdir)
         if grefvalues is None: grefvalues = refvalues
         allsetvalues.append(values)
         #allvalues.append([mean([values[j][i] for j in range(len(values))] ) for i in range(len(values[0]))])
 
-    maxl = max(max([max(map(len,v)) for v in allsetvalues]),len(refvalues))
-    allvalues = [grefvalues + [0 for i in xrange(maxl+1-len(grefvalues))]]
-    allvalues += [[mean([v[i] if len(v) > i else 0 for v in _allvalues  ])  for i in xrange(maxl+1)] for _allvalues in allsetvalues]
+    maxl = max(max([max(list(map(len,v))) for v in allsetvalues]),len(refvalues))
+    allvalues = [grefvalues + [0 for i in range(maxl+1-len(grefvalues))]]
+    allvalues += [[mean([v[i] if len(v) > i else 0 for v in _allvalues  ])  for i in range(maxl+1)] for _allvalues in allsetvalues]
 
-    legends = ['Reference','GLM']+[a+' '+b for a,b in itertools.product(['GLM'],[m.replace('_',' ') for m in RestrictionName.values()])]+['Null GLM']
+    legends = ['Reference','GLM']+[a+' '+b for a,b in itertools.product(['GLM'],[m.replace('_',' ') for m in list(RestrictionName.values())])]+['Null GLM']
     return allvalues, legends
 
 
@@ -549,14 +558,14 @@ def histogram_distances(allvalues, legends):
     #del allvalues[1]
     results = []
     for d in allvalues[2:]:
-        print ref
-        print d
-        print histogram_distance(ref,d)
+        print(ref)
+        print(d)
+        print(histogram_distance(ref,d))
         results.append(histogram_distance(ref,d))
-    print results
-    res = [(r/results[-1]) for r in results]
+    print(results)
+    res = [(old_div(r,results[-1])) for r in results]
     for l,r in zip(legends[2:], res):
-        print l,r
+        print(l,r)
 
 def branch_length_histogram_comparison(treename = None):
     allvalues,legends = get_branch_length_histograms(treename)
@@ -567,7 +576,7 @@ def branch_length_histogram_comparison(treename = None):
     allvalues2 = []
     for values in allvalues:
         sv = float(sum(values))
-        allvalues2.append([v/sv for v in values[1:]])
+        allvalues2.append([old_div(v,sv) for v in values[1:]])
     allvalues= allvalues2
 
     #histogram_distances(allvalues, legends)
@@ -578,8 +587,8 @@ def branch_length_histogram_comparison(treename = None):
     del allvalues[3]
 
     legends = ['GLM','Null GLM','GLM without Burst Date','GLM without Position', 'GLM without Ancestor Fate','GLM without Ancestor Position']
-    for v in allvalues: print len(v)
-    plot_histo_curve(range(1,len(allvalues[0])), allvalues, 'Distribution of branch lengths'+ (' in '+treename if treename else ''), legends=legends,linewidth=2)
+    for v in allvalues: print(len(v))
+    plot_histo_curve(list(range(1,len(allvalues[0]))), allvalues, 'Distribution of branch lengths'+ (' in '+treename if treename else ''), legends=legends,linewidth=2)
 
 
 

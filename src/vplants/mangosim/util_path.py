@@ -1,3 +1,4 @@
+from builtins import str
 from os.path import join, exists, abspath, dirname
 import os
 import vplants.mangosim
@@ -102,7 +103,7 @@ def param_stringid(params, consideronly = None, sep = '_'):
     return result
 
 def stringid_param(string, sep = '_'):
-    def inverse(mdict) : return dict([(v,k) for k,v in mdict.items()])
+    def inverse(mdict) : return dict([(v,k) for k,v in list(mdict.items())])
     abbrevs = string.split(sep)
     assert len(abbrevs) == 4
     params = {'VARIETY' : inverse(varietyabbrev)[abbrevs[0]], 'GLM_TYPE' : inverse(glmtypeabbrev)[abbrevs[1]],
@@ -116,7 +117,7 @@ def stringid_param(string, sep = '_'):
 def common_options(paramlist):
     paramref = paramlist[0]
     commons = []
-    for k, v in paramref.items():
+    for k, v in list(paramref.items()):
         for param in paramlist[1:]:
             if param.get(k) != v:
                 break

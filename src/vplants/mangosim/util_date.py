@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import range
 from datetime import date, timedelta
 
 
@@ -14,11 +16,11 @@ MonthEn = {'january' : 1, 'february' : 2, 'march' : 3,
          'october' : 10, 'november' : 11, 'december' : 12 }
 
 
-MonthName = dict([(v,k) for k,v in Month.items()])
-MonthEnName = dict([(v,k) for k,v in MonthEn.items()])
+MonthName = dict([(v,k) for k,v in list(Month.items())])
+MonthEnName = dict([(v,k) for k,v in list(MonthEn.items())])
 
 
-MonthOrder = range(6,13)+range(6)
+MonthOrder = list(range(6,13))+list(range(6))
 
 def date_from_string(string):
     """From string = 'month.year', it return a date
@@ -205,7 +207,7 @@ bloom_weeks = {}
 def get_bloom_weeks(icycle):
     if not icycle in bloom_weeks:
         bloom_weeks_i = { 0 : (date(2000+icycle,7,1),get_date_from_week(2000+icycle,31,7)) }
-        bloom_weeks_i.update(dict([(i, (get_date_from_week(2000+icycle,31+i,1), get_date_from_week(2000+icycle,31+i,7))) for i in xrange(1,13)]))
+        bloom_weeks_i.update(dict([(i, (get_date_from_week(2000+icycle,31+i,1), get_date_from_week(2000+icycle,31+i,7))) for i in range(1,13)]))
         bloom_weeks[icycle] = bloom_weeks_i
     return bloom_weeks[icycle]
 
@@ -214,7 +216,7 @@ def get_bloom_week(date, icycle = None):
     if icycle is None:
         icycle = get_flowering_cycle(date)
     bweeks = get_bloom_weeks(icycle)
-    for periodid, period_beg_end  in bweeks.items():
+    for periodid, period_beg_end  in list(bweeks.items()):
         if period_beg_end[0] <= date <= period_beg_end[1]:
             return periodid
 
@@ -231,7 +233,7 @@ def get_harvest_week(date, icycle = None):
     if icycle is None:
         icycle = get_fruiting_cycle(date)
     weeks = get_harvest_weeks(icycle)
-    for periodid, period_beg_end  in weeks.items():
+    for periodid, period_beg_end  in list(weeks.items()):
         if period_beg_end[0] <= date <= period_beg_end[1]:
             return periodid
 

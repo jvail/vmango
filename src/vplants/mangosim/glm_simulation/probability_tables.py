@@ -1,11 +1,15 @@
+from __future__ import print_function
 #from vplants.mangosim.tools import share_dir
+from builtins import zip
+from builtins import range
+from builtins import object
 from vplants.mangosim.state import *
 from vplants.mangosim.util_date import *
 from vplants.mangosim.util_path import *
 from vplants.mangosim.devlaw_description import *
 
 
-class ProbaTable:
+class ProbaTable(object):
     def __init__(self, name, family, fname = None):
         self.name = name
         self.family = family
@@ -31,24 +35,24 @@ class ProbaTable:
         subset_table_factor = tablevalues[self.factors]
         subset_table_probas = tablevalues[extrafactors]
         self.values = {}
-        for ind in xrange(len(tablevalues)):
+        for ind in range(len(tablevalues)):
             factorv = tuple(subset_table_factor.iloc[ind])
             self.values[factorv] = list(subset_table_probas.iloc[ind])
 
     def get_proba_value(self, args):
         if len(args) < len(self.factors): 
             raise ValueError('Invalid number of factors.',args, self.factors)
-        for arg, value in args.items():
+        for arg, value in list(args.items()):
             if not value in factorsvalues[arg]: 
                 raise ValueError('Invalid value for factor of test',value,arg,self.name)
         try:
             factoractualvalue = tuple([args[f] for f in self.factors])
-        except KeyError, e:
+        except KeyError as e:
             #print self.factors, args, self.type, self.name
             raise e
         try:
             return self.values[factoractualvalue]
-        except KeyError, e:
+        except KeyError as e:
             # print self.factors, factoractualvalue, self.type, self.name
             raise e            
 
@@ -150,12 +154,12 @@ def use_proba_table_from(treename,  estimationbase, estimationtype = eCompleteGl
     use_proba_table(mm.get_variety(mm.get_tree_from_name(treename)), probnames, estimationtype, restriction)
 
 def iterprobatables():
-    for k, ps in global_proba_tables.items():
-        for cycle, pbs in ps.items():
+    for k, ps in list(global_proba_tables.items()):
+        for cycle, pbs in list(ps.items()):
             wpbs, lpbs =  pbs
-            for pbname, pb in wpbs.items():
+            for pbname, pb in list(wpbs.items()):
                 yield pb
-            for pbname, pb in lpbs.items():
+            for pbname, pb in list(lpbs.items()):
                 yield pb
 
 def set_seed(value):
@@ -166,7 +170,7 @@ def set_seed(value):
 
 current_unitdev = None
 
-class UnitDev:
+class UnitDev(object):
     def __init__(self, Burst_Date, 
                        Position_A, 
                        Nature_F = None, 
@@ -195,7 +199,7 @@ class UnitDev:
         current_unitdev = self
 
     def get_realization(self, name, cycle = eWithinCycle):
-        if self.trace: print 'Test',self.cycle,'Within' if cycle == eWithinCycle else 'Delayed',name
+        if self.trace: print('Test',self.cycle,'Within' if cycle == eWithinCycle else 'Delayed',name)
         p = (self.params if cycle == eWithinCycle else self.paramsdelayed)
         return self.proba_tables[0 if cycle == eWithinCycle else 1][name].realization(**p)
 
@@ -204,7 +208,7 @@ class UnitDev:
             return False
         try:
             return self.get_realization('vegetative_burst',cycle)
-        except KeyError, ie: # some month may not be fulfilled.
+        except KeyError as ie: # some month may not be fulfilled.
             return False
 
     def burst_date_children(self, cycle = eWithinCycle):
@@ -252,13 +256,13 @@ class UnitDev:
     def nb_lateral_gu_children(self, cycle = eWithinCycle):
         try:
             return self.get_realization('nb_lateral_gu_children',cycle)+1
-        except KeyError, ie:
+        except KeyError as ie:
             return 0
 
     def flowering(self):
         try:
             return self.get_realization('flowering')
-        except KeyError, ie:
+        except KeyError as ie:
             return False
 
     def nb_inflorescences(self):
@@ -269,7 +273,7 @@ class UnitDev:
         from datetime import timedelta
         try:
             fweek = int(self.get_realization('flowering_week'))
-        except KeyError,e:
+        except KeyError as e:
             fweek = 5      
         period_beg, period_end = bloom_weeks[self.cycle][fweek]
         return period_beg + timedelta(days=randint(0,(period_end-period_beg).days))
@@ -277,7 +281,7 @@ class UnitDev:
     def fruiting(self):
         try:
             return self.get_realization('fruiting')
-        except KeyError, ie:
+        except KeyError as ie:
             return False
 
     def nb_fruits(self):

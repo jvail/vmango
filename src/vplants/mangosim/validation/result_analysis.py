@@ -1,4 +1,14 @@
+from __future__ import division
+from __future__ import print_function
+from past.builtins import cmp
+from builtins import zip
+from builtins import str
+from builtins import map
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import vplants.mangosim.doralice_mtg.mtg_manipulation as mm
+from functools import reduce
 reload(mm) 
 from vplants.mangosim.doralice_mtg.mtg_manipulation import *
 from vplants.mangosim.state import *
@@ -14,7 +24,7 @@ import matplotlib.pyplot as plt
 figoutdir = 'figures'
 
 def retrieve_mtgfiles(inputdir, nb = None):
-    print 'Dir:',inputdir
+    print('Dir:',inputdir)
     import glob
     mtgfiles = glob.glob(join(inputdir,mtgfname.format('*')))
     mtgfiles.sort()
@@ -24,18 +34,18 @@ def retrieve_mtgfiles(inputdir, nb = None):
 def retrieve_mtgs(inputdir, nb = None):
     mtgs = []
     for  mtgfile in retrieve_mtgfiles(inputdir, nb):
-        print 'Retreive '+repr(os.path.basename(mtgfile))
+        print('Retreive '+repr(os.path.basename(mtgfile)))
         mtgs.append(load_obj(mtgfile))
     return mtgs
 
 def mykeyhandler(event):
     if event.key == 'escape': plt.close()
-    else: print('you pressed', event.key, event.xdata, event.ydata)
+    else: print(('you pressed', event.key, event.xdata, event.ydata))
 
 from vplants.mangosim.utils.util_parallel import *
 
 
-class Invokable:
+class Invokable(object):
     def __init__(self, name, title):
         self.name = name 
         self.title = title
@@ -65,13 +75,13 @@ class Evaluator (Invokable):
         baseparams = {'GLM_TYPE' : glm, 'GLM_RESTRICTION' : restriction}
         if not 'FRUIT_MODEL' in args:
             baseparams['FRUIT_MODEL'] = [self.fruitmodel]
-        for name, argval in args.items():
+        for name, argval in list(args.items()):
             if type(argval) != list: baseparams[name] = [argval]
             else : baseparams[name] = argval
 
-        paramtargets = list(itertools.product(*baseparams.values()))
+        paramtargets = list(itertools.product(*list(baseparams.values())))
         for paramvalue in paramtargets:
-            params = dict(zip(baseparams.keys(),paramvalue))
+            params = dict(list(zip(list(baseparams.keys()),paramvalue)))
             self.paramtargets.append(params)
         return self
 
@@ -103,7 +113,7 @@ class Evaluator (Invokable):
             import glob
             pathes = glob.glob(os.path.join(path,fbs_prefix+'*'))
             sizerange = [int(os.path.basename(lpath)[len(fbs_prefix):]) for lpath in pathes]
-            print 'Fruit Branch Size Range :', sizerange
+            print('Fruit Branch Size Range :', sizerange)
 
         self.addtarget(WITH_GLM = False, FRUIT_MODEL = True, FRUITBRANCHSIZE = sizerange)
         pass
@@ -148,7 +158,7 @@ class Evaluator (Invokable):
                         values.append(self._applyto(eSimulatedMtg, mtgfile))
                 else:
                     values += nparmap(lambda mfile : self._applyto(eSimulatedMtg, mfile), mtgfiles)
-                print 'Applied in', time.time()-t,'sec.'
+                print('Applied in', time.time()-t,'sec.')
                 dump_obj(values, cachebasename, inputdir)
             else:
                 values = load_obj(cachebasename, inputdir)
@@ -162,7 +172,7 @@ class Evaluator (Invokable):
             if saving:
                 if not os.path.exists(figoutdir):
                     os.makedirs(figoutdir)
-                print 'Save',repr(filename)
+                print('Save',repr(filename))
                 plt.savefig(filename,  bbox_inches='tight')
                 plt.close()
             else:
@@ -193,7 +203,7 @@ class Evaluator (Invokable):
 
     def saved_filenames(self):
         fname = self.savedbasename()
-        fnames = [os.path.join(figoutdir,fname+'--'+str(i)+'.png') for i in xrange(len(self.reducefuncs))]
+        fnames = [os.path.join(figoutdir,fname+'--'+str(i)+'.png') for i in range(len(self.reducefuncs))]
         return fnames
 
     def isUptodate(self):
@@ -210,11 +220,11 @@ class Evaluator (Invokable):
     def _applyto(self, mtgtype, mtgfile = None):
         setMtgStyle(mtgtype)
         if mtgtype == eSimulatedMtg : 
-            if self.verbose : print 'Process', repr(os.path.basename(mtgfile))
+            if self.verbose : print('Process', repr(os.path.basename(mtgfile)))
             mtg = load_obj(mtgfile)
             mtg.fname = mtgfile
         else : 
-            if self.verbose : print 'Process reference'
+            if self.verbose : print('Process reference')
             mtg = get_mtg()
         if type(mtg) != MTG: raise ValueError(mtg)
         return self.func(mtg, mtgtype, *self.funcargs, **self.funckwds)
@@ -269,7 +279,7 @@ def monthtranslate(txt):
 
 def __strip_histo(histo):
     # We remove the first and last part of the histo if it is equal to 0.
-    keyvalues = histo.keys()
+    keyvalues = list(histo.keys())
     for d in keyvalues:
         if histo[d] == 0:
             del histo[d]
@@ -305,20 +315,20 @@ def chisquare(hist1, hist2):
             else:
                 h1.append(v1)
                 h2.append(v2)
-    print
+    print()
     #print hist1
     #print hist2
-    print h1
-    print h2
+    print(h1)
+    print(h2)
     res = chisquare(h1, f_exp=h2)
     return res[0],res[1]
 
 def normalize_histo(histo):
     sh1 = float(sum(histo))
-    return [v1/sh1 for v1 in histo]
+    return [old_div(v1,sh1) for v1 in histo]
 
 def kullback_leibler_divergence(hist1, hist2):
-    return sum([v1 * log(v1/v2) for v1,v2 in zip(hist1, hist2) if abs(v1) > 0 and abs(v2) > 0] )
+    return sum([v1 * log(old_div(v1,v2)) for v1,v2 in zip(hist1, hist2) if abs(v1) > 0 and abs(v2) > 0] )
 
 def sym_kullback_leibler_divergence(hist1, hist2):
     assert len(hist1) == len(hist2)
@@ -339,7 +349,7 @@ def bhattacharyya_histo_distance(hist1, hist2):
 def chi_squared_histo_distance(hist1, hist2):
     h1 = normalize_histo(hist1)
     h2 = normalize_histo(hist2)
-    return sum([pow(v1-v2,2)/(v1+v2) for v1,v2 in zip(h1,h2) if abs(v1) > 0 or abs(v2) > 0])/2.
+    return sum([old_div(pow(v1-v2,2),(v1+v2)) for v1,v2 in zip(h1,h2) if abs(v1) > 0 or abs(v2) > 0])/2.
 
 def l2_normed_histo_distance(hist1, hist2):
     h1 = normalize_histo(hist1)
@@ -364,7 +374,7 @@ def normalized_rmsd(hist1, hist2):
 
 def normalized_rmsd2(hist1, hist2):
     assert len(hist1) == len(hist2)
-    return rmsd(hist1, hist2)  / (max(max(hist1),max(hist2)) - min(min(hist1),min(hist2)))
+    return old_div(rmsd(hist1, hist2), (max(max(hist1),max(hist2)) - min(min(hist1),min(hist2))))
 
 def histogram_distance(hist1, hist2):
     return rmsd(hist1, hist2)
@@ -379,16 +389,16 @@ def histogram_distances(reference, allvalues, nullmodel = None ):
         results.append((k,histogram_distance(reference,d)))
     if nullmodel:
         nullmodelval = results[nullmodel][1]
-        results = [(k,v/nullmodelval)for k,v in results]
+        results = [(k,old_div(v,nullmodelval))for k,v in results]
     return results
 
 def meanarray(values):
     import numpy as np
-    return [np.mean([v[i] for v in values]) for i in xrange(len(values[0]))]
+    return [np.mean([v[i] for v in values]) for i in range(len(values[0]))]
 
 def meanarrays(kvalues):
     if type(kvalues) == dict:
-        return dict([(k,meanarray(a)) for k,a in kvalues.items()])
+        return dict([(k,meanarray(a)) for k,a in list(kvalues.items())])
     else:
         return [(k,meanarray(a)) for k,a in kvalues]
 
@@ -398,7 +408,7 @@ def flattenarray(values):
 
 def flattenarrays(kvalues):
     if type(kvalues) == dict:
-       return dict([(k,[flattenarray(values) for values in valuesset]) for k,valuesset in kvalues.items()])
+       return dict([(k,[flattenarray(values) for values in valuesset]) for k,valuesset in list(kvalues.items())])
     else:
        return [(k,[flattenarray(values) for values in valuesset]) for k,valuesset in kvalues]
 
@@ -408,25 +418,25 @@ def selectsubarray(values, indices):
 
 def selectsubarrays(kvalues, indices):
     if type(kvalues) == dict:
-       return dict([(k,[selectsubarray(values, indices) for values in valuesset])  for k,valuesset in kvalues.items()])
+       return dict([(k,[selectsubarray(values, indices) for values in valuesset])  for k,valuesset in list(kvalues.items())])
     else:
        return [(k,[selectsubarray(values, indices) for values in valuesset])  for k,valuesset in kvalues]
 
 
 def maxlength(kvalues):
     if type(kvalues) == dict:
-        return max([max(map(len,ivalues)) for ivalues in kvalues.values()])
+        return max([max(list(map(len,ivalues))) for ivalues in list(kvalues.values())])
     else:    
-        return max([max(map(len,ivalues)) for iparam, ivalues in kvalues])
+        return max([max(list(map(len,ivalues))) for iparam, ivalues in kvalues])
 
 def homogenize_histo_length(refvalues, kvalues):
     maxl = max(maxlength(kvalues), len(refvalues))
-    kvalueshistos = kvalues.values() if type(kvalues) == dict else [v for k,v in kvalues]
+    kvalueshistos = list(kvalues.values()) if type(kvalues) == dict else [v for k,v in kvalues]
     for ivalues in kvalueshistos:
         for v in ivalues:
-            if len(v) < maxl: v += [0 for i in xrange(maxl-len(v))]
+            if len(v) < maxl: v += [0 for i in range(maxl-len(v))]
     if len(refvalues) < maxl:
-         refvalues += [0 for i in xrange(maxl-len(refvalues))]
+         refvalues += [0 for i in range(maxl-len(refvalues))]
     return maxl
 
 restrictions = list(reversed([None, eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction, eAllRestriction]))
@@ -438,7 +448,7 @@ def sortedkeys(kvalues):
 
 def find_param(kvalues, **paramvalues):
     for i, (p,v) in enumerate(kvalues):
-        for pname, pvalue in paramvalues.items():
+        for pname, pvalue in list(paramvalues.items()):
             try:
                 assert p[pname] == pvalue
             except:
@@ -463,12 +473,12 @@ def histodistances(meankvalues, refsimu = {'GLM_RESTRICTION' : None}, nullsimu =
     res = [v for k,v in histo]
     if type(refsimu) == dict:
         res.insert(refsimuid, 0)
-    print '\t'.join(map(str,res))
+    print('\t'.join(map(str,res)))
     return res
 
 def histodistance_legend(meankvalues, refsimu = {'GLM_RESTRICTION' : None}, nullsimu = {'GLM_RESTRICTION' : eAllRestriction}):
     res = histodistances(meankvalues, refsimu, nullsimu)
-    res = map(str,res) #['%.3f' % v for v in res]
+    res = list(map(str,res)) #['%.3f' % v for v in res]
     return res 
 
 def histogram(values):
@@ -476,17 +486,17 @@ def histogram(values):
     #return list(histogram(values)[0])
     from collections import Counter
     c = Counter(values)
-    k = c.keys()
-    return [c.get(ki,0) for ki in xrange(min(k), max(k)+1)]
+    k = list(c.keys())
+    return [c.get(ki,0) for ki in range(min(k), max(k)+1)]
 
 def histogram_comparison(refvalues, kvalues):
     meankvalues = meanarrays(kvalues)
-    print 'RMSD :', rmsd(refvalues, meankvalues[0][1])
-    print 'N RMSD :', normalized_rmsd(refvalues, meankvalues[0][1])
-    print 'N2 RMSD :', normalized_rmsd2(refvalues, meankvalues[0][1])
-    print 'Kol-Simrnov :', ks_2samp(refvalues, meankvalues[0][1])
-    print 'Chi-Square :', chisquare(meankvalues[0][1], refvalues)
-    print rmsd(refvalues, meankvalues[0][1]),'\t',normalized_rmsd(refvalues, meankvalues[0][1]),'\t',ks_2samp(refvalues, meankvalues[0][1])[0],'\t',ks_2samp(refvalues, meankvalues[0][1])[1]
+    print('RMSD :', rmsd(refvalues, meankvalues[0][1]))
+    print('N RMSD :', normalized_rmsd(refvalues, meankvalues[0][1]))
+    print('N2 RMSD :', normalized_rmsd2(refvalues, meankvalues[0][1]))
+    print('Kol-Simrnov :', ks_2samp(refvalues, meankvalues[0][1]))
+    print('Chi-Square :', chisquare(meankvalues[0][1], refvalues))
+    print(rmsd(refvalues, meankvalues[0][1]),'\t',normalized_rmsd(refvalues, meankvalues[0][1]),'\t',ks_2samp(refvalues, meankvalues[0][1])[0],'\t',ks_2samp(refvalues, meankvalues[0][1])[1])
 
 def plot_histogram(refvalues, kvalues, xlabels, title, titlelocation = 2, xlabelrotation = 0, figsize = None):
     assert len(xlabels) == len(kvalues[0][1][0]) == len(refvalues)
@@ -494,7 +504,7 @@ def plot_histogram(refvalues, kvalues, xlabels, title, titlelocation = 2, xlabel
         histogram_comparison(refvalues, kvalues)
         fig, ax = plot_histo(xlabels, allvalues=kvalues[0][1], _title=title, reference=refvalues, legendtag = kvalues[0][0], titlelocation = titlelocation, xlabelrotation = xlabelrotation, figsize = figsize)
     else:
-        print 'trace'
+        print('trace')
         meankvalues = meanarrays(kvalues)
         legends = histodistance_legend(meankvalues, refvalues)
         fig, ax = plot_histos_means(xlabels, [v for k,v in meankvalues], title+' Comparison', reference=refvalues, legends = legends, legendtags = [k for k,v in meankvalues], titlelocation = titlelocation, xlabelrotation = xlabelrotation, figsize = None)
@@ -507,7 +517,7 @@ from vplants.mangosim.util_date import Month
 class burst_date_distribution(Evaluator):
     def __init__(self):
         Evaluator.__init__(self, 'burst',self.determine_distribution, self.plot, 'Burst Date Distribution')
-        self.Month = dict([(i,v) for v,i in Month.items()])
+        self.Month = dict([(i,v) for v,i in list(Month.items())])
         self.daterange = monthdate_range(vegetative_cycle_end(3),vegetative_cycle_begin(6))
 
     def determine_distribution(self, mtg, mtgype):
@@ -521,11 +531,11 @@ class burst_date_distribution(Evaluator):
                 y = d.year
                 histo_date[(y,m)] += 1
             except : pass
-        return histo_date.values()
+        return list(histo_date.values())
 
     def plot(self, refvalues,kvalues):
         strdate = lambda d : monthtranslate(self.Month[d[1]])+'-'+str(d[0])
-        dates     = map(strdate, self.daterange)
+        dates     = list(map(strdate, self.daterange))
         plot_histogram(refvalues, kvalues, dates, self.maketitle('Burst Dates'), titlelocation = 2, xlabelrotation = 80, figsize=(10,4))
         plt.xlabel('Month')
         plt.ylabel('Number of new growth units')
@@ -557,11 +567,11 @@ class bloom_date_distribution(Evaluator):
                 histo_date[d] += 1
             except : pass
         #if strip : __strip_histo(histo_date)
-        return histo_date.values()
+        return list(histo_date.values())
 
     def plot(self, refvalues, kvalues):
         strdate = lambda d : str(d[1])# +'-'+str(d[0]-2000)
-        dates     = map(strdate, self.daterange)
+        dates     = list(map(strdate, self.daterange))
         del refvalues[0:5]
         del dates[0:5]
         for k,valueset in kvalues:
@@ -601,11 +611,11 @@ class harvest_date_distribution(Evaluator):
                     histo_date[d] += 1
                 except : pass
         #if strip : __strip_histo(histo_date)
-        return histo_date.values()
+        return list(histo_date.values())
 
     def plot(self, refvalues,kvalues):
         strdate = lambda d : str(d[1])#+'-'+str(d[0]-2000)
-        dates     = map(strdate, self.daterange)
+        dates     = list(map(strdate, self.daterange))
         del refvalues[0:5]
         del dates[0:5]
         for k,valueset in kvalues:
@@ -633,14 +643,14 @@ class tree_branch_length(Evaluator):
                 l += 1
             return l
         last_apical_ucs = [uc for uc in ucs if len([cuc for cuc in vegetative_children(mtg,uc) if is_apical(mtg,cuc)]) == 0]
-        axial_axe_lengths = map(axial_axe_length, last_apical_ucs)
+        axial_axe_lengths = list(map(axial_axe_length, last_apical_ucs))
         histo = histogram(axial_axe_lengths)
         return histo
 
     def plot(self, refvalues,kvalues):
-        print refvalues
+        print(refvalues)
         maxl = homogenize_histo_length(refvalues,kvalues)
-        fig, ax = plot_histogram(refvalues, kvalues, range(1,maxl+1), self.maketitle('Branch Length'), titlelocation = 1, figsize=(8,4))
+        fig, ax = plot_histogram(refvalues, kvalues, list(range(1,maxl+1)), self.maketitle('Branch Length'), titlelocation = 1, figsize=(8,4))
         plt.xlabel('Number of Growth Units per Branch')
         plt.ylabel('Number of Branches')
 
@@ -665,15 +675,15 @@ class current_year_axe_length(Evaluator):
                 for p in parents:
                     groupid[p] = gid
         groupidcount = {}
-        for gid in groupid.values():
+        for gid in list(groupid.values()):
             groupidcount.setdefault(gid, 0)
             groupidcount[gid] += 1
-        histo = histogram(groupidcount.values())
+        histo = histogram(list(groupidcount.values()))
         return histo
 
     def plot(self, refvalues,kvalues):
         maxl = homogenize_histo_length(refvalues,kvalues)
-        plot_histogram(refvalues, kvalues, range(1,maxl+1), self.maketitle('Current Year Axe Length'), titlelocation = 1)
+        plot_histogram(refvalues, kvalues, list(range(1,maxl+1)), self.maketitle('Current Year Axe Length'), titlelocation = 1)
 
 
 
@@ -711,8 +721,8 @@ class terminal_count_distribution(organ_count_distribution):
         organ_count_distribution.__init__(self,'terminal',self.determine_distribution, self.plot_distribution1, 'Terminal GU Characteristics')
 
     def determine_distribution(self, mtg, mtgtype):
-        terminals = [self.get_terminal_gus_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
-        nbterminals = map(lambda t : (len ([gu for gu in t if mtg.edge_type(gu) == '<']),len ([gu for gu in t if mtg.edge_type(gu) == '+'])),terminals)
+        terminals = [self.get_terminal_gus_at_cycle(mtg, cycle=c) for c in range(self.begcycle, self.maxcycle)]
+        nbterminals = [(len ([gu for gu in t if mtg.edge_type(gu) == '<']),len ([gu for gu in t if mtg.edge_type(gu) == '+'])) for t in terminals]
         nbfloterminals = [(len([gu for gu in cterminals if len(inflorescence_children(mtg,gu)) > 0 and mtg.edge_type(gu) == '<']),
                            len([gu for gu in cterminals if len(inflorescence_children(mtg,gu)) > 0 and mtg.edge_type(gu) == '+'])) for cterminals in terminals]
         return nbterminals+nbfloterminals
@@ -720,28 +730,28 @@ class terminal_count_distribution(organ_count_distribution):
     def print_distribution(self, refvalues, kvalues):
         import numpy as np
         begcycle, maxcycle = self.begcycle, self.maxcycle
-        labels = ['Nb Terminals '+str(i) for i in xrange(begcycle, maxcycle)]+['Nb Flowering Terminals '+str(i) for i in xrange(begcycle, maxcycle)]+['Nb Inflos '+str(i) for i in xrange(begcycle, maxcycle)]+['Nb Fruits '+str(i) for i in xrange(begcycle, maxcycle)]
-        for k,values in kvalues.items():
+        labels = ['Nb Terminals '+str(i) for i in range(begcycle, maxcycle)]+['Nb Flowering Terminals '+str(i) for i in range(begcycle, maxcycle)]+['Nb Inflos '+str(i) for i in range(begcycle, maxcycle)]+['Nb Fruits '+str(i) for i in range(begcycle, maxcycle)]
+        for k,values in list(kvalues.items()):
             glm, restriction = k
-            print RestrictionName[restriction]
-            for i in xrange(len(refvalues)):
-                print labels[i],'\t',
-                print refvalues[i],'\t',
+            print(RestrictionName[restriction])
+            for i in range(len(refvalues)):
+                print(labels[i],'\t', end=' ')
+                print(refvalues[i],'\t', end=' ')
                 if type(values[0][i]) != tuple:
-                    print np.mean([val[i] for val in values]),'+-',
-                    print np.std([val[i] for val in values])
+                    print(np.mean([val[i] for val in values]),'+-', end=' ')
+                    print(np.std([val[i] for val in values]))
                 else:
-                    print '(',
-                    for j in xrange(len(values[0][i])):
-                        print np.mean([val[i][j] for val in values]),'+-',
-                        print np.std([val[i][j] for val in values]),',',
-                    print ')'
+                    print('(', end=' ')
+                    for j in range(len(values[0][i])):
+                        print(np.mean([val[i][j] for val in values]),'+-', end=' ')
+                        print(np.std([val[i][j] for val in values]),',', end=' ')
+                    print(')')
 
 
     def plot_distribution1(self, refvalues, kvalues):
         begcycle, maxcycle = self.begcycle, self.maxcycle
-        labels =  [('Nb. Ter. Api. '+str(i),'Nb. Ter. Lat. '+str(i)) for i in xrange(begcycle, maxcycle)]
-        labels += [('Nb. Flo. Ter. Api. '+str(i),'Nb. Flo. Ter. Lat. '+str(i)) for i in xrange(begcycle, maxcycle)]
+        labels =  [('Nb. Ter. Api. '+str(i),'Nb. Ter. Lat. '+str(i)) for i in range(begcycle, maxcycle)]
+        labels += [('Nb. Flo. Ter. Api. '+str(i),'Nb. Flo. Ter. Lat. '+str(i)) for i in range(begcycle, maxcycle)]
         self.plot_distributioni(refvalues, kvalues, labels)
     
 class nbinflos(organ_count_distribution):
@@ -750,7 +760,7 @@ class nbinflos(organ_count_distribution):
         self.plotrestriction = plotrestriction
 
     def determine_distribution(self, mtg, mtgtype):
-        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
+        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in range(self.begcycle, self.maxcycle)]
         nbinflos = [sum([mm.nb_of_inflorescences(mtg,inflo) for inflo in inflocycle]) for inflocycle in inflos]
         if mtgtype == eMeasuredMtg:
             nbinflos[0] = len(inflos[0])
@@ -758,7 +768,7 @@ class nbinflos(organ_count_distribution):
 
     def plot_distribution2(self, refvalues, kvalues):
         begcycle, maxcycle = self.begcycle, self.maxcycle
-        labels =  ['Nb. Inflorescences of cycle '+str(i) for i in xrange(begcycle, maxcycle)]
+        labels =  ['Nb. Inflorescences of cycle '+str(i) for i in range(begcycle, maxcycle)]
         if self.plotrestriction:
             refvalues = selectsubarray(refvalues, self.plotrestriction)
             kvalues = selectsubarrays(kvalues, self.plotrestriction)
@@ -778,13 +788,13 @@ class nbfruits(organ_count_distribution):
         self.begcycle, self.maxcycle = 3,6
 
     def determine_distribution(self, mtg, mtgtype):
-        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
+        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in range(self.begcycle, self.maxcycle)]
         nbfruits = [sum([mm.get_nb_fruits(mtg,inflo) for inflo in inflocycle]) for inflocycle in inflos]
         return nbfruits
 
     def plot_distribution2(self, refvalues, kvalues):
         begcycle, maxcycle = self.begcycle, self.maxcycle
-        labels = ['Cycle '+str(i) for i in xrange(begcycle, maxcycle)]
+        labels = ['Cycle '+str(i) for i in range(begcycle, maxcycle)]
         if self.plotrestriction:
             refvalues = selectsubarray(refvalues, self.plotrestriction)
             kvalues = selectsubarrays(kvalues, self.plotrestriction)
@@ -803,13 +813,13 @@ class production(organ_count_distribution):
         self.begcycle, self.maxcycle = 3,6
 
     def determine_distribution(self, mtg, mtgtype):
-        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
+        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in range(self.begcycle, self.maxcycle)]
         production = [sum([mm.get_fruits_weight(mtg,inflo,0) for inflo in inflocycle])/1000. for inflocycle in inflos]
         return production
 
     def plot_distribution2(self, refvalues, kvalues):
         begcycle, maxcycle = self.begcycle, self.maxcycle
-        labels = ['Cycle '+str(i) for i in xrange(3, maxcycle)]
+        labels = ['Cycle '+str(i) for i in range(3, maxcycle)]
         if self.plotrestriction:
             refvalues = selectsubarray(refvalues, self.plotrestriction)
             kvalues = selectsubarrays(kvalues, self.plotrestriction)
@@ -817,8 +827,8 @@ class production(organ_count_distribution):
         
         if len(kvalues) > 1:
             #histodistances(meanarrays(kvalues))
-            print meanarrays(kvalues)
-            legends = ['Fruiting Branch Size : '+str(i) for i in xrange(1,8)]+['Stochastic Production']
+            print(meanarrays(kvalues))
+            legends = ['Fruiting Branch Size : '+str(i) for i in range(1,8)]+['Stochastic Production']
         else : 
             legends = None
 
@@ -839,25 +849,25 @@ class meanfruitweight(organ_count_distribution):
 
 
     def determine_distribution(self, mtg, mtgtype):
-        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
+        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in range(self.begcycle, self.maxcycle)]
         #if mtgtype == eMeasuredMtg:
-        production = [np.mean([mm.get_fruits_weight(mtg,inflo,0)/mm.get_nb_fruits(mtg,inflo) for inflo in inflocycle for j in xrange(mm.get_nb_fruits(mtg,inflo)) if not mm.get_fruits_weight(mtg,inflo) is None]) for inflocycle in inflos]
+        production = [np.mean([old_div(mm.get_fruits_weight(mtg,inflo,0),mm.get_nb_fruits(mtg,inflo)) for inflo in inflocycle for j in range(mm.get_nb_fruits(mtg,inflo)) if not mm.get_fruits_weight(mtg,inflo) is None]) for inflocycle in inflos]
         #else:
         #    production = [np.mean([mm.get_fruits_weight(mtg,inflo,0) for inflo in inflocycle for j in xrange(mm.get_nb_fruits(mtg,inflo)) if not mm.get_fruits_weight(mtg,inflo) is None]) for inflocycle in inflos]
         return production
 
     def plot_distribution(self, refvalues, kvalues):
         begcycle, maxcycle = self.begcycle, self.maxcycle
-        labels = ['Cycle '+str(i) for i in xrange(begcycle, maxcycle)]
+        labels = ['Cycle '+str(i) for i in range(begcycle, maxcycle)]
         if self.plotrestriction:
             refvalues = selectsubarray(refvalues, self.plotrestriction)
             kvalues = selectsubarrays(kvalues, self.plotrestriction)
             labels = selectsubarray(labels, self.plotrestriction)
         
         if len(kvalues) > 1:
-            print meanarrays(kvalues)
-            print refvalues
-            legends = ['Size : '+str(i) for i in xrange(1,8)]+['Stochastic Production']
+            print(meanarrays(kvalues))
+            print(refvalues)
+            legends = ['Size : '+str(i) for i in range(1,8)]+['Stochastic Production']
         else : legends = None
 
         self.plot_distributioni(refvalues, kvalues, labels, legends=legends, titlelocation = 0, figsize=(5,6.5))
@@ -874,13 +884,13 @@ class fruitweight(organ_count_distribution):
 
 
     def determine_distribution(self, mtg, mtgtype):
-        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in xrange(self.begcycle, self.maxcycle)]
-        production = [np.array([mm.get_fruits_weight(mtg,inflo,0)/mm.get_nb_fruits(mtg,inflo) for inflo in inflocycle for j in xrange(mm.get_nb_fruits(mtg,inflo)) if not mm.get_fruits_weight(mtg,inflo) is None]) for inflocycle in inflos]
+        inflos = [self.get_all_inflos_at_cycle(mtg, cycle=c) for c in range(self.begcycle, self.maxcycle)]
+        production = [np.array([old_div(mm.get_fruits_weight(mtg,inflo,0),mm.get_nb_fruits(mtg,inflo)) for inflo in inflocycle for j in range(mm.get_nb_fruits(mtg,inflo)) if not mm.get_fruits_weight(mtg,inflo) is None]) for inflocycle in inflos]
         return production
 
     def plot_distribution(self, refvalues, kvalues):
         begcycle, maxcycle = self.begcycle, self.maxcycle
-        labels = ['Cycle '+str(i) for i in xrange(begcycle, maxcycle)]
+        labels = ['Cycle '+str(i) for i in range(begcycle, maxcycle)]
         if self.plotrestriction:
             refvalues = selectsubarray(refvalues, self.plotrestriction)
             kvalues = selectsubarrays(kvalues, self.plotrestriction)
@@ -888,7 +898,7 @@ class fruitweight(organ_count_distribution):
         
         if len(kvalues) > 1:
             #print refvalues
-            legends = ['Size : '+str(i) for i in xrange(1,8)]+['Stochastic Production']
+            legends = ['Size : '+str(i) for i in range(1,8)]+['Stochastic Production']
         else : legends = None
 
         self.plot_distributioni(refvalues, kvalues, labels, legends=legends, titlelocation = 0, figsize=(5,6.5))
@@ -923,10 +933,10 @@ class leaf_fruit_ratio(organ_count_distribution):
 
     def determine_distribution(self, mtg, mtgtype):
         if mtgtype == eMeasuredMtg:
-            mean_leaf_fruit_ratio = [0 for c in xrange(self.begcycle, self.maxcycle)]
+            mean_leaf_fruit_ratio = [0 for c in range(self.begcycle, self.maxcycle)]
         else:
             ratio = lambda x: x[0]/float(x[1]) if x[1] > 0 else 0
-            inflos = [(c,self.get_all_inflos_at_cycle(mtg, cycle=c)) for c in xrange(self.begcycle, self.maxcycle)]
+            inflos = [(c,self.get_all_inflos_at_cycle(mtg, cycle=c)) for c in range(self.begcycle, self.maxcycle)]
             leafruit = mtg.property('leaffruit_ratio')
             mean_leaf_fruit_ratio = []
             for c,inflocycle in inflos:
@@ -934,7 +944,7 @@ class leaf_fruit_ratio(organ_count_distribution):
                 if len(ratios) > 0:
                     mean_leaf_fruit_ratio.append(np.mean(ratios))
                 else:
-                    print mtg.fname,c,ratios, len(inflocycle), len([i for i in inflocycle if mtg.property('nb_fruits')[i] > 0])
+                    print(mtg.fname,c,ratios, len(inflocycle), len([i for i in inflocycle if mtg.property('nb_fruits')[i] > 0]))
                     mean_leaf_fruit_ratio.append(None)
 
             #mean_leaf_fruit_ratio = [np.mean([ratio(leafruit[inflo]) for inflo in inflocycle if inflo in leafruit]) for inflocycle in inflos ]
@@ -942,8 +952,8 @@ class leaf_fruit_ratio(organ_count_distribution):
 
     def plot(self, refvalues, kvalues):
         begcycle, maxcycle = self.begcycle, self.maxcycle
-        labels = ['Cycle '+str(i) for i in xrange(begcycle, maxcycle)]
-        legends = ['Fruiting Branch Size : '+str(i) for i in xrange(1,len(kvalues)+1)]
+        labels = ['Cycle '+str(i) for i in range(begcycle, maxcycle)]
+        legends = ['Fruiting Branch Size : '+str(i) for i in range(1,len(kvalues)+1)]
         if self.plotrestriction:
             refvalues = selectsubarray(refvalues, self.plotrestriction)
             kvalues = selectsubarrays(kvalues, self.plotrestriction)
@@ -959,7 +969,7 @@ def heatmap(data, monthrange, xlabelling = True, ylabelling = True, withcolorbar
         data /= mx
         for i,(y,m) in enumerate(monthrange):
             ld = lastday_in_month(y,m)
-            for d in xrange(1,32-ld):
+            for d in range(1,32-ld):
                 data[i,ld+d-1] = [1,1,1]
 
         #for i,j in itertools.product(*[range(d) for d in data.shape]):
@@ -970,23 +980,23 @@ def heatmap(data, monthrange, xlabelling = True, ylabelling = True, withcolorbar
         #view = ax.matshow(data, cmap=plt.cm.jet,extent=[0,31,nbmonth,0]) 
         view = ax.imshow(data, extent=[0,31,nbmonth,0]) 
         #a.xaxis.set_major_formatter(ticker.NullFormatter())
-        ax.set_xticks(range(31), minor = False)
+        ax.set_xticks(list(range(31)), minor = False)
         ax.set_xticklabels('')
         if xlabelling:
             ax.set_xticks(arange(0.5,31.5,0.5), minor = True)
-            ax.set_xticklabels( [ str(i) if j == 0 else '' for i in range(1,32) for j in xrange(2)], minor = True )
+            ax.set_xticklabels( [ str(i) if j == 0 else '' for i in range(1,32) for j in range(2)], minor = True )
 
-        invmonth = dict([(i,v if len(v)<= 4 else v[:3]+'.') for v,i in MonthEn.items()])
+        invmonth = dict([(i,v if len(v)<= 4 else v[:3]+'.') for v,i in list(MonthEn.items())])
         strdate = lambda d : invmonth[d[1]]+'-'+str(d[0])
-        ax.set_yticks(range(len(monthrange)))
+        ax.set_yticks(list(range(len(monthrange))))
         ax.set_yticklabels('')
         if ylabelling:
             ax.set_yticks(arange(0.5,len(monthrange)+0.5,0.5), minor = True)
-            ax.set_yticklabels( [ strdate(d) if j == 0 else '' for d in monthrange  for j in xrange(2)], minor = True )
+            ax.set_yticklabels( [ strdate(d) if j == 0 else '' for d in monthrange  for j in range(2)], minor = True )
 
         plt.grid(linestyle='--')
-        print nbmonth // 12
-        for i in xrange(0,(nbmonth // 12)+1):
+        print(nbmonth // 12)
+        for i in range(0,(nbmonth // 12)+1):
             plt.plot([0,31],[12*i,12*i], color='blue', linewidth=2)
 
 
@@ -1003,25 +1013,25 @@ def heatmap_colormap(vmin, vmax):
         elif i > 4*stripl : return [intensity,0,0]
         elif 2*stripl < i < 3*stripl : return [intensity,intensity,0]
         elif i <= 2*stripl:
-            c = i/stripl - 1
+            c = old_div(i,stripl) - 1
             return [intensity*c,intensity,0]
         elif i >= 3*stripl:
-            c = (i-3*stripl)/stripl
+            c = old_div((i-3*stripl),stripl)
             return [intensity,intensity*(1-c),0]
 
     length = 800
     width = 100
 
-    data = array([[color(i,(length-j)/float(length),width) for i in xrange(width)] for j in xrange(length)]).astype(float)
+    data = array([[color(i,(length-j)/float(length),width) for i in range(width)] for j in range(length)]).astype(float)
     view = ax.imshow(data) 
 
     vmaxlog = log10(vmax)
-    ticklength = int(length / vmaxlog)
-    ax.set_yticks([length-1-i*ticklength for i in xrange(int(floor(vmaxlog))+1)])
+    ticklength = int(old_div(length, vmaxlog))
+    ax.set_yticks([length-1-i*ticklength for i in range(int(floor(vmaxlog))+1)])
     ax.set_xticks([])
 
     ticklabels = []
-    for k in xrange(int(floor(vmaxlog))+1):
+    for k in range(int(floor(vmaxlog))+1):
         ticklabels += [str(10**k if k > 0 else 0)]
     ax.set_yticklabels(ticklabels)
 
@@ -1046,9 +1056,9 @@ class stage_evaluator(Evaluator):
         else : return (len(self.monthrange)*31) - 1
 
     def dayid_to_date(self, did):
-        nbm = did / 31
+        nbm = old_div(did, 31)
         nbd = did % 31
-        nbyear = nbm / 12
+        nbyear = old_div(nbm, 12)
         nbm = nbm % 12
         ayear = self.begindate.year+nbyear
         amonth = self.begindate.month+nbm
@@ -1062,21 +1072,21 @@ class stage_evaluator(Evaluator):
         fid = self.date_to_dayid(datebeg)
         lid = self.date_to_dayid(dateend)
         if datebeg.year != dateend.year or datebeg.month != dateend.month:
-            result = range(fid,fid+(lastday_in_month(datebeg.year,datebeg.month)-datebeg.day)+1)
+            result = list(range(fid,fid+(lastday_in_month(datebeg.year,datebeg.month)-datebeg.day)+1))
             mrange = monthdate_range(datebeg,dateend)
             mrange.pop(0)
             for m,y in mrange:
-                result += range(self.date_to_dayid(date(y,m,1)),self.date_to_dayid(date(y,m,lastday_in_month(y,m))))
-            result += range(self.date_to_dayid(date(dateend.year,dateend.month,1)),lid+1)
+                result += list(range(self.date_to_dayid(date(y,m,1)),self.date_to_dayid(date(y,m,lastday_in_month(y,m)))))
+            result += list(range(self.date_to_dayid(date(dateend.year,dateend.month,1)),lid+1))
             return result
         else:
-            return range(fid, lid)
+            return list(range(fid, lid))
 
     def determine_distribution(self, mtg, mtgype):
         from vplants.mangosim.thermaltime import MultiPhaseThermalTimeAccumulator
         from vplants.mangosim.simulation.organ_properties import GUManager, InfloManager
         from random import randint
-        result = [0 for m in self.monthrange for i in xrange(31)]
+        result = [0 for m in self.monthrange for i in range(31)]
         gumanager = GUManager()
         inflomanager = InfloManager()
         ucs =  self.get_all_gus(mtg)
@@ -1135,11 +1145,11 @@ class stage_evaluator(Evaluator):
         nbmonth = int(len(refvalues)/31.)
 
         def toarray(v): 
-            return np.reshape([[a/1000,a%1000,0] for a in v], (nbmonth,31,3))
+            return np.reshape([[old_div(a,1000),a%1000,0] for a in v], (nbmonth,31,3))
 
         nbplots = len(kvalues)+withref
         nbcols = ceil(sqrt(nbplots))
-        nbrows = int(ceil(nbplots/nbcols))
+        nbrows = int(ceil(old_div(nbplots,nbcols)))
         nbcols = int(nbcols)
 
         plt.subplot(nbrows, nbcols+1,1)
@@ -1190,9 +1200,9 @@ class stage_duration(Invokable):
 
     def compute(self):
         from random import randint
-        result = [[None for i in xrange(31)] for m in self.monthrange]
+        result = [[None for i in range(31)] for m in self.monthrange]
         for i,(y,m) in enumerate(self.monthrange):
-            for d in xrange(1,lastday_in_month(y,m)):
+            for d in range(1,lastday_in_month(y,m)):
                     begdate = date(y,m,d)
                     enddate = self.pheno.find_date_of_stage_end('F',begdate)
                     result[i][d-1] = (enddate-begdate).days
@@ -1204,30 +1214,30 @@ class stage_duration(Invokable):
     def heatmap(self, data, monthrange, xlabelling = True, ylabelling = True):
         import numpy as np
         data = np.array(data).astype(float)
-        print np.nanmin(data), np.nanmax(data)
+        print(np.nanmin(data), np.nanmax(data))
         #for i,j in itertools.product(*[range(d) for d in data.shape]):
         #    if data[i,j] == 0: data[i,j] = None
 
         ax = plt.gca()
         nbmonth = len(data)
         jet = plt.cm.jet
-        rjet = jet.from_list('rjet',list(reversed(map(jet,range(jet.N)))),jet.N)
+        rjet = jet.from_list('rjet',list(reversed(list(map(jet,list(range(jet.N)))))),jet.N)
         view = ax.matshow(data, cmap=rjet, extent=[0,31,nbmonth,0]) 
         #view = ax.imshow(data, extent=[0,31,nbmonth,0]) 
 
-        ax.set_xticks(range(31), minor = False)
+        ax.set_xticks(list(range(31)), minor = False)
         ax.set_xticklabels('')
         if xlabelling:
             ax.set_xticks(np.arange(0.5,31.5,0.5), minor = True)
-            ax.set_xticklabels( [ str(i) if j == 0 else '' for i in range(1,32) for j in xrange(2)], minor = True )
+            ax.set_xticklabels( [ str(i) if j == 0 else '' for i in range(1,32) for j in range(2)], minor = True )
 
-        invmonth = dict([(i,v if len(v)<= 4 else v[:3]+'.') for v,i in MonthEn.items()])
+        invmonth = dict([(i,v if len(v)<= 4 else v[:3]+'.') for v,i in list(MonthEn.items())])
         strdate = lambda d : invmonth[d[1]]+'-'+str(d[0])
-        ax.set_yticks(range(len(monthrange)))
+        ax.set_yticks(list(range(len(monthrange))))
         ax.set_yticklabels('')
         if ylabelling:
             ax.set_yticks(np.arange(0.5,len(monthrange)+0.5,0.5), minor = True)
-            ax.set_yticklabels( [ strdate(d) if j == 0 else '' for d in monthrange  for j in xrange(2)], minor = True )
+            ax.set_yticklabels( [ strdate(d) if j == 0 else '' for d in monthrange  for j in range(2)], minor = True )
         plt.gcf().colorbar(view)
         plt.show()
 
@@ -1241,12 +1251,12 @@ def get_treenames():
 from collections import OrderedDict
 
 def class_lineno(mclass):
-    return mclass.__init__.im_func.func_code.co_firstlineno
+    return mclass.__init__.__func__.__code__.co_firstlineno
 
 def build_cmddict():
     import inspect
     cmdflags = []
-    for name, obj in globals().items():
+    for name, obj in list(globals().items()):
         if inspect.isclass(obj)  and issubclass(obj, Invokable) : 
             try:
                 instance = obj()
@@ -1255,7 +1265,7 @@ def build_cmddict():
             else:
                 cmdflags += [(instance.name,obj)]                
     cmdflags.sort(cmp=lambda a,b :cmp(class_lineno(a[1]),class_lineno(b[1])))
-    print [class_lineno(a[1]) for a in cmdflags]
+    print([class_lineno(a[1]) for a in cmdflags])
     return OrderedDict(cmdflags)
 
 cmdflags = build_cmddict()
@@ -1264,7 +1274,7 @@ cmdflags = build_cmddict()
 def saveall(fruitmodel=False, comparison = True, force=False):
     for tree in ['all']+get_treenames():
         for restriction in [None, 'all'] :
-            for cmd in cmdflags.values():
+            for cmd in list(cmdflags.values()):
                 p = cmd()
                 if issubclass(p, Evaluator):
                     if restriction == 'all':
@@ -1272,7 +1282,7 @@ def saveall(fruitmodel=False, comparison = True, force=False):
                     if tree != 'all':
                         p.targettree(tree)
                     p(force=force, saving=True)
-    for cmd in cmdflags.values():
+    for cmd in list(cmdflags.values()):
         p = cmd()
         if not issubclass(p, Evaluator):
             p(force=force, saving=True)
@@ -1287,7 +1297,7 @@ def make_report(force = False, comparison = True, fruitmodel = False):
     restrictions = [None]
     if comparison: restrictions.append('all')
 
-    for cmdname, cmd in cmdflags.items():
+    for cmdname, cmd in list(cmdflags.items()):
         p = cmd()
         tx.add_section(p.title)
         for restriction in restrictions:
@@ -1343,30 +1353,30 @@ def test_production():
 
     #r =  r1+r2+r3
     #print r
-    v = [(v1[i][0],sum([meanarrays(v)[i][1] for v in [v1,v2,v3]],[])) for i in xrange(len(v1))]
+    v = [(v1[i][0],sum([meanarrays(v)[i][1] for v in [v1,v2,v3]],[])) for i in range(len(v1))]
     #print v
     if restriction:
         r = selectsubarray(r, restriction)
         v = [(k,selectsubarray(vi, restriction)) for k,vi in v]
 
-    print histodistance_legend(v)
+    print(histodistance_legend(v))
 
 def main():
     import sys
     def help():
-        print 'Available plots :',cmdflags.keys()
-        print '-c  : Comparison mode'
-        print '-cu  : Comparison mode with unique factor'
-        print '-fm : Use fruitmodel'
-        print '-ft : Fruit model test'
-        print '-flt : Fruit model leaf fruit ratio test'
-        print '-f  : Force reevaluation'
-        print '-s  : Save figure'
-        print '-sa : Save all figures'
-        print '-sa1: Save all figures without comparison section'
-        print '-r  : Create a report'
-        print '-r1 : Create a report without comparison section'
-        print '-tTREENAME : Limit the study to one tree. Available trees are',get_treenames()
+        print('Available plots :',list(cmdflags.keys()))
+        print('-c  : Comparison mode')
+        print('-cu  : Comparison mode with unique factor')
+        print('-fm : Use fruitmodel')
+        print('-ft : Fruit model test')
+        print('-flt : Fruit model leaf fruit ratio test')
+        print('-f  : Force reevaluation')
+        print('-s  : Save figure')
+        print('-sa : Save all figures')
+        print('-sa1: Save all figures without comparison section')
+        print('-r  : Create a report')
+        print('-r1 : Create a report without comparison section')
+        print('-tTREENAME : Limit the study to one tree. Available trees are',get_treenames())
     argv = sys.argv[1:]
     switches = [a for a in argv if a.startswith('-')]
     cmds = [a for a in argv if not a.startswith('-')]
@@ -1375,14 +1385,14 @@ def main():
         cmds = ['burst']
     for cmd in cmds:
         if cmd == 'all':
-            for c in cmdflags.values():
+            for c in list(cmdflags.values()):
                 processes.append(c())
             break
         else:
             try:
                 processes.append(cmdflags[cmd]())
-            except KeyError, ke:
-                print 'Invalid plot :', cmd
+            except KeyError as ke:
+                print('Invalid plot :', cmd)
                 help()
                 return
 
@@ -1430,11 +1440,11 @@ def main():
 
         saving = '-s' in switches
         for i,p in enumerate(processes):
-            print p.title
+            print(p.title)
             p(force=force or p.isUptodate(), saving=saving)
 
         if treename:
-            print 'Available trees are',get_treenames()
+            print('Available trees are',get_treenames())
 
 
 

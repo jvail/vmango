@@ -1,4 +1,7 @@
+from __future__ import print_function
 
+from builtins import str
+from builtins import range
 workingrep    = 'images4'
 lsysfile      = 'mango_mtg_replay.lpy'
 tempbgeomfile = 'temp_scene.bgeom'
@@ -31,14 +34,14 @@ def generate_movie(nbpovprocess):
     pool = Pool(processes=nbpovprocess+1)
     pool.map(_generate,paramvalueslist)
     os.remove(stepfile)
-    print 'Computed in ',time.time() - init,'sec ...'
+    print('Computed in ',time.time() - init,'sec ...')
 
 
 
 def generate_bgeom(step = None):
     from openalea.lpy import Lsystem
     import os
-    print 'Scene generator launched'
+    print('Scene generator launched')
     l = Lsystem(lsysfile,{'RESOLUTION' : 2, 'daystep' : 1, 'TIMEBAR' : False, 'LEAFY' : True, 'WITH_INFLO' : True, 'EXPORT_TO_MTG' : False})
 
     if step is None:
@@ -50,14 +53,14 @@ def generate_bgeom(step = None):
 
     open(stepfile,'w').write(str(nbsteps))
     if not os.path.exists(workingrep) : os.makedirs(workingrep)
-    for step in xrange(firststep, nbsteps):
+    for step in range(firststep, nbsteps):
         if step == firststep: lstring = l.derive(firststep+1)
         else: lstring = l.derive(lstring,step,1)
         lscene = l.sceneInterpretation(lstring)
         fname = join(workingrep, bgeomfile.format(str(step).zfill(4)))
         lscene.save(tempbgeomfile)
         os.rename(tempbgeomfile,fname)
-        print "Scene",step,"generated ..."
+        print("Scene",step,"generated ...")
 
 def wait_for_file(fname, timeout = 60):
     import time
@@ -126,7 +129,7 @@ union {
 
 def generate_pov(i=0,nbpovprocess=1):
     """ generate ith images modulo nbpovprocess """
-    print 'Image generator ',i,' launched'
+    print('Image generator ',i,' launched')
     from openalea.plantgl.all import Scene, Tesselator, PovFilePrinter
     wait_for_file(stepfile)
     nbsteps = int(open(stepfile,'r').read())
@@ -149,17 +152,17 @@ def generate_pov(i=0,nbpovprocess=1):
             mpovfile = mainpovfile.format(step)
             file(mpovfile,'w').write(mpovtext)
             cmd = povcomdline.format(mpovfile, stepimgfile, imageresolution[0], imageresolution[1])
-            print
-            print i,'>>>',cmd
-            print 'Image ',step,'computed ...'
+            print()
+            print(i,'>>>',cmd)
+            print('Image ',step,'computed ...')
             os.system(cmd)
             if os.path.exists(stepimgfile):
                 os.remove(mpovfile)
                 os.remove(steppovfile)
                 os.remove(bgeomfname)
             else:
-                print 'Error with image', step
-        else: print 'Error with image', step
+                print('Error with image', step)
+        else: print('Error with image', step)
         step += nbpovprocess
 
 
