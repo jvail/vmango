@@ -13,6 +13,7 @@ python setup.py develop
 # run mangosim
 
 ```console
+cd src\openalea\vmango\simulation
 ipython
 %gui qt5
 %run runsimu.py

@@ -1,8 +1,0 @@
-Ce dossier contient les différents dossiers de données nécessaires à la simulation et au calibrage des modèles.
-
-	- bud_data : données sur des bourgeons d'UCs et d'inflorescences pour la validation des modèles
-	- burst_date : données sur les dates de débourrement des UCs et des inflorescences
-	- growth_data : données sur la croissance des UCs et des inflorescences
-	- simulation_results : données issues de la simulation 
-	- size_data : données de longueur/surface/etc... pour la calibration des modèles
-	- temperature_data : données de températures sur les différents vergers

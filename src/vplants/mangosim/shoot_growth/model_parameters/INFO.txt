@@ -1,5 +1,0 @@
-- size_distribution : dossier contenant les scripts R ayant permit d'établir les distribution de longueur, surface, etc des organes du manguiers (feuilles, UCs et inflorescences)
-
-- stochastic_model : contient les scripts et les données pour obtenir les paramètres du modèle stochastique
-
-- thermal_time : contient les scripts R pour obtenir les paramètres des modèles de temps thermique (déterministe et stochastique)

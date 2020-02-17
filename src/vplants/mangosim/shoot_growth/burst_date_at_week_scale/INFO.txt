@@ -1,3 +1,0 @@
-Le script "debourrement" sert à étudier les différentes bases de données contenant les dates de débourrement.
-Il permet d'avoir une vue d'ensemble des dates de débourrement des UCs et des inflorescences.
-Il permet égalemnt de comparer les distributions de dates de débourrement au mois et à la semaine.

@@ -1,7 +1,0 @@
-Ce fichier contient les informations sur les dates de débourrement des UCs et des inflorescences dans 3 vergers  
-
-fichiers excel :
-	- début FLORAISON 2009Complet10DEC10 : dates de débourrement pour tous les vergers
-	- deb_cirad : dates de débourrement verger cirad
-	- deb_cpea : dates de débourrement verger cpea
-	- deb_cly : dates de débourrement verger cly

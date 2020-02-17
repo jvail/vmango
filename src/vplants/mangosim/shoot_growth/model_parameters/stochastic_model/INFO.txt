@@ -1,5 +1,0 @@
-Scripts R permettant de connaître les paramètres du modèle stochastique :
-	- minimisationLV : mise en forme des données et calcul de la vraisemblance pour la croissance
-	- modpopulation : fonction de calcul de la vraisemblance pour la croissance
-	- nT : mise en forme des données
-	- Vraisemblance : Calcul de la vraisemblance pour les stades phénologiques
