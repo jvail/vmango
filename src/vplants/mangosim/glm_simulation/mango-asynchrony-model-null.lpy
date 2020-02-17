@@ -2,6 +2,7 @@ from openalea.plantgl.all import Text
 from transfert_mtg_to_lpy_for_glm import *
 from datetime import date, timedelta, datetime
 from math import floor, ceil
+from importlib import reload
 import mango_asynchrony_simulation_model_null
 reload(mango_asynchrony_simulation_model_null)
 from mango_asynchrony_simulation_model_null import *

@@ -1,4 +1,6 @@
 from __future__ import print_function
+from __future__ import unicode_literals
+from importlib import reload
 from past.builtins import cmp
 from builtins import zip
 from builtins import map
@@ -102,9 +104,9 @@ def sort_burst_date(data, date_factor):
         gmonthids = list(range(6,13))+list(range(6))
         monthids = np.unique(data[date_factor])
         if  monthids.dtype == object:
-            def mcmp(a, b) : return cmp(gmonthids.index(int(a.split('-')[0])), gmonthids.index(int(b.split('-')[0])))
+            def mcmp(x) : return gmonthids.index(int(a.split('-')[0]))
             monthids = list(monthids)
-            monthids.sort(cmp = mcmp) 
+            monthids.sort(key = mcmp) 
             #print 'monthids :', monthids
         else:
             monthids = gmonthids

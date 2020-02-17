@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 from __future__ import absolute_import
 from past.builtins import cmp
 from builtins import str
@@ -81,7 +82,7 @@ def lowest_common_ancestor(mtg, nodei, nodej):
     print(ancestorsj)
     
     commonancestors = list(set(ancestorsi.keys()) & set(ancestorsj.keys()))
-    commonancestors.sort(cmp = lambda x,y : cmp(ancestorsi[x],ancestorsi[y]))
+    commonancestors.sort(key = lambda x: ancestorsi[x])
     try:
         return commonancestors[0], ancestorsi[commonancestors[0]], ancestorsj[commonancestors[0]]
     except:

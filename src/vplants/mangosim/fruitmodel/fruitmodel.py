@@ -1,6 +1,8 @@
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 from __future__ import absolute_import
+from importlib import reload
 from builtins import str
 from builtins import zip
 from builtins import map
@@ -11,8 +13,8 @@ import os
 from datetime import *
 import os.path
 
-RScriptRepo = dirname(abspath(__file__))
-RWorkRepo = os.path.join(RScriptRepo,'tmp')
+RScriptRepo = dirname(abspath(__file__)).replace(os.sep, '/')
+RWorkRepo = os.path.join(RScriptRepo,'tmp').replace(os.sep, '/')
 
 EXTERNALPROCESS = True
 
@@ -47,8 +49,8 @@ write.csv(res, file=paste(localdir,"/tmp/resultats-",idsimu,".csv",sep=''))
 
 def get_R_cmd():
     import sys
-    if sys == 'win32':
-        R_HOME = os.environ["R_USER"]
+    if sys.platform == 'win32':
+        R_HOME = os.environ["R_HOME"]
         exe = os.path.join(R_HOME,'bin','Rscript.exe')
         assert os.path.exists(exe)
     else:
@@ -60,7 +62,8 @@ def launch_r(idsimu, script):
     os.chdir(RWorkRepo)
     
     launchfile = 'modellauncher-'+str(idsimu)+'.r'
-    launcher = file(launchfile,'w')
+    
+    launcher = open(launchfile, 'w')
     launcher.write(script)
     launcher.close()
     

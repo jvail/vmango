@@ -5,6 +5,7 @@ from random import *
 #from pandas import DataFrame, read_csv
 import numpy as np
 import numpy.random as nprand
+from importlib import reload
 
 from vplants.mangosim.tools import *
 from vplants.mangosim.util_date import *
@@ -691,7 +692,7 @@ Information :
     ar = False
     envsize = 0.8
     nproduce [ @2D @R @Ts(0),(5) @M(-0.90,-0.85) 
-    nproduce Label('Tree: '+treename+('. Loaded' if tree_load else '. Not loaded')+'. Date: '+str(current_date.year)+'-'+str(current_date.month).zfill(2)+'-'+str(current_date.day).zfill(2)+'. Cycle: '+str(get_cycle(current_date))+'. T: '+str(current_temperatures[-1])+'°',14)
+    nproduce Label('Tree: '+treename+('. Loaded' if tree_load else '. Not loaded')+'. Date: '+str(current_date.year)+'-'+str(current_date.month).zfill(2)+'-'+str(current_date.day).zfill(2)+'. Cycle: '+str(get_cycle(current_date))+'. T: '+str(current_temperatures[-1])+'ï¿½',14)
     clength = (current_date - first_date).days/float((last_date - first_date).days)
     nproduce ,(4) @M(-0.91,-0.9) -(90) _(0.04) F(0.01)
     if clength > 0:

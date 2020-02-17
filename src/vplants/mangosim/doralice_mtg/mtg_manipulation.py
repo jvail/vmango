@@ -1,5 +1,6 @@
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 from __future__ import absolute_import
 from past.builtins import cmp
 from builtins import zip
@@ -698,7 +699,7 @@ def check_terminal3_producing_at_cycle5(mtg, variety = 'cogshall'):
 @use_global_mtg
 def check_apical_ratio_in_first_layer(mtg, variety = 'cogshall'):
     trees = get_all_trees_of_variety(mtg, variety)
-    trees.sort(lambda x,y: cmp(is_loaded(mtg,x),is_loaded(mtg,y)))
+    trees.sort(key=lambda x: is_loaded(mtg,x))
     treenames = [get_tree_name(mtg,i) for i in trees]
     loaded = [is_loaded(mtg,i) for i in trees]
     def apical_ratio(mtg, trees, cycle):
@@ -846,7 +847,7 @@ def check_apical_strength(mtg, cycles = [4,5], variety = 'cogshall'):
 
         print('For nb ancestor = ',order,', we have',len(ucs),'gu with the following histogram of apical strength:')
         ordered_config = list(histo.keys())
-        ordered_config.sort(lambda x,y:cmp(len(x),len(y)))
+        ordered_config.sort(key=len)
         for k in ordered_config:
             print(k, histo[k])
         print("only considering apical prop of order",order,"for terminal :",histol)

@@ -16,7 +16,7 @@ def retrieveCurves(globals):
   # sort curves according to their names
   for n,v in curves: v.name = n
   curves = [v for n,v in curves]
-  curves.sort(lambda x,y : cmp(x.name,y.name))
+  curves.sort(key=lambda x : x.name)
   return curves
 
 

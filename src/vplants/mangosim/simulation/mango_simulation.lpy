@@ -13,6 +13,7 @@ from random import *
 import numpy as np
 import numpy.random as nprand
 import os
+from importlib import reload
 
 from vplants.mangosim.tools import *
 import vplants.mangosim.util_date as ud
@@ -34,7 +35,7 @@ seed(SEED)
 nprand.seed(SEED)
 
 def normalize_imgs(path = '../../../../share/textures'):
-  for i in xrange(execContext().turtle.getColorListSize()):
+  for i in range(execContext().turtle.getColorListSize()):
     mat = execContext().turtle.getMaterial(i)
     if mat.isTexture(): 
       image = mat.image
@@ -129,7 +130,7 @@ if not 'GLM_TYPE' in globals():
 
 def Start():
   global previous_date, current_date, current_cycle, current_temperatures
-  
+
   previous_date = first_date
   current_date  = first_date
   current_cycle = get_vegetative_cycle(current_date)
@@ -191,7 +192,7 @@ def End(lstring):
     resultmtg = export_to_mtg(lstring)
     if SAVE_MTG:
       # write it in the file
-      print 'Export result in',repr(export_fname)
+      print('Export result in', repr(export_fname))
       dump_obj(resultmtg, export_fname)
 
 

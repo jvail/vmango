@@ -7,7 +7,7 @@ def load_obj(filename, dirname = '.'):
   gfname = join(dirname,filename)
   if exists(gfname ):
     pkl_file = open(gfname,'rb')
-    obj = pickle.load(pkl_file)
+    obj = pickle.load(pkl_file, encoding='latin1')
     pkl_file.close()
     return obj
   else:

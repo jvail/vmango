@@ -1,6 +1,8 @@
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 from __future__ import absolute_import
+from importlib import reload
 from builtins import zip
 from builtins import str
 from builtins import range
@@ -799,8 +801,8 @@ class FruitManager (OrganManager):
         sizefactor = 1
         ep = (0.98*pow(weight,0.3398))*sizefactor
         larg = (1.25*pow(weight,0.3203))*sizefactor
-        long = (2.23*pow(weight,0.2896))*sizefactor 
-        return ep, larg, int
+        long_ = (2.23*pow(weight,0.2896))*sizefactor 
+        return ep, larg, long_
 
     def plot(self, fruitparam, current_date):
         first_date = fruitparam.inflo_fullbloom_date
@@ -817,20 +819,20 @@ class FruitManager (OrganManager):
                 mn *= growthindex
                 ratios = [old_div(d,mn) for d in dims]
                 cratios = [1+(r-1)*growthindex for r in ratios]
-                ep, larg, int = [mn*r for r in cratios]
+                ep, larg, int_ = [mn*r for r in cratios]
             elif current_date >= fruitparam.maturity_date:
                 stage = 3
                 weight = fruitparam.weight
-                ep, larg, int = self.fruit_dimensions(weight)
+                ep, larg, int_ = self.fruit_dimensions(weight)
             else:
                 stage = 2
                 if fruitparam.hasattr('growth'):
                     weight = fruitparam.growth[current_date][0]
-                    ep, larg, int = self.fruit_dimensions(weight)
+                    ep, larg, int_ = self.fruit_dimensions(weight)
                 else:
                     growthindex = (current_date - fruitparam.growth_stage_date).days/float((fruitparam.maturity_date - fruitparam.growth_stage_date).days)
                     weight = fruitparam.initial_weight + (fruitparam.weight-fruitparam.initial_weight)* growthindex                  
-                    ep, larg, int = self.fruit_dimensions(weight)
+                    ep, larg, int_ = self.fruit_dimensions(weight)
 
             if fruitparam.growth_stage_date == first_date: print(fruitparam)
             phenoindex = (current_date - first_date).days/float((fruitparam.growth_stage_date-first_date).days)
@@ -847,4 +849,4 @@ class FruitManager (OrganManager):
                 nsproduce([InterpolateColors(self.pheno_colors[0],self.pheno_colors[1],colphenoindex)])
             elif stage == 3:
                 nsproduce([SetColor(self.pheno_colors[1])])
-            nsproduce([PglShape(Scaled(ep,larg,int, Revolution(self.profile, 8 if self.resolution < 2 else 30))),EB()])   
+            nsproduce([PglShape(Scaled(ep,larg,int_, Revolution(self.profile, 8 if self.resolution < 2 else 30))),EB()])   

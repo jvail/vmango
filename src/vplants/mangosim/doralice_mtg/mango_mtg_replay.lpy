@@ -1,6 +1,7 @@
 from openalea.plantgl.all import Text, Scaled, Sphere
 from datetime import date, timedelta, datetime
 from math import floor, ceil, log
+from importlib import reload
 
 from vplants.mangosim.state import *
 from vplants.mangosim.util_date import *

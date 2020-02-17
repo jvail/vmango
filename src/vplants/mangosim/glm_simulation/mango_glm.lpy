@@ -1,6 +1,7 @@
 from openalea.plantgl.all import Text, Scaled, Sphere
 from datetime import date, timedelta
 from math import floor, ceil, log
+from importlib import reload
 
 import probability_tables
 reload(probability_tables)

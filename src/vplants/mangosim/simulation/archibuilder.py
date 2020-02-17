@@ -6,6 +6,7 @@ import vplants.mangosim.doralice_mtg.mtg_manipulation  as mm
 import vplants.mangosim.util_date as ud
 from datetime import datetime, date
 from random import randint
+from importlib import reload
 
 
 class ArchiBuilder(object):

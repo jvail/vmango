@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import unicode_literals
 #c = [(vid,nb) for vid, nb in mtg.property('nb_thin_fr').items() if get_tree_name(mtg,get_tree_of_gu(mtg,vid)) == 'B10']
 
 def get_parent(lstring, fid):
