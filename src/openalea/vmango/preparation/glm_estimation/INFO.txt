@@ -1,0 +1,43 @@
+Ce dossier contient des fichier python qui récupère les données du MTG Doralice et estime des paramètres nécessaire.
+
+    - get_data_for_glm.py :
+        Récupère des données du MTG Doralice pour les mettres sous un tableau adapté pour R. (dataframe de Pandas)
+        Une ligne correspond à une UC mère d'un cycle et une colonne correspond à une caractéristique de l'UC 
+        (nature de l'UC, nombre d'enfants qu'elle donne, son numéro d'identification dans le MTG, carge de l'arbre qui porte cette UC, ...)
+        Un grand nombre des colonnes correspondent aux variables réponses (Y) et aux facteurs (X) pour les GLMs.
+        
+        Pour le modèle "null", un tableau est aussi créé avec la fonction get_table_for_null_model().
+        
+        Les tableaux sont enregistrés dans "mangosim//share//model_glm" sous format csv.
+        
+    Les fichier R suivant analysent les données des nouveaux tableaux créés et estiment les paramètres des variables réponses. 
+        - glm_for_simulation_03to04_order1.r :
+            données concernant les UCs mères terminales du cycle 3 ("table_TRANSITION_03to04_cogshall.csv")
+        - glm_for_simulation_04_order1.r :
+            données concernant les UCs mères née au cycle 4 ("table_INSIDE_04_cogshall.csv")
+        - glm_for_simulation_04to05_order1.r :
+            données concernant les UCs mères terminales du cycle 4 ("table_TRANSITION_04to05_cogshall.csv")
+        - glm_for_simulation_05_order1.r :
+            données concernant les UCs mères née au cycle 5 ("table_INSIDE_05_cogshall.csv")
+        
+        - model_null_for_simulation.r :
+            données concernant les UCs mère du cycle 4 et 5("table_for_null_model_cogshall.csv")
+
+            Pour chaque variable réponse, on récupère l'indice des UCs correspondantes (exemple index_bursted) à l'aide de la fonction which(). 
+            Sur cet sous-ensemble, on applique la fonction glm() :
+                Exemple : glm( Y ~ X1 + X2 + X3 , family = "loi de Y" , data = "le tableau" , subset = "sous-ensemble du tableau" )
+            La fonction step() permet de sélectionner le modèle glm obtenu prècedement à partir de l'AIC (modèle meilleur si AIC petit)
+            La fonction vglm est faite pour les variables réponses Y de type multinomiale ordinale : 
+                Exemple : 
+                library(VGAM)
+                vglm( Y ~ X1 + X2 + X3, family = cumulative(parallel=T), data = "le tableau" , subset = "sous-ensemble du tableau" )
+        
+            La fonction get_table_prob_variable_glm() :
+            Ensuite, à partir d'un GLM (pour une variable réponse Y), création d'un tableau qui contient en colonne les facteurs X utilisés dans le GLM.
+            Le tableau est un produit cartésien des valeurs des facteurs X. 
+            On ajoute une colonne correspondant au(x) paramètre(s) de la variable réponse Y (fonction des valeurs des facteurs).
+            Dans le code, on distingue les "glm" et les "vglm" car la récupération des informations des modèles n'est pas la même.
+
+            Ensuite, on place ces tableaux sous format csv dans "mangosim\\share\\model_glm" selon le modèle et les données utilisées 
+            (glm complet ou sélectionné et toutes les données ou seulement provenant d'un arbre)
+            La fonction paste(a,b,sep="") est similaire à "+" sous python et "sep" indique la séparation entre les deux éléments a et b.

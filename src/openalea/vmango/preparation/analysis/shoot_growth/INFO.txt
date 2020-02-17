@@ -1,0 +1,19 @@
+Ce dossier contient les différents scripts permettant de simuler la croissance et le développement des pousses.
+
+Dossiers :
+	- validation :  scripts R pour la validation des modèles
+	- model_parameters : scripts R pour estimer les différents paramètres des modèles
+	- data : dossier contenant toutes les bases de données utilisées pour le calibrage et la simulation
+	- burst_date : dossier contenant une étude des dates de débourrement des UCs et des inflorescences
+
+Fichiers Python :
+	- pousse_therm.lpy : modèle déterministe de croissance et de développement d'une UC ou d'une inflorescence
+	- pousse_therm_optim.lpy : modèle déterministe de croissance et de développement d'une UC ou d'une inflorescence, sans copie des paramètres
+	- therm_valid.lpy : script permettant de valider le modèle déterministe sur différents vergers
+	- pousse_stoch.lpy : modèle stochastique de croissance et de développement d'une UC ou d'une inflorescence
+	- mango_mtg_replay_essai_couplage.lpy : Couplage du modèle déterministe avec le modèle à l'échelle de l'arbre
+
+	- couplage_optim.lpy : variante du couplage
+	- arbre_therm.lpy : ébauche d'arbre avec croissance en temps thermique
+	- pousse_seq.lpy : ébauche de croissance séquentielle d'une UC
+	- arbre_seq.lpy : ébauche d'rbre avec croissance séquentielle

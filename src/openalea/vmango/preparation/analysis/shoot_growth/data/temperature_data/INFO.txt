@@ -1,0 +1,7 @@
+Ce dossier contient les 4 fichiers de températures moyennes journalières des vergers de la réunion.
+
+fihiers.csv :
+	- TBMmoy : Températures de Bassin Martin
+	- TBPmoy : Températures de Bassin Plat
+	- TGFmoy : Températures de Grand Fond
+	- TGHmoy : Températures de St Gille les Haut

@@ -1,0 +1,6 @@
+Ce dossier contient les scripts R permettant de valider notre modèle selon différents points.
+
+Script R :
+	- pheno_in_tree : permet d'étudier la répartition des stades phénologiques présents sur un arbre au cours des différents flushs
+	- temperature_validation : contrôle qu'il y a bien un effet de la température sur le modèle
+	- growth_development_validation : valide la croissance et le développement les UCs et des inflorescences pour le modèle déterministe
