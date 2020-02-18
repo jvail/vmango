@@ -1,18 +1,18 @@
 
 from builtins import str
 from builtins import object
-LARGE_REPORT_HEADER =  """\documentclass[10pt,a4paper]{article}
-\usepackage[utf8]{inputenc}
-\usepackage[english]{babel}
+LARGE_REPORT_HEADER =  u"""\\documentclass[10pt,a4paper]{article}
+\\usepackage[utf8]{inputenc}
+\\usepackage[english]{babel}
 
-\usepackage{amsmath}
-\usepackage{amsfonts}
-\usepackage{amssymb}
-\usepackage{booktabs}
-\usepackage{longtable}
-\usepackage{hyperref}
-\usepackage{graphicx}
-\usepackage[left=1cm,right=1cm,top=1cm,bottom=1.5cm]{geometry}
+\\usepackage{amsmath}
+\\usepackage{amsfonts}
+\\usepackage{amssymb}
+\\usepackage{booktabs}
+\\usepackage{longtable}
+\\usepackage{hyperref}
+\\usepackage{graphicx}
+\\usepackage[left=1cm,right=1cm,top=1cm,bottom=1.5cm]{geometry}
 """
 
 BEGIN_DOCUMENT = "\\begin{document}\n"
@@ -40,7 +40,7 @@ class TexReportGenerator(object):
     def __init__(self, fname, title, subtitle = ''):
         self.fname = fname
         self.compiled = False
-        self.texstream = file(fname, 'w')
+        self.texstream = open(fname, 'w')
         # Add 'large_report_header_jo.tex' input as fisrt line:
         self.texstream.write(LARGE_REPORT_HEADER)
         # Begin document:
@@ -69,14 +69,14 @@ class TexReportGenerator(object):
             md5sum = None
             if os.path.exists(toc):
                 import md5
-                md5sum = md5.new(file(toc,'r').read()).digest()
+                md5sum = md5.new(open(toc,'r').read()).digest()
 
-        genfile = file(genfilename,'w')
+        genfile = open(genfilename,'w')
         genfile.write("\input{"+os.path.splitext(texbasefname)[0]+"}\n\n")
         genfile.close()
         os.system('pdflatex -interaction=batchmode '+genfilename)
         if fastcompilation is None and not md5sum is None:
-            nmd5sum = md5.new(file(toc,'r').read()).digest()
+            nmd5sum = md5.new(open(toc,'r').read()).digest()
             fastcompilation = (md5sum == nmd5sum)
         if not fastcompilation: os.system('pdflatex -interaction=batchmode '+genfilename)
         os.rename(pdffilename(genfilename),pdffilename(texbasefname))
