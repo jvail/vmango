@@ -1,8 +1,9 @@
 from __future__ import division
-
 from builtins import str
 from builtins import range
 from past.utils import old_div
+from mtg_import import getMTG
+
 def get_ucs(m):
     return [e for e in m.vertices(scale=2) if m.class_name(e) == 'U']
 
@@ -50,7 +51,8 @@ def plot_histo(angles):
 
 if __name__ == '__main__':
     from openalea.mtg import *
-    #m = MTG("a19.mtg")
+
+    m = getMTG("a21.mtg")
     #m = MTG("jf31.mtg")
     ucs = get_ucs(m)
     #print ucfirstpos(ucs[0],m)
