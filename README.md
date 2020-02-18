@@ -7,12 +7,14 @@ conda activate lpy3
 
 # build V-Mango
 
-## dev version - use imports from source tree
+dev version - use imports from source tree
+
 ```console
 python setup.py develop
 ```
 
-## use imports from openalea.vmango site package
+use imports from openalea.vmango site package
+
 ```console
 python setup.py install
 ```
