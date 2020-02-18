@@ -17,7 +17,7 @@ package_dir = dict( [('',pkg_root_dir)] + [(namespace + "." + pkg, pkg_root_dir 
 
 setup(
     name='openalea.vmango',
-    version='1.0.0',
+    version='3.0.0',
     description='V-Mango package for openalea.',
     long_description='The openalea.vmango contains a simulation and analysis tool for mango tree architecture.',
     author='Frederic Boudon',
