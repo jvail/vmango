@@ -67,3 +67,10 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# jupyter
+.ipynb_checkpoints/
+
+# vs code
+.vscode/
+.envFile
