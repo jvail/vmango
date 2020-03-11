@@ -33,7 +33,7 @@ k1runquant = """
 0.000000000 0.000000000 0.000000000 0.000000000 0.00000000 0.0000000 0.0000000 0.00000000
 0.000000000 0.000000000 0.000000000 0.000000000 0.00000000 0.0000000 0.0000000 0.00000000"""
 
-def fruit_model_main(bloom_date, nb_fruits, nb_leaves, verbose=False, idsimu=np.nan, MS_Init=np.nan, k1_fruit_sample=np.nan):
+def fruit_model_main(bloom_date, nb_fruits, nb_leaves, input_hourly, input_daily, verbose=False, idsimu=np.nan, MS_Init=np.nan, k1_fruit_sample=np.nan):
 
     LF = nb_leaves / nb_fruits
     if np.isnan(MS_Init):
@@ -56,15 +56,20 @@ def fruit_model_main(bloom_date, nb_fruits, nb_leaves, verbose=False, idsimu=np.
     if Position == 'S': Pos = 'Sud'
 
     #### attention les donn?es sont celles de 2002 ####
-    Meteo = pd.read_csv('../../../../../share/environment/rayostpierre2002.csv', sep=';', parse_dates=['Date', 'DATE'], dayfirst=True)
-    Meteo['DATE'] = Meteo['Date'].dt.date
-    Meteo_journalier = pd.read_csv('../../../../../share/environment/tempstpierre2002.csv', sep=';', parse_dates=['DATE'], dayfirst=True)
-    Meteo_journalier['DATE'] = Meteo_journalier['DATE'].dt.date
+    # Meteo = pd.read_csv('../../../../../share/environment/rayostpierre2002.csv', sep=';', parse_dates=['Date', 'DATE'], dayfirst=True)
+    # Meteo['DATE'] = Meteo['Date'].dt.date
+    # Meteo_journalier = pd.read_csv('../../../../../share/environment/tempstpierre2002.csv', sep=';', parse_dates=['DATE'], dayfirst=True)
+    # Meteo_journalier['DATE'] = Meteo_journalier['DATE'].dt.date
+
+    # input_daily.to_csv("tmp/input_daily_py.csv", na_rep='NA', index=False)
+    # input_hourly.to_csv("tmp/input_hourly_py.csv", na_rep='NA', index=False)
 
     Res = CROISSANCE_MF_TEMPERATURE(
         Jour_Flo = bloom_date,
-        Tab_journalier = pd.DataFrame(Meteo_journalier[['DATE', 'TM']]),
-        Tab_horaire = pd.DataFrame(Meteo[['DATE', 'HEURE', 'Rayonnement', 'Temperature_Air', 'HR', 'Date']]),
+        Tab_journalier = input_daily,
+        # Tab_journalier = pd.DataFrame(Meteo_journalier[['DATE', 'TM']]),
+        Tab_horaire = input_hourly,
+        # Tab_horaire = pd.DataFrame(Meteo[['DATE', 'HEURE', 'Rayonnement', 'Temperature_Air', 'HR', 'Date']]),
         MF_Init = 23.647 * MS_Init**0.6182,
         envirlum = k1_fruit,
         MS_Init_Division_Cellulaire = MS_Init,

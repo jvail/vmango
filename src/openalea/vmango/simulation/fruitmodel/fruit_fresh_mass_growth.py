@@ -44,19 +44,19 @@ def fruit_fresh_mass_growth(
     #print(MSpepu, Eaupepu, partpepu, croissMS, Masse_Fruit, MSfruit[0], MSfruit[1])
 
 
-    Results_jour = pd.DataFrame({
-        'Potentiel_Hydrique': [np.nan],
-        'P_Turgescence': [np.nan],
-        'P_Osmotique': [np.nan],
-        'Xyleme': [np.nan],
-        'Phloeme': [np.nan],
-        'Transpiration': [np.nan],
-        'saccharose': [np.nan],
-        'sucres_solubles': [np.nan],
-        'acides_organiques': [np.nan]
-    })
+    # Results_jour = pd.DataFrame({
+    #     'Potentiel_Hydrique': [np.nan],
+    #     'P_Turgescence': [np.nan],
+    #     'P_Osmotique': [np.nan],
+    #     'Xyleme': [np.nan],
+    #     'Phloeme': [np.nan],
+    #     'Transpiration': [np.nan],
+    #     'saccharose': [np.nan],
+    #     'sucres_solubles': [np.nan],
+    #     'acides_organiques': [np.nan]
+    # })
 
-    Results_jour_suivant = pd.DataFrame({ 'Date': [np.nan], 'Masse_Fruit': [np.nan], 'MS_Fruit': [np.nan], 'Eaupepu': [np.nan] })
+    # Results_jour_suivant = pd.DataFrame({ 'Date': [np.nan], 'Masse_Fruit': [np.nan], 'MS_Fruit': [np.nan], 'Eaupepu': [np.nan] })
 
     #  Determination de la Pression Osmotique (P_Osmotique)
 
@@ -228,22 +228,37 @@ def fruit_fresh_mass_growth(
 
     #---------------------------------- Sorties qualit? ------------------
     # somme glucose, sacchrose, fructose
-    Results_jour['saccharose'] =  msa / Eaupu
-    Results_jour['sucres_solubles'] = (msa+mg+mf) / Eaupu
+    saccharose =  msa / Eaupu
+    sucres_solubles = (msa+mg+mf) / Eaupu
     # somme acide citrique et malique
-    Results_jour['acides_organiques'] = (mmal + mcit) /Eaupu
-    Results_jour['Potentiel_Hydrique'] = Potentiel_Hydrique_Fruit
-    Results_jour['P_Turgescence'] = P_Turgescence
-    Results_jour['P_Osmotique'] = P_Osmotique
-    Results_jour['Xyleme'] = Flux_Xyleme
-    Results_jour['Phloeme'] = Flux_Phloeme
-    Results_jour['Transpiration'] = Transpiration_Fruit
+    acides_organiques = (mmal + mcit) /Eaupu
+    # Results_jour['Potentiel_Hydrique'] = Potentiel_Hydrique_Fruit
+    # Results_jour['P_Turgescence'] = P_Turgescence
+    # Results_jour['P_Osmotique'] = P_Osmotique
+    # Results_jour['Xyleme'] = Flux_Xyleme
+    # Results_jour['Phloeme'] = Flux_Phloeme
+    # Results_jour['Transpiration'] = Transpiration_Fruit
 
-    Results_jour_suivant['Date'] = Date + datetime.timedelta(days=1)
-    Results_jour_suivant['Masse_Fruit'] = Masse_Fruit_new
-    Results_jour_suivant['MS_Fruit'] = MSfruit[1]
-    Results_jour_suivant['Eaupepu'] = Eaupepu_new
+    # Results_jour_suivant['Date'] = Date + np.timedelta64(1, 'D')
+    # Results_jour_suivant['Masse_Fruit'] = Masse_Fruit_new
+    # Results_jour_suivant['MS_Fruit'] = MSfruit[1]
+    # Results_jour_suivant['Eaupepu'] = Eaupepu_new
 
     # pd.DataFrame([[local[0], type(local[1]).__name__] for local in locals().items()], columns=['name', 'type']).to_csv(f'{__name__ }_vars.csv', index=False, sep=';')
 
-    return (Results_jour, Results_jour_suivant)
+    return ((
+        Potentiel_Hydrique_Fruit,
+        P_Turgescence,
+        P_Osmotique,
+        Flux_Xyleme,
+        Flux_Phloeme,
+        Transpiration_Fruit,
+        saccharose,
+        sucres_solubles,
+        acides_organiques
+    ), (
+        Date + np.timedelta64(1, 'D'),
+        Masse_Fruit_new,
+        MSfruit[1],
+        Eaupepu_new
+    ))

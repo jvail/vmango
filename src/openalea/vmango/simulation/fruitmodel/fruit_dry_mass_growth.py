@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from os.path import abspath, dirname, join
 
 from openalea.vmango.simulation.fruitmodel.fruitmodel_error import FruitModelValueError
 
@@ -14,7 +15,8 @@ def fruit_dry_mass_growth(
     MS_Fruit_Precedent,     # en gramme de MS
     Reserve_Rameau,         # en gramme de carbone
     Reserve_Feuille,        # en gramme de carbone
-    LF                      # Rapport feuille / fruit [10, 150]
+    LF,                      # Rapport feuille / fruit [10, 150]
+    idsimu=np.nan
 ):
 
 
@@ -142,10 +144,10 @@ def fruit_dry_mass_growth(
             else:
                 Reste_RE = 0
                 error = pd.DataFrame({ 'error': ['Les parties vegetatives s\'etouffent: le systeme meurt ...'] })
-                if 'idsimu' in globals():
-                    error.to_csv(f'/tmp/failed-{idsimu}.csv', index=False)
+                if not np.isnan(idsimu):
+                    error.to_csv(join(dirname(abspath(__file__)), f'tmp/failed-{idsimu}.csv'), index=False)
                 else:
-                    error.to_csv('tmp/py.csv', index=False)
+                    error.to_csv(join(dirname(abspath(__file__)), 'tmp/py.csv'), index=False)
                 raise FruitModelValueError(f'Les parties vegetatives s\'etouffent: le systeme meurt ...')
 
     ### Sitution d?favorable pour le fruit.
@@ -153,10 +155,10 @@ def fruit_dry_mass_growth(
         besoin_fruit = (Respiration_Fruit - Reste_RE) / cfruit
         if besoin_fruit >= MS_Fruit_Precedent:
             error = pd.DataFrame({ 'error': ['Les parties reproductrices s\'etouffent: le systeme meurt ...'] })
-            if 'idsimu' in globals():
-                error.to_csv(f'/tmp/failed-{idsimu}.csv', index=False)
+            if not np.isnan(idsimu):
+                error.to_csv(join(dirname(abspath(__file__)), f'tmp/failed-{idsimu}.csv'), index=False)
             else:
-                error.to_csv('tmp/py.csv', index=False)
+                error.to_csv(join(dirname(abspath(__file__)), 'tmp/py.csv'), index=False)
             raise FruitModelValueError(f'Les parties reproductrices s\'etouffent: le systeme meurt ...')
         else:
             # le fruit pompe sur ses r?serves
@@ -191,8 +193,4 @@ def fruit_dry_mass_growth(
 
     # pd.DataFrame([[local[0], type(local[1]).__name__] for local in locals().items()], columns=['name', 'type']).to_csv(f'{__name__ }_vars.csv', index=False, sep=';')
 
-    return pd.DataFrame({
-        'MS_Fruit': [MS_Fruit_New],
-        'Reserve_Feuille': [Reserve_Feuille_New],
-        'Reserve_Rameau': [Reserve_Rameau_New]
-    })
+    return (MS_Fruit_New, (Reserve_Feuille_New, Reserve_Rameau_New))
