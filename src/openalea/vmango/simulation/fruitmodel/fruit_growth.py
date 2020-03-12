@@ -23,6 +23,7 @@ def fruit_growth(
     Tab_horaire = Tab_horaire.drop(Tab_horaire[Tab_horaire['DATE'] < Jour_Flo].index)
     # Tab_journalier = Tab_journalier[Tab_journalier['DATE'] >= Jour_Flo]
      # construction colonne DAB
+    Tab_journalier.reset_index(inplace=True, drop=True)
     Tab_journalier.loc[:,'DAB'] = Tab_journalier.index.copy()
 
     # calcul des degr?s jours ? partir DAB = 0

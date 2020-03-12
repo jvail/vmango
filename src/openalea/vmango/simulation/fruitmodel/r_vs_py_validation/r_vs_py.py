@@ -115,7 +115,7 @@ for i in range(10):
                 df_r.to_csv('r_vs_py_validation/df_r.csv', index=False)
                 df_py.to_csv('r_vs_py_validation/df_py.csv', index=False)
                 df_diff = df_r.loc[:, 'Masse_Fruit':] - df_py.loc[:, 'Masse_Fruit':]
-                flat_diff = df_diff[df_diff > 0.001].values.flatten()
+                flat_diff = df_diff[abs(df_diff) > 0.001].values.flatten()
                 if len(flat_diff[~np.isnan(flat_diff)]) > 0:
                     df_diff.to_csv('r_vs_py_validation/df_py_diff.csv', index=False)
                     print(i, bloom_date, nb_fruits, nb_leaves, ms_init, k1_fruit_sample, time_r, time_py, ripe, model_error, is_eq)
