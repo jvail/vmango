@@ -1,171 +1,171 @@
 # Mod?le de croissance en Mati?re fraiche, Lechaudel (2007).
 
-CROISSANCE_MF = function(   Date,
-                            Temperature_Air,
-                            rayo,
-                            humirela,
-                            ddj,
-                            Temp_air_moy,
-                            MSfruit,
-                            MF_Init,
-                            Eaupepu_Init,
-                            Poids_Fruit_Init,
-                            H,                                                  # Pression Seuil Y ~ H * Volume Fruit, pour la croissance, Parametre ? Estimer.
-                            Phiini,                                             #  Taux d'accroissement cellulaire
-                            DDini,                                              # DDJ ? partir duquel extensibilit? cellulaire (Phiini d?croit).
-                            Tau,                                                # Tau de d?croissance de l'extensibilit? cellulaire.
-                            aLf                                                 # Parametre pour calculer la conductivit? hydraulique
+growth_FM = function(   date,
+                            T_air,
+                            GR,
+                            RH,
+                            dd_cum,
+                            T_air_daily,
+                            DM_fruit,
+                            FM_fruit_ini,
+                            W_fleshpeel_ini,
+                            DM_fruit_0                                                # Parametre pour calculer la conductivit? hydraulique
                         )
 
 {
 #----------------------------- Initialisation des donn?es de sorties et entr?es
 
-  MSpepu =    0.4086 * MSfruit[1]^0.7641 + 0.5219 * MSfruit[1]^1.0584                               # MS dans la peau et la pulpe.
-  Eaupepu =   Eaupepu_Init                                                                          # Eau dans la peau et la pulpe d?termin?e avec relation allom?trique.
-  partpepu =  0.4086*0.7641*(MSfruit[-1])^(0.7641-1) + 0.5219*1.0584*(MSfruit[-1])^(1.0584-1)
-  croissMS = partpepu * diff(MSfruit)                                                               # D?rivi?e de la mati?re s?che dans la peau et la pulpe.
-  croissMS[croissMS < 0] = 0
-  Masse_Fruit = MF_Init                                                                             # Masse fraiche du fruit
-  Masse_Noyau = MF_Init - (MSpepu + Eaupepu)                                                        # Masse du noyau calcul?e avec relation empirique.
+  h = 0.002027                                            # Pression Seuil Y ~ H * V_olume Fruit, pour la croissance, Parametre ? Estimer.
+  phi_max = 0.414                                           #  Taux d'accroissement cellulaire (MPa / jour, article 2007)
+  dd_thresh = 2000                                             # DDJ ? partir duquel extensibilit? cellulaire (Phiini d?croit).
+  tau = 0.966                                              # Tau de d?croissance de l'extensibilit? cellulaire.
+  aLf = 0.3732
 
-Results_jour = data.frame( Potentiel_Hydrique = NA,
-                          P_Turgescence = NA,
-                          P_Osmotique = NA,
-                          Xyleme = NA,
-                          Phloeme = NA,
-                          Transpiration = NA,
-                          saccharose = NA,
-                          sucres_solubles = NA,
-                          acides_organiques = NA
+  DM_fleshpeel =    0.4086 * DM_fruit[1]^0.7641 + 0.5219 * DM_fruit[1]^1.0584                               # MS dans la peau et la pulpe.
+  W_fleshpeel =   W_fleshpeel_ini                                                                          # Eau dans la peau et la pulpe d?termin?e avec relation allom?trique.
+  DM_fleshpeel_growth = 0.4086*0.7641*(DM_fruit[-1])^(0.7641-1) + 0.5219*1.0584*(DM_fruit[-1])^(1.0584-1) * diff(DM_fruit)                                                               # D?rivi?e de la m_ati?re s?che dans la peau et la pulpe.
+  DM_fleshpeel_growth[DM_fleshpeel_growth < 0] = 0
+  FM_fruit = FM_fruit_ini                                                                             # Masse fraiche du fruit
+  FM_stone = FM_fruit - (DM_fleshpeel + W_fleshpeel)                                                        # Masse du noyau calcul?e avec relation empirique.
+
+Results_jour = data.frame( water_potential = NA,
+                          turgor_pressure = NA,
+                          osmotic_pressure = NA,
+                          flux_xyleme = NA,
+                          flux_phloeme = NA,
+                          transpiration = NA,
+                          sucrose = NA,
+                          soluble_sugars = NA,
+                          organic_acids = NA
                             )
 
-Results_jour_suivant = data.frame( Date = NA,
-                                   Masse_Fruit = NA,
+Results_jour_suivant = data.frame( date = NA,
+                                   FM_fruit = NA,
                                    MS_Fruit = NA,
-                                   Eaupepu = NA
+                                   W_fleshpeel = NA
                                   )
 
-#-------------------------- Determination de la Pression Osmotique (P_Osmotique)
+#-------------------------- Determination de la Pression Osmotique (osmotic_pressure)
 
-  degjour =   mean(ddj)
-	MSpu    =   0.8226 * MSpepu                                                   # Mati?re s?che dans la puple. Relation Allom?trique.
-	Eaupu   =   0.8958 * Eaupepu
+  dd_cum =   mean(dd_cum)
+	DM_flesh    =   0.8226 * DM_fleshpeel                                                   # Mati?re s?che dans la puple. Relation Allom?trique.
+	W_flesh   =   0.8958 * W_fleshpeel
 
-	#---- Calcul des proportion des diff?rents compos?s en fonction des relation allom?triques d?termin?es ? partir de la mati?re s?che Pulpe et DDJ.
-  propmal = 0.06620651 + (-0.0000538797) * degjour + (-0.002464413) * MSpu + 2.406565e-006 * MSpu * degjour
-	if (propmal < 0) {    	propmal = 0.0   	}
-	proppyr = 0.0006896104 + 1.613387e-006 * degjour + 0.00005063595 * MSpu + (-6.912509e-008) * MSpu * degjour
-	if (proppyr < 0) {    	proppyr = 0.0   	}
-	propoxa = 0.004750718 + (-2.113094e-006) * degjour + (-0.00002965687) * MSpu + 0.0 * MSpu * degjour
-	if (propoxa < 0) {    	propoxa = 0.0   	}
-	propK = 0.01394964 + (-5.234608e-006) * degjour + (-0.000288464) * MSpu + 2.682089e-007 * MSpu * degjour
-	if (propK < 0) {    	propK = 0.0   	}
-	propMg = 0.00115595 + (-7.937479e-007) * degjour + (-0.00002320017) * MSpu + (2.344528e-008) * MSpu * degjour
-	if (propMg < 0) {    	propMg = 0.0   	}
-	propCa = 0.001588606 + (-6.625787e-007) * degjour + (-0.0000228527) * MSpu + (1.514343e-008) * MSpu * degjour
-	if (propCa < 0) {    	propCa = 0.0   	}
-	propNH4 = 0.000246011 + 3.741743e-007 * degjour + 0.00002495255 * MSpu + (-3.010081e-008) * MSpu * degjour
-	if (propNH4 < 0) {    	propNH4 = 0.0   	}
-	propNa = 0.0001279568 + 8.15203e-008 * degjour + (-1.468235e-006) * MSpu + 0.0 * MSpu * degjour
-	if (propNa < 0) {    	propNa = 0.0   	}
-	propglc = 0.08074145 + (-0.00006325543) * degjour + (-0.001161846) * MSpu + 1.161344e-006 * MSpu * degjour
-	if (propglc < 0) {    	propglc = 0.0   	}
-	propfrc = 0.04972199 + 0.0000966001 * degjour + (-0.001078579) * MSpu + 0.0 * MSpu * degjour
-	if (propfrc < 0) {    	propfrc = 0.0   	}
-	propami = -0.1708815 + 0.0004380411 * degjour + 0.01923022 * MSpu + (-0.00002059459) * MSpu * degjour
-	if (propami < 0) {    	propami = 0.0   	}
-  propcit = 0.1625024 + (-0.0000640754) * degjour + 0.003906348 * MSpu + (-4.784292e-006) * MSpu * degjour
-  if (propcit < 0) {    	propcit = 0.0   	}
-  propsac = 0.0 + (0.00017695) * degjour + (-0.007249) * MSpu + 9.03e-006 * MSpu * degjour
-  if (propsac < 0) {    	propsac = 0.0   	}
+	#---- Calcul des prop_ortion des diff?rents compos?s en fonction des relation allom?triques d?termin?es ? partir de la m_ati?re s?che Pulpe et dd_cum.
+  prop_mal = 0.06620651 + (-0.0000538797) * dd_cum + (-0.002464413) * DM_flesh + 2.406565e-006 * DM_flesh * dd_cum
+	if (prop_mal < 0) {    	prop_mal = 0.0   	}
+	prop_pyr = 0.0006896104 + 1.613387e-006 * dd_cum + 0.00005063595 * DM_flesh + (-6.912509e-008) * DM_flesh * dd_cum
+	if (prop_pyr < 0) {    	prop_pyr = 0.0   	}
+	prop_oxa = 0.004750718 + (-2.113094e-006) * dd_cum + (-0.00002965687) * DM_flesh + 0.0 * DM_flesh * dd_cum
+	if (prop_oxa < 0) {    	prop_oxa = 0.0   	}
+	prop_K = 0.01394964 + (-5.234608e-006) * dd_cum + (-0.000288464) * DM_flesh + 2.682089e-007 * DM_flesh * dd_cum
+	if (prop_K < 0) {    	prop_K = 0.0   	}
+	prop_Mg = 0.00115595 + (-7.937479e-007) * dd_cum + (-0.00002320017) * DM_flesh + (2.344528e-008) * DM_flesh * dd_cum
+	if (prop_Mg < 0) {    	prop_Mg = 0.0   	}
+	prop_Ca = 0.001588606 + (-6.625787e-007) * dd_cum + (-0.0000228527) * DM_flesh + (1.514343e-008) * DM_flesh * dd_cum
+	if (prop_Ca < 0) {    	prop_Ca = 0.0   	}
+	prop_NH4 = 0.000246011 + 3.741743e-007 * dd_cum + 0.00002495255 * DM_flesh + (-3.010081e-008) * DM_flesh * dd_cum
+	if (prop_NH4 < 0) {    	prop_NH4 = 0.0   	}
+	prop_Na = 0.0001279568 + 8.15203e-008 * dd_cum + (-1.468235e-006) * DM_flesh + 0.0 * DM_flesh * dd_cum
+	if (prop_Na < 0) {    	prop_Na = 0.0   	}
+	prop_glc = 0.08074145 + (-0.00006325543) * dd_cum + (-0.001161846) * DM_flesh + 1.161344e-006 * DM_flesh * dd_cum
+	if (prop_glc < 0) {    	prop_glc = 0.0   	}
+	prop_frc = 0.04972199 + 0.0000966001 * dd_cum + (-0.001078579) * DM_flesh + 0.0 * DM_flesh * dd_cum
+	if (prop_frc < 0) {    	prop_frc = 0.0   	}
+	prop_ami = -0.1708815 + 0.0004380411 * dd_cum + 0.01923022 * DM_flesh + (-0.00002059459) * DM_flesh * dd_cum
+	if (prop_ami < 0) {    	prop_ami = 0.0   	}
+  prop_cit = 0.1625024 + (-0.0000640754) * dd_cum + 0.003906348 * DM_flesh + (-4.784292e-006) * DM_flesh * dd_cum
+  if (prop_cit < 0) {    	prop_cit = 0.0   	}
+  prop_sac = 0.0 + (0.00017695) * dd_cum + (-0.007249) * DM_flesh + 9.03e-006 * DM_flesh * dd_cum
+  if (prop_sac < 0) {    	prop_sac = 0.0   	}
 
-  #---- Calcul de la masse et du nombre de mol des diff?rents compos?s
-	mmal = propmal * MSpu;      nmal = mmal / 134
-	mcit = propcit * MSpu;      ncit = mcit / 192
-	mpyr = proppyr * MSpu;      npyr = mpyr / 88
-	moxa = propoxa * MSpu;      noxa = moxa / 90
-	mK = propK * MSpu;          nK = mK / 39
-	mMg = propMg * MSpu;        nMg = mMg / 24
-	mCa = propCa * MSpu;        nCa = mCa / 40
-	mNH4 = propNH4 * MSpu;      nNH4 = mNH4 / 18
-	mNa = propNa * MSpu;        nNa = mNa / 23
-	mg = propglc * MSpu;        nglc = mg / 180
-	mf = propfrc * MSpu;        nfrc = mf / 180
-	msa = propsac * MSpu;       nsac = msa / 342
-	mam = propami * MSpu
+  #---- Calcul de la m_asse et du nombre de m_ol des diff?rents compos?s
+  m_mal = prop_mal * DM_flesh;      n_mal = m_mal / 134
+  m_cit = prop_cit * DM_flesh;      n_cit = m_cit / 192
+  m_pyr = prop_pyr * DM_flesh;      n_pyr = m_pyr / 88
+  m_oxa = prop_oxa * DM_flesh;      n_oxa = m_oxa / 90
+  m_K = prop_K * DM_flesh;          n_K = m_K / 39
+  m_Mg = prop_Mg * DM_flesh;        n_Mg = m_Mg / 24
+  m_Ca = prop_Ca * DM_flesh;        n_Ca = m_Ca / 40
+  m_NH4 = prop_NH4 * DM_flesh;      n_NH4 = m_NH4 / 18
+  m_Na = prop_Na * DM_flesh;        n_Na = m_Na / 23
+  m_g = prop_glc * DM_flesh;        n_glc = m_g / 180
+  m_f = prop_frc * DM_flesh;        n_frc = m_f / 180
+  m_sa = prop_sac * DM_flesh;       n_sac = m_sa / 342
+  m_am = prop_ami * DM_flesh
 
-  ncompsol =     nmal + ncit + npyr + noxa + nK + nMg + nCa + nNH4 + nNa + nglc + nfrc + nsac
-	Cssm     =     ncompsol / Eaupu
-	R = 83                                                                        # R gaz constant (cm3 bar mol-1 ?K-1
-	P_Osmotique = (R / 10) * (Temp_air_moy + 273.15) * Cssm  + 0.2                # Calcul de la pression osmotique (MPa)
+  n_solutes =     n_mal + n_cit + n_pyr + n_oxa + n_K + n_Mg + n_Ca + n_NH4 + n_Na + n_glc + n_frc + n_sac
+	c_solutes     =     n_solutes / W_flesh
+	R = 8.3                                                                        # R gaz constant (cm3 bar m_ol-1 ?K-1
+	osmotic_pressure = R * (T_air_daily + 273.15) * c_solutes  + 0.2                # Calcul de la pression osmotique (MPa)
                                                                                 #0.2 ?tant la pression osmotique due aux acides amin?s, constant
 
 
 ###----- CALCUL DE LA TRANSPIRATION DU FRUIT -----------------
 
 ro = 5544                                                                       # perm?abilit? cuticulaire en cm/jour (231 cm/h dans papier 2007)
-surfruit = 3.65 * (Masse_Fruit)^0.73                                            # calcul de la surface du fruit exp?rimental (en cm?)
-Petoile = 0.008048 * exp(0.0547 * Temp_air_moy)                                 # pression de vapeur saturante (Nobel, 1974)
-transpi.alpha = 18 * Petoile / (83 * (Temp_air_moy + 273.15))                  # concentration de vapeur d'eau ? saturation
+A_fruit = 3.65 * (FM_fruit)^0.73                                            # calcul de la surface du fruit exp?rimental (en cm?)
+P_sat = 0.008048 * exp(0.0547 * T_air_daily)                                 # pression de vapeur saturante (Nobel, 1974)
+alpha = 18 * P_sat / (83 * (T_air_daily + 273.15))                  # concentration de vapeur d'eau ? saturation
 
 # calcul de la transpiration du fruit (g/j)
-Transpiration_Fruit = surfruit * transpi.alpha * ro * (0.996 - (mean(humirela) / 100))       # 0.996 = HR dans les espaces remplis d'air ? l'int?rieur du fruit
+transpiration = A_fruit * alpha * ro * (0.996 - (mean(RH) / 100))       # 0.996 = HR dans les espaces remplis d'air ? l'int?rieur du fruit
 
-#----------------------------- Determination de la pression de turgescence (P_Turgescence)-----------------------------------------------------------------------------------------------------
+#----------------------------- Determination de la pression de turgescence (turgor_pressure)-----------------------------------------------------------------------------------------------------
 
-  Potentiel_Hydrique_Arbre = 1.0 * mean(-0.6617105 + (-0.006940179 * Temperature_Air) + (0.007888208 * humirela) + (0.0000198265 * rayo)) # Calcul du potentiel hydrique arbre
+  water_potential_stem = 1.0 * mean(-0.6617105 + (-0.006940179 * T_air) + (0.007888208 * RH) + (0.0000198265 * GR)) # Calcul du potentiel hydrique arbre
 
-  DDini = 20.769 * Poids_Fruit_Init + 518.87                                    # variante possible, DDini fonction P0.fruit
+  dd_thresh = 20.769 * DM_fruit_0 + 518.87                                    # variante possible, dd_thresh fonction P0.fruit
   #### MODIF MAY17
 
 
-	if (degjour > DDini) {Phi = Phiini * (Tau ^(degjour-DDini))}else{ Phi = Phiini}               #- Variation de Phi (accroissement volume en fonction de Taux ? partir seuil DDJ).
+	if (dd_cum > dd_thresh) {Phi = phi_max * (tau ^(dd_cum-dd_thresh))}else{ Phi = phi_max}               #- Variation de Phi (accroissement volume en fonction de Taux ? partir seuil dd_cum).
 
 #calcul de la conductivit? globale
-  A_Lf = surfruit * aLf                                                         # produit de la surface et du ratio (membrane composite/surface du fruit du fruit = a) et de la conductivit? hydraulique entre la tige et le fruit (Lf)
+  ALf = A_fruit * aLf                                                         # produit de la surface et du ratio (membrane composite/surface du fruit du fruit = a) et de la conductivit? hydraulique entre la tige et le fruit (Lf)
 
 # calcul du seuil de pression Y
-  Yo = 0 ; Vo = 0                                                               # param?tres papier 2007
-  Y = Yo + H * (Eaupepu - Vo)
+  Y_o = 0 ; V_o = 0                                                               # param?tres papier 2007
+  Y = Y_o + h * (W_fleshpeel - V_o)
 
 #  Pturgescence ? partir equation 13 sans l'?lasticit?
-  numerateur = Phi * Eaupepu * Y + A_Lf * (Potentiel_Hydrique_Arbre + P_Osmotique) - Transpiration_Fruit + croissMS / 1.60
-  denominateur = Phi * Eaupepu + A_Lf
-  P_Turgescence = numerateur / denominateur
+  numerator = Phi * W_fleshpeel * Y + ALf * (water_potential_stem + osmotic_pressure) - transpiration + DM_fleshpeel_growth / 1.60
+  denominator = Phi * W_fleshpeel + ALf
+  turgor_pressure = numerator / denominator
 
-	if (P_Turgescence < Y) P_Turgescence = Potentiel_Hydrique_Arbre + P_Osmotique - (Transpiration_Fruit - (croissMS / 1.60)) / A_Lf
+	if (turgor_pressure < Y) turgor_pressure = water_potential_stem + osmotic_pressure - (transpiration - (DM_fleshpeel_growth / 1.60)) / ALf
 
-	if (P_Turgescence < Yo) P_Turgescence = 0
+	if (turgor_pressure < Y_o) turgor_pressure = 0
 
-	Potentiel_Hydrique_Fruit = P_Turgescence - P_Osmotique                                   #- Calcul du potentiel hydrique du fruit.
+	water_potential = turgor_pressure - osmotic_pressure                                   #- Calcul du potentiel hydrique du fruit.
 
-	Flux_Xyleme  = A_Lf * (Potentiel_Hydrique_Arbre - Potentiel_Hydrique_Fruit)                           #- Entr?e d'eau par le xyleme
-	Flux_Phloeme = croissMS / 1.60                                                                        #- Entr?e d'eau par le phloeme
+	flux_xyleme  = ALf * (water_potential_stem - water_potential)                           #- Entr?e d'eau par le xyleme
+	flux_phloeme = DM_fleshpeel_growth / 1.60                                                                        #- Entr?e d'eau par le phloeme
 
 #---------------------------------- Bilan Hydrique et carbon? ------------------
 
-  MSpepu_new       = MSpepu + croissMS                                           # Bilan carbon?
-  Eaupepu_new      = Eaupepu + Flux_Xyleme + Flux_Phloeme - Transpiration_Fruit  # Bilan hydrique
-  Masse_Noyau_new  = 0.1167 * (MSpepu_new + Eaupepu_new)
-  Masse_Fruit_new  = MSpepu_new + Eaupepu_new + Masse_Noyau_new
+  DM_fleshpeel       = DM_fleshpeel + DM_fleshpeel_growth                                           # Bilan carbon?
+  W_fleshpeel      = W_fleshpeel + flux_xyleme + flux_phloeme - transpiration  # Bilan hydrique
+  FM_stone  = 0.1167 * (DM_fleshpeel + W_fleshpeel)
+  FM_fruit  = DM_fleshpeel + W_fleshpeel + FM_stone
   #---------------------------------- Sorties qualit? ------------------
-  Results_jour$sucres_solubles =                     (msa+mg+mf)/ Eaupu  # somme glucose, sacchrose, fructose
-  Results_jour$acides_organiques =                     (mmal + mcit)/Eaupu # somme acide citrique et malique
+  Results_jour$soluble_sugars =                     (m_sa+m_g+m_f)/ W_flesh  # somme glucose, sacchrose, fructose
+  Results_jour$organic_acids =                     (m_mal + m_cit)/W_flesh # somme acide citrique et m_alique
 
 #----------------------------------- Resultats ---------------------------------
 
-Results_jour$Potentiel_Hydrique=              Potentiel_Hydrique_Fruit
-Results_jour$P_Turgescence=                   P_Turgescence
-Results_jour$P_Osmotique =                    P_Osmotique
-Results_jour$Xyleme =                         Flux_Xyleme
-Results_jour$Phloeme =                        Flux_Phloeme
-Results_jour$Transpiration =                  Transpiration_Fruit
-Results_jour$saccharose =                     msa / Eaupu
+Results_jour$water_potential=              water_potential
+Results_jour$turgor_pressure=                   turgor_pressure
+Results_jour$osmotic_pressure =                    osmotic_pressure
+Results_jour$flux_xyleme =                         flux_xyleme
+Results_jour$flux_phloeme =                        flux_phloeme
+Results_jour$transpiration =                  transpiration
+Results_jour$sucrose =                     m_sa / W_flesh
 
-Results_jour_suivant$Date =                 Date + 1
-Results_jour_suivant$Masse_Fruit =          Masse_Fruit_new
-Results_jour_suivant$MS_Fruit =             MSfruit[2]
-Results_jour_suivant$Eaupepu =              Eaupepu_new
+Results_jour_suivant$date =                 date + 1
+Results_jour_suivant$FM_fruit =          FM_fruit
+Results_jour_suivant$MS_Fruit =             DM_fruit[2]
+Results_jour_suivant$W_fleshpeel =              W_fleshpeel
 
 Results = list( Results_jour = Results_jour,
                   Results_jour_suivant = Results_jour_suivant)

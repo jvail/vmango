@@ -4,193 +4,135 @@ from os.path import abspath, dirname, join
 
 from openalea.vmango.simulation.fruitmodel.fruitmodel_error import FruitModelValueError
 
-
-### Fonction MS ? partir Model MS Lechaudel, 2005
-def fruit_dry_mass_growth(
-    Rayonnement,            # En watts.m-2
-    Temperature_Air,        # Temp?rature horaire de l'air
-    Temperature_Fruit,      # Temp?rature horaire du fruit.
-    envirlum,               # Evolution de l'environnement lumineux dans la journ?e
-    Poids_Fruit_Init,       # Poids du fruit ? la fin de la division cellulaire en gramme de MS
-    MS_Fruit_Precedent,     # en gramme de MS
-    Reserve_Rameau,         # en gramme de carbone
-    Reserve_Feuille,        # en gramme de carbone
-    LF,                      # Rapport feuille / fruit [10, 150]
+def growth_DM(
+    GR,
+    T_air,
+    T_fruit,
+    sunlit_bs,
+    DM_fruit_0,
+    DM_fruit_previous,
+    reserve_stem,
+    reserve_leaf,
+    LF,
     idsimu=np.nan
 ):
 
+    dd_delta = np.sum((T_fruit - 16) / 24)
+    GR = GR / 3600 * 10000
+    PAR = GR * 0.5 * 4.6
 
-    Delta_DDJ_Journee = np.sum((Temperature_Fruit - 16)/24)                            # Accumulation de DDJ dans la journ?e
-    RG = Rayonnement / 3600 * 10000                                                 # transformation du RG en J/cm2/h en W/m2
-    PAR = RG * 0.5 * 4.6                                                            # Transformation du RG en watts/m2 en Rayonnement Photosynth?tiquement Actif (papier Varlet-Grancher et al. 1989 dans Agronomie, vol 9:419-139)
+    sunlit_ws = np.array([0.88] * 24)
 
-    # PARAMETRES POUR ASSIMILATION
-    # k1 et k2 : coefficients de pond?ration du rayonnement inter et intra-rameau
-    k1 = envirlum
-    k2 = np.array([0.88] * 24)
-
-    # PARAMETRES PHOTOSYNTHESE fixe
-    p1 = 3.85                                       # coefficients relation Anet = f(PPF)
+    p1 = 3.85
     p2 = 33.23
     p3 = 0.483
     p4 = 0.034
-    r3 = 0.0529                                     # coefficient relation PPFshaded = f(PPFsunlit)
+    k3 = 0.0529
 
-    # PARAMETRES POUR RESPIRATIONS D'ENTRETIEN
-    MRR_rameau = 0.000858                           # Respiration de maintenance rameau
-    MRR_feuilles = 0.000156                         # Respiration de maintenance feuilles
-    MRR_fruits = 0.00115                            # Respiration de maintenance fruit
-    Q10_rameau = 1.96                               # Q10 rameau
-    Q10_feuilles = 2.11                             # Q10 feuilles
-    Q10_fruits = 1.9                                # Q10 fruits
+    MRR_stem = 0.000858
+    MRR_leaf = 0.000156
+    MRR_fruit = 0.00115
+    Q10_stem = 1.96
+    Q10_leaf = 2.11
+    Q10_fruit = 1.9
 
-    # PARAMETRES POUR DEMANDE DU FRUIT
-    gamma_feuilles = 0.0162                         # remobilisation des r?serves, papier 2005
-    gamma_rameau = 0.0164                           # remobilisation des r?serves, papier 2005
-    cram = 0.4387                                   # concentration carbone rameau
-    cfeuil = 0.4051                                 # concentration carbone feuille
-    cfruit = 0.4239                                 # concentration carbone fruit
-    GRCfruit = 0.04                                 # coefficient de respiration de croissance (gCO2.gMS)
+    r_mobile_leaf = 0.0162
+    r_mobile_stem = 0.0164
+    cc_stem = 0.4387
+    cc_leaf = 0.4051
+    cc_fruit = 0.4239
+    GRC_fruit = 0.04
 
-    # PARAMETRE LOGISTIQUE FONCTION DES DDJ
-    RGRini_fruit =  0.0105                          #  param papier 2005
-    a_fruit =       16.736                          #  param papier 2005
-    b_fruit =       0.624                           #  param papier 2005
-    psi =           0.3                             # ?
-    DMfmax =  a_fruit * (Poids_Fruit_Init**b_fruit) # poids maximum du fruit.
+    RGR_fruit_ini = 0.0105
+    a1 = 16.736
+    a2 = 0.624
+    r_storage = 0.3
+    DM_fruit_max = a1 * (DM_fruit_0 ** a2)
 
-    # PARAMETRES DES STRUCTURES
-    poids_rameau = (41.83 + 77.41) / 2              # moy exp?, fixe
-    poids_feuilles = 0.8                            # poids sec feuille, fixe
-    partMS_reserves0_rameau = 0.1                   # moy exp?
-    partMS_reserves0_feuilles = 0.074               # moy exp?
+    DM_stem = (41.83 + 77.41) / 2
+    DM_leaf_unit = 0.8
+    r_DM_stem_ini = 0.1
+    r_DM_leaf_ini = 0.074
 
-    # PARAMETRES DE STRUCTURES
-    Structure_Rameau = poids_rameau * (1 - partMS_reserves0_rameau)                 # partie structure du remeau en gC.
-    Structure_Feuille = poids_feuilles * (1 - partMS_reserves0_feuilles) * LF       # partie structure des feuilles en gC.
+    DM_structure_stem = DM_stem * (1 - r_DM_stem_ini)
+    DM_structure_leaf = DM_leaf_unit * (1 - r_DM_leaf_ini) * LF
 
-    Surf_Fol = 0.0051 * LF**0.937                                                   # Estimation de la surface folliaire calcul surface foliaire (m2)
+    LA = 0.0051 * LF**0.937
 
-    # ASSIMILATION DE CARBONE
+    D_fruit =  DM_fruit_previous * RGR_fruit_ini * dd_delta * (1 - (DM_fruit_previous / DM_fruit_max)) * (cc_fruit + GRC_fruit)
 
-    # demande de croissance du fruit (gC/j) , ce que veux le fruit en fonction de la croissance potentielle.
-    Dfruit =  MS_Fruit_Precedent * RGRini_fruit * Delta_DDJ_Journee * (1 - (MS_Fruit_Precedent / DMfmax)) * (cfruit + GRCfruit)
+    Pmax = (p1 * (D_fruit / LA) * p2) / (p1 * (D_fruit / LA) + p2)
+    Pmax = min(Pmax.min(), 15)
 
-    # calcul de la photosynth?se maximale, est fonction de la demande du fruit, surface folaire (la demande tient compte des co?ts (en C) de construction )
-    Pmax = (p1 * (Dfruit / Surf_Fol) * p2) / (p1 * (Dfruit / Surf_Fol) + p2)
-    Pmax = min(Pmax.min(), 15)        # Plafonnement de la demande du fruit
-    # if (Pmax < 5)  { Pmax = 5  }      # Si pas de fruit, on limite le Pmax à 5.
-    #### MODIF MAY17
+    LA_sunlit = sunlit_bs[PAR>0] * sunlit_ws[PAR>0] * LA
+    LA_shaded = LA - LA_sunlit
 
-    # CALCUL DES ASSIMILATS SUR LA JOURNEE OFFRE DE LA JOURNEE, production et mobilisation des r?serves.
-    Surf_Fol_Sol = k1[PAR>0] * k2[PAR>0] * Surf_Fol # on calcul la surface folaire en plein soleil
-    Surf_Fol_Omb = Surf_Fol - Surf_Fol_Sol
+    PAR_shaded = k3 * PAR
+    P_shaded = ((Pmax + p3) * (1 - np.exp(- p4 * PAR_shaded[PAR_shaded > 0] / (Pmax + p3)))) - p3
+    photo_shaded = 3600 * sum (P_shaded[P_shaded > 0] *  LA_shaded[P_shaded > 0]) * 12 / 10 ** 6
 
-    #calcul du rayonnement a l'ombre a l'aide d'une fonction de ponderation du PPFD
-    PAR_omb = r3 * PAR
-    photomb = ((Pmax + p3) * (1 - np.exp(- p4 * PAR_omb[PAR_omb>0] / (Pmax + p3)))) - p3
-    assiomb = 3600 * sum (photomb[photomb>0] *  Surf_Fol_Omb[photomb>0]) * 12 / 10**6    # ajout avril 2015 : si PAR.omb tr?s faible, photomb <0, d? ? p3
+    P_sunlit = ((Pmax + p3) * (1 - np.exp(-p4 * PAR[PAR > 0] / (Pmax + p3)))) - p3
+    photo_sunlit = 3600 * sum(P_sunlit[P_sunlit > 0] * LA_sunlit[P_sunlit > 0]) * 12 / 10 ** 6
 
-    photsol = ((Pmax + p3) * (1 - np.exp(-p4*PAR[PAR>0] / (Pmax + p3)))) - p3
-    assisol = 3600 * sum(photsol[photsol>0] * Surf_Fol_Sol[photsol>0]) * 12 / 10**6 # ajout avril 2015 : si PAR.omb tr?s faible, photomb <0, d? ? p3
+    photo = photo_shaded + photo_sunlit
 
-    # assimilation sur la journ?e (gC/j)
-    photo_fol = assiomb + assisol
+    reserve_m = (reserve_leaf * r_mobile_leaf) + (reserve_stem * r_mobile_stem)
 
-    # r?serves facilement utilisables (gC)
-    Reserve_Facile_Util = (Reserve_Feuille * gamma_feuilles) + (Reserve_Rameau * gamma_rameau)
+    assimilats = photo + reserve_m
 
-    # assimilats disponibles totaux
-    assimilats = photo_fol + Reserve_Facile_Util
+    reserve_nm_leaf = reserve_leaf * (1 - r_mobile_leaf)
+    reserve_nm_stem = reserve_stem * (1- r_mobile_stem)
 
-    # r?serves difficilement utilisables (gC)
-    Reserve_Dif_Util_Feuille = Reserve_Feuille * (1 - gamma_feuilles)
-    Reserve_Dif_Util_Rameau = Reserve_Rameau * (1- gamma_rameau)
+    MR_stem = MRR_stem / 24 * (Q10_stem ** ((T_air - 20) / 10)) * (DM_structure_stem + (reserve_stem / cc_stem))
 
-    # ==============================================================================
-    # MAINTENANCE ET CROISSANCE DU FRUIT
-    # ==============================================================================
+    MR_fruit = MRR_fruit / 24 * (Q10_fruit ** ((T_fruit -20)/10)) * DM_fruit_previous
 
-    # en gC
-    Respiration_Rameau = MRR_rameau / 24 * (Q10_rameau**((Temperature_Air - 20) / 10)) * (Structure_Rameau + (Reserve_Rameau / cram))
-    # en gC
-    Respiration_Fruit = MRR_fruits / 24 * (Q10_fruits**((Temperature_Fruit -20)/10)) * MS_Fruit_Precedent
-    # en gC
-    Respiration_Feuilles = MRR_feuilles * (Q10_feuilles**((Temperature_Air -20)/10)) * (Structure_Feuille + Reserve_Feuille / cfeuil)
-    # Respiration des feuilles uniquement pendant la nuit.
-    Respiration_Feuilles = sum(Respiration_Feuilles[PAR == 0])
-    Respiration_Fruit = sum(Respiration_Fruit)
-    Respiration_Rameau = sum(Respiration_Rameau)
+    MR_leaf = MRR_leaf * (Q10_leaf ** ((T_air -20)/10)) * (DM_structure_leaf + reserve_leaf / cc_leaf)
+    MR_leaf = sum(MR_leaf[PAR == 0])
+    MR_fruit = sum(MR_fruit)
+    MR_stem = sum(MR_stem)
 
-    RE_fruct = Respiration_Fruit
-    RE_veget = Respiration_Rameau + Respiration_Feuilles
+    MR_repo = MR_fruit
+    MR_veget = MR_stem + MR_leaf
 
-    # RAPPEL : r?gles de priorit? d'utiolisation des assimilats :
-    # 1- maitenance, 2- croissance reproductive, 3- mise en r?serve dans rameau et feuilles
-
-    # 1? utilisation des assimilats disponibles pour la respiration d'entretien
-
-    if assimilats >= RE_veget:
-        Reste_RE = assimilats - RE_veget
+    if assimilats >= MR_veget:
+        remains_1 = assimilats - MR_veget
     else:
-        if assimilats + Reserve_Dif_Util_Feuille >= RE_veget:
-            Reste_RE = 0
-            Reserve_Dif_Util_Feuille = assimilats + Reserve_Dif_Util_Feuille - RE_veget
+        if assimilats + reserve_nm_leaf >= MR_veget:
+            remains_1 = 0
+            reserve_nm_leaf = assimilats + reserve_nm_leaf - MR_veget
         else:
-            if assimilats + Reserve_Dif_Util_Feuille + Reserve_Dif_Util_Rameau >= RE_veget:
-                Reste_RE = 0
-                Reserve_Dif_Util_Rameau = assimilats + Reserve_Dif_Util_Feuille + Reserve_Dif_Util_Rameau - RE_veget
-                Reserve_Dif_Util_Feuille = 0
+            if assimilats + reserve_nm_leaf + reserve_nm_stem >= MR_veget:
+                remains_1 = 0
+                reserve_nm_stem = assimilats + reserve_nm_leaf + reserve_nm_stem - MR_veget
+                reserve_nm_leaf = 0
             else:
-                Reste_RE = 0
-                error = pd.DataFrame({ 'error': ['Les parties vegetatives s\'etouffent: le systeme meurt ...'] })
-                if not np.isnan(idsimu):
-                    error.to_csv(join(dirname(abspath(__file__)), f'tmp/failed-{idsimu}.csv'), index=False)
-                else:
-                    error.to_csv(join(dirname(abspath(__file__)), 'tmp/py.csv'), index=False)
+                remains_1 = 0
                 raise FruitModelValueError(f'Les parties vegetatives s\'etouffent: le systeme meurt ...')
 
-    ### Sitution d?favorable pour le fruit.
-    if Reste_RE < RE_fruct:
-        besoin_fruit = (Respiration_Fruit - Reste_RE) / cfruit
-        if besoin_fruit >= MS_Fruit_Precedent:
-            error = pd.DataFrame({ 'error': ['Les parties reproductrices s\'etouffent: le systeme meurt ...'] })
-            if not np.isnan(idsimu):
-                error.to_csv(join(dirname(abspath(__file__)), f'tmp/failed-{idsimu}.csv'), index=False)
-            else:
-                error.to_csv(join(dirname(abspath(__file__)), 'tmp/py.csv'), index=False)
+    if remains_1 < MR_repo:
+        besoin_fruit = (MR_fruit - remains_1) / cc_fruit
+        if besoin_fruit >= DM_fruit_previous:
             raise FruitModelValueError(f'Les parties reproductrices s\'etouffent: le systeme meurt ...')
         else:
-            # le fruit pompe sur ses r?serves
-            MS_Fruit_Precedent = MS_Fruit_Precedent - besoin_fruit
+            DM_fruit_previous = DM_fruit_previous - besoin_fruit
 
-    Reste1 = max(0, Reste_RE - RE_fruct)
+    remains_2 = max(0, remains_1 - MR_repo)
 
-    #------ 2 utilisation de ce qui reste pour la croissance du fruit
+    DM_fruit  = DM_fruit_previous + (min(D_fruit, remains_2) / (cc_fruit + GRC_fruit))
 
-    MS_Fruit_New  = MS_Fruit_Precedent + (min(Dfruit, Reste1) / (cfruit + GRCfruit))
+    remains_3 = remains_2 - min(D_fruit, remains_2)
 
-    # ======================================================================================
-    # MISE EN RESERVE de ce qui reste
-    # ===========================================================================================
+    reserve_stem_provi = reserve_nm_stem + min(remains_3, reserve_stem * r_mobile_stem)
+    reserve_leaf_provi = reserve_nm_leaf + max(0, remains_3 - reserve_stem * r_mobile_stem)
 
-    # Ce qui n'est pas pris par le fruit et qui va dans les r?serves. Distribution rameaux et feuille
-    Reste2 = Reste1 - min(Dfruit, Reste1)
+    reserve_MAX = (r_storage / (1 - r_storage)) * DM_structure_leaf * cc_leaf
 
-    Res_rameau_provi = Reserve_Dif_Util_Rameau + min(Reste2, Reserve_Rameau * gamma_rameau)
-    Res_feuilles_provi = Reserve_Dif_Util_Feuille + max(0, Reste2 - Reserve_Rameau * gamma_rameau)
-
-    # cr?ation d'un seuil de r?serves qui peuvent ?tre stock?es chaque jour :
-            # part des r?serves/unit? de struc * nb de strctures (ie nb de feuilles)
-    seuil = (psi / (1 - psi)) * Structure_Feuille * cfeuil
-
-    if Res_feuilles_provi > seuil:
-        Reserve_Feuille_New = seuil
-        Reserve_Rameau_New  = Res_feuilles_provi - seuil + Res_rameau_provi
+    if reserve_leaf_provi > reserve_MAX:
+        reserve_leaf = reserve_MAX
+        reserve_stem  = reserve_leaf_provi - reserve_MAX + reserve_stem_provi
     else:
-        Reserve_Feuille_New = Res_feuilles_provi
-        Reserve_Rameau_New = Res_rameau_provi
+        reserve_leaf = reserve_leaf_provi
+        reserve_stem = reserve_stem_provi
 
-    # pd.DataFrame([[local[0], type(local[1]).__name__] for local in locals().items()], columns=['name', 'type']).to_csv(f'{__name__ }_vars.csv', index=False, sep=';')
-
-    return (MS_Fruit_New, (Reserve_Feuille_New, Reserve_Rameau_New))
+    return (DM_fruit, (reserve_leaf, reserve_stem))

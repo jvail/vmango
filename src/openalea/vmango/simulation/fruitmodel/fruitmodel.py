@@ -1,7 +1,7 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-import os
+import os, random
 import os.path
 from builtins import map, range, str, zip
 from datetime import *
@@ -14,7 +14,7 @@ from openalea.vmango.management.util_parallel import *
 from openalea.vmango.utilities.util_tools import *
 from past.utils import old_div
 
-from openalea.vmango.simulation.fruitmodel.fruit_model_main import fruit_model_main
+from openalea.vmango.simulation.fruitmodel.fruit_model_main import growth_main
 from openalea.vmango.simulation.fruitmodel.fruitmodel_error import FruitModelValueError, FruitModelInputError
 
 RScriptRepo = dirname(abspath(__file__)).replace(os.sep, '/')
@@ -119,39 +119,42 @@ def wait_for_file(fname, timeout = 0.1):
 #         os.remove(tempfile)
 #         return result
 
-def initialize_input(weather_hourly_file_path, weather_daily_file_path):
+def initialize_input(weather_hourly_file_path, weather_daily_file_path, sunlit_fractions_file_path):
     weather_hourly = pd.read_csv(weather_hourly_file_path,
-        sep=';', parse_dates=['Date'], dayfirst=True, usecols=['HEURE', 'Rayonnement', 'Temperature_Air', 'HR', 'Date'])
+        sep=';', parse_dates=['DATETIME'], dayfirst=True, usecols=['HOUR', 'GR', 'T', 'HR', 'DATETIME'])
     weather_daily = pd.read_csv(weather_daily_file_path,
         sep=';', parse_dates=['DATE'], dayfirst=True, usecols=['DATE', 'TM'])
+    sunlit_fractions = pd.read_csv(sunlit_fractions_file_path,
+        sep='\s+', usecols=['q10', 'q25', 'q50', 'q75', 'q90'])
 
-    weather_hourly.rename(columns={'Date':'DATE'}, inplace=True)
+    weather_hourly.rename(columns={'DATETIME':'DATE'}, inplace=True)
     weather_hourly['DATE'] = weather_hourly['DATE'].astype('datetime64[D]')
     weather_daily['DATE'] = weather_daily['DATE'].astype('datetime64[D]')
 
     weather = weather_daily.merge(weather_hourly, on='DATE')
-    weather.sort_values(['DATE', 'HEURE'], inplace=True)
+    weather.sort_values(['DATE', 'HOUR'], inplace=True)
 
     weather_hour_count = weather.groupby(['DATE']).count()
 
-    if len(weather_hour_count[weather_hour_count['HEURE'] != 24].values) > 0:
+    if len(weather_hour_count[weather_hour_count['HOUR'] != 24].values) > 0:
         print('Input data has days with less than 24 h')
 
-    input_hourly = pd.DataFrame(weather[['DATE', 'HEURE', 'Rayonnement', 'Temperature_Air', 'HR']])
+    input_hourly = pd.DataFrame(weather[['DATE', 'HOUR', 'GR', 'T', 'HR']])
     input_daily = pd.DataFrame(weather[['DATE', 'TM']].iloc[::24].reset_index(drop=True))
-    return (input_hourly, input_daily)
+    return (input_hourly, input_daily, sunlit_fractions)
 
 input_hourly = None
 input_daily = None
 
 def fruitmodel(idsimu, bloom_date, nb_fruits, nb_leaves, dumpdir = None):
-    global input_hourly, input_daily
+    global input_hourly, input_daily, sunlit_fractions
     if input_hourly is None or input_daily is None:
         absdir = os.path.dirname(os.path.abspath(__file__))
         os.chdir(os.path.join(absdir, '..'))
-        weather_hourly_file_path = os.path.join(absdir, '../../../../../share/environment/rayostpierre2002.csv')
-        weather_daily_file_path = os.path.join(absdir, '../../../../../share/environment/tempstpierre2002.csv')
-        input_hourly, input_daily = initialize_input(weather_hourly_file_path, weather_daily_file_path)
+        weather_hourly_file_path = os.path.join(absdir, '../../../../../share/environment/weather_hourly_stpierre_2002.csv')
+        weather_daily_file_path = os.path.join(absdir, '../../../../../share/environment/weather_daily_stpierre_2002.csv')
+        sunlit_fractions_file_path = os.path.join(absdir, '../../../../../share/environment/sunlit_fractions.csv')
+        input_hourly, input_daily, sunlit_fractions = initialize_input(weather_hourly_file_path, weather_daily_file_path, sunlit_fractions_file_path)
 
     bloom_date = np.datetime64(datetime.strptime(bloom_date, '%d/%m/%Y')).astype('datetime64[D]')
     print(f'Do simu {idsimu}')
@@ -162,7 +165,9 @@ def fruitmodel(idsimu, bloom_date, nb_fruits, nb_leaves, dumpdir = None):
     result = None
 
     try:
-        result = fruit_model_main(bloom_date, nb_fruits, nb_leaves, input_hourly, input_daily, idsimu=idsimu)
+        DM_fruit_0 = 0.97 * np.random.normal(13.9, 4.1) + 0.03 * np.random.normal(29.2, 0.66)
+        sunlit_bs = sunlit_fractions.iloc[:,random.randrange(0, 5)].to_numpy()
+        result = growth_main(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, input_hourly, input_daily, idsimu=idsimu)
     except FruitModelValueError as e:
         print(e)
 
@@ -256,15 +261,15 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None, para
         else:
 
             # print 'Simu', idsimu, 'succeed', inflos, nb_fruits
-            dates = result["Date"]
+            dates = result["DATE"]
             # dates = [d.to_pydatetime() for d in dates]
             newyear = bloom_date_date.year
             dates = [date(d.year+cycledecal, d.month, d.day) for d in dates]
-            fruitproperties = list(zip(result["Masse_Fruit"], result["sucres_solubles"],  result["acides_organiques"]))
+            fruitproperties = list(zip(result["FM_fruit"], result["soluble_sugars"],  result["organic_acids"]))
 
             fruit_growth = dict(list(zip(dates,fruitproperties)))
             fruits_growth_stage_date, fruits_maturity_date = min(dates), max(dates)
-            fruits_initial_weight, fruits_weight = min(result["Masse_Fruit"]), max(result["Masse_Fruit"])
+            fruits_initial_weight, fruits_weight = min(result["FM_fruit"]), max(result["FM_fruit"])
             # print fruits_initial_weight, fruits_weight, fruits_growth_stage_date, fruits_maturity_date
 
             fruit_results.append((len(inflos), nb_leaves,  nb_fruits, fruits_weight, inflos, [params[inflo].nb_fruits for inflo in inflos] ))
