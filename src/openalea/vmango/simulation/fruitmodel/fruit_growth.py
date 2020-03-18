@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 
-from openalea.vmango.simulation.fruitmodel.fruit_dry_mass_growth import growth_DM
-from openalea.vmango.simulation.fruitmodel.fruit_fresh_mass_growth import growth_FM
+from openalea.vmango.simulation.fruitmodel.fruit_dry_matter_growth import growth_DM
+from openalea.vmango.simulation.fruitmodel.fruit_fresh_matter_growth import growth_FM
 
 def growth(
     bloom_date,
