@@ -39,5 +39,7 @@ ipython
 # jupyter
 
 ```console
-conda create -n jupyter -y -c fredboudon -c conda-forge openalea.lpy openalea.mtg r jupyterlab
+conda activate lpy3
+python -m ipykernel install --user --name lpy3
+jupyter notebook
 ```
