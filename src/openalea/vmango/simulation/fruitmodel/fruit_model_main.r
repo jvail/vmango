@@ -26,9 +26,9 @@ if (is.nan(sunlit_bs_sample)) {
 
 # Ouverture des fonctions n?cessaires
 source(paste(localdir,"/fruit_growth.r",sep=''),keep.source = TRUE)
-dry_mass_growth = paste(localdir,"/fruit_dry_mass_growth.r",sep='')
-source(dry_mass_growth,keep.source = TRUE)
-source(paste(localdir,"/fruit_fresh_mass_growth.r",sep=''),keep.source = TRUE)
+dry_matter_growth = paste(localdir,"/fruit_dry_matter_growth.r",sep='')
+source(dry_matter_growth,keep.source = TRUE)
+source(paste(localdir,"/fruit_fresh_matter_growth.r",sep=''),keep.source = TRUE)
 
 
 #### attention les donn?es sont celles de 2002 ####
