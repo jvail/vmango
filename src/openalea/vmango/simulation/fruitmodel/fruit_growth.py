@@ -56,7 +56,8 @@ def growth(
         'transpiration': [np.nan],
         'sucrose': [np.nan],
         'soluble_sugars': [np.nan],
-        'organic_acids': [np.nan]
+        'organic_acids': [np.nan],
+        'dd_cum': [np.nan]
     })
 
     DM = (DM_fruit_ini, (reserve_leaf_ini, reserve_stem_ini))
@@ -99,7 +100,7 @@ def growth(
             DM_fruit_0=DM_fruit_0
         )
 
-        growth_df.loc[i, 6:15] = FM[0]
+        growth_df.loc[i, 6:16] = (*FM[0], dd_cum_day[0])
         growth_df.loc[i + 1, 0:6] = FM[1] + DM[1]
 
         sucrose = FM[0][6]

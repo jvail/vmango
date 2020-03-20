@@ -75,7 +75,8 @@ growth_df = data.frame(DATE = DATE[1],
                         transpiration = NA,
                         sucrose = NA,
                         soluble_sugars = NA,
-                        organic_acids = NA)
+                        organic_acids = NA,
+                        dd_cum = NA)
 
 DM =          list( DM_fruit =        DM_fruit_ini,
                     reserve_leaf = reserve_leaf_ini,
@@ -119,6 +120,7 @@ for (i in 1:length(DATE)[1])
                          )
 
       growth_df[i,7:15]  = FM[["Results_jour"]]
+      growth_df[i,16]  = weather_hourly_fruit_day_df$dd_cum[1]
       growth_df[i+1,1:4] = FM[["Results_jour_suivant"]]
 
       #### MODIF MAY17
