@@ -27,3 +27,9 @@ def isiterable(obj):
         return iter(obj) != None
     except:
         return False
+
+
+class ModelParams(dict):
+  def __init__(self, *args, **kwargs):
+    super(ModelParams, self).__init__(*args, **kwargs)
+    self.__dict__ = self

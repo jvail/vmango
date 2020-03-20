@@ -9,7 +9,9 @@ from importlib import reload
 from os.path import abspath, dirname, join
 import pandas as pd
 import numpy as np
+import toml
 
+from openalea.vmango.utilities.util_tools import ModelParams
 from openalea.vmango.management.util_parallel import *
 from openalea.vmango.utilities.util_tools import *
 from past.utils import old_div
@@ -119,7 +121,7 @@ def wait_for_file(fname, timeout = 0.1):
 #         os.remove(tempfile)
 #         return result
 
-def initialize_input(weather_hourly_file_path, weather_daily_file_path, sunlit_fractions_file_path):
+def initialize_input(weather_hourly_file_path, weather_daily_file_path, sunlit_fractions_file_path, params_file_path):
     weather_hourly = pd.read_csv(weather_hourly_file_path,
         sep=';', parse_dates=['DATETIME'], dayfirst=True, usecols=['HOUR', 'GR', 'T', 'HR', 'DATETIME'])
     weather_daily = pd.read_csv(weather_daily_file_path,
@@ -141,7 +143,10 @@ def initialize_input(weather_hourly_file_path, weather_daily_file_path, sunlit_f
 
     input_hourly = pd.DataFrame(weather[['DATE', 'HOUR', 'GR', 'T', 'HR']])
     input_daily = pd.DataFrame(weather[['DATE', 'TM']].iloc[::24].reset_index(drop=True))
-    return (input_hourly, input_daily, sunlit_fractions)
+
+    params = toml.load(params_file_path, _dict=ModelParams)
+
+    return (input_hourly, input_daily, sunlit_fractions, params)
 
 input_hourly = None
 input_daily = None
@@ -154,7 +159,9 @@ def fruitmodel(idsimu, bloom_date, nb_fruits, nb_leaves, dumpdir = None):
         weather_hourly_file_path = os.path.join(absdir, '../../../../../share/environment/weather_hourly_stpierre_2002.csv')
         weather_daily_file_path = os.path.join(absdir, '../../../../../share/environment/weather_daily_stpierre_2002.csv')
         sunlit_fractions_file_path = os.path.join(absdir, '../../../../../share/environment/sunlit_fractions.csv')
-        input_hourly, input_daily, sunlit_fractions = initialize_input(weather_hourly_file_path, weather_daily_file_path, sunlit_fractions_file_path)
+        params_file_path = os.path.join(absdir, '../../../../../share/parameters/fruitmodel/cogshall.toml')
+        input_hourly, input_daily, sunlit_fractions, params = initialize_input(
+            weather_hourly_file_path, weather_daily_file_path, sunlit_fractions_file_path, params_file_path)
 
     bloom_date = np.datetime64(datetime.strptime(bloom_date, '%d/%m/%Y')).astype('datetime64[D]')
     print(f'Do simu {idsimu}')

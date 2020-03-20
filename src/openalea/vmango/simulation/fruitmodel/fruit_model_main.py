@@ -7,7 +7,7 @@ from io import StringIO
 
 from openalea.vmango.simulation.fruitmodel.fruit_growth import growth
 
-def growth_main(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, weather_hourly_df, weather_daily_df, verbose=False, idsimu=np.nan):
+def growth_main(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, weather_hourly_df, weather_daily_df, params, verbose=False):
 
     LF = nb_leaves / nb_fruits
     FM_fruit_ini = 23.647 * DM_fruit_0 ** 0.6182
@@ -21,6 +21,7 @@ def growth_main(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, weather
         DM_fruit_0,
         DM_fruit_0,
         LF,
+        params,
         verbose=verbose
     )
 

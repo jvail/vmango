@@ -1,7 +1,7 @@
 # setup env
 
 ```console
-conda create -y -n lpy3 -c fredboudon -c conda-forge openalea.lpy openalea.mtg r
+conda create -y -n lpy3 -c fredboudon -c conda-forge openalea.lpy openalea.mtg r toml
 conda activate lpy3
 ```
 

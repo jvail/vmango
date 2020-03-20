@@ -3,6 +3,7 @@ from timeit import default_timer as timer
 import pandas as pd
 import numpy as np
 
+from openalea.vmango.simulation.fruitmodel.fruitmodel import initialize_input
 from openalea.vmango.simulation.fruitmodel.r_vs_py_validation.run import run as run_py
 from openalea.vmango.simulation.fruitmodel.fruitmodel_error import FruitModelValueError
 
@@ -27,33 +28,35 @@ os.chdir(os.path.join(absdir, '..'))
 weather_hourly_file_path = os.path.join(absdir, '../../../../../../share/environment/weather_hourly_stpierre_2002.csv')
 weather_daily_file_path = os.path.join(absdir, '../../../../../../share/environment/weather_daily_stpierre_2002.csv')
 sunlit_fractions_file_path = os.path.join(absdir, '../../../../../../share/environment/sunlit_fractions.csv')
+params_file_path = os.path.join(absdir, '../../../../../../share/parameters/fruitmodel/cogshall.toml')
 
-def initialize_input():
-    weather_hourly = pd.read_csv(weather_hourly_file_path,
-        sep=';', parse_dates=['DATETIME'], dayfirst=True, usecols=['HOUR', 'GR', 'T', 'HR', 'DATETIME'])
-    weather_daily = pd.read_csv(weather_daily_file_path,
-        sep=';', parse_dates=['DATE'], dayfirst=True, usecols=['DATE', 'TM'])
-    sunlit_fractions = pd.read_csv(sunlit_fractions_file_path,
-        sep='\s+', usecols=['q10', 'q25', 'q50', 'q75', 'q90'])
+# def initialize_input():
+#     weather_hourly = pd.read_csv(weather_hourly_file_path,
+#         sep=';', parse_dates=['DATETIME'], dayfirst=True, usecols=['HOUR', 'GR', 'T', 'HR', 'DATETIME'])
+#     weather_daily = pd.read_csv(weather_daily_file_path,
+#         sep=';', parse_dates=['DATE'], dayfirst=True, usecols=['DATE', 'TM'])
+#     sunlit_fractions = pd.read_csv(sunlit_fractions_file_path,
+#         sep='\s+', usecols=['q10', 'q25', 'q50', 'q75', 'q90'])
 
-    weather_hourly.rename(columns={'DATETIME':'DATE'}, inplace=True)
-    weather_hourly['DATE'] = weather_hourly['DATE'].astype('datetime64[D]')
-    weather_daily['DATE'] = weather_daily['DATE'].astype('datetime64[D]')
+#     weather_hourly.rename(columns={'DATETIME':'DATE'}, inplace=True)
+#     weather_hourly['DATE'] = weather_hourly['DATE'].astype('datetime64[D]')
+#     weather_daily['DATE'] = weather_daily['DATE'].astype('datetime64[D]')
 
-    weather = weather_daily.merge(weather_hourly, on='DATE')
-    weather.sort_values(['DATE', 'HOUR'], inplace=True)
+#     weather = weather_daily.merge(weather_hourly, on='DATE')
+#     weather.sort_values(['DATE', 'HOUR'], inplace=True)
 
-    weather_hour_count = weather.groupby(['DATE']).count()
+#     weather_hour_count = weather.groupby(['DATE']).count()
 
-    if len(weather_hour_count[weather_hour_count['HOUR'] != 24].values) > 0:
-        print('Input data has days with less than 24 h')
+#     if len(weather_hour_count[weather_hour_count['HOUR'] != 24].values) > 0:
+#         print('Input data has days with less than 24 h')
 
-    input_hourly = pd.DataFrame(weather[['DATE', 'HOUR', 'GR', 'T', 'HR']])
-    input_daily = pd.DataFrame(weather[['DATE', 'TM']].iloc[::24].reset_index(drop=True))
+#     input_hourly = pd.DataFrame(weather[['DATE', 'HOUR', 'GR', 'T', 'HR']])
+#     input_daily = pd.DataFrame(weather[['DATE', 'TM']].iloc[::24].reset_index(drop=True))
 
-    return (input_hourly, input_daily, sunlit_fractions)
+#     return (input_hourly, input_daily, sunlit_fractions)
 
-input_hourly, input_daily, sunlit_fractions = initialize_input()
+input_hourly, input_daily, sunlit_fractions, params = initialize_input(
+            weather_hourly_file_path, weather_daily_file_path, sunlit_fractions_file_path, params_file_path)
 
 if sys.platform == 'win32':
     R_HOME = os.environ['R_HOME']
@@ -67,7 +70,7 @@ def run_r(bloom_date, nb_fruits, nb_leaves, verbose, DM_fruit_0, sunlit_bs_sampl
 
 times = []
 
-for i in range(1):
+for i in range(25):
 
     time_r = 0
     time_py = 0
@@ -93,7 +96,7 @@ for i in range(1):
         time_r = end - start
 
         start = timer()
-        run_py(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, input_hourly, input_daily, verbose=verbose)
+        run_py(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, input_hourly, input_daily, params, verbose=verbose)
         end = timer()
         time_py = end - start
 

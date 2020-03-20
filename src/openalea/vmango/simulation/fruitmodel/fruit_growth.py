@@ -13,8 +13,8 @@ def growth(
     DM_fruit_0,
     DM_fruit_ini,
     LF,
-    verbose=False,
-    idsimu=np.nan
+    params,
+    verbose=False
 ):
 
     weather_daily_df = weather_daily_df.drop(weather_daily_df[weather_daily_df['DATE'] < bloom_date].index)
@@ -23,10 +23,10 @@ def growth(
     weather_daily_df.reset_index(inplace=True, drop=True)
     weather_daily_df.loc[:,'DAB'] = weather_daily_df.index.copy()
 
-    Tbase = 16
+    Tbase = params.growth.Tbase
     weather_daily_df.loc[:,'dd_cum'] = np.cumsum([max(0, tm - Tbase) for tm in weather_daily_df['TM'].values])
 
-    dd_cum_0 = 352.72
+    dd_cum_0 = params.growth.dd_cum_0
     weather_daily_fruit_df = weather_daily_df.drop(weather_daily_df[weather_daily_df['dd_cum'] < dd_cum_0].index)
     weather_hourly_fruit_df = weather_daily_fruit_df.merge(weather_hourly_df, on='DATE')
 
@@ -84,7 +84,7 @@ def growth(
             reserve_stem=DM[1][1],
             reserve_leaf=DM[1][0],
             LF=LF,
-            idsimu=idsimu
+            params=params.dry_matter
         )
 
         FM = growth_FM(
@@ -97,7 +97,8 @@ def growth(
             DM_fruit=(DM_fruit_previous, DM[0]),
             FM_fruit_ini=FM_fruit_ini,
             W_fleshpeel_ini=W_fleshpeel_ini,
-            DM_fruit_0=DM_fruit_0
+            DM_fruit_0=DM_fruit_0,
+            params=params.fresh_matter
         )
 
         growth_df.loc[i, 6:16] = (*FM[0], dd_cum_day[0])

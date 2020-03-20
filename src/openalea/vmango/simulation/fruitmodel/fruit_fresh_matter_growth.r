@@ -49,7 +49,7 @@ Results_jour_suivant = data.frame( date = NA,
 
   dd_cum =   mean(dd_cum)
 	DM_flesh    =   0.8226 * DM_fleshpeel                                                   # Mati?re s?che dans la puple. Relation Allom?trique.
-	W_flesh   =   0.8958 * W_fleshpeel
+	W_flesh   =   0.8959 * W_fleshpeel
 
 	#---- Calcul des prop_ortion des diff?rents compos?s en fonction des relation allom?triques d?termin?es ? partir de la m_ati?re s?che Pulpe et dd_cum.
   prop_mal = 0.06620651 + (-0.0000538797) * dd_cum + (-0.002464413) * DM_flesh + 2.406565e-006 * DM_flesh * dd_cum
