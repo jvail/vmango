@@ -23,7 +23,7 @@ growth_FM = function(   date,
 
   DM_fleshpeel =    0.4086 * DM_fruit[1]^0.7641 + 0.5219 * DM_fruit[1]^1.0584                               # MS dans la peau et la pulpe.
   W_fleshpeel =   W_fleshpeel_ini                                                                          # Eau dans la peau et la pulpe d?termin?e avec relation allom?trique.
-  DM_fleshpeel_growth = 0.4086*0.7641*(DM_fruit[-1])^(0.7641-1) + 0.5219*1.0584*(DM_fruit[-1])^(1.0584-1) * diff(DM_fruit)                                                               # D?rivi?e de la m_ati?re s?che dans la peau et la pulpe.
+  DM_fleshpeel_growth = (0.4086*0.7641*(DM_fruit[-1])^(0.7641-1) + 0.5219*1.0584*(DM_fruit[-1])^(1.0584-1)) * diff(DM_fruit)                                                               # D?rivi?e de la m_ati?re s?che dans la peau et la pulpe.
   DM_fleshpeel_growth[DM_fleshpeel_growth < 0] = 0
   FM_fruit = FM_fruit_ini                                                                             # Masse fraiche du fruit
   FM_stone = FM_fruit - (DM_fleshpeel + W_fleshpeel)                                                        # Masse du noyau calcul?e avec relation empirique.

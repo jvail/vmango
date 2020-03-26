@@ -50,8 +50,7 @@ def growth_FM(
     DM_fleshpeel = a5 * DM_fruit[0] ** a6 + a7 * DM_fruit[0] ** a8
     W_fleshpeel = W_fleshpeel_ini
 
-    DM_fleshpeel_growth = a5 * a6 * DM_fruit[1] ** (a6 - 1) + a7 * a8 * DM_fruit[1] ** (a8 - 1) * (DM_fruit[1] - DM_fruit[0])
-    DM_fleshpeel_growth = max(0, DM_fleshpeel_growth)
+    DM_fleshpeel_growth = max(0, (a5 * a6 * DM_fruit[1] ** (a6 - 1) + a7 * a8 * DM_fruit[1] ** (a8 - 1)) * (DM_fruit[1] - DM_fruit[0]))
 
     FM_fruit = FM_fruit_ini
     FM_stone = FM_fruit - (DM_fleshpeel + W_fleshpeel)
