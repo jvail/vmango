@@ -2,142 +2,138 @@
 
 ##### nom du fichier : FONCTION SYNTHESE TEMPERATURE & MF & MS.r
 
-CROISSANCE_MF_TEMPERATURE = function
+growth = function
                         (
-                        Jour_Flo,                                                   # Jour floraison (DAB = 0)
-                        Tab_DATE,
-                        Tab_temperature_Air,
-                        Tab_horaire_DATE,
-                        Tab_horaire_HEURE,
-                        Tab_horaire_Date,
-                        Tab_horaire_Rayonnement,
-                        Tab_horaire_Temperature_Air,
-                        Tab_horaire_HR,                                              
+                        bloom_date,                                                   # Jour floraison (DAB = 0)
+                        weather_daily_DATE,
+                        weather_daily_TM,
+                        weather_hourly_DATE,
+                        weather_hourly_HOUR,
+                        weather_hourly_DATETIME,
+                        weather_hourly_GR,
+                        weather_hourly_T,
+                        weather_hourly_HR,
 #--------------------- Arguments Croissance MF ---------------------------------
-                        MF_Init,                                                # Mati?re fraiche initiale
-                        
-#--------------------- Arguments Croissance MS ---------------------------------                                                                                                                
-                        envirlum,                                               # Evolution de l'environnement lumineux dans la journ?e
-                        MS_Init_Division_Cellulaire,                            # Poids du fruit ? la fin de la division cellulaire en gramme de MS
-                        MS_Debut_Sim, 
-                        LF,                                                       # Rapport feuille / fruit [10, 150] 
-                        
+                        FM_fruit_ini,                                                # Mati?re fraiche initiale
+
+#--------------------- Arguments Croissance MS ---------------------------------
+                        sunlit_bs,                                               # Evolution de l'environnement lumineux dans la journ?e
+                        DM_fruit_0,                            # Poids du fruit ? la fin de la division cellulaire en gramme de MS
+                        DM_fruit_ini,
+                        LF,                                                       # Rapport feuille / fruit [10, 150]
                         verbose = FALSE
                         )
 
-{   
+{
 
-Tab_journalier = data.frame(DATE = Tab_DATE, TM = Tab_temperature_Air)
-Tab_journalier = Tab_journalier[Tab_journalier$DATE >= Jour_Flo,]
-Tab_journalier$DAB = c(0,seq (1:c(length(Tab_journalier$DATE)-1)))              # construction colonne DAB
+weather_daily_df = data.frame(DATE = weather_daily_DATE, TM = weather_daily_TM)
+weather_daily_df = weather_daily_df[weather_daily_df$DATE >= bloom_date,]
+weather_daily_df$DAB = c(0,seq (1:c(length(weather_daily_df$DATE)-1)))              # construction colonne DAB
 
-Tab_horaire = data.frame(DATE = Tab_horaire_DATE, HEURE = Tab_horaire_HEURE, Rayonnement = Tab_horaire_Rayonnement, Temperature_Air = Tab_horaire_Temperature_Air,
-                         HR = Tab_horaire_HR, Date = Tab_horaire_Date)
+weather_hourly_df = data.frame(DATE = weather_hourly_DATE, HOUR = weather_hourly_HOUR, GR = weather_hourly_GR, T = weather_hourly_T,
+                         HR = weather_hourly_HR, DATETIME = weather_hourly_DATETIME)
 
 Tbase = 16                                                                      # calcul des degr?s jours ? partir DAB = 0
-m = vector(mode="numeric",length=nrow(Tab_journalier))
-for (i in (1:nrow(Tab_journalier)))
+dd = vector(mode="numeric",length=nrow(weather_daily_df))
+for (i in (1:nrow(weather_daily_df)))
 {
-    if  (Tab_journalier$TM[i] > Tbase)  m[i] = Tab_journalier$TM[i] - Tbase  else m[i] = 0  
+    if  (weather_daily_df$TM[i] > Tbase)  dd[i] = weather_daily_df$TM[i] - Tbase  else dd[i] = 0
 }
-calcddj = as.vector(cumsum(m))
-Tab_journalier$ddj = calcddj
-ddjy = 352.72                                                                  # fin de la multiplication cellulaire dans le fruit (temp?rature base 16 ?C) 
-ddjini = min(Tab_journalier$ddj[Tab_journalier$ddj>ddjy])                      # valeur la plus proche et sup?rieure ? ddjy dans Tab_journalier
+dd_cum = as.vector(cumsum(dd))
+weather_daily_df$dd_cum = dd_cum
+dd_cum_0 = 352.72                                                                  # fin de la multiplication cellulaire dans le fruit (temp?rature base 16 ?C)
+dd_cum_ini = min(weather_daily_df$dd_cum[weather_daily_df$dd_cum>dd_cum_0])                      # valeur la plus proche et sup?rieure ? dd_cum_0 dans weather_daily_df
 
-DDJ_Init =  ddjini
-Tab_journalier_fruit = Tab_journalier[Tab_journalier$ddj >= DDJ_Init,]
-DAB_Init = Tab_journalier_fruit[Tab_journalier_fruit$ddj==DDJ_Init,"DAB"]                         # DAB r??lle du fruit ? laquelle d?bute la simulation
+weather_daily_fruit_df = weather_daily_df[weather_daily_df$dd_cum >= dd_cum_ini,]
+# DAB_Init = weather_daily_fruit_df[weather_daily_fruit_df$dd_cum==dd_cum_ini,"DAB"]                         # DAB r??lle du fruit ? laquelle d?bute la simulation
 
-Tab_horaire_fruit = merge(Tab_journalier_fruit,Tab_horaire,by="DATE")
-DATE = unique(Tab_horaire_fruit[,"DATE"])
-DAB_sim = unique(Tab_horaire_fruit$DAB)
+weather_hourly_fruit_df = merge(weather_daily_fruit_df,weather_hourly_df,by="DATE")
+DATE = unique(weather_hourly_fruit_df[,"DATE"])
+DAB = unique(weather_hourly_fruit_df$DAB)
 ###----------------------------------------------------------------------------------------------------
 
 #---Initialisation des valeurs des param?tres
-Reserve_Feuille = 0.8 * 0.074 * LF * 0.4051
-Reserve_Rameau  = 0.1 * 0.4387 * (41.83 + 77.41)/2
+reserve_leaf_ini = 0.8 * 0.074 * LF * 0.4051
+reserve_stem_ini  = 0.1 * 0.4387 * (41.83 + 77.41)/2
+W_fleshpeel_ini = 0.4086 * (FM_fruit_ini - DM_fruit_ini)^0.7428 + 0.5874 * (FM_fruit_ini - DM_fruit_ini)^1.0584
+
 #### MODIF MAY17
 
-Croissance = data.frame(Date = DATE[1], 
-                        Masse_Fruit = MF_Init, 
-                        MS_Fruit = MS_Debut_Sim,
-                        Eaupepu = 0.4086 * (MF_Init - MS_Debut_Sim)^0.7428 + 0.5874 * (MF_Init - MS_Debut_Sim)^1.0584,
+growth_df = data.frame(DATE = DATE[1],
+                        FM_fruit = FM_fruit_ini,
+                        DM_fruit = DM_fruit_ini,
+                        W_fleshpeel = W_fleshpeel_ini,
                         #### MODIF MAY17
-                        Reserve_Feuille = Reserve_Feuille,
-                        Reserve_Rameau =  Reserve_Rameau, 
+                        reserve_leaf = reserve_leaf_ini,
+                        reserve_stem =  reserve_stem_ini,
                         #### MODIF MAY17
-                        Potentiel_Hydrique = NA,
-                        P_Turgescence = NA, 
-                        P_Osmotique = NA, 
-                        Xyleme = NA, 
-                        Phloeme = NA, 
-                        Transpiration = NA, 
-                        Saccharose = NA, 
-                        sucres_solubles = NA,
-                        acides_organiques = NA)
-                        
-MS =          list( MS_Fruit =        MS_Debut_Sim,
-                    Reserve_Feuille = Reserve_Feuille,
-                    Reserve_Rameau =  Reserve_Rameau )  
+                        water_potential = NA,
+                        turgor_pressure = NA,
+                        osmotic_pressure = NA,
+                        flux_xyleme = NA,
+                        flux_phloeme = NA,
+                        transpiration = NA,
+                        sucrose = NA,
+                        soluble_sugars = NA,
+                        organic_acids = NA,
+                        dd_cum = NA)
 
-#--------------------------------------------------------- DEBUT DE LA BOUCLE ----------------------------------------------------------------------------------------------------------------- 
+DM =          list( DM_fruit =        DM_fruit_ini,
+                    reserve_leaf = reserve_leaf_ini,
+                    reserve_stem =  reserve_stem_ini )
+
+#--------------------------------------------------------- DEBUT DE LA BOUCLE -----------------------------------------------------------------------------------------------------------------
 
 if(verbose) {
   cat("\n")
   pb = txtProgressBar(min=0,max=length(DATE), char="|", width=72, style=3)        # Initialisation barre progression, sur boucle i
 }
 
-for (i in 1:length(DATE)[1])                                                                           
+for (i in 1:length(DATE)[1])
 {
-    Table_Croissance = Tab_horaire_fruit[Tab_horaire_fruit$DATE==DATE[i],]
-    Table_Croissance = Table_Croissance[order(Table_Croissance$HEURE),]
+    weather_hourly_fruit_day_df = weather_hourly_fruit_df[weather_hourly_fruit_df$DATE==DATE[i],]
+    weather_hourly_fruit_day_df = weather_hourly_fruit_day_df[order(weather_hourly_fruit_day_df$HOUR),]
 
     #----------------- Fonction croissance en Mati?re s?che
-    MS_Fruit_Precedent = MS$MS_Fruit 
-    MS = CROISSANCE_MS (  Rayonnement =       Table_Croissance$Rayonnement,         # en J.cm-2 cumul? sur l'heure
-                          Temperature_Air =   Table_Croissance$TM,                  # Temp?rature journali?re de l'air
-                          Temperature_Fruit = Table_Croissance$TM,                  # Temp?rature journali du fruit.
-                          envirlum =          envirlum,                             # Evolution de l'environnement lumineux dans la journ?e
-                          Poids_Fruit_Init =   MS_Init_Division_Cellulaire,         # Poids du fruit ? la fin de la division cellulaire en gramme de MS
-                          MS_Fruit_Precedent = MS$MS_Fruit,                         # en gramme de MS
-                          Reserve_Rameau =     MS$Reserve_Rameau,                   # en gramme de carbone
-                          Reserve_Feuille =    MS$Reserve_Feuille,                  # en gramme de carbone
-                          LF = LF                                                   # Rapport feuille / fruit [10, 150] 
+    DM_fruit_previous = DM$DM_fruit
+    DM = growth_DM (  GR =       weather_hourly_fruit_day_df$GR,         # en J.cm-2 cumul? sur l'heure
+                          T_air =   weather_hourly_fruit_day_df$TM,                  # Temp?rature journali?re de l'air
+                          T_fruit = weather_hourly_fruit_day_df$TM,                  # Temp?rature journali du fruit.
+                          sunlit_bs =          sunlit_bs,                             # Evolution de l'environnement lumineux dans la journ?e
+                          DM_fruit_0 =   DM_fruit_0,         # Poids du fruit ? la fin de la division cellulaire en gramme de MS
+                          DM_fruit_previous = DM_fruit_previous,                         # en gramme de MS
+                          reserve_stem =     DM$reserve_stem,                   # en gramme de carbone
+                          reserve_leaf =    DM$reserve_leaf,                  # en gramme de carbone
+                          LF = LF                                                   # Rapport feuille / fruit [10, 150]
                         )
     #------------------ Fonction de croissance en Mati?re fraiche
-    MF = CROISSANCE_MF  ( Date =              unique(Table_Croissance$DATE),
-                          Temperature_Air =   Table_Croissance$Temperature_Air,     # dynamique horaire
-                          rayo =              Table_Croissance$Rayonnement,         # dynamique horaire
-                          humirela =          Table_Croissance$HR,                  # dynamique horaire  
-                          ddj =               Table_Croissance$ddj,
-                          Temp_air_moy =      mean(Table_Croissance$TM),            # donn?e journali?re moyenne
-                          MSfruit =           c(MS_Fruit_Precedent, MS$MS_Fruit),
-                          MF_Init =           Croissance[dim(Croissance)[1],"Masse_Fruit"],
-                          Eaupepu_Init =      Croissance[dim(Croissance)[1],"Eaupepu"],
-                          Poids_Fruit_Init =  MS_Init_Division_Cellulaire,         # Poids du fruit ? la fin de la division cellulaire en gramme de MS
-                          H = 0.002027 ,                                            # Pression Seuil Y ~ H * Volume Fruit, pour la croissance, Parametre ? Estimer.
-                          Phiini = 0.414,                                           #  Taux d'accroissement cellulaire (MPa / jour, article 2007)
-                          DDini = 2000,                                             # DDJ ? partir duquel extensibilit? cellulaire (Phiini d?croit).
-                          Tau = 0.966,                                              # Tau de d?croissance de l'extensibilit? cellulaire.
-                          aLf = 0.3732                                              # Parametres pour calculer la conductivit? hydraulique (param papier 2007 * 24)
+    FM = growth_FM  ( date =              unique(weather_hourly_fruit_day_df$DATE),
+                          T_air =   weather_hourly_fruit_day_df$T,     # dynamique horaire
+                          GR =              weather_hourly_fruit_day_df$GR,         # dynamique horaire
+                          RH =          weather_hourly_fruit_day_df$HR,                  # dynamique horaire
+                          dd_cum =               weather_hourly_fruit_day_df$dd_cum,
+                          T_air_daily =      mean(weather_hourly_fruit_day_df$TM),            # donn?e journali?re moyenne
+                          DM_fruit =           c(DM_fruit_previous, DM$DM_fruit),
+                          FM_fruit_ini =           FM_fruit_ini,
+                          W_fleshpeel_ini =       W_fleshpeel_ini,
+                          DM_fruit_0 =  DM_fruit_0         # Poids du fruit ? la fin de la division cellulaire en gramme de MS                                          # Parametres pour calculer la conductivit? hydraulique (param papier 2007 * 24)
                          )
 
-      Croissance[i,7:13]  = MF[["Results_jour"]]
-      Croissance[i+1,1:4] = MF[["Results_jour_suivant"]]
-      
-      #### MODIF MAY17
-      Croissance[i+1,5] = MS$Reserve_Feuille
-      Croissance[i+1,6] = MS$Reserve_Rameau
+      growth_df[i,7:15]  = FM[["Results_jour"]]
+      growth_df[i,16]  = weather_hourly_fruit_day_df$dd_cum[1]
+      growth_df[i+1,1:4] = FM[["Results_jour_suivant"]]
 
-    if ( Croissance[i,"Saccharose"] >= 0.04)
+      #### MODIF MAY17
+      growth_df[i+1,5] = DM$reserve_leaf
+      growth_df[i+1,6] = DM$reserve_stem
+
+    if ( growth_df[i,"sucrose"] >= 0.04)
     {
-      if(verbose) {cat("Le fruit est mur \n")}
-    	break                         # sort de la boucle et arr?te les simulations 
-    }  
+      if(verbose) {print("Le fruit est mur")}
+    	break                         # sort de la boucle et arr?te les simulations
+    }
     if(verbose) {setTxtProgressBar(pb,i) }
 }                                                                        # Fin de la boucle sur i
 
-return(list(DAB = DAB_sim, Croissance=Croissance))                     
+return(list(DAB=DAB, growth_df=growth_df))
 }                                                                                # Fin de la fonction
-                   

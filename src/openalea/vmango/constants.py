@@ -42,3 +42,8 @@ RestrictionName = { eBurstDateRestriction         : 'without_burst_month_and_flo
                     eNoRestriction                : 'allfactors',
                     None                          : 'allfactors'
                     }
+
+# constants process models
+ 
+R = 8.3                         # gaz constant [cm3 MPa mol-1 K-1] 
+MM_water = 18                   # molecular mass of water [g mol-1]
