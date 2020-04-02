@@ -152,7 +152,7 @@ input_hourly = None
 input_daily = None
 
 def fruitmodel(idsimu, bloom_date, nb_fruits, nb_leaves, dumpdir = None):
-    global input_hourly, input_daily, sunlit_fractions
+    global input_hourly, input_daily, sunlit_fractions, params
     if input_hourly is None or input_daily is None:
         absdir = os.path.dirname(os.path.abspath(__file__))
         os.chdir(os.path.join(absdir, '..'))
@@ -174,7 +174,7 @@ def fruitmodel(idsimu, bloom_date, nb_fruits, nb_leaves, dumpdir = None):
     try:
         DM_fruit_0 = 0.97 * np.random.normal(13.9, 4.1) + 0.03 * np.random.normal(29.2, 0.66)
         sunlit_bs = sunlit_fractions.iloc[:,random.randrange(0, 5)].to_numpy()
-        result = growth_main(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, input_hourly, input_daily, idsimu=idsimu)
+        result = growth_main(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, input_hourly, input_daily, params)
     except FruitModelValueError as e:
         print(e)
 
