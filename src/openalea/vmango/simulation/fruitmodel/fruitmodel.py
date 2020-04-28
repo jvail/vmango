@@ -123,9 +123,9 @@ def wait_for_file(fname, timeout = 0.1):
 
 def initialize_input(weather_hourly_file_path, weather_daily_file_path, sunlit_fractions_file_path, params_file_path):
     weather_hourly = pd.read_csv(weather_hourly_file_path,
-        sep=';', parse_dates=['DATETIME'], dayfirst=True, usecols=['HOUR', 'GR', 'T', 'HR', 'DATETIME'])
+        sep=';', parse_dates=['DATETIME'], dayfirst=True, usecols=['HOUR', 'GR', 'T', 'RH', 'DATETIME'])
     weather_daily = pd.read_csv(weather_daily_file_path,
-        sep=';', parse_dates=['DATE'], dayfirst=True, usecols=['DATE', 'TM'])
+        sep=';', parse_dates=['DATE'], dayfirst=True, usecols=['DATE', 'TM', 'TX', 'TN'])
     sunlit_fractions = pd.read_csv(sunlit_fractions_file_path,
         sep='\s+', usecols=['q10', 'q25', 'q50', 'q75', 'q90'])
 
@@ -138,8 +138,8 @@ def initialize_input(weather_hourly_file_path, weather_daily_file_path, sunlit_f
 
     weather_hour_count = weather.groupby(['DATE']).count()
 
-    if len(weather_hour_count[weather_hour_count['HOUR'] != 24].values) > 0:
-        print('Input data has days with less than 24 h')
+    #if len(weather_hour_count[weather_hour_count['HOUR'] != 24].values) > 0:
+        #print('Input data has days with less than 24 h')
 
     input_hourly = pd.DataFrame(weather[['DATE', 'HOUR', 'GR', 'T', 'HR']])
     input_daily = pd.DataFrame(weather[['DATE', 'TM']].iloc[::24].reset_index(drop=True))
@@ -164,7 +164,7 @@ def fruitmodel(idsimu, bloom_date, nb_fruits, nb_leaves, dumpdir = None):
             weather_hourly_file_path, weather_daily_file_path, sunlit_fractions_file_path, params_file_path)
 
     bloom_date = np.datetime64(datetime.strptime(bloom_date, '%d/%m/%Y')).astype('datetime64[D]')
-    print(f'Do simu {idsimu}')
+    #print(f'Do simu {idsimu}')
     tempfile = os.path.join(RWorkRepo,"resultats-"+str(idsimu)+".csv")
     if os.path.exists(tempfile):
         os.remove(tempfile)
@@ -176,7 +176,8 @@ def fruitmodel(idsimu, bloom_date, nb_fruits, nb_leaves, dumpdir = None):
         sunlit_bs = sunlit_fractions.iloc[:,random.randrange(0, 5)].to_numpy()
         result = growth_main(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, input_hourly, input_daily, params)
     except FruitModelValueError as e:
-        print(e)
+        #print(e)
+        pass
 
     failedfile = os.path.join(RWorkRepo,"failed-"+str(idsimu)+".csv")
     if os.path.exists(failedfile):

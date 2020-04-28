@@ -3,14 +3,31 @@ import datetime
 import numpy as np
 import pandas as pd
 import random as rdm
-from io import StringIO
 
-from openalea.vmango.simulation.fruitmodel.fruit_growth import growth
+from .fruit_growth import growth
 
-def growth_main(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, weather_hourly_df, weather_daily_df, params, verbose=False):
+def growth_main(
+    bloom_date,
+    nb_fruits,
+    nb_leaves,
+    sunlit_bs,
+    weather_daily_df,
+    weather_hourly_df,
+    DM_fruit_0=np.nan,
+    DM_fruit_ini=np.nan,
+    sim_date_ini=None,
+    dd_thresh=np.nan,
+    stop_sim_ddcum=np.nan,
+    verbose=False
+):
 
     LF = nb_leaves / nb_fruits
-    FM_fruit_ini = 23.647 * DM_fruit_0 ** 0.6182
+    if np.isnan(DM_fruit_0):
+        DM_fruit_0 = 0.97 * np.random.normal(13.9, 4.1) + 0.03 * np.random.normal(29.2, 0.66)
+    if np.isnan(DM_fruit_ini):
+        DM_fruit_ini = DM_fruit_0
+
+    # FM_fruit_ini = 23.647 * DM_fruit_0 ** 0.6182
 
     result = growth(
         bloom_date,
@@ -21,8 +38,10 @@ def growth_main(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, weather
         DM_fruit_0,
         DM_fruit_0,
         LF,
+        dd_thresh,
+        stop_sim_ddcum
         params,
-        verbose=verbose
+        verbose
     )
 
     DAB, growth_df = result

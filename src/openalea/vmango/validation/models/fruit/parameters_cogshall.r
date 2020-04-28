@@ -4,7 +4,8 @@
 
 
 ## [growth]
-Tbase = 16                      # base temperature for degree-days calculation [°C]
+sucrose_ripe_thresh = 0.04      # threshold sucrose content in the flesh beyond which fruit is assumed ripe [g g-1 FM]
+stop_sim_ddcum = NaN
 dd_cum_0 = 352.72               # cumulated degree-days at the end of cell division [dd]
 a20	= 0.4086	                  # specific parameter for fruit peel water mass calculation based on fruit water mass [g1-0,7428 H20]
 a21	= 0.7428	                  # specific parameter for fruit peel water mass calculation based on fruit water mass	[dimensionless]
@@ -12,6 +13,7 @@ a22	= 0.5874	                  # specific parameter for fruit flesh water mass c
 a23	= 1.0584	                  # specific parameter for fruit flesh water mass calculation based on fruit water mass	[dimensionless]
 
 ## [dry_matter]
+Tbase = 16                      # base temperature for degree-days calculation [°C]
 k = 0.0432                      # conversion factor of leaf photosynthesis (from µmol CO2 s-1 to g C h-1) [g C s h-1 µmol-1 CO2]
 k1 = 0.5                        # fraction of global radiation photosynthetically active [dimensionless]
 k2 = 4.6                        # conversion factor of global radiation (from W m-2 to µmol photon m-2 s-1) [µmol photon W-1 s-1]
@@ -50,7 +52,6 @@ sunlit_ws = rep(0.88,24)        # hourly whithin-shoots sunlit fractions of leav
 ## [fresh_matter]
 h = 0.002027                    # coeffcient of "cell wall hardening" [MPa cm-3]
 phi_max = 0.414                 # maximal cell wall extensibility [MPa-1 day-1]
-dd_thresh = 2000                # threshold dregree-days after which cell wall extensibility decreases [dd]
 tau = 0.966                     # rate of decrease in cell wall extensibility [dimensionless]
 aLf = 0.3732                    # product of the ratio of the area of the vascular network to the fruit area (a) by the hydraulic conductivity between the stem and the fruit for water transport (Lf)  [g H2O cm-2 MPa-1 day-1]
 osmotic_pressure_aa = 0.2       # osmotic pressure in fruit flesh due to amino acids [MPa]
@@ -66,7 +67,7 @@ a6 = 0.7641                     # specific parameter for fruit peel dry mass cal
 a7 = 0.5219                     # specific parameter for fruit flesh dry mass calculation based on fruit dry mass [g1-1.0584 DM]
 a8 = 1.0584                     # specific parameter for fruit flesh dry mass calculation based on fruit dry mass [dimensionless]
 a9 = 0.8226                     # proportion of flesh in fruit flesh and peel dry mass [dimensionless]
-a10 = 0.8959                    # proportion of flesh in fruit flesh and peel water mass [dimensionless]
+a10 = 0.8958                    # proportion of flesh in fruit flesh and peel water mass [dimensionless]
 a11 = 3.65                      # specific parameter for fruit surface calculation based on fruit fresh mass [cm2 g-0.73 FM]
 a12 = 0.73                      # specific parameter for fruit surface calculation based on fruit fresh mass [dimensionless]
 a13 = 0.1167                    # ratio of fruit stone fresh mass to fruit flesh and peel fresh mass [dimensionless]
@@ -90,20 +91,3 @@ delta_glc = c( 0.08074145,  -0.00006325543, -0.001161846,    1.161344e-06)   # g
 delta_frc = c( 0.04972199,   0.0000966001,  -0.001078579,    0.0)            # fructose
 delta_suc = c( 0.0,          0.00017695,    -0.007249,       9.03e-06)       # sucrose
 delta_sta = c(-0.1708815,    0.0004380411,   0.01923022,    -0.00002059459)  # starch
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

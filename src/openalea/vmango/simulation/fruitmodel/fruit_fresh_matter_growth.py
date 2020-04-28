@@ -1,6 +1,30 @@
-import numpy as np
+#########################################################################################################################
+###  FRUIT MODEL : FRUIT GROWTH IN FRESH MASS    ########################################################################
+#########################################################################################################################
 
-from openalea.vmango.constants import R, MM_water
+# Original model from : Léchaudel et al. 2007_Tree Physiology 27:219-230
+# See also : Fishman and Génard 1998_Plant Cell Environ. 21:739-752
+#            Léchaudel 2004_PhD
+
+# - erratum parameter units : alpha [g cm-3] and tau [dimensionless]
+# - flesh compartment : comprise flesh and peel
+
+# Differences between the current R code and the original model :
+# ------------------------------------------------------------------------------------------------------------------------
+# - the model run at a daily time step (vs. hourly time step in the original model)
+#   parameter units in Table A2 are updated : ro [cm day-1], aLf [g cm-2 MPa-1 day-1] and phi_max [MPa-1 day-1]
+# - fruit growth is based only on plactic component (vs. plastic and elastic components in the original model)
+#   Eq.12 becomes : dV/dt = dV_plas/dt
+#   Eq.13 becomes : dV/dt = phi*V*(P_f - Y) if P_f > Y
+#                   dV/dt = 0               if P_f ≤ Y
+# - Eq.6-7 : contribution of amino acids to osmotic pressure (R*T*n_aa/w) is fixed at a constant (osmotic_pressure_aa)
+# - MODIF 2017-05_1 : if not fixed as input (cf year-dependent calibrated value in the original model),
+#                     dd_thresh value is empirically calculated from fruit dry mass at the end of cell division
+
+import numpy as np
+from math import exp
+
+from .constants import R, d_W, MM_water, MM_mal, MM_cit, MM_pyr, MM_oxa, MM_K, MM_Mg, MM_Ca, MM_NH4, MM_Na, MM_glc, MM_frc, MM_suc
 
 def growth_FM(
     date,
@@ -8,11 +32,13 @@ def growth_FM(
     GR,
     RH,
     dd_cum,
-    T_air_daily,
-    DM_fruit,
-    FM_fruit_ini,
-    W_fleshpeel_ini,
+    TM_air,
     DM_fruit_0,
+    DM_fruit,
+    DM_fruit_previous,
+    FM_fruit_previous
+    W_fleshpeel_previous,
+    dd_thresh,
     params
 ):
 
@@ -45,132 +71,175 @@ def growth_FM(
     a17 = params.a17                                    # specific parameter for stem water potential calculation
     a18 = params.a18                                    # specific paramater for cell wall degree-day threshold calculation [dd g DM-1]
     a19 = params.a19                                    # specific paramater for cell wall degree-day threshold calculation [dd]
+    delta_mal = params.mass_prop_delta.mal              # malic acid
+    delta_cit = params.mass_prop_delta.cit              # citric acid
+    delta_pyr = params.mass_prop_delta.pyr              # pyruvic acid
+    delta_oxa = params.mass_prop_delta.oxa              # oxalic acid
+    delta_K = params.mass_prop_delta.K                  # K+
+    delta_Mg = params.mass_prop_delta.Mg                # Mg2+
+    delta_Ca = params.mass_prop_delta.Ca                # Ca2+
+    delta_NH4 = params.mass_prop_delta.NH4              # NH4+
+    delta_Na = params.mass_prop_delta.Na                # Na+
+    delta_glc = params.mass_prop_delta.glc              # glucose
+    delta_frc = params.mass_prop_delta.frc              # fructose
+    delta_suc = params.mass_prop_delta.suc              # sucrose
+    delta_sta = params.mass_prop_delta.sta              # starch
 
+    # ========================================================================================================================
+    # DRY MASS AND GROWTH RATE OF FRUIT FLESH
+    # ========================================================================================================================
+    ## from empirical relationships in Léchaudel (2004)
 
-    DM_fleshpeel = a5 * DM_fruit[0] ** a6 + a7 * DM_fruit[0] ** a8
-    W_fleshpeel = W_fleshpeel_ini
+    DM_fleshpeel_previous = (a7 * (DM_fruit_previous) ** a8) + (a5 * (DM_fruit_previous) ** a6)
+    DM_fleshpeel_growth = (a7 * a8 * (DM_fruit) ** (a8 - 1) + a5 * a6 * (DM_fruit) ** (a6 - 1)) * (DM_fruit - DM_fruit_previous)
+    DM_fleshpeel_growth = max(DM_fleshpeel_growth, 0)
+    DM_flesh_previous = a9 * DM_fleshpeel_previous
+    W_flesh_previous = a10 * W_fleshpeel_previous
 
-    DM_fleshpeel_growth = max(0, (a5 * a6 * DM_fruit[1] ** (a6 - 1) + a7 * a8 * DM_fruit[1] ** (a8 - 1)) * (DM_fruit[1] - DM_fruit[0]))
+    # ========================================================================================================================
+    # OSMOTIC PRESSURE IN THE FRUIT
+    # ========================================================================================================================
 
-    FM_fruit = FM_fruit_ini
-    FM_stone = FM_fruit - (DM_fleshpeel + W_fleshpeel)
+    ## -- mass proportion of osmotically active solutes & starch in the dry mass of fruit flesh (eq.9) :
+    DM_flesh_previous_x_dd_cum = DM_flesh_previous * dd_cum
+    prop_mal = max(0, delta_mal[1] + delta_mal[2] * dd_cum + delta_mal[3] * DM_flesh_previous + delta_mal[4] * DM_flesh_previous_x_dd_cum)
+    prop_cit = max(0, delta_cit[1] + delta_cit[2] * dd_cum + delta_cit[3] * DM_flesh_previous + delta_cit[4] * DM_flesh_previous_x_dd_cum)
+    prop_pyr = max(0, delta_pyr[1] + delta_pyr[2] * dd_cum + delta_pyr[3] * DM_flesh_previous + delta_pyr[4] * DM_flesh_previous_x_dd_cum)
+    prop_oxa = max(0, delta_oxa[1] + delta_oxa[2] * dd_cum + delta_oxa[3] * DM_flesh_previous + delta_oxa[4] * DM_flesh_previous_x_dd_cum)
+    prop_K = max(0, delta_K[1] + delta_K[2] * dd_cum + delta_K[3] * DM_flesh_previous + delta_K[4] * DM_flesh_previous_x_dd_cum)
+    prop_Mg = max(0, delta_Mg[1] + delta_Mg[2] * dd_cum + delta_Mg[3] * DM_flesh_previous + delta_Mg[4] * DM_flesh_previous_x_dd_cum)
+    prop_Ca = max(0, delta_Ca[1] + delta_Ca[2] * dd_cum + delta_Ca[3] * DM_flesh_previous + delta_Ca[4] * DM_flesh_previous_x_dd_cum)
+    prop_NH4 = max(0, delta_NH4[1] + delta_NH4[2] * dd_cum + delta_NH4[3] * DM_flesh_previous + delta_NH4[4] * DM_flesh_previous_x_dd_cum)
+    prop_Na  = max(0, delta_Na[1] + delta_Na[2] * dd_cum + delta_Na[3] * DM_flesh_previous + delta_Na[4] * DM_flesh_previous_x_dd_cum)
+    prop_glc = max(0, delta_glc[1] + delta_glc[2] * dd_cum + delta_glc[3] * DM_flesh_previous + delta_glc[4] * DM_flesh_previous_x_dd_cum)
+    prop_frc = max(0, delta_frc[1] + delta_frc[2] * dd_cum + delta_frc[3] * DM_flesh_previous + delta_frc[4] * DM_flesh_previous_x_dd_cum)
+    prop_suc = max(0, delta_suc[1] + delta_suc[2] * dd_cum + delta_suc[3] * DM_flesh_previous + delta_suc[4] * DM_flesh_previous_x_dd_cum)
+    prop_sta = max(0, delta_sta[1] + delta_sta[2] * dd_cum + delta_sta[3] * DM_flesh_previous + delta_sta[4] * DM_flesh_previous_x_dd_cum)
 
-    dd_cum = np.mean(dd_cum)
+    ## -- mass and number of moles of osmotically active solutes & starch in fruit flesh (eq.8) :
+    m_mal = prop_mal * DM_flesh_previous
+    n_mal = m_mal / MM_mal
+    m_cit = prop_cit * DM_flesh_previous
+    n_cit = m_cit / MM_cit
+    m_pyr = prop_pyr * DM_flesh_previous
+    n_pyr = m_pyr / MM_pyr
+    m_oxa = prop_oxa * DM_flesh_previous
+    n_oxa = m_oxa / MM_oxa
+    m_K = prop_K * DM_flesh_previous
+    n_K = m_K / MM_K
+    m_Mg = prop_Mg * DM_flesh_previous
+    n_Mg = m_Mg / MM_Mg
+    m_Ca = prop_Ca * DM_flesh_previous
+    n_Ca = m_Ca / MM_Ca
+    m_NH4 = prop_NH4 * DM_flesh_previous
+    n_NH4 = m_NH4 / MM_NH4
+    m_Na = prop_Na * DM_flesh_previous
+    n_Na = m_Na / MM_Na
+    m_glc = prop_glc * DM_flesh_previous
+    n_glc = m_glc / MM_glc
+    m_frc = prop_frc * DM_flesh_previous
+    n_frc = m_frc / MM_frc
+    m_suc = prop_suc * DM_flesh_previous
+    n_suc = m_suc / MM_suc
+    m_sta = prop_sta * DM_flesh_previous
 
-    MSpu = a9 * DM_fleshpeel
-    W_flesh = a10 * W_fleshpeel
+    ## -- osmotic pressure in fruit flesh (eq.6-7) :
+    n_solutes = n_mal + n_cit + n_pyr + n_oxa + n_K + n_Mg + n_Ca + n_NH4 + n_Na + n_glc + n_frc + n_suc
+    osmotic_pressure = (R * (TM_air + 273.15) * n_solutes) / (W_flesh_previous / d_W) + osmotic_pressure_aa
 
-    MSpu_x_dd_cum = MSpu * dd_cum
-    prop_mal = max(0, 0.06620651 + (-0.0000538797) * dd_cum + (-0.002464413) * MSpu + 2.406565e-006 * MSpu_x_dd_cum)
-    prop_pyr = max(0, 0.0006896104 + 1.613387e-006 * dd_cum + 0.00005063595 * MSpu + (-6.912509e-008) * MSpu_x_dd_cum)
-    prop_oxa = max(0, 0.004750718 + (-2.113094e-006) * dd_cum + (-0.00002965687) * MSpu + 0.0 * MSpu_x_dd_cum)
-    prop_K = max(0, 0.01394964 + (-5.234608e-006) * dd_cum + (-0.000288464) * MSpu + 2.682089e-007 * MSpu_x_dd_cum)
-    prop_Mg = max(0, 0.00115595 + (-7.937479e-007) * dd_cum + (-0.00002320017) * MSpu + (2.344528e-008) * MSpu_x_dd_cum)
-    prop_Ca = max(0, 0.001588606 + (-6.625787e-007) * dd_cum + (-0.0000228527) * MSpu + (1.514343e-008) * MSpu_x_dd_cum)
-    prop_NH4 = max(0, 0.000246011 + 3.741743e-007 * dd_cum + 0.00002495255 * MSpu + (-3.010081e-008) * MSpu_x_dd_cum)
-    prop_Na = max(0, 0.0001279568 + 8.15203e-008 * dd_cum + (-1.468235e-006) * MSpu + 0.0 * MSpu_x_dd_cum)
-    prop_glc = max(0, 0.08074145 + (-0.00006325543) * dd_cum + (-0.001161846) * MSpu + 1.161344e-006 * MSpu_x_dd_cum)
-    prop_frc = max(0, 0.04972199 + 0.0000966001 * dd_cum + (-0.001078579) * MSpu + 0.0 * MSpu_x_dd_cum)
-    prop_ami = max(0, -0.1708815 + 0.0004380411 * dd_cum + 0.01923022 * MSpu + (-0.00002059459) * MSpu_x_dd_cum)
-    prop_cit = max(0, 0.1625024 + (-0.0000640754) * dd_cum + 0.003906348 * MSpu + (-4.784292e-006) * MSpu_x_dd_cum)
-    prop_sac = max(0, 0.0 + (0.00017695) * dd_cum + (-0.007249) * MSpu + 9.03e-006 * MSpu_x_dd_cum)
+    # ========================================================================================================================
+    # FRUIT TRANSPIRATION
+    # ========================================================================================================================
 
-    m_mal = prop_mal * MSpu
-    n_mal = m_mal / 134
+    ## -- fruit surface (eq.3) :
+    A_fruit = a11 * FM_fruit_previous ** a12
 
-    m_cit = prop_cit * MSpu
-    n_cit = m_cit / 192
+    ## -- saturation vapor pressure (eq.3 in Fishman and Génard 1998) :
+    ##    converted from bar to MPa
+    P_sat = s1 * exp(s2 * TM_air) / 10
 
-    m_pyr = prop_pyr * MSpu
-    n_pyr = m_pyr / 88
+    ## -- fruit transpiration (eq.2) :
+    alpha = MM_water * P_sat / (R * (TM_air + 273.15))
+    transpiration = A_fruit * alpha * ro * (RH_fruit - RH / 100)
 
-    m_oxa = prop_oxa * MSpu
-    n_oxa = m_oxa / 90
+    # ========================================================================================================================
+    # CELL WALL PROPERTIES OF THE FRUIT
+    # ========================================================================================================================
 
-    m_K = prop_K * MSpu
-    n_K = m_K / 39
+    ## -- cell wall extensibility (eq.18) :
+    if np.isnan(dd_thresh):                                                                                                       # _MODIF 2017-05_1
+        ## if not fixed as input, set from an empirical relationship
+        dd_thresh = a18 * DM_fruit_0 + a19
 
-    m_Mg = prop_Mg * MSpu
-    n_Mg = m_Mg / 24
+    Phi = phi_max * tau ** max(0, dd_cum - dd_thresh)
 
-    m_Ca = prop_Ca * MSpu
-    n_Ca = m_Ca / 40
+    # -- threshold pressure (eq.15-16) :
+    V = W_fleshpeel_previous / d_W + DM_fleshpeel_previous / d_DM
+    Y = Y_0 + h * (V - V_0)
 
-    m_NH4 = prop_NH4 * MSpu
-    n_NH4 = m_NH4 / 18
+    # ========================================================================================================================
+    # TURGOR PRESSURE & WATER POTENTIAL IN THE FRUIT
+    # ========================================================================================================================
 
-    m_Na = prop_Na * MSpu
-    n_Na = m_Na / 23
+    ## -- water potential of the stem :
+    water_potential_stem = a14 + a15 * TM_air + a16 * RH + a17 * GR
 
-    m_g = prop_glc * MSpu
-    n_glc = m_g / 180
-
-    m_f = prop_frc * MSpu
-    n_frc = m_f / 180
-
-    m_sa = prop_sac * MSpu
-    n_sac = m_sa / 342
-
-    m_am = prop_ami * MSpu
-
-    n_solutes = n_mal + n_cit + n_pyr + n_oxa + n_K + n_Mg + n_Ca + n_NH4 + n_Na + n_glc + n_frc + n_sac
-    c_solutes = n_solutes / W_flesh
-
-    osmotic_pressure = R * (T_air_daily + 273.15) * c_solutes  + osmotic_pressure_aa
-
-    A_fruit = a11 * FM_fruit ** a12
-    P_sat = s1 * np.exp(s2 * T_air_daily)
-    alpha = MM_water * P_sat / (83 * (T_air_daily + 273.15))
-    transpiration = A_fruit * alpha * ro * (0.996 - (np.mean(RH) / 100))
-
-    water_potential_stem = 1.0 * np.mean(a14 + (a15 * T_air) + (a16 * RH) + (a17 * GR))
-    dd_thresh = a18 * DM_fruit_0 + a19
-
-    Phi = phi_max
-    if dd_cum > dd_thresh:
-        Phi = phi_max * tau ** (dd_cum - dd_thresh)
-
+    ## -- turgor pressure in the fruit (defined by combining eq.11 and eq.13) :
     ALf = A_fruit * aLf
-
-    Y_0 = V_0 = 0
-    Y = Y_0 + h * (W_fleshpeel - V_0)
-
-    numerator = Phi * W_fleshpeel * Y + ALf * (water_potential_stem + osmotic_pressure) - transpiration + DM_fleshpeel_growth / 1.60
-    denominator = Phi * W_fleshpeel + ALf
+    numerator = Phi * V * Y  +  ALf * (water_potential_stem + osmotic_pressure) / d_W - transpiration / d_W + DM_fleshpeel_growth / d_DM
+    denominator = Phi * V + ALf / d_W
     turgor_pressure = numerator / denominator
 
     if turgor_pressure < Y:
-        turgor_pressure = water_potential_stem + osmotic_pressure - (transpiration - (DM_fleshpeel_growth / 1.60)) / ALf
+        turgor_pressure = water_potential_stem + osmotic_pressure - (transpiration - DM_fleshpeel_growth * d_W / d_DM) / ALf
 
     if turgor_pressure < Y_0:
         turgor_pressure = 0
 
+    ## -- water potential in the fruit (eq.5) :
     water_potential = turgor_pressure - osmotic_pressure
-    flux_xyleme  = ALf * (water_potential_stem - water_potential)
-    flux_phloeme = DM_fleshpeel_growth / 1.60
 
-    DM_fleshpeel = DM_fleshpeel + DM_fleshpeel_growth
-    W_fleshpeel = W_fleshpeel + flux_xyleme + flux_phloeme - transpiration
-    FM_stone  = a13 * (DM_fleshpeel + W_fleshpeel)
-    FM_fruit  = DM_fleshpeel + W_fleshpeel + FM_stone
+    # ========================================================================================================================
+    # WATER AND DRY MATTER CHANGES IN FRUIT COMPARTMENTS
+    # ========================================================================================================================
 
-    sucrose =  m_sa / W_flesh
-    soluble_sugars = (m_sa + m_g + m_f) / W_flesh
-    organic_acids = (m_mal + m_cit) / W_flesh
+    ## -- rate of water inflow in the fruit from xylem and phloem (eq.4) :
+    flux_xylem_phloem = ALf * (water_potential_stem - water_potential)
+
+    ## -- changes in dry mass, fresh mass and water mass of fruit compartments :
+    DM_fleshpeel = DM_fleshpeel_previous + DM_fleshpeel_growth
+    W_fleshpeel = W_fleshpeel_previous + flux_xylem_phloem - transpiration
+    FM_stone = a13 * (DM_fleshpeel + W_fleshpeel)
+    FM_fruit = DM_fleshpeel + W_fleshpeel + FM_stone
+    DM_flesh = DM_fleshpeel * a9
+    W_flesh = W_fleshpeel * a10
+
+    FM_minus_stone = W_flesh_previous + DM_flesh_previous
+    sucrose = m_suc / FM_minus_stone
+    glucose = m_glc / FM_minus_stone
+    fructose = m_frc / FM_minus_stone
+    soluble_sugars = (m_suc + m_glc + m_frc) / FM_minus_stone
+    starch = m_sta / FM_minus_stone
+    organic_acids = (m_mal + m_cit) / FM_minus_stone
 
     return ((
         water_potential,
         turgor_pressure,
         osmotic_pressure,
-        flux_xyleme,
-        flux_phloeme,
+        flux_xylem_phloem
         transpiration,
-        sucrose,
-        soluble_sugars,
+        sucrose
+        glucose
+        fructose
+        soluble_sugars
+        starch
         organic_acids
     ), (
         date + np.timedelta64(1, 'D'),
-        FM_fruit,
-        DM_fruit[1],
+        FM_fruit
+        DM_Fruit
         W_fleshpeel
+        DM_fleshpeel
+        W_flesh
+        DM_flesh
     ))
