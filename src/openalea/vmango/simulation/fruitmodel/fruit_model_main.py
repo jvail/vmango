@@ -1,5 +1,4 @@
-import os
-import datetime
+import os, datetime
 import numpy as np
 import pandas as pd
 import random as rdm
@@ -13,33 +12,33 @@ def growth_main(
     sunlit_bs,
     weather_daily_df,
     weather_hourly_df,
+    params,
     DM_fruit_0=np.nan,
     DM_fruit_ini=np.nan,
     sim_date_ini=None,
     dd_thresh=np.nan,
     stop_sim_ddcum=np.nan,
-    verbose=False
+    verbose=False,
 ):
 
     LF = nb_leaves / nb_fruits
+    print(DM_fruit_0)
     if np.isnan(DM_fruit_0):
         DM_fruit_0 = 0.97 * np.random.normal(13.9, 4.1) + 0.03 * np.random.normal(29.2, 0.66)
     if np.isnan(DM_fruit_ini):
         DM_fruit_ini = DM_fruit_0
 
-    # FM_fruit_ini = 23.647 * DM_fruit_0 ** 0.6182
-
     result = growth(
         bloom_date,
         weather_daily_df,
         weather_hourly_df,
-        FM_fruit_ini,
         sunlit_bs,
-        DM_fruit_0,
-        DM_fruit_0,
         LF,
+        DM_fruit_0,
+        DM_fruit_ini,
+        sim_date_ini,
         dd_thresh,
-        stop_sim_ddcum
+        stop_sim_ddcum,
         params,
         verbose
     )

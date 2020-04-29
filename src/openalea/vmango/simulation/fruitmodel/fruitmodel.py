@@ -16,8 +16,8 @@ from openalea.vmango.management.util_parallel import *
 from openalea.vmango.utilities.util_tools import *
 from past.utils import old_div
 
-from openalea.vmango.simulation.fruitmodel.fruit_model_main import growth_main
-from openalea.vmango.simulation.fruitmodel.fruitmodel_error import FruitModelValueError, FruitModelInputError
+from .fruit_model_main import growth_main
+from .fruitmodel_error import FruitModelValueError, FruitModelInputError
 
 RScriptRepo = dirname(abspath(__file__)).replace(os.sep, '/')
 RWorkRepo = os.path.join(RScriptRepo,'tmp').replace(os.sep, '/')
@@ -141,8 +141,8 @@ def initialize_input(weather_hourly_file_path, weather_daily_file_path, sunlit_f
     #if len(weather_hour_count[weather_hour_count['HOUR'] != 24].values) > 0:
         #print('Input data has days with less than 24 h')
 
-    input_hourly = pd.DataFrame(weather[['DATE', 'HOUR', 'GR', 'T', 'HR']])
-    input_daily = pd.DataFrame(weather[['DATE', 'TM']].iloc[::24].reset_index(drop=True))
+    input_hourly = pd.DataFrame(weather[['DATE', 'HOUR', 'GR', 'T', 'RH']])
+    input_daily = pd.DataFrame(weather[['DATE', 'TM', 'TN', 'TX']].iloc[::24].reset_index(drop=True))
 
     params = toml.load(params_file_path, _dict=ModelParams)
 
@@ -174,7 +174,22 @@ def fruitmodel(idsimu, bloom_date, nb_fruits, nb_leaves, dumpdir = None):
     try:
         DM_fruit_0 = 0.97 * np.random.normal(13.9, 4.1) + 0.03 * np.random.normal(29.2, 0.66)
         sunlit_bs = sunlit_fractions.iloc[:,random.randrange(0, 5)].to_numpy()
-        result = growth_main(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, input_hourly, input_daily, params)
+        result = growth_main(
+            bloom_date,
+            nb_fruits,
+            nb_leaves,
+            sunlit_bs,
+            input_daily,
+            input_hourly,
+            params,
+            DM_fruit_0,
+            DM_fruit_ini=np.nan,
+            sim_date_ini=None,
+            dd_thresh=np.nan,
+            stop_sim_ddcum=np.nan,
+            verbose=False
+        )
+
     except FruitModelValueError as e:
         #print(e)
         pass

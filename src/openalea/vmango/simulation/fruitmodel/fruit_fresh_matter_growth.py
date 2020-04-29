@@ -36,7 +36,7 @@ def growth_FM(
     DM_fruit_0,
     DM_fruit,
     DM_fruit_previous,
-    FM_fruit_previous
+    FM_fruit_previous,
     W_fleshpeel_previous,
     dd_thresh,
     params
@@ -48,6 +48,7 @@ def growth_FM(
     tau = params.tau                                    # rate of decrease in cell wall extensibility [°C-1 day-1]
     aLf = params.aLf                                    # produit between the ratio of the area of the vascular network to the fruit area (a) and hydraulic conductivity between the stem and the fruit (Lf)  [g cm-2 MPa-1 day-1]
     ro = params.ro                                      # fruit surface conductance [cm day-1]
+    RH_fruit = params.RH_fruit                          # relative humidity of air space in fruit [dimensionless]
     Y_0 = params.Y_0                                    # threshold pressure at full bloom [MPa-1 day-1]
     V_0 = params.V_0                                    # flesh volume at full bloom [cm3]
     s1 = params.s1                                      # specific parameter for saturation vapor pressure calculation
@@ -101,20 +102,20 @@ def growth_FM(
     # ========================================================================================================================
 
     ## -- mass proportion of osmotically active solutes & starch in the dry mass of fruit flesh (eq.9) :
-    DM_flesh_previous_x_dd_cum = DM_flesh_previous * dd_cum
-    prop_mal = max(0, delta_mal[1] + delta_mal[2] * dd_cum + delta_mal[3] * DM_flesh_previous + delta_mal[4] * DM_flesh_previous_x_dd_cum)
-    prop_cit = max(0, delta_cit[1] + delta_cit[2] * dd_cum + delta_cit[3] * DM_flesh_previous + delta_cit[4] * DM_flesh_previous_x_dd_cum)
-    prop_pyr = max(0, delta_pyr[1] + delta_pyr[2] * dd_cum + delta_pyr[3] * DM_flesh_previous + delta_pyr[4] * DM_flesh_previous_x_dd_cum)
-    prop_oxa = max(0, delta_oxa[1] + delta_oxa[2] * dd_cum + delta_oxa[3] * DM_flesh_previous + delta_oxa[4] * DM_flesh_previous_x_dd_cum)
-    prop_K = max(0, delta_K[1] + delta_K[2] * dd_cum + delta_K[3] * DM_flesh_previous + delta_K[4] * DM_flesh_previous_x_dd_cum)
-    prop_Mg = max(0, delta_Mg[1] + delta_Mg[2] * dd_cum + delta_Mg[3] * DM_flesh_previous + delta_Mg[4] * DM_flesh_previous_x_dd_cum)
-    prop_Ca = max(0, delta_Ca[1] + delta_Ca[2] * dd_cum + delta_Ca[3] * DM_flesh_previous + delta_Ca[4] * DM_flesh_previous_x_dd_cum)
-    prop_NH4 = max(0, delta_NH4[1] + delta_NH4[2] * dd_cum + delta_NH4[3] * DM_flesh_previous + delta_NH4[4] * DM_flesh_previous_x_dd_cum)
-    prop_Na  = max(0, delta_Na[1] + delta_Na[2] * dd_cum + delta_Na[3] * DM_flesh_previous + delta_Na[4] * DM_flesh_previous_x_dd_cum)
-    prop_glc = max(0, delta_glc[1] + delta_glc[2] * dd_cum + delta_glc[3] * DM_flesh_previous + delta_glc[4] * DM_flesh_previous_x_dd_cum)
-    prop_frc = max(0, delta_frc[1] + delta_frc[2] * dd_cum + delta_frc[3] * DM_flesh_previous + delta_frc[4] * DM_flesh_previous_x_dd_cum)
-    prop_suc = max(0, delta_suc[1] + delta_suc[2] * dd_cum + delta_suc[3] * DM_flesh_previous + delta_suc[4] * DM_flesh_previous_x_dd_cum)
-    prop_sta = max(0, delta_sta[1] + delta_sta[2] * dd_cum + delta_sta[3] * DM_flesh_previous + delta_sta[4] * DM_flesh_previous_x_dd_cum)
+    DM_flesh_x_dd_cum = DM_flesh_previous * dd_cum
+    prop_mal = max(0, delta_mal[0] + delta_mal[1] * dd_cum + delta_mal[2] * DM_flesh_previous + delta_mal[3] * DM_flesh_x_dd_cum)
+    prop_cit = max(0, delta_cit[0] + delta_cit[1] * dd_cum + delta_cit[2] * DM_flesh_previous + delta_cit[3] * DM_flesh_x_dd_cum)
+    prop_pyr = max(0, delta_pyr[0] + delta_pyr[1] * dd_cum + delta_pyr[2] * DM_flesh_previous + delta_pyr[3] * DM_flesh_x_dd_cum)
+    prop_oxa = max(0, delta_oxa[0] + delta_oxa[1] * dd_cum + delta_oxa[2] * DM_flesh_previous + delta_oxa[3] * DM_flesh_x_dd_cum)
+    prop_K = max(0, delta_K[0] + delta_K[1] * dd_cum + delta_K[2] * DM_flesh_previous + delta_K[3] * DM_flesh_x_dd_cum)
+    prop_Mg = max(0, delta_Mg[0] + delta_Mg[1] * dd_cum + delta_Mg[2] * DM_flesh_previous + delta_Mg[3] * DM_flesh_x_dd_cum)
+    prop_Ca = max(0, delta_Ca[0] + delta_Ca[1] * dd_cum + delta_Ca[2] * DM_flesh_previous + delta_Ca[3] * DM_flesh_x_dd_cum)
+    prop_NH4 = max(0, delta_NH4[0] + delta_NH4[1] * dd_cum + delta_NH4[2] * DM_flesh_previous + delta_NH4[3] * DM_flesh_x_dd_cum)
+    prop_Na  = max(0, delta_Na[0] + delta_Na[1] * dd_cum + delta_Na[2] * DM_flesh_previous + delta_Na[3] * DM_flesh_x_dd_cum)
+    prop_glc = max(0, delta_glc[0] + delta_glc[1] * dd_cum + delta_glc[2] * DM_flesh_previous + delta_glc[3] * DM_flesh_x_dd_cum)
+    prop_frc = max(0, delta_frc[0] + delta_frc[1] * dd_cum + delta_frc[2] * DM_flesh_previous + delta_frc[3] * DM_flesh_x_dd_cum)
+    prop_suc = max(0, delta_suc[0] + delta_suc[1] * dd_cum + delta_suc[2] * DM_flesh_previous + delta_suc[3] * DM_flesh_x_dd_cum)
+    prop_sta = max(0, delta_sta[0] + delta_sta[1] * dd_cum + delta_sta[2] * DM_flesh_previous + delta_sta[3] * DM_flesh_x_dd_cum)
 
     ## -- mass and number of moles of osmotically active solutes & starch in fruit flesh (eq.8) :
     m_mal = prop_mal * DM_flesh_previous
@@ -226,20 +227,20 @@ def growth_FM(
         water_potential,
         turgor_pressure,
         osmotic_pressure,
-        flux_xylem_phloem
+        flux_xylem_phloem,
         transpiration,
-        sucrose
-        glucose
-        fructose
-        soluble_sugars
-        starch
+        sucrose,
+        glucose,
+        fructose,
+        soluble_sugars,
+        starch,
         organic_acids
     ), (
         date + np.timedelta64(1, 'D'),
-        FM_fruit
-        DM_Fruit
-        W_fleshpeel
-        DM_fleshpeel
-        W_flesh
+        FM_fruit,
+        DM_fruit,
+        W_fleshpeel,
+        DM_fleshpeel,
+        W_flesh,
         DM_flesh
     ))

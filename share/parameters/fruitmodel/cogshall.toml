@@ -1,10 +1,16 @@
 title = 'Fruit Model Cogshall Parameters'
 
 [growth]
-Tbase = 16                      # base temperature DAB = 0 [°C]
-dd_cum_0 = 352.72               # cumulated degree-days at the end of cell division (Tbase) [°C]
+sucrose_ripe_thresh = 0.04      # threshold sucrose content in the flesh beyond which fruit is assumed ripe [g g-1 FM]
+stop_sim_ddcum = 'nan'
+dd_cum_0 = 352.72               # cumulated degree-days at the end of cell division [dd]
+a20	= 0.4086	                # specific parameter for fruit peel water mass calculation based on fruit water mass [g1-0,7428 H20]
+a21	= 0.7428	                # specific parameter for fruit peel water mass calculation based on fruit water mass	[dimensionless]
+a22	= 0.5874	                # specific parameter for fruit flesh water mass calculation based on fruit water mass	[g1-1,0584 H2O]
+a23	= 1.0584	                # specific parameter for fruit flesh water mass calculation based on fruit water mass	[dimensionless]
 
 [dry_matter]
+Tbase = 16                      # base temperature for degree-days calculation [°C]
 k = 0.0432                      # conversion factor of leaf photosynthesis (from µmol CO2 s-1 to g C h-1) [g C s h-1 µmol-1 CO2]
 k1 = 0.5                        # fraction of global radiation photosynthetically active [dimensionless]
 k2 = 4.6                        # conversion factor of global radiation (from W m-2 to µmol photon m-2 s-1) [µmol photon W-1 s-1]
@@ -46,6 +52,7 @@ dd_thresh = 2000                # dregree-days after which the cell wall extensi
 tau = 0.966                     # rate of decrease in cell wall extensibility [°C-1 day-1]
 aLf = 0.3732                    # produit between the ratio of the area of the vascular network to the fruit area (a) and hydraulic conductivity between the stem and the fruit (Lf)  [g cm-2 MPa-1 day-1]
 ro = 5544                       # fruit surface conductance [cm day-1]
+RH_fruit = 0.996                # relative humidity of air space in fruit [dimensionless]
 Y_0 = 0                         # threshold pressure at full bloom [MPa-1 day-1]
 V_0 = 0                         # flesh volume at full bloom [cm3]
 s1 = 0.008048                   # specific parameter for saturation vapor pressure calculation

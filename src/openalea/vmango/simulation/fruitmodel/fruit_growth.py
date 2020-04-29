@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import math
 
 from .fruit_dry_matter_growth import growth_DM
 from .fruit_fresh_matter_growth import growth_FM
@@ -8,13 +9,13 @@ def growth(
     bloom_date,
     weather_daily_df,
     weather_hourly_df,
-    FM_fruit_ini,
     sunlit_bs,
-    DM_fruit_0,
-    DM_fruit_0,
     LF,
+    DM_fruit_0,
+    DM_fruit_ini,
+    sim_date_ini,
     dd_thresh,
-    stop_sim_ddcum
+    stop_sim_ddcum,
     params,
     verbose
 ):
@@ -28,7 +29,7 @@ def growth(
     weather_daily_df.loc[:,'DAB'] = weather_daily_df.index.copy()
 
     ## -- addition of cumulated degree-days to daily weather data :
-    Tbase = params.growth.Tbase
+    Tbase = params.dry_matter.Tbase
     TM = ((weather_daily_df['TX'] + weather_daily_df['TN']) / 2).values
     dd_delta = [max(0, tm - Tbase) for tm in TM]
     weather_daily_df.loc[:,'dd_delta'] = dd_delta
@@ -74,6 +75,8 @@ def growth(
     a8 = params.fresh_matter.a8
     a9 = params.fresh_matter.a9
     a10 = params.fresh_matter.a10
+    DM_leaf_unit = params.dry_matter.DM_leaf_unit
+    DM_stem = params.dry_matter.DM_stem
 
     ## -- initial amount of carbon in leaf and stem reserves :
     reserve_leaf_ini = (DM_leaf_unit * LF) * r_DM_leaf_ini * cc_leaf
@@ -140,13 +143,13 @@ def growth(
             TX_air,
             TM_air,
             T_fruit=TM_air,
-            sunlit_bs,
+            sunlit_bs=sunlit_bs,
             DM_fruit_0=DM_fruit_0,
-            DM_fruit_previous,
+            DM_fruit_previous=DM_fruit_previous,
             reserve_stem=reserve_leaf_previous,
             reserve_leaf=reserve_stem_previous,
-            LF,
-            dd_delta,
+            LF=LF,
+            dd_delta=dd_delta,
             params=params.dry_matter
         )
 
@@ -155,19 +158,19 @@ def growth(
             T_air,
             GR=np.mean(GR),
             RH=np.mean(RH),
-            dd_cum,
+            dd_cum=dd_cum,
             TM_air=np.mean(TM_air),
-            DM_fruit_0,
+            DM_fruit_0=DM_fruit_0,
             DM_fruit=DM[0],
-            DM_fruit_previous,
-            FM_fruit_previous
-            W_fleshpeel_previous,
-            dd_thresh,
+            DM_fruit_previous=DM_fruit_previous,
+            FM_fruit_previous=FM_fruit_previous,
+            W_fleshpeel_previous=W_fleshpeel_previous,
+            dd_thresh=dd_thresh,
             params=params.fresh_matter
         )
 
         ## -- outputs of the current day :
-        growth_df.loc[i, 6:19] = (*FM[0], dd_cum)
+        growth_df.loc[i, 9:21] = (*FM[0], dd_cum)
 
         ## -- outputs of the next day :
         growth_df.loc[i + 1, 0:9] = FM[1] + (DM[1], DM[2])

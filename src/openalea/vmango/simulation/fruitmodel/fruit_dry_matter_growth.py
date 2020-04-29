@@ -130,12 +130,12 @@ def growth_DM(
     # ========================================================================================================================
 
     ## -- daily maintenance respiration for the stem, leaves (only during dark hours) and fruits :
-    MR_stem = MRR_stem * (Q10_stem ** ((T_air - Tref) / 10)) * (DM_structure_stem + (reserve_stem / cc_stem))
-    MR_leaf = len(PAR[PAR == 0]) * MRR_leaf * (Q10_leaf ** ((T_air - Tref) / 10)) * (DM_structure_leaf + reserve_leaf / cc_leaf)
+    MR_stem = MRR_stem * (Q10_stem ** ((TM_air - Tref) / 10)) * (DM_structure_stem + (reserve_stem / cc_stem))
+    MR_leaf = len(PAR[PAR == 0]) * MRR_leaf * (Q10_leaf ** ((TM_air - Tref) / 10)) * (DM_structure_leaf + reserve_leaf / cc_leaf)
     MR_fruit = MRR_fruit * (Q10_fruit ** ((T_fruit - Tref) / 10)) * DM_fruit_previous
 
     ## -- daily maintenance respiration for reproductive and vegetative components :
-    MR_repo = MR_fruit
+    MR_repro = MR_fruit
     MR_veget = MR_stem + MR_leaf
 
     # ========================================================================================================================
@@ -177,7 +177,7 @@ def growth_DM(
                 raise FruitModelValueError('Vegetative part of the system dies ...')
 
     ## -- use of remaining assimilates for maintenance respiration of reproductive components :
-    if remains_1 < MR_repo:
+    if remains_1 < MR_repro:
         ## mobilization of fruit reserves if maintenance respiration is not satified by remaining assimilates :
         required_DM_fruit = (MR_repro - remains_1) / cc_fruit
         if required_DM_fruit < DM_fruit_previous:
@@ -186,7 +186,7 @@ def growth_DM(
             ## death of reproductive components if maintenance respiration is not satisfied by remaining assimilates and fruit reserves :
             raise FruitModelValueError('Reproductive part of the system dies ...')
 
-    remains_2 = max(0, remains_1 - MR_repo)
+    remains_2 = max(0, remains_1 - MR_repro)
 
     # ------------------------------------------------------------------------------------------------------------------------
     # 2- remaining assimilates are used for fruit growth
