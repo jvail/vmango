@@ -700,6 +700,7 @@ class FruitManager (OrganManager):
 
     def set_parameters(self, profile, resolution, modelenabled, branchsize, outputenabled, outputname, parallelfruitmodel):
         # Graphic Parameters
+        from openalea.plantgl.all import Revolution
         self.resolution = resolution
         self.profile = profile
         self.profile.ctrlPointList = list(reversed(self.profile.ctrlPointList))
@@ -710,6 +711,7 @@ class FruitManager (OrganManager):
         self.outputenabled = outputenabled
         self.outputname = outputname
         self.parallelfruitmodel = parallelfruitmodel
+        self.Revolution = Revolution(profile, 8 if resolution < 2 else 30)
         #print 'Fruit Model Enabled :', modelenabled
 
 
@@ -846,4 +848,4 @@ class FruitManager (OrganManager):
                 nsproduce([InterpolateColors(self.pheno_colors[0],self.pheno_colors[1],colphenoindex)])
             elif stage == 3:
                 nsproduce([SetColor(self.pheno_colors[1])])
-            nsproduce([PglShape(Scaled(ep,larg,int_, Revolution(self.profile, 8 if self.resolution < 2 else 30))),EB()])
+            nsproduce([PglShape(Scaled(ep,larg,int_, self.Revolution)),EB()])

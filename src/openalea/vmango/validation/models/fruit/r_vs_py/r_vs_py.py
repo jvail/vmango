@@ -3,8 +3,8 @@ from timeit import default_timer as timer
 import pandas as pd
 import numpy as np
 
+from openalea.vmango.simulation.fruitmodel.fruit_model_main import growth_main
 from openalea.vmango.simulation.fruitmodel.fruitmodel import initialize_input
-from openalea.vmango.simulation.fruitmodel.r_vs_py_validation.run import run as run_py
 from openalea.vmango.simulation.fruitmodel.fruitmodel_error import FruitModelValueError
 
 verbose = False
@@ -25,35 +25,10 @@ result = pd.DataFrame({
 absdir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(os.path.join(absdir, '..'))
 
-weather_hourly_file_path = os.path.join(absdir, '../../../../../../share/environment/weather_hourly_stpierre_2002.csv')
-weather_daily_file_path = os.path.join(absdir, '../../../../../../share/environment/weather_daily_stpierre_2002.csv')
-sunlit_fractions_file_path = os.path.join(absdir, '../../../../../../share/environment/sunlit_fractions.csv')
-params_file_path = os.path.join(absdir, '../../../../../../share/parameters/fruitmodel/cogshall.toml')
-
-# def initialize_input():
-#     weather_hourly = pd.read_csv(weather_hourly_file_path,
-#         sep=';', parse_dates=['DATETIME'], dayfirst=True, usecols=['HOUR', 'GR', 'T', 'HR', 'DATETIME'])
-#     weather_daily = pd.read_csv(weather_daily_file_path,
-#         sep=';', parse_dates=['DATE'], dayfirst=True, usecols=['DATE', 'TM'])
-#     sunlit_fractions = pd.read_csv(sunlit_fractions_file_path,
-#         sep='\s+', usecols=['q10', 'q25', 'q50', 'q75', 'q90'])
-
-#     weather_hourly.rename(columns={'DATETIME':'DATE'}, inplace=True)
-#     weather_hourly['DATE'] = weather_hourly['DATE'].astype('datetime64[D]')
-#     weather_daily['DATE'] = weather_daily['DATE'].astype('datetime64[D]')
-
-#     weather = weather_daily.merge(weather_hourly, on='DATE')
-#     weather.sort_values(['DATE', 'HOUR'], inplace=True)
-
-#     weather_hour_count = weather.groupby(['DATE']).count()
-
-#     if len(weather_hour_count[weather_hour_count['HOUR'] != 24].values) > 0:
-#         print('Input data has days with less than 24 h')
-
-#     input_hourly = pd.DataFrame(weather[['DATE', 'HOUR', 'GR', 'T', 'HR']])
-#     input_daily = pd.DataFrame(weather[['DATE', 'TM']].iloc[::24].reset_index(drop=True))
-
-#     return (input_hourly, input_daily, sunlit_fractions)
+weather_hourly_file_path = os.path.join(absdir, '../../../../../../../share/environment/weather_hourly_stpierre_2002.csv')
+weather_daily_file_path = os.path.join(absdir, '../../../../../../../share/environment/weather_daily_stpierre_2002.csv')
+sunlit_fractions_file_path = os.path.join(absdir, '../../../../../../../share/environment/sunlit_fractions.csv')
+params_file_path = os.path.join(absdir, '../../../../../../../share/parameters/fruitmodel/cogshall.toml')
 
 input_hourly, input_daily, sunlit_fractions, params = initialize_input(
             weather_hourly_file_path, weather_daily_file_path, sunlit_fractions_file_path, params_file_path)
@@ -65,12 +40,12 @@ if sys.platform == 'win32':
 else:
     exe = 'Rscript'
 
-def run_r(bloom_date, nb_fruits, nb_leaves, verbose, DM_fruit_0, sunlit_bs_sample):
-    os.system(f'"{exe}" r_vs_py_validation/run.r {os.getcwd()} {bloom_date} {nb_fruits} {nb_leaves} {verbose} {DM_fruit_0} {sunlit_bs_sample}')
+def run_r(bloom_date, nb_fruits, nb_leaves, verbose, DM_fruit_0, light_envir_sample, weather_fname="stpierre_2002"):
+    os.system(f'"{exe}" r_vs_py/run.r {os.getcwd()} {bloom_date} {nb_fruits} {nb_leaves} {verbose} {DM_fruit_0} {light_envir_sample} {weather_fname}')
 
 times = []
 
-for i in range(25):
+for i in range(1):
 
     time_r = 0
     time_py = 0
@@ -96,7 +71,24 @@ for i in range(25):
         time_r = end - start
 
         start = timer()
-        run_py(bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs, input_hourly, input_daily, params, verbose=verbose)
+        bloom_date_ = np.datetime64(datetime.datetime.strptime(bloom_date, '%d/%m/%Y')).astype('datetime64[D]'),
+        res = growth_main(
+            bloom_date_,
+            nb_fruits,
+            nb_leaves,
+            sunlit_bs,
+            input_daily,
+            input_hourly,
+            params,
+            DM_fruit_0,
+            DM_fruit_ini=np.nan,
+            sim_date_ini=None,
+            dd_thresh=np.nan,
+            stop_sim_ddcum=np.nan,
+            verbose=verbose
+        )
+        res.to_csv('tmp/py.csv', na_rep='nan', index=False)
+
         end = timer()
         time_py = end - start
 
@@ -119,12 +111,12 @@ for i in range(25):
                 print(i, bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs_sample, time_r, time_py, ripe, model_error, is_eq)
             else:
                 print(i, bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs_sample, time_r, time_py, ripe, model_error, is_eq)
-                df_r.to_csv('r_vs_py_validation/df_r.csv', index=False)
-                df_py.to_csv('r_vs_py_validation/df_py.csv', index=False)
+                df_r.to_csv('r_vs_py/df_r.csv', index=False)
+                df_py.to_csv('r_vs_py/df_py.csv', index=False)
                 df_diff = df_r.loc[:, 'FM_fruit':] - df_py.loc[:, 'FM_fruit':]
                 flat_diff = df_diff[abs(df_diff) > 0.001].values.flatten()
                 if len(flat_diff[~np.isnan(flat_diff)]) > 0:
-                    df_diff.to_csv('r_vs_py_validation/df_py_diff.csv', index=False)
+                    df_diff.to_csv('r_vs_py/df_py_diff.csv', index=False)
                     pd.options.display.max_rows = None
                     pd.options.display.max_columns = None
                     print(df_diff)
@@ -136,6 +128,6 @@ for i in range(25):
 
         result.loc[len(result)] = [i, bloom_date, nb_fruits, nb_leaves, DM_fruit_0, sunlit_bs_sample, time_r, time_py, ripe, model_error, is_eq]
 
-result.to_csv('r_vs_py_validation/r_vs_py.csv', na_rep='nan', index=False)
+result.to_csv('r_vs_py/r_vs_py.csv', na_rep='nan', index=False)
 
 print('py/r', np.mean([t[1]/t[0] for t in times]))

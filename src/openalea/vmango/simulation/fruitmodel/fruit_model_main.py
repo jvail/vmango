@@ -22,7 +22,6 @@ def growth_main(
 ):
 
     LF = nb_leaves / nb_fruits
-    print(DM_fruit_0)
     if np.isnan(DM_fruit_0):
         DM_fruit_0 = 0.97 * np.random.normal(13.9, 4.1) + 0.03 * np.random.normal(29.2, 0.66)
     if np.isnan(DM_fruit_ini):

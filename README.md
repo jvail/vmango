@@ -43,5 +43,3 @@ conda activate lpy3
 python -m ipykernel install --user --name lpy3
 jupyter notebook
 ```
-
-docker run --rm --network host --user $(id -u):$(id -g) -v /home/jvail/cirad/dev/vmango:/vmango -e "NOTEBOOK_DIR=vmango/notebooks" plantgljupyter:latest
