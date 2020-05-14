@@ -44,19 +44,16 @@ def growth_FM(
 
     h = params.h                                        # coeffcient of "cell wall hardening" [MPa cm-3]
     phi_max = params.phi_max                            # maximal cell wall extensibility [MPa-1 day-1]
-    dd_thresh = params.dd_thresh                        # dregree-days after which the cell wall extensibility decreased [dd]
     tau = params.tau                                    # rate of decrease in cell wall extensibility [°C-1 day-1]
     aLf = params.aLf                                    # produit between the ratio of the area of the vascular network to the fruit area (a) and hydraulic conductivity between the stem and the fruit (Lf)  [g cm-2 MPa-1 day-1]
+    osmotic_pressure_aa = params.osmotic_pressure_aa    # osmotic pressure in the flesh due to amino acids [Mpa]
     ro = params.ro                                      # fruit surface conductance [cm day-1]
     RH_fruit = params.RH_fruit                          # relative humidity of air space in fruit [dimensionless]
     Y_0 = params.Y_0                                    # threshold pressure at full bloom [MPa-1 day-1]
     V_0 = params.V_0                                    # flesh volume at full bloom [cm3]
     s1 = params.s1                                      # specific parameter for saturation vapor pressure calculation
     s2 = params.s2                                      # specific parameter for saturation vapor pressure calculation
-    delta_solutes = params.delta_solutes                # specific parameters for calculation of flesh composition in solutes
-    osmotic_pressure_aa = params.osmotic_pressure_aa    # osmotic pressure in the flesh due to amino acids [Mpa]
     d_DM = params.d_DM                                  # density of dry matter [g cm3]
-    d_W = params.d_W                                    # density of water [g cm3]
     a5 = params.a5                                      # specific parameter for peel dry mass calculation [g DM 1-0.7641]
     a6 = params.a6                                      # specific parameter for peel dry mass calculation [dimensionless]
     a7 = params.a7                                      # specific parameter for flesh dry mass calculation [g DM 1-1.0584]

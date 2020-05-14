@@ -1,7 +1,6 @@
 
-localdir = '' #getSrcDirectory(function(x) {x})
+localdir = './' #getSrcDirectory(function(x) {x})
 envdata = '../../../../../../share/environment/' #getSrcDirectory(function(x) {x})
-print(c(localdir, envdata))
 fruitmodel <- function( bloom_date,
                         nb_fruits,
                         nb_leaves,

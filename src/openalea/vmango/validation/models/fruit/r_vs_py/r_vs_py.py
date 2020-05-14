@@ -45,7 +45,7 @@ def run_r(bloom_date, nb_fruits, nb_leaves, verbose, DM_fruit_0, light_envir_sam
 
 times = []
 
-for i in range(1):
+for i in range(100):
 
     time_r = 0
     time_py = 0
@@ -71,7 +71,7 @@ for i in range(1):
         time_r = end - start
 
         start = timer()
-        bloom_date_ = np.datetime64(datetime.datetime.strptime(bloom_date, '%d/%m/%Y')).astype('datetime64[D]'),
+        bloom_date_ = np.datetime64(datetime.datetime.strptime(bloom_date, '%d/%m/%Y'), 'D')
         res = growth_main(
             bloom_date_,
             nb_fruits,

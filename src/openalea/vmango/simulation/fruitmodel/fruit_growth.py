@@ -59,6 +59,9 @@ def growth(
     # DATA INITIALIZATION
     # ========================================================================================================================
 
+    sucrose_ripe_thresh = params.growth.sucrose_ripe_thresh
+    stop_sim_ddcum = params.growth.stop_sim_ddcum
+
     r_DM_leaf_ini = params.dry_matter.r_DM_leaf_ini
     cc_leaf = params.dry_matter.cc_leaf
     r_DM_stem_ini = params.dry_matter.r_DM_stem_ini
@@ -146,8 +149,8 @@ def growth(
             sunlit_bs=sunlit_bs,
             DM_fruit_0=DM_fruit_0,
             DM_fruit_previous=DM_fruit_previous,
-            reserve_stem=reserve_leaf_previous,
-            reserve_leaf=reserve_stem_previous,
+            reserve_stem=reserve_stem_previous,
+            reserve_leaf=reserve_leaf_previous,
             LF=LF,
             dd_delta=dd_delta,
             params=params.dry_matter
@@ -184,13 +187,13 @@ def growth(
 
         ## -- end of fruit growth - simulation is stopped :
         if np.isnan(stop_sim_ddcum): # if based on sucrose content (default)
-            sucrose = FM[0][6]
-            if sucrose >= params.growth.sucrose_ripe_thresh:
+            sucrose = FM[0][5]
+            if sucrose >= sucrose_ripe_thresh:
                 if verbose:
                      print('The fruit is ripe: Sucrose threshhold reached.')
                 break
         else: # else based on cumulated degree-days
-            if dd_cum >= params.growth.stop_sim_ddcum:
+            if dd_cum >= stop_sim_ddcum:
                 if verbose:
                      print('The fruit is ripe: Degree-days threshhold reached.')
                 break
