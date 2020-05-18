@@ -58,7 +58,14 @@ for i in range(100):
     bloom_date = '01/11/2002'
     nb_fruits = random.randrange(1, 4)
     nb_leaves = random.randrange(10, 20)
-    DM_fruit_0 = 0.97 * np.random.normal(13.9, 4.1) + 0.03 * np.random.normal(29.2, 0.66)
+    weight_1 = params.growth.fruitDM0_weight_1
+    mu_1 = params.growth.fruitDM0_mu_1
+    sigma_1 = params.growth.fruitDM0_sigma_1
+    weight_2 = params.growth.fruitDM0_weight_2
+    mu_2 = params.growth.fruitDM0_mu_2
+    sigma_2 = params.growth.fruitDM0_sigma_2
+
+    DM_fruit_0 = weight_1 * np.random.normal(mu_1, sigma_1) + weight_2 * np.random.normal(mu_2, sigma_2)
     sunlit_bs_sample = random.randrange(0, 5)
     sunlit_bs = sunlit_fractions.iloc[:,sunlit_bs_sample].to_numpy()
     model_error = ''

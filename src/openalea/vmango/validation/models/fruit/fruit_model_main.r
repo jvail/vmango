@@ -50,7 +50,7 @@ fruitmodel <- function( bloom_date,
   ## -- fruit dry mass at the end of cell division :
   if (is.nan(DM_fruit_0)) {
     ## if not fixed as input, randomly sampled within a bimodal distribution (from Léchaudel)
-    DM_fruit_0 <- 0.97 * rnorm(1, mean = 13.9, sd = 4.1) + 0.03 * rnorm(1, mean = 29.2, sd = 0.66)
+    DM_fruit_0 <- fruitDM0_weight_1 * rnorm(1, mean = fruitDM0_mu_1, sd = fruitDM0_sigma_1) + fruitDM0_weight_2 * rnorm(1, mean = fruitDM0_mu_2, sd = fruitDM0_sigma_2)
   }
 
   ## -- fruit dry mass at the first simulation date :
@@ -60,7 +60,7 @@ fruitmodel <- function( bloom_date,
   }
 
   ## -- leaf to fruit ratio :
-  LF <- nb_leaves / nb_fruits
+  LFratio <- nb_leaves / nb_fruits
 
 
   # ========================================================================================================================
@@ -79,7 +79,7 @@ fruitmodel <- function( bloom_date,
                     weather_hourly_T = weather_hourly_df$T,
                     weather_hourly_RH = weather_hourly_df$RH,
                     sunlit_bs = sunlit_bs,
-                    LF = LF,
+                    LFratio = LFratio,
                     DM_fruit_0 = DM_fruit_0,
                     DM_fruit_ini = DM_fruit_ini,
                     sim_date_ini = ifelse(is.nan(sim_date_ini),
@@ -96,7 +96,7 @@ fruitmodel <- function( bloom_date,
   # ========================================================================================================================
 
   growth_df <- result$growth_df
-  growth_df$LF <- rep(LF, nrow(growth_df))
+  growth_df$LFratio <- rep(LFratio, nrow(growth_df))
   growth_df$sunlit_bs <- rep(sum(sunlit_bs)/24, nrow(growth_df))
   growth_df$DAB <- result$DAB[1:nrow(result$growth_df)]
 

@@ -1,5 +1,5 @@
 R = 8.3                             # gaz constant [cm3 MPa mol-1 K-1]
-d_W = 1                             # water density [g cm-3]
+density_W = 1                       # water density [g cm-3]
 MM_water = 18                       # molecular mass of water [g mol-1]
 MM_mal = 134                        # molecular mass of malic acid [g mol-1]
 MM_cit = 192                        # molecular mass of citric acid [g mol-1]
