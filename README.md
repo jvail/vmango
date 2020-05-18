@@ -40,6 +40,7 @@ ipython
 
 ```console
 conda activate vmango
+conda install -y -c conda-forge jupyterlab
 python -m ipykernel install --user --name vmango
-jupyter notebook
+jupyter lab
 ```
