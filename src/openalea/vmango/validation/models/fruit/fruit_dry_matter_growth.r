@@ -17,7 +17,7 @@
 # ------------------------------------------------------------------------------------------------------------------------
 # - calculation of degree-days : based on lower temperature threshold (vs. lower and upper temperature thresholds in the original model)
 # - MODIF 2015-04_1 : a condition on P_rate_shaded (P_rate_sunlit) was added to select values > 0 because P_rate_shaded (P_rate_sunlit) can be ≤ 0 when PAR is very low
-# - MODIF 2017-05_1 : a minimal threshold was added for Pmax to avoid that P_rate_shaded (P_rate_sunlit) ≤ 0 for branches without fruits (i.e. with D_fruit = 0)
+# - MODIF 2017-05_1 : a minimal threshold was added for Pmax to avoid that P_rate_shaded (P_rate_sunlit) ≤ 0 for branches without fruits (i.e. with D_fruit = 0) - TO BE ACTIVATED -
 
 
 growth_DM <- function( GR,
@@ -72,8 +72,8 @@ growth_DM <- function( GR,
   ## -- carbon assimilation by leaf photosynthesis (eq.3) :
   LA_sunlit <- sunlit_bs[PAR>0] * sunlit_ws[PAR>0] * LA
   LA_shaded <- LA - LA_sunlit
-  photo_shaded <- sum(P_rate_shaded[P_rate_shaded>0] * LA_shaded[P_rate_shaded>0]) * k                                                          # _MODIF 2015-04_1
-  photo_sunlit <- sum(P_rate_sunlit[P_rate_sunlit>0] * LA_sunlit[P_rate_sunlit>0]) * k                                                          # _MODIF 2015-04_1
+  photo_shaded <- sum(P_rate_shaded[P_rate_shaded>0] * LA_shaded[P_rate_shaded>0]) * k                                           # _MODIF 2015-04_1
+  photo_sunlit <- sum(P_rate_sunlit[P_rate_sunlit>0] * LA_sunlit[P_rate_sunlit>0]) * k                                           # _MODIF 2015-04_1
   photo <- photo_shaded + photo_sunlit
 
   # ========================================================================================================================

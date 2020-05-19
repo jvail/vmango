@@ -90,7 +90,8 @@ growth <- function( bloom_date,
   ## -- initial fresh and dry mass of fruit compartements :
   ##    from empirical relationships in Léchaudel (2004)
   FM_fruit_ini <- e_fruitDM2FM_1 * DM_fruit_ini ^ e_fruitDM2FM_2
-  W_fleshpeel_ini <- (e_fruit2fleshW_1 * (FM_fruit_ini - DM_fruit_ini) ^ e_fruit2fleshW_2) + (e_fruit2peelW_1 * (FM_fruit_ini - DM_fruit_ini) ^ e_fruit2peelW_2)
+  W_fleshpeel_ini <- (e_fruit2fleshW_1 * (FM_fruit_ini - DM_fruit_ini) ^ e_fruit2fleshW_2) + 
+                     (e_fruit2peelW_1  * (FM_fruit_ini - DM_fruit_ini) ^ e_fruit2peelW_2)
   DM_fleshpeel_ini <- (e_fruit2fleshDM_1 * DM_fruit_ini ^ e_fruit2fleshDM_2) + (e_fruit2peelDM_1 * DM_fruit_ini ^ e_fruit2peelDM_2)
   W_flesh_ini <- e_fleshpeel2fleshW * W_fleshpeel_ini
   DM_flesh_ini <- e_fleshpeel2fleshDM * DM_fleshpeel_ini

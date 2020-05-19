@@ -172,12 +172,12 @@ def fruitmodel(idsimu, bloom_date, nb_fruits, nb_leaves, dumpdir = None):
     result = None
 
     try:
-        weight_1 = params.growth.fruitDM0_weight_1
-        mu_1 = params.growth.fruitDM0_mu_1
-        sigma_1 = params.growth.fruitDM0_sigma_1
-        weight_2 = params.growth.fruitDM0_weight_2
-        mu_2 = params.growth.fruitDM0_mu_2
-        sigma_2 = params.growth.fruitDM0_sigma_2
+        weight_1 = params.main.fruitDM0_weight_1
+        mu_1 = params.main.fruitDM0_mu_1
+        sigma_1 = params.main.fruitDM0_sigma_1
+        weight_2 = params.main.fruitDM0_weight_2
+        mu_2 = params.main.fruitDM0_mu_2
+        sigma_2 = params.main.fruitDM0_sigma_2
 
         DM_fruit_0 = weight_1 * np.random.normal(mu_1, sigma_1) + weight_2 * np.random.normal(mu_2, sigma_2)
         sunlit_bs = sunlit_fractions.iloc[:,random.randrange(0, 5)].to_numpy()

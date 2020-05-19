@@ -62,8 +62,10 @@ growth_FM <- function( date,
   # ========================================================================================================================
   ## from empirical relationships in Léchaudel (2004)
 
-  DM_fleshpeel_previous <- (e_fruit2fleshDM_1 * (DM_fruit_previous) ^ e_fruit2fleshDM_2) + (e_fruit2peelDM_1 * (DM_fruit_previous) ^ e_fruit2peelDM_2)
-  DM_fleshpeel_delta <- (e_fruit2fleshDM_1 * e_fruit2fleshDM_2 * (DM_fruit) ^ (e_fruit2fleshDM_2 - 1) + e_fruit2peelDM_1 * e_fruit2peelDM_2 * (DM_fruit) ^ (e_fruit2peelDM_2 - 1)) * (DM_fruit - DM_fruit_previous)
+  DM_fleshpeel_previous <- (e_fruit2fleshDM_1 * (DM_fruit_previous) ^ e_fruit2fleshDM_2) + 
+                           (e_fruit2peelDM_1  * (DM_fruit_previous) ^ e_fruit2peelDM_2)
+  DM_fleshpeel_delta <- ( e_fruit2fleshDM_1 * e_fruit2fleshDM_2 * (DM_fruit) ^ (e_fruit2fleshDM_2 - 1) + 
+                          e_fruit2peelDM_1  * e_fruit2peelDM_2  * (DM_fruit) ^ (e_fruit2peelDM_2 - 1) ) * (DM_fruit - DM_fruit_previous)
   DM_fleshpeel_delta <- max(DM_fleshpeel_delta, 0)
   DM_flesh_previous <- e_fleshpeel2fleshDM * DM_fleshpeel_previous
   W_flesh_previous <- e_fleshpeel2fleshW * W_fleshpeel_previous
@@ -109,7 +111,7 @@ growth_FM <- function( date,
   mass_Mg  <- prop_Mg  * DM_flesh_previous ;      nmol_Mg  <- mass_Mg  / MM_Mg
   mass_Ca  <- prop_Ca  * DM_flesh_previous ;      nmol_Ca  <- mass_Ca  / MM_Ca
   mass_NH4 <- prop_NH4 * DM_flesh_previous ;      nmol_NH4 <- mass_NH4 / MM_NH4
-  mass_Na  <- prop_Na  * DM_flesh_previous ;       nmol_Na <- mass_Na  / MM_Na
+  mass_Na  <- prop_Na  * DM_flesh_previous ;      nmol_Na  <- mass_Na  / MM_Na
   mass_glc <- prop_glc * DM_flesh_previous ;      nmol_glc <- mass_glc / MM_glc
   mass_frc <- prop_frc * DM_flesh_previous ;      nmol_frc <- mass_frc / MM_frc
   mass_suc <- prop_suc * DM_flesh_previous ;      nmol_suc <- mass_suc / MM_suc
@@ -141,7 +143,7 @@ growth_FM <- function( date,
   # ========================================================================================================================
 
   ## -- cell wall extensibility (eq.18) :
-  if (is.nan(dd_thresh)) {                                                                                                       # _MODIF 2017-05_1
+  if (is.nan(dd_thresh)) {                                                                                                          # _MODIF 2017-05_1
     ## if not fixed as input, set from an empirical relationship
     dd_thresh <- ddthres_1 * DM_fruit_0 + ddthres_2
   }
@@ -167,10 +169,10 @@ growth_FM <- function( date,
 
   ## -- turgor pressure in the fruit (defined by combining eq.11 and eq.13) :
   ALf <- A_fruit * aLf
-  numerator <- Phi * V * Y  +  ALf * (water_potential_stem + osmotic_pressure_fruit) / density_W - transpiration_fruit / density_W + DM_fleshpeel_delta / density_DM
+  numerator <- Phi * V * Y  +  ALf * (water_potential_stem + osmotic_pressure_fruit) / density_W - transpiration_fruit / density_W + 
+               DM_fleshpeel_delta / density_DM
   denominator <- Phi * V + ALf / density_W
 
-  Phi * V * Y  +  ALf * (water_potential_stem + osmotic_pressure_fruit) / density_W - transpiration_fruit / density_W + DM_fleshpeel_delta / density_DM
   turgor_pressure_fruit <- numerator / denominator
   if (turgor_pressure_fruit < Y) {
     turgor_pressure_fruit <- water_potential_stem + osmotic_pressure_fruit - (transpiration_fruit - DM_fleshpeel_delta * density_W / density_DM) / ALf

@@ -23,12 +23,12 @@ def growth_main(
 
     LFratio = nb_leaves / nb_fruits
     if np.isnan(DM_fruit_0):
-        weight_1 = params.growth.fruitDM0_weight_1
-        mu_1 = params.growth.fruitDM0_mu_1
-        sigma_1 = params.growth.fruitDM0_sigma_1
-        weight_2 = params.growth.fruitDM0_weight_2
-        mu_2 = params.growth.fruitDM0_mu_2
-        sigma_2 = params.growth.fruitDM0_sigma_2
+        weight_1 = params.main.fruitDM0_weight_1
+        mu_1 = params.main.fruitDM0_mu_1
+        sigma_1 = params.main.fruitDM0_sigma_1
+        weight_2 = params.main.fruitDM0_weight_2
+        mu_2 = params.main.fruitDM0_mu_2
+        sigma_2 = params.main.fruitDM0_sigma_2
         DM_fruit_0 = weight_1 * np.random.normal(mu_1, sigma_1) + weight_2 * np.random.normal(mu_2, sigma_2)
     if np.isnan(DM_fruit_ini):
         DM_fruit_ini = DM_fruit_0

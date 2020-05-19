@@ -1,6 +1,7 @@
 
 localdir = './' #getSrcDirectory(function(x) {x})
 envdata = '../../../../../../share/environment/' #getSrcDirectory(function(x) {x})
+
 fruitmodel <- function( bloom_date,
                         nb_fruits,
                         nb_leaves,
@@ -50,7 +51,8 @@ fruitmodel <- function( bloom_date,
   ## -- fruit dry mass at the end of cell division :
   if (is.nan(DM_fruit_0)) {
     ## if not fixed as input, randomly sampled within a bimodal distribution (from Léchaudel)
-    DM_fruit_0 <- fruitDM0_weight_1 * rnorm(1, mean = fruitDM0_mu_1, sd = fruitDM0_sigma_1) + fruitDM0_weight_2 * rnorm(1, mean = fruitDM0_mu_2, sd = fruitDM0_sigma_2)
+    DM_fruit_0 <- fruitDM0_weight_1 * rnorm(1, mean = fruitDM0_mu_1, sd = fruitDM0_sigma_1) +
+                  fruitDM0_weight_2 * rnorm(1, mean = fruitDM0_mu_2, sd = fruitDM0_sigma_2)
   }
 
   ## -- fruit dry mass at the first simulation date :

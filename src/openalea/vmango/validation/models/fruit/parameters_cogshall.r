@@ -1,7 +1,12 @@
 ## FRUIT MODEL PARAMETERS - cultivar Cogshall
 
 ## [main]
-
+fruitDM0_weight_1 = 0.97        # specific parameter for fruit dry mass distribution at the end of cell division [dimensionless]
+fruitDM0_mu_1 = 13.9	          # specific parameter for fruit dry mass distribution at the end of cell division [g DM]
+fruitDM0_sigma_1 = 4.1          # specific parameter for fruit dry mass distribution at the end of cell division [g DM]
+fruitDM0_weight_2 = 0.03        # specific parameter for fruit dry mass distribution at the end of cell division [dimensionless]
+fruitDM0_mu_2 = 29.2            # specific parameter for fruit dry mass distribution at the end of cell division [g DM]
+fruitDM0_sigma_2 = 0.66         # specific parameter for fruit dry mass distribution at the end of cell division [g DM]
 
 ## [growth]
 sucrose_ripe_thresh = 0.04      # threshold sucrose content in the flesh beyond which fruit is assumed ripe [g g-1 FM]
@@ -9,16 +14,10 @@ stop_sim_ddcum = NaN
 dd_cum_0 = 352.72               # cumulated degree-days at the end of cell division [dd]
 e_fruitDM2FM_1 = 23.647         # specific parameter for fruit fresh mass calculation based on fruit dry mass (for fruits with L < 105 mm) [g1-0,6182 DM]
 e_fruitDM2FM_2 = 0.6182         # specific parameter for fruit fresh mass calculation based on fruit dry mass (for fruits with L < 105 mm) [dimensionless]
-e_fruit2peelW_1 = 0.4086	    # specific parameter for fruit peel water mass calculation based on fruit water mass [g1-0,7428 H20]
-e_fruit2peelW_2 = 0.7428	    # specific parameter for fruit peel water mass calculation based on fruit water mass [dimensionless]
-e_fruit2fleshW_1 = 0.5874	    # specific parameter for fruit flesh water mass calculation based on fruit water mass [g1-1,0584 H2O]
-e_fruit2fleshW_2 = 1.0584	    # specific parameter for fruit flesh water mass calculation based on fruit water mass [dimensionless]
-fruitDM0_weight_1 = 0.97        # specific parameter for fruit dry mass distribution at the end of cell division [dimensionless]
-fruitDM0_mu_1 = 13.9	        # specific parameter for fruit dry mass distribution at the end of cell division [g DM]
-fruitDM0_sigma_1 = 4.1          # specific parameter for fruit dry mass distribution at the end of cell division [g DM]
-fruitDM0_weight_2 = 0.03        # specific parameter for fruit dry mass distribution at the end of cell division [dimensionless]
-fruitDM0_mu_2 = 29.2            # specific parameter for fruit dry mass distribution at the end of cell division [g DM]
-fruitDM0_sigma_2 = 0.66         # specific parameter for fruit dry mass distribution at the end of cell division [g DM]
+e_fruit2peelW_1 = 0.4086	      # specific parameter for fruit peel water mass calculation based on fruit water mass [g1-0,7428 H20]
+e_fruit2peelW_2 = 0.7428	      # specific parameter for fruit peel water mass calculation based on fruit water mass [dimensionless]
+e_fruit2fleshW_1 = 0.5874	      # specific parameter for fruit flesh water mass calculation based on fruit water mass [g1-1,0584 H2O]
+e_fruit2fleshW_2 = 1.0584	      # specific parameter for fruit flesh water mass calculation based on fruit water mass [dimensionless]
 
 ## [dry_matter]
 Tbase_fruit = 16                # base temperature for degree-days calculation [°C]
