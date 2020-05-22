@@ -1,8 +1,8 @@
 # setup env
 
 ```console
-conda create -y -n lpy3 -c fredboudon -c conda-forge openalea.lpy openalea.mtg r toml
-conda activate lpy3
+conda create -y -n vmango -c fredboudon -c conda-forge openalea.lpy openalea.mtg r toml future rpy2
+conda activate vmango
 ```
 
 # build V-Mango
@@ -39,7 +39,8 @@ ipython
 # jupyter
 
 ```console
-conda activate lpy3
-python -m ipykernel install --user --name lpy3
-jupyter notebook
+conda activate vmango
+conda install -y -c conda-forge jupyterlab
+python -m ipykernel install --user --name vmango
+jupyter lab
 ```

@@ -69,9 +69,9 @@ class ProbaTable(object):
             if 'number' in extrafactors and self.family != eGaussian: extrafactors.remove('number')
             lextrafactors = list(extrafactors)
             lextrafactors.remove('probability')
-            if self.family == eGaussian:                
-                lextrafactors.remove('stderror')                
-                lextrafactors.remove('number')                
+            if self.family == eGaussian:
+                lextrafactors.remove('stderror')
+                lextrafactors.remove('number')
             if len(lextrafactors) != 0 :
                 raise ValueError('Unrecognized factors', self.name, self.fname, lextrafactors)
 
@@ -105,10 +105,10 @@ class ProbaTable(object):
 
 
     def get_proba_value(self, args):
-        if len(args) < len(self.factors): 
+        if len(args) < len(self.factors):
             raise ValueError('Invalid number of factors.',args, self.factors)
         for arg, value in list(args.items()):
-            if arg in self.factorsvalues and not value in self.factorsvalues[arg]: 
+            if arg in self.factorsvalues and not value in self.factorsvalues[arg]:
                 #print arg, value
                 if arg in ['Nature_F','Nature_Ancestor_F'] and value == eFruiting:
                     if eFlowering in self.factorsvalues[arg]:
@@ -124,7 +124,7 @@ class ProbaTable(object):
             return self.values[factoractualvalue]
         except KeyError as e:
             # print self.factors, factoractualvalue, self.type, self.name
-            raise KeyError(self.factors, e.args)            
+            raise KeyError(self.factors, e.args)
 
     def realization(self, **args):
         from numpy import cumsum
@@ -136,7 +136,7 @@ class ProbaTable(object):
         elif self.family == ePoisson:
             return int( poisson(probavalue[0],1) )
         elif self.family == eGaussian:
-            return float( normal(probavalue[0],probavalue[1]*sqrt(probavalue[2]),1) )
+            return float(normal(probavalue[0], probavalue[1]*sqrt(0 if probavalue[2] <= 0 else probavalue[2]), 1))
         elif self.family == eMultinomial:
             check_compat = True
             if check_compat:
@@ -247,7 +247,7 @@ def make_repetition(proba_table, maxcycle = 10):
 
 global_proba_tables = {}
 current_proba_table = None
-    
+
 def get_proba_tables(variety = 'cogshall', estimationtype = eSelectedGlm, restriction = None):
     global global_proba_tables
     tableid = (variety, estimationtype, restriction)
@@ -336,7 +336,7 @@ def appendmonthdelta(intialdate, monthdelta):
             dyear = (burst_month-1) // 12
             burst_year += dyear
             burst_month -=  dyear*12
-            if not(1 <= burst_month <= 12): 
+            if not(1 <= burst_month <= 12):
                 raise ValueError('Invalid month',burst_month, monthdelta, self.burst_date.month)
         return burst_year, burst_month
 
@@ -359,11 +359,11 @@ def find_closest_values(value, existingvalues, keyordering = None):
     else: return (existingvalues[valueindex-1],existingvalues[valueindex+1])
 
 class UnitDev(object):
-    def __init__(self, Burst_Date, 
-                       Position_A, 
-                       Nature_F = None, 
+    def __init__(self, Burst_Date,
+                       Position_A,
+                       Nature_F = None,
                        Position_Ancestor_A = None,
-                       Nature_Ancestor_F = None, 
+                       Nature_Ancestor_F = None,
                        UnitType = eGU,
                        # Tree_Fruit_Load  = eLoaded,
                        WithinDelayMethod = eDeltaPoissonForWithin,
@@ -375,8 +375,8 @@ class UnitDev(object):
         self.unittype = UnitType
 
         self.params = dict(Burst_Month = Burst_Date.month,
-                           Position_A = Position_A, 
-                           Position_Ancestor_A = Position_Ancestor_A, 
+                           Position_A = Position_A,
+                           Position_Ancestor_A = Position_Ancestor_A,
                            Nature_Ancestor_F   = Nature_Ancestor_F, # eVegetative if Nature_Ancestor_F == eVegetative else eFlowering,
                            #Tree_Fruit_Load     = Tree_Fruit_Load
                            Cycle = self.cycle
@@ -527,7 +527,7 @@ class UnitDev(object):
             return 1
 
     def nb_gu_children(self, cycle = eWithinCycle):
-        
+
         try:
             return self.get_realization('nb_gu_children',cycle)+1
         except KeyError as ie:
@@ -589,7 +589,7 @@ class UnitDev(object):
             return self.get_realization('mixedinflo_burst')
         except KeyError as ie:
             return False
-    
+
     def is_mixedinflo_apical(self):
         try:
             return self.get_realization('has_apical_mi_children')
@@ -622,11 +622,11 @@ class UnitDev(object):
 
                 if veg_burst:
                     apical_child = self.has_apical_gu_child()
-                    
+
                     #nb_children  = self.nb_gu_children()
                     #nb_lateral_gu_children = nb_children - apical_child
 
-                    nb_lateral_gu_children = 0 
+                    nb_lateral_gu_children = 0
                     if not apical_child or self.has_lateral_gu_children():
                         nb_lateral_gu_children += self.nb_lateral_gu_children()
         else :
@@ -640,7 +640,7 @@ class UnitDev(object):
                 mi_burst_date = self.mixedinflo_burstdate()
 
             if self.has_table() and self.flowering():
-                self.paramsdelayed['Nature_F'] = eFlowering                
+                self.paramsdelayed['Nature_F'] = eFlowering
                 nb_inflorescences = self.nb_inflorescences()
                 date_inflo_bloom, fweek  = self.flowering_date()
                 self.params['Flowering_Week'] = fweek

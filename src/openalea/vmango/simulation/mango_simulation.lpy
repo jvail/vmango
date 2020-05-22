@@ -35,9 +35,9 @@ seed(SEED)
 nprand.seed(SEED)
 
 def normalize_imgs(path = '../../../../share/textures'):
-  for i in range(execContext().turtle.getColorListSize()):
+  for i in range(len(execContext().turtle.getColorList())):
     mat = execContext().turtle.getMaterial(i)
-    if mat.isTexture(): 
+    if mat.isTexture():
       image = mat.image
       image.filename = os.path.abspath(os.path.join(path,os.path.basename(image.filename)))
 
@@ -68,14 +68,14 @@ height_max_3 = max([mtg.Height(gu) for gu in mm.get_terminal_gus_of_tree_at_cycl
 height_max = max([mtg.Height(gu) for gu in mm.get_terminal_gus_of_tree_at_cycle(mtg,treeid,5)])
 
 if TIMESTEP < 1:
-  def todatetime(d,h=12,m=0,s=0): 
+  def todatetime(d,h=12,m=0,s=0):
     if d is None: return None
     return datetime(d.year,d.month,d.day,h,m,s)
   ud.todatetime = todatetime
 
 init_date  = vegetative_cycle_begin(4)
 if not 'final_date' in globals():
-    final_date = fruiting_cycle_end(5) # 
+    final_date = fruiting_cycle_end(5) #
 
 first_date =  init_date
 last_date  = todatetime(final_date)
@@ -124,8 +124,8 @@ if not 'GLM_RESTRICTION' in globals():
                      4 : eNatureFRestriction,
                      5 : eAllRestriction }[_GLM_RESTRICTION]
 if not 'GLM_TYPE' in globals():
-  GLM_TYPE = { 1 : eCompleteGlm, 
-               2 : eSelectedGlm, 
+  GLM_TYPE = { 1 : eCompleteGlm,
+               2 : eSelectedGlm,
                3 : eInteractionGlm}[_GLM_TYPE]
 
 def Start():
@@ -135,21 +135,21 @@ def Start():
   current_date  = first_date
   current_cycle = get_vegetative_cycle(current_date)
   current_temperature = [get_temperature(first_date)]
-  
+
   backward()
 
 
 def StartEach():
   useGroup(1)
   backward()
-  
+
   global previous_date, current_date, current_cycle, current_timestep, current_temperatures
-  
+
   previous_date = current_date
   current_date += delta_date
-  
+
   archibuilder.starteach(current_date)
-  
+
   if FRUIT_MODEL and fruitmanager.has_fruiting_in_period(previous_date, current_date):
      current_date = fruitmanager.get_first_fruiting_start_date(previous_date, current_date)
      current_timestep = (current_date - previous_date).days
@@ -158,10 +158,10 @@ def StartEach():
     current_timestep = (current_date - previous_date).days
   else:
     current_timestep = TIMESTEP
-  
+
   current_cycle = get_vegetative_cycle(current_date)
   #print '>' , current_date, current_cycle, isFrameDisplayed()
-  
+
   if current_timestep > 1:
     current_temperatures = [get_temperature(cdate) for cdate in date_xrange(previous_date+timedelta(days=1),current_date+timedelta(days=1))]
   else:
@@ -172,16 +172,16 @@ resultmtg = None
 
 def EndEach(lstring):
   archibuilder.endeach(current_date)
-  
+
   if FRUIT_MODEL and fruitmanager.is_fruiting_start_date(current_date):
     fruitmanager.applymodel(lstring, current_date)
-    if fruitmanager.modelenabled and isFrameDisplayed() :
-        Viewer.showMessage('Fruit model evaluation : '+str(current_date), 1000)
-  
+    #if fruitmanager.modelenabled and isFrameDisplayed() :
+    #    Viewer.showMessage('Fruit model evaluation : '+str(current_date), 1000)
+
   if current_date == final_date and (getIterationNb() +1) < __lsystem__.derivationLength:
     End(lstring)
     Stop()
-  
+
   #if lscene:
   #    abspath_imgs(lscene)
   #    return lscene
@@ -202,7 +202,7 @@ module GU(p), Inflorescence(p): scale = 2
 module Fruit(p)
 module A(p), InflorescenceBud(p) : scale = 3
 module Internode, Leaf : scale = 3
-module Information : scale = 1 
+module Information : scale = 1
 module Pedicel, Flower
 module Petiole, fLeaf, gLeaf
 
@@ -215,9 +215,9 @@ if not 'TextureBaseColor' in globals():
 
 initial_view = 1
 
-Axiom: 
-  nproduce Information 
-  nproduce @Tp(0,0,1) @Ts(ELASTICITY) 
+Axiom:
+  nproduce Information
+  nproduce @Tp(0,0,1) @Ts(ELASTICITY)
   if RESOLUTION ==2 : nproduce SectionResolution(16)
   if GENERALIZEDCYLINDER: nproduce @Gc
   treeparam = ParameterSet(treename=treename, variety='cogshall', date=current_date,seed=SEED, mtgid=treeid,loading=eLoaded)
@@ -226,18 +226,18 @@ Axiom:
     treeparam.factor_restriction = RestrictionName[GLM_RESTRICTION]
     treeparam.fruit_model = FRUIT_MODEL
   nproduce Tree(treeparam)
-  
+
   ARCHI = True
   if ARCHI:
       archibuilder.init(first_uc, current_date, estimationtype= GLM_TYPE, factorrestriction=GLM_RESTRICTION, repeatlastprobas=REPEAT_LASTPROBAS)
-  
+
   else:
       guparam = gumanager.set_dimensions(ParameterSet(burst_date=date(2003,4,1), position=eApical, position_parent=eApical, nbdescendants=1, leafy=True), current_date)
       nproduce +(60) GU(guparam)
 
       infloparam = inflomanager.set_dimensions(ParameterSet(burst_date=first_date, nb_fruits=2, fruiting = False, fruits_maturity_date=date(2003,12,15), fruits_weight=400), current_date)
       nproduce  InflorescenceBud(infloparam)
-  
+
 
 derivation length: int(nbsteps)
 ignore: / &
@@ -300,18 +300,18 @@ maximum depth:10
 
 # Setup  tropism and legend
 # Note that the 2D legend cause a crash of lpy when recording the animation
-Information : 
+Information :
   if TIMEBAR:
     ar = False
     envsize = 0.8
     green,red,yellow,blue = 0,1,2,3
-    nproduce [ @2D @R @Ts(0),(blue) @M(-0.90,-0.85) 
+    nproduce [ @2D @R @Ts(0),(blue) @M(-0.90,-0.85)
     nproduce Label('Tree: '+treename+'. Date: '+str(current_date.year)+'-'+str(current_date.month).zfill(2)+'-'+str(current_date.day).zfill(2)+'. Cycle: '+str(get_vegetative_cycle(current_date))+'. T: '+str(current_temperatures[-1])+' C',14)
     clength = (current_date - first_date).days/float((last_date - first_date).days)
     nproduce ,(yellow) @M(-0.91,-0.9) -(90) _(0.04) F(0.01)
     if clength > 0:
       nproduce ,(green) @M(-0.9,-0.9) _(0.03) F(clength*envsize)
-      nproduce ,(red) @M(-0.9+clength*envsize,-0.9) _(0.04) F(0.01)  
+      nproduce ,(red) @M(-0.9+clength*envsize,-0.9) _(0.04) F(0.01)
     if clength < 1:
       nproduce ,(yellow) @M(-0.9+envsize,-0.9) _(0.04) F(0.01)
       nproduce ,(blue) @M(-0.9,-0.9) _(0.02) F(envsize)
@@ -325,7 +325,7 @@ GU(param):
   gumanager.plot(param, TEXTURE, LEAFY, DISTINCT_MI)
   pass
 
-Inflorescence(param): 
+Inflorescence(param):
    if WITH_INFLO:
        #print inflomanager.pheno_stadename.get(param.pheno_tts.stage,'S'), param.pheno_tts.rank_in_stage()
        inflomanager.plot(param, current_date)
@@ -371,9 +371,7 @@ def __initialiseContext__(context):
 	Color_11 = pgl.Texture2D(image = PGL_140675898004864 , )
 	Color_11.name = "Color_11"
 	context.turtle.setMaterial(11,Color_11)
-	PGL_140608034579296 = pgl.ImageTexture("PGL_140608034579296" , "/Users/fboudon/Develop/oagit/mangosim/share/textures/bark2.png" , )
-	PGL_140608034579296.name = "PGL_140608034579296"
-	Color_12 = pgl.Texture2D(image = PGL_140608034579296 , )
+	Color_12 = pgl.Material("Color_6" , ambient = (63,42,20) , diffuse = 1.67033 , specular = (0,0,0) , )
 	Color_12.name = "Color_12"
 	context.turtle.setMaterial(12,Color_12)
 	Color_14 = pgl.Material("Color_14" , ambient = (62,125,20) , diffuse = 1.032 , specular = (0,0,0) , )
@@ -435,83 +433,83 @@ def __initialiseContext__(context):
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
 	import openalea.plantgl.all as pgl
-	axis1 = pgl.BezierCurve2D(	
-	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.214286, 0.00865801, 1),(0.45671, 0.138528, 1)]) , 
+	axis1 = pgl.BezierCurve2D(
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.214286, 0.00865801, 1),(0.45671, 0.138528, 1)]) ,
 	    )
 	axis1.name = "axis1"
-	axis2 = pgl.BezierCurve2D(	
-	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.209957, -0.017316, 1),(0.491342, -0.0952381, 1)]) , 
+	axis2 = pgl.BezierCurve2D(
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.209957, -0.017316, 1),(0.491342, -0.0952381, 1)]) ,
 	    )
 	axis2.name = "axis2"
-	axis3 = pgl.BezierCurve2D(	
-	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.166667, 0, 1),(0.5, 0, 1)]) , 
+	axis3 = pgl.BezierCurve2D(
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.166667, 0, 1),(0.166667, 0, 1),(0.5, 0, 1)]) ,
 	    )
 	axis3.name = "axis3"
-	axis4 = pgl.BezierCurve2D(	
-	    pgl.Point3Array([(-0.5, 0, 1),(-0.158009, -0.047619, 1),(0.166667, 0.004329, 1),(0.443723, -0.393939, 1)]) , 
+	axis4 = pgl.BezierCurve2D(
+	    pgl.Point3Array([(-0.5, 0, 1),(-0.158009, -0.047619, 1),(0.166667, 0.004329, 1),(0.443723, -0.393939, 1)]) ,
 	    )
 	axis4.name = "axis4"
-	axis5 = pgl.BezierCurve2D(	
-	    pgl.Point3Array([(-0.416733, 0.0128104, 1),(0.2343, -0.076231, 1),(0.507411, -0.330906, 1),(0.662132, -0.814102, 1)]) , 
+	axis5 = pgl.BezierCurve2D(
+	    pgl.Point3Array([(-0.416733, 0.0128104, 1),(0.2343, -0.076231, 1),(0.507411, -0.330906, 1),(0.662132, -0.814102, 1)]) ,
 	    )
 	axis5.name = "axis5"
-	leafsection = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(-0.508209, 0.16873, 1),(-0.515031, 0.138195, 1),(-0.198373, -0.0924227, 1),(-0.00298323, 0.188761, 1),(0.0897461, -0.106293, 1),(0.555704, 0.0979703, 1),(0.545047, 0.12817, 1)]) , 
+	leafsection = pgl.NurbsCurve2D(
+	    ctrlPointList = pgl.Point3Array([(-0.508209, 0.16873, 1),(-0.515031, 0.138195, 1),(-0.198373, -0.0924227, 1),(-0.00298323, 0.188761, 1),(0.0897461, -0.106293, 1),(0.555704, 0.0979703, 1),(0.545047, 0.12817, 1)]) ,
 	    )
 	leafsection.name = "leafsection"
 	import openalea.plantgl.all as pgl
-	leafwidthgrowth = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(0, 0.0123039, 1),(0.289062, 0.0763736, 1),(0.289062, 0.454469, 1),(0.331839, 0.989763, 1),(1, 1, 1)]) , 
+	leafwidthgrowth = pgl.NurbsCurve2D(
+	    ctrlPointList = pgl.Point3Array([(0, 0.0123039, 1),(0.289062, 0.0763736, 1),(0.289062, 0.454469, 1),(0.331839, 0.989763, 1),(1, 1, 1)]) ,
 	    )
 	leafwidthgrowth.name = "leafwidthgrowth"
-	leafwidth = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(0, 0.0846264, 1),(0.239002, 1.00091, 1),(0.485529, 0.991241, 1),(0.718616, 1.00718, 1),(0.877539, 0.231273, 1),(1, 0.00332359, 1)]) , 
+	leafwidth = pgl.NurbsCurve2D(
+	    ctrlPointList = pgl.Point3Array([(0, 0.0846264, 1),(0.239002, 1.00091, 1),(0.485529, 0.991241, 1),(0.718616, 1.00718, 1),(0.877539, 0.231273, 1),(1, 0.00332359, 1)]) ,
 	    )
 	leafwidth.name = "leafwidth"
-	petioleCurve = pgl.BezierCurve2D(	
-	    pgl.Point3Array([(-0.543785, 0.192006, 1),(-0.178289, 0.176044, 1),(-0.0656355, 0.0728558, 1),(0.548469, 0.597983, 1),(0.397151, 0.581459, 1),(0.543571, 0.599108, 1)]) , 
+	petioleCurve = pgl.BezierCurve2D(
+	    pgl.Point3Array([(-0.543785, 0.192006, 1),(-0.178289, 0.176044, 1),(-0.0656355, 0.0728558, 1),(0.548469, 0.597983, 1),(0.397151, 0.581459, 1),(0.543571, 0.599108, 1)]) ,
 	    )
 	petioleCurve.name = "petioleCurve"
 	panel_0 = ({'active': True, 'visible': True, 'name': 'Panel GU'},[('Curve2D',axis1),('Curve2D',axis2),('Curve2D',axis3),('Curve2D',axis4),('Curve2D',axis5),('Curve2D',leafsection),('Function',leafwidthgrowth),('Function',leafwidth),('Curve2D',petioleCurve)])
-	radius_base03 = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(0, 0.131507, 1),(0.00454138, 0.0251277, 1),(0.578848, 0.00694723, 1),(1, 0.00524218, 1)]) , 
+	radius_base03 = pgl.NurbsCurve2D(
+	    ctrlPointList = pgl.Point3Array([(0, 0.131507, 1),(0.00454138, 0.0251277, 1),(0.578848, 0.00694723, 1),(1, 0.00524218, 1)]) ,
 	    )
 	radius_base03.name = "radius_base03"
-	inflo_radius = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(0, 0.160173, 1),(0.393939, 0.151515, 1),(0.735931, 0.0649351, 1),(1, 0.025974, 1)]) , 
+	inflo_radius = pgl.NurbsCurve2D(
+	    ctrlPointList = pgl.Point3Array([(0, 0.160173, 1),(0.393939, 0.151515, 1),(0.735931, 0.0649351, 1),(1, 0.025974, 1)]) ,
 	    )
 	inflo_radius.name = "inflo_radius"
-	radius = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(0, 0.107326, 1),(0.192635, 0.0975655, 1),(0.457142, 0.000244746, 1),(1, 0.026087, 1)]) , 
+	radius = pgl.NurbsCurve2D(
+	    ctrlPointList = pgl.Point3Array([(0, 0.107326, 1),(0.192635, 0.0975655, 1),(0.457142, 0.000244746, 1),(1, 0.026087, 1)]) ,
 	    )
 	radius.name = "radius"
-	leafsize = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(0, 0.431282, 1),(0.324129, 0.436757, 1),(0.408886, 0.416427, 1),(0.412274, 0.708684, 1),(0.844357, 0.703533, 1),(1, 0.246499, 1)]) , 
+	leafsize = pgl.NurbsCurve2D(
+	    ctrlPointList = pgl.Point3Array([(0, 0.431282, 1),(0.324129, 0.436757, 1),(0.408886, 0.416427, 1),(0.412274, 0.708684, 1),(0.844357, 0.703533, 1),(1, 0.246499, 1)]) ,
 	    )
 	leafsize.name = "leafsize"
-	leaflength = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(0, 1, 1),(0.00149779, 1.00072, 1),(1, 0.995671, 1),(1, 0.400121, 1)]) , 
+	leaflength = pgl.NurbsCurve2D(
+	    ctrlPointList = pgl.Point3Array([(0, 1, 1),(0.00149779, 1.00072, 1),(1, 0.995671, 1),(1, 0.400121, 1)]) ,
 	    )
 	leaflength.name = "leaflength"
-	leafpath = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(-0.5, 0, 1),(-0.145022, -0.0735931, 1),(0.0844156, -0.212121, 1),(0.123377, -0.497835, 1)]) , 
+	leafpath = pgl.NurbsCurve2D(
+	    ctrlPointList = pgl.Point3Array([(-0.5, 0, 1),(-0.145022, -0.0735931, 1),(0.0844156, -0.212121, 1),(0.123377, -0.497835, 1)]) ,
 	    )
 	leafpath.name = "leafpath"
 	panel_1 = ({'active': False, 'visible': True, 'name': 'Panel Unused'},[('Function',radius_base03),('Function',inflo_radius),('Function',radius),('Function',leafsize),('Function',leaflength),('Curve2D',leafpath)])
-	fruitprofile = pgl.BezierCurve2D(	
-	    pgl.Point3Array([(0.00563514, 0.994106, 1),(0.223956, 0.97883, 1),(0.425561, 0.771672, 1),(0.680945, 0.239898, 1),(0.509633, 0.00914747, 1),(0.0130125, 0.0011832, 1)]) , 
+	fruitprofile = pgl.BezierCurve2D(
+	    pgl.Point3Array([(0.00563514, 0.994106, 1),(0.223956, 0.97883, 1),(0.425561, 0.771672, 1),(0.680945, 0.239898, 1),(0.509633, 0.00914747, 1),(0.0130125, 0.0011832, 1)]) ,
 	    )
 	fruitprofile.name = "fruitprofile"
-	bract_axis = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(-0.5, 0, 1),(-0.166667, -0.168182, 1),(0.143939, -0.140909, 1),(0.504545, -0.113636, 1)]) , 
+	bract_axis = pgl.NurbsCurve2D(
+	    ctrlPointList = pgl.Point3Array([(-0.5, 0, 1),(-0.166667, -0.168182, 1),(0.143939, -0.140909, 1),(0.504545, -0.113636, 1)]) ,
 	    )
 	bract_axis.name = "bract_axis"
-	bract_section = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(-0.5, 0, 1),(-0.189394, -0.159091, 1),(0.221212, -0.186364, 1),(0.5, 0, 1)]) , 
+	bract_section = pgl.NurbsCurve2D(
+	    ctrlPointList = pgl.Point3Array([(-0.5, 0, 1),(-0.189394, -0.159091, 1),(0.221212, -0.186364, 1),(0.5, 0, 1)]) ,
 	    )
 	bract_section.name = "bract_section"
-	bract_width = pgl.NurbsCurve2D(	
-	    ctrlPointList = pgl.Point3Array([(0, 0.141879, 1),(0.0485817, 1.44717, 1),(1, 1.11933, 1),(1, 0.0236465, 1)]) , 
+	bract_width = pgl.NurbsCurve2D(
+	    ctrlPointList = pgl.Point3Array([(0, 0.141879, 1),(0.0485817, 1.44717, 1),(1, 1.11933, 1),(1, 0.0236465, 1)]) ,
 	    )
 	bract_width.name = "bract_width"
 	panel_2 = ({'active': True, 'visible': True, 'name': 'Panel Inflo'},[('Curve2D',fruitprofile),('Curve2D',bract_axis),('Curve2D',bract_section),('Function',bract_width)])

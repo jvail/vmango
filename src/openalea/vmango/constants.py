@@ -13,7 +13,7 @@ eLoaded, eNotLoaded = 1, 0
 eBinomial, ePoisson, eMultinomial, eGaussian = list(range(1,5))
 
 eCompleteGlm, eSelectedGlm, eInteractionGlm = 1,2,3
-GlmTypeName = {eCompleteGlm : 'complete_glm', eSelectedGlm : 'selected_glm', eInteractionGlm :'interaction_glm'} 
+GlmTypeName = {eCompleteGlm : 'complete_glm', eSelectedGlm : 'selected_glm', eInteractionGlm :'interaction_glm'}
 
 
 eWithinCycle, eLaterCycle = list(range(2))
@@ -30,20 +30,15 @@ eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNa
 eBurstDateOnlyRestriction, ePositionAOnlyRestriction, ePositionAncestorAOnlyRestriction, eNatureFOnlyRestriction = 15 - eBurstDateRestriction, 15 -  ePositionARestriction, 15 - ePositionAncestorARestriction, 15 -  eNatureFRestriction
 eAllRestriction, eNoRestriction = 15,0
 
-RestrictionName = { eBurstDateRestriction         : 'without_burst_month_and_flowering_week', 
-                    ePositionARestriction         : 'without_position_a', 
-                    ePositionAncestorARestriction : 'without_position_ancestor_a',                    
+RestrictionName = { eBurstDateRestriction         : 'without_burst_month_and_flowering_week',
+                    ePositionARestriction         : 'without_position_a',
+                    ePositionAncestorARestriction : 'without_position_ancestor_a',
                     eNatureFRestriction           : 'without_nature_f_and_nature_ancestor_f',
-                    eBurstDateOnlyRestriction         : 'with_only_burst_month_and_flowering_week', 
-                    ePositionAOnlyRestriction         : 'with_only_position_a', 
-                    ePositionAncestorAOnlyRestriction : 'with_only_position_ancestor_a',                    
+                    eBurstDateOnlyRestriction         : 'with_only_burst_month_and_flowering_week',
+                    ePositionAOnlyRestriction         : 'with_only_position_a',
+                    ePositionAncestorAOnlyRestriction : 'with_only_position_ancestor_a',
                     eNatureFOnlyRestriction           : 'with_only_nature_f_and_nature_ancestor_f',
                     eAllRestriction               : 'without_all',
                     eNoRestriction                : 'allfactors',
                     None                          : 'allfactors'
                     }
-
-# constants process models
- 
-R = 8.3                         # gaz constant [cm3 MPa mol-1 K-1] 
-MM_water = 18                   # molecular mass of water [g mol-1]
