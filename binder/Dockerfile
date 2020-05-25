@@ -1,16 +1,16 @@
 FROM node:12-buster-slim AS base
 
 # https://mybinder.readthedocs.io/en/latest/tutorials/dockerfile.html
-ARG NB_USER=user
+#ARG NB_USER=user
 ARG NB_UID=1000
-ENV USER ${NB_USER}
-ENV NB_UID ${NB_UID}
-ENV HOME /home/${NB_USER}
+#ENV USER ${NB_USER}
+#ENV NB_UID ${NB_UID}
+#ENV HOME /home/${NB_USER}
 
-RUN adduser --disabled-password \
-    --gecos "Default user" \
-    --uid ${NB_UID} \
-    ${NB_USER}
+#RUN adduser --disabled-password \
+#    --gecos "Default user" \
+#    --uid ${NB_UID} \
+#    ${NB_USER}
 COPY . ${HOME}
 USER root
 RUN chown -R ${NB_UID} ${HOME}
@@ -56,8 +56,5 @@ RUN git clone https://github.com/jvail/plantgl-jupyter.git && cd plantgl-jupyter
     python3 -m ipykernel install --name pgl-jupyter
 
 FROM plantgl-jupyter as jupyter
-COPY . ${HOME}
-USER root
-RUN chown -R ${NB_UID} ${HOME}
-RUN python3 setup.py develop
-USER ${NB_USER}
+RUN cd ${HOME} && python3 setup.py develop
+USER ${NB_UID}
