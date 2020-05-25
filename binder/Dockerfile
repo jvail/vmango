@@ -55,6 +55,6 @@ RUN cd plantgl-jupyter && npm install && npm run build && \
     jupyter labextension install . && \
     python3 -m ipykernel install --name pgl-jupyter
 
-FROM lpy as jupyter
+FROM plantgl-jupyter as vmango
 RUN cd ${HOME} && python3 setup.py develop
 USER ${NB_UID}
