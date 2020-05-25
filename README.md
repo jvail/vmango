@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/fredboudon/vmango.git)
-=======
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/fredboudon/vmango.git/master)
->>>>>>> develop
 
 # setup env
 
