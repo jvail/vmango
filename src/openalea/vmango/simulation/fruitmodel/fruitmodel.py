@@ -291,7 +291,7 @@ def applymodel(mtg, cycle, fruit_distance = 4, dump = True, dumptag = None, para
         else:
 
             # print 'Simu', idsimu, 'succeed', inflos, nb_fruits
-            dates = result["DATE"]
+            dates = result["date"]
             # dates = [d.to_pydatetime() for d in dates]
             newyear = bloom_date_date.year
             dates = [date(d.year+cycledecal, d.month, d.day) for d in dates]
