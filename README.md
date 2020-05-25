@@ -27,13 +27,16 @@ lpy
 * click 'Rewind'
 * click 'Run'
 
-# run V-Mango 'headless'
+# run V-Mango in ipython
 
 ```console
 cd src\openalea\vmango\simulation
 ipython
 %gui qt5
-%run runsimu.py
+from openalea.lpy import *
+l = Lsystem('src/openalea/vmango/simulation/mango_simulation.lpy')
+lstring = l.iterate()
+l.plot(lstring)
 ```
 
 # jupyter
