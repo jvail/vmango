@@ -1,6 +1,9 @@
 FROM jvail/plantgl-jupyter:v3.2
-COPY . /home/jovyan
+ARG NB_USER=jovyan
+ARG NB_UID=1000
+COPY . /home/${NB_USER}
 USER root
-RUN chown -R 1000 /home/jovyan
-RUN cd /home/jovyan && python3 setup.py develop
-USER jovyan
+RUN chown -R ${NB_UID} /home/${NB_USER}
+WORKDIR /home/${NB_USER}
+RUN python3 setup.py develop
+USER ${NB_USER}
