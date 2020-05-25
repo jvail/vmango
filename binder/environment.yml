@@ -1,0 +1,17 @@
+name: vmango
+channels:
+  - fredboudon
+  - conda-forge
+  - anaconda
+dependencies:
+  - openalea.lpy
+  - openalea.mtg
+  - r
+  - toml
+  - future
+  - rpy2
+  - pandas
+  - numpy
+  - pip
+  - pip:
+     - git+https://github.com/fredboudon/vmango.git
