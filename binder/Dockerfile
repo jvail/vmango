@@ -31,8 +31,16 @@ RUN pip3 install virtualenv toml matplotlib pandas future qtconsole numpy jupyte
 RUN pip3 install git+https://github.com/fredboudon/deploy.git --user
 RUN pip3 install git+https://github.com/fredboudon/mtg.git
 
+FROM python as plantgl-jupyter
+RUN git clone https://github.com/jvail/plantgl-jupyter.git && cd plantgl-jupyter
+RUN npm install && npm run build && \
+    pip3 install -e . && \
+    jupyter nbextension install --sys-prefix --overwrite --py pgljupyter && \
+    jupyter nbextension enable --sys-prefix --py pgljupyter && \
+    jupyter labextension install . && \
+    python3 -m ipykernel install --name pgl-jupyter
+
 FROM python as plantgl
-WORKDIR /build
 RUN git clone  https://github.com/jvail/plantgl.git  && cd plantgl && \
     git checkout plantgl-jupyter && \
     mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ../ && \
@@ -46,15 +54,6 @@ RUN git clone https://github.com/jvail/lpy.git && cd lpy && \
     make -j4 && make install && \
     cd .. && pip3 install .
 
-FROM lpy as plantgl-jupyter
-RUN git clone https://github.com/jvail/plantgl-jupyter.git && cd plantgl-jupyter && \
-    npm install && npm run build && \
-    pip3 install -e . && \
-    jupyter nbextension install --sys-prefix --overwrite --py pgljupyter && \
-    jupyter nbextension enable --sys-prefix --py pgljupyter && \
-    jupyter labextension install . && \
-    python3 -m ipykernel install --name pgl-jupyter
-
-FROM plantgl-jupyter as jupyter
+FROM lpy as jupyter
 RUN cd ${HOME} && python3 setup.py develop
 USER ${NB_UID}
