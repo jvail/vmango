@@ -48,7 +48,7 @@ RUN git clone https://github.com/jvail/lpy.git && cd lpy && \
 
 FROM lpy as plantgl-jupyter
 RUN git clone https://github.com/jvail/plantgl-jupyter.git && cd plantgl-jupyter && \
-    npm install && npm run build \
+    npm install && npm run build && \
     pip3 install -e . && \
     jupyter nbextension install --sys-prefix --overwrite --py pgljupyter && \
     jupyter nbextension enable --sys-prefix --py pgljupyter && \
