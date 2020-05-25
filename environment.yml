@@ -12,6 +12,8 @@ dependencies:
   - rpy2
   - pandas
   - numpy
+  - mesa-dri-drivers-cos6-x86_64
+  - mesa-dri1-drivers-cos6-x86_64
   - mesa-libgl-cos6-x86_64
   - mesa-libgl-devel-cos6-x86_64
   - pip
