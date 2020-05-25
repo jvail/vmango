@@ -13,6 +13,7 @@ dependencies:
   - pandas
   - numpy
   - mesa-libgl-cos6-x86_64
+  - mesa-libgl-devel-cos6-x86_64
   - pip
   - pip:
      - git+https://github.com/fredboudon/vmango.git
