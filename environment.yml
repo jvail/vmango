@@ -2,6 +2,7 @@ name: vmango
 channels:
   - fredboudon
   - conda-forge
+  - anaconda
 dependencies:
   - openalea.lpy
   - openalea.mtg
@@ -11,5 +12,7 @@ dependencies:
   - rpy2
   - pandas
   - numpy
+  - mesa-libgl-cos6-x86_64
+  - pip
   - pip:
      - git+https://github.com/fredboudon/vmango.git
