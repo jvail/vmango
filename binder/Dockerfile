@@ -3,7 +3,8 @@ FROM jvail/plantgl-jupyter:v3.3.2
 ARG NB_USER=jovyan
 ARG NB_UID=1000
 
-RUN R -e "install.packages(c('VGAM', 'multcomp', 'combinat'),dependencies=TRUE, repos='http://cran.rstudio.com/')"
+#RUN apt-get install -y r-base r-cran-vgam r-cran-multcomp r-cran-combinat
+#RUN R -e "install.packages(c('VGAM', 'multcomp', 'combinat'),dependencies=TRUE, repos='http://cran.rstudio.com/')"
 COPY . /home/${NB_USER}
 USER root
 RUN chown -R ${NB_UID} /home/${NB_USER}
