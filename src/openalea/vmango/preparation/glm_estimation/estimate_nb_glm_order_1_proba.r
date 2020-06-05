@@ -11,7 +11,7 @@ CONSIDER_FACTORS = NULL
 BASE_FACTORS = c("Burst_Month","Flowering_Week","Position_A","Position_Ancestor_A","Nature_Ancestor_F","Nature_F")
 
 # input and output directory
-share_dir = '../../../../share/'
+share_dir = '../../../../../share/'
 input_dir = paste(share_dir,'glm_estimate_input/cogshall/', sep="")
 output_basedir = paste(share_dir,'glm_output_proba/cogshall/', sep="")
 
@@ -1158,7 +1158,7 @@ gen_constraint_glm = function() {
   EXCLUDE_FACTORS <<- initialvalue
 }
 
-gen_constraint_glm()
+#gen_constraint_glm()
 
 gen_limited_glm = function() {
   initialvalue = CONSIDER_FACTORS
@@ -1170,7 +1170,7 @@ gen_limited_glm = function() {
   CONSIDER_FACTORS <<- initialvalue
 }
 
-gen_limited_glm()
+#gen_limited_glm()
 
 #EXCLUDE_FACTORS <<- 'all'
 #generate_outputdir(EXCLUDE_FACTORS)
