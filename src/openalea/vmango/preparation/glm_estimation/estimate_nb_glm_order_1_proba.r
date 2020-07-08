@@ -1158,7 +1158,7 @@ gen_constraint_glm = function() {
   EXCLUDE_FACTORS <<- initialvalue
 }
 
-gen_constraint_glm()
+#gen_constraint_glm()
 
 gen_limited_glm = function() {
   initialvalue = CONSIDER_FACTORS
@@ -1170,7 +1170,7 @@ gen_limited_glm = function() {
   CONSIDER_FACTORS <<- initialvalue
 }
 
-gen_limited_glm()
+#gen_limited_glm()
 
 #EXCLUDE_FACTORS <<- 'all'
 #generate_outputdir(EXCLUDE_FACTORS)
