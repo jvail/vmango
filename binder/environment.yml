@@ -14,4 +14,4 @@ dependencies:
   - numpy
   - pip
   - pip:
-     - git+https://github.com/fredboudon/vmango.git
+     - plantgl-jupyter

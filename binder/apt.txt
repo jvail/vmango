@@ -1,1 +1,5 @@
 libgl1-mesa-dev
+r-base
+r-cran-vgam
+r-cran-multcomp
+r-cran-combinat
