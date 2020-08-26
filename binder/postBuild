@@ -3,4 +3,4 @@ jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
 jupyter lab build
 jupyter lab clean
 python /home/jovyan/setup.py develop
-python /home/jovyan/share/scripts/make_glm_files.py
+python -m /home/jovyan/share/scripts/make_glm_files.py
