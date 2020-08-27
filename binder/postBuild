@@ -1,7 +1,8 @@
 #!/bin/bash
-jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
-jupyter lab build
-jupyter lab clean
+conda activate /srv/conda/envs/notebook
 cd /home/jovyan && pip install .
 python -c "help('modules')"
 python /home/jovyan/share/scripts/make_glm_files.py
+jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
+jupyter lab build
+jupyter lab clean
