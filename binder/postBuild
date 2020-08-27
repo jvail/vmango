@@ -1,4 +1,5 @@
 #!/bin/bash
+conda init bash
 conda activate /srv/conda/envs/notebook
 cd /home/jovyan && pip install .
 python -c "help('modules')"
