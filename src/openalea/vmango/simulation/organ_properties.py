@@ -825,7 +825,7 @@ class FruitManager (OrganManager):
                 ep, larg, int_ = self.fruit_dimensions(weight)
             else:
                 stage = 2
-                if fruitparam.hasattr('growth'):
+                if fruitparam.hasattr('growth') and current_date in fruitparam.growth:
                     weight = fruitparam.growth[current_date][0]
                     ep, larg, int_ = self.fruit_dimensions(weight)
                 else:
