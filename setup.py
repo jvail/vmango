@@ -49,8 +49,8 @@ setup(
 
     # Declare scripts and entry_points (extensions) of your package
     entry_points = {
-        #'console_scripts': [
-        #       'fake_script = openalea.fakepackage.amodule:console_script', ],
+        # 'make_glm': [
+        #       'make_glm = openalea.fakepackage.amodule:console_script', ],
         # 'gui_scripts': [
         #      'fake_gui = openalea.fakepackage.amodule:gui_script',],
         #
