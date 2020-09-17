@@ -1,4 +1,3 @@
-name: vmango
 channels:
   - fredboudon
   - conda-forge
