@@ -1,8 +1,6 @@
 set -ex
 
-conda init bash
-conda activate notebook
-#cd /home/jovyan && pip install -e .
+cd /home/jovyan && pip install -e .
 python -c "help('modules')"
 python /home/jovyan/share/scripts/make_glm_files.py
 jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
