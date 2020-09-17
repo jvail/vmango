@@ -35,7 +35,7 @@ setup(
 
     # Namespace packages creation by deploy
     namespace_packages = [namespace],
-    #create_namespaces = False,
+    create_namespaces = False,
     zip_safe= False,
 
     # Eventually include data in your package
