@@ -28,6 +28,9 @@ setup(
 
     # package installation
     packages= packages,
+    package_dir = {
+        '' : 'src'
+    },
     # package_dir= package_dir,
 
     # Namespace packages creation by deploy
