@@ -75,7 +75,7 @@ if TIMESTEP < 1:
 
 init_date  = vegetative_cycle_begin(4)
 if not 'final_date' in globals():
-    final_date = fruiting_cycle_end(5) #
+    final_date = fruiting_cycle_end(4) #
 
 first_date =  init_date
 last_date  = todatetime(final_date)
@@ -343,89 +343,89 @@ __lpy_code_version__ = 1.1
 
 def __initialiseContext__(context):
 	import openalea.plantgl.all as pgl
-	Color_0 = pgl.Material("Color_0" , ambient = (30,60,10) , diffuse = 3 , )
+	Color_0 = pgl.Material("Color_0" , ambient = (30,60,10) , diffuse = 3 , specular = (0,0,0),shininess = 0)
 	Color_0.name = "Color_0"
 	context.turtle.setMaterial(0,Color_0)
-	Color_1 = pgl.Material("Color_1" , ambient = (60,0,0) , diffuse = 3 , )
+	Color_1 = pgl.Material("Color_1" , ambient = (60,0,0) , diffuse = 3 , specular = (0,0,0),shininess = 0)
 	Color_1.name = "Color_1"
 	context.turtle.setMaterial(1,Color_1)
-	Color_2 = pgl.Material("Color_2" , ambient = (60,60,15) , diffuse = 3 , )
+	Color_2 = pgl.Material("Color_2" , ambient = (60,60,15) , diffuse = 3 , specular = (0,0,0),shininess = 0)
 	Color_2.name = "Color_2"
 	context.turtle.setMaterial(2,Color_2)
-	Color_3 = pgl.Material("Color_3" , ambient = (0,0,60) , diffuse = 3 , )
+	Color_3 = pgl.Material("Color_3" , ambient = (0,0,60) , diffuse = 3 , specular = (0,0,0),shininess = 0)
 	Color_3.name = "Color_3"
 	context.turtle.setMaterial(3,Color_3)
-	Color_5 = pgl.Material("Color_5" , ambient = (51,50,16) , diffuse = 1.76471 , specular = (0,0,0) , )
+	Color_5 = pgl.Material("Color_5" , ambient = (51,50,16) , diffuse = 1.76471 , specular = (0,0,0) ,shininess = 0 )
 	Color_5.name = "Color_5"
 	context.turtle.setMaterial(5,Color_5)
-	Color_6 = pgl.Material("Color_6" , ambient = (71,91,46) , diffuse = 1.67033 , specular = (0,0,0) , )
+	Color_6 = pgl.Material("Color_6" , ambient = (71,91,46) , diffuse = 1.67033 , specular = (0,0,0) ,shininess = 0 )
 	Color_6.name = "Color_6"
 	context.turtle.setMaterial(6,Color_6)
-	Color_10 = pgl.Material("Color_10" , ambient = (71,91,46) , diffuse = 1.67033 , specular = (0,0,0) , )
+	Color_10 = pgl.Material("Color_10" , ambient = (71,91,46) , diffuse = 1.67033 , specular = (0,0,0) ,shininess = 0 )
 	Color_10.name = "Color_10"
 	context.turtle.setMaterial(10,Color_10)
-	Color_11 = pgl.Material("Color_11" , ambient = (71,91,46) , diffuse = 1.67033 , specular = (0,0,0) , )
+	Color_11 = pgl.Material("Color_11" , ambient = (71,91,46) , diffuse = 1.67033 , specular = (0,0,0) ,shininess = 0 )
 	Color_11.name = "Color_11"
 	context.turtle.setMaterial(11,Color_11)
 	context.turtle.setMaterial(11,Color_11)
-	Color_12 = pgl.Material("Color_6" , ambient = (63,42,20) , diffuse = 1.67033 , specular = (0,0,0) , )
+	Color_12 = pgl.Material("Color_6" , ambient = (63,42,20) , diffuse = 1.67033 , specular = (0,0,0) ,shininess = 0 )
 	Color_12.name = "Color_12"
 	context.turtle.setMaterial(12,Color_12)
-	Color_14 = pgl.Material("Color_14" , ambient = (62,125,20) , diffuse = 1.032 , specular = (0,0,0) , )
+	Color_14 = pgl.Material("Color_14" , ambient = (62,125,20) , diffuse = 1.032 , specular = (0,0,0) ,shininess = 0 )
 	Color_14.name = "Color_14"
 	context.turtle.setMaterial(14,Color_14)
-	Color_15 = pgl.Material("Color_15" , ambient = (59,49,16) , diffuse = 1.76271 , specular = (0,0,0) , )
+	Color_15 = pgl.Material("Color_15" , ambient = (59,49,16) , diffuse = 1.76271 , specular = (0,0,0) ,shininess = 0 )
 	Color_15.name = "Color_15"
 	context.turtle.setMaterial(15,Color_15)
-	Color_16 = pgl.Material("Color_16" , ambient = (137,52,37) , diffuse = 1.64964 , specular = (0,0,0) , )
+	Color_16 = pgl.Material("Color_16" , ambient = (137,52,37) , diffuse = 1.64964 , specular = (0,0,0) ,shininess = 0 )
 	Color_16.name = "Color_16"
 	context.turtle.setMaterial(16,Color_16)
-	Color_17 = pgl.Material("Color_17" , ambient = (55,60,14) , diffuse = 3 , specular = (0,0,0) , )
+	Color_17 = pgl.Material("Color_17" , ambient = (55,60,14) , diffuse = 3 , specular = (0,0,0) ,shininess = 0 )
 	Color_17.name = "Color_17"
 	context.turtle.setMaterial(17,Color_17)
-	Color_18 = pgl.Material("Color_18" , ambient = (30,60,10) , diffuse = 1.66667 , specular = (0,0,0) , )
+	Color_18 = pgl.Material("Color_18" , ambient = (30,60,10) , diffuse = 1.66667 , specular = (0,0,0) ,shininess = 0 )
 	Color_18.name = "Color_18"
 	context.turtle.setMaterial(18,Color_18)
-	Color_20 = pgl.Material("Color_20" , ambient = (30,60,10) , diffuse = 1.66667 , specular = (0,0,0) , )
+	Color_20 = pgl.Material("Color_20" , ambient = (30,60,10) , diffuse = 1.66667 , specular = (0,0,0) ,shininess = 0 )
 	Color_20.name = "Color_20"
 	context.turtle.setMaterial(20,Color_20)
-	Color_21 = pgl.Material("Color_21" , ambient = (162,52,68) , diffuse = 1.04321 , specular = (0,0,0) , )
+	Color_21 = pgl.Material("Color_21" , ambient = (162,52,68) , diffuse = 1.04321 , specular = (0,0,0) ,shininess = 0 )
 	Color_21.name = "Color_21"
 	context.turtle.setMaterial(21,Color_21)
-	Color_22 = pgl.Material("Color_22" , ambient = (101,94,11) , diffuse = 1.65347 , specular = (0,0,0) , )
+	Color_22 = pgl.Material("Color_22" , ambient = (101,94,11) , diffuse = 1.65347 , specular = (0,0,0) ,shininess = 0 )
 	Color_22.name = "Color_22"
 	context.turtle.setMaterial(22,Color_22)
-	Color_23 = pgl.Material("Color_23" , ambient = (2,2,2) , diffuse = 0 , specular = (0,0,0) , )
+	Color_23 = pgl.Material("Color_23" , ambient = (2,2,2) , diffuse = 0 , specular = (0,0,0) ,shininess = 0 )
 	Color_23.name = "Color_23"
 	context.turtle.setMaterial(23,Color_23)
-	Color_25 = pgl.Material("Color_25" , ambient = (30,60,10) , diffuse = 1.66667 , specular = (0,0,0) , )
+	Color_25 = pgl.Material("Color_25" , ambient = (30,60,10) , diffuse = 1.66667 , specular = (0,0,0) ,shininess = 0 )
 	Color_25.name = "Color_25"
 	context.turtle.setMaterial(25,Color_25)
-	Color_26 = pgl.Material("Color_26" , ambient = (30,60,10) , diffuse = 1.96667 , specular = (0,0,0) , )
+	Color_26 = pgl.Material("Color_26" , ambient = (30,60,10) , diffuse = 1.96667 , specular = (0,0,0) ,shininess = 0 )
 	Color_26.name = "Color_26"
 	context.turtle.setMaterial(26,Color_26)
-	Color_27 = pgl.Material("Color_27" , ambient = (39,80,12) , diffuse = 1.2625 , specular = (0,0,0) , )
+	Color_27 = pgl.Material("Color_27" , ambient = (39,80,12) , diffuse = 1.2625 , specular = (0,0,0) , shininess=0)
 	Color_27.name = "Color_27"
 	context.turtle.setMaterial(27,Color_27)
-	Color_28 = pgl.Material("Color_28" , ambient = (148,148,0) , diffuse = 0.810811 , specular = (0,0,0) , )
+	Color_28 = pgl.Material("Color_28" , ambient = (148,148,0) , diffuse = 0.810811 , specular = (0,0,0) , shininess=0)
 	Color_28.name = "Color_28"
 	context.turtle.setMaterial(28,Color_28)
-	Color_29 = pgl.Material("Color_29" , ambient = (59,49,16) , diffuse = 1.74576 , specular = (0,0,0) , )
+	Color_29 = pgl.Material("Color_29" , ambient = (59,49,16) , diffuse = 1.74576 , specular = (0,0,0) , shininess=0)
 	Color_29.name = "Color_29"
 	context.turtle.setMaterial(29,Color_29)
-	Color_30 = pgl.Material("Color_30" , ambient = (2,2,2) , diffuse = 0 , specular = (0,0,0) , )
+	Color_30 = pgl.Material("Color_30" , ambient = (2,2,2) , diffuse = 0 , specular = (0,0,0) , shininess=0)
 	Color_30.name = "Color_30"
 	context.turtle.setMaterial(30,Color_30)
-	Color_32 = pgl.Material("Color_32" , ambient = (41,82,13) , diffuse = 1.10976 , specular = (0,0,0) , )
+	Color_32 = pgl.Material("Color_32" , ambient = (41,82,13) , diffuse = 1.10976 , specular = (0,0,0) , shininess=0)
 	Color_32.name = "Color_32"
 	context.turtle.setMaterial(32,Color_32)
-	Color_33 = pgl.Material("Color_33" , ambient = (107,0,107) , diffuse = 1.6729 , specular = (0,0,0) , )
+	Color_33 = pgl.Material("Color_33" , ambient = (107,0,107) , diffuse = 1.6729 , specular = (0,0,0) , shininess=0)
 	Color_33.name = "Color_33"
 	context.turtle.setMaterial(33,Color_33)
 	context.animation_timestep = 0.1
 	context.options.setSelection('Module declaration',1)
 	context.options.setSelection('Warning with sharp module',0)
-	scalars = [('Geometry', 'Category'), ('RESOLUTION', 'Integer', 1, 0, 2), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('GENERALIZEDCYLINDER', 'Bool', True), ('TEXTURE', 'Bool', True), ('DISTINCT_MI', 'Bool', False), ('ELASTICITY', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', True), ('SAVE_MTG', 'Bool', False), ('FRUITMODEL_OUTPUT', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 0, 0, 2), ('SEED', 'Integer', 9, 0, 100), ('TIMESTEP', 'Integer', 90, 1, 180), ('REPEAT_LASTPROBAS', 'Bool', False), ('GLM', 'Category'), ('WITH_GLM', 'Bool', True), ('_GLM_TYPE', 'Integer', 3, 1, 3), ('_GLM_RESTRICTION', 'Integer', 0, 0, 6), ('Fruit Model', 'Category'), ('FRUIT_MODEL', 'Bool', True), ('FRUITBRANCHSIZE', 'Integer', 1, 1, 10), ('PARALLELFRUITMODEL', 'Bool', False), ('Visuals', 'Category'), ('TIMEBAR', 'Bool', False)]
+	scalars = [('Geometry', 'Category'), ('RESOLUTION', 'Integer', 1, 0, 2), ('LEAFY', 'Bool', True), ('WITH_INFLO', 'Bool', True), ('GENERALIZEDCYLINDER', 'Bool', True), ('TEXTURE', 'Bool', True), ('DISTINCT_MI', 'Bool', False), ('ELASTICITY', 'Float', 0.02, 0.0, 1.0, 2), ('Data Export', 'Category'), ('EXPORT_TO_MTG', 'Bool', True), ('SAVE_MTG', 'Bool', False), ('FRUITMODEL_OUTPUT', 'Bool', False), ('Simulation', 'Category'), ('TREE', 'Integer', 0, 0, 2), ('SEED', 'Integer', 9, 0, 100), ('TIMESTEP', 'Integer', 60, 1, 180), ('REPEAT_LASTPROBAS', 'Bool', False), ('GLM', 'Category'), ('WITH_GLM', 'Bool', True), ('_GLM_TYPE', 'Integer', 3, 1, 3), ('_GLM_RESTRICTION', 'Integer', 0, 0, 6), ('Fruit Model', 'Category'), ('FRUIT_MODEL', 'Bool', False), ('FRUITBRANCHSIZE', 'Integer', 1, 1, 10), ('PARALLELFRUITMODEL', 'Bool', False), ('Visuals', 'Category'), ('TIMEBAR', 'Bool', False)]
 	context["__scalars__"] = scalars
 	for s in scalars:
 		if not s[1] == "Category" : context[s[0]] = s[2]
