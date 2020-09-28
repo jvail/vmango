@@ -104,7 +104,7 @@
                 },
                 {
                     "name": "FRUIT_MODEL",
-                    "value": true
+                    "value": false
                 },
                 {
                     "name": "FRUITBRANCHSIZE",
@@ -629,7 +629,12 @@
                 10
             ],
             "diffuse": 3,
-            "shininess": 0.2
+            "shininess": 0.0,
+            "specular": [
+                0,
+                0,
+                0
+            ]
         },
         {
             "name": "Color_1",
@@ -640,7 +645,12 @@
                 0
             ],
             "diffuse": 3,
-            "shininess": 0.2
+            "shininess": 0.0,
+            "specular": [
+                0,
+                0,
+                0
+            ]
         },
         {
             "name": "Color_2",
@@ -651,7 +661,12 @@
                 15
             ],
             "diffuse": 3,
-            "shininess": 0.2
+            "shininess": 0.0,
+            "specular": [
+                0,
+                0,
+                0
+            ]
         },
         {
             "name": "Color_3",
@@ -662,7 +677,12 @@
                 60
             ],
             "diffuse": 3,
-            "shininess": 0.2
+            "shininess": 0.0,
+            "specular": [
+                0,
+                0,
+                0
+            ]
         },
         {
             "name": "oldwood_color",
@@ -678,7 +698,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "stem_petiole_color",
@@ -694,7 +714,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "Color_10",
@@ -704,7 +724,12 @@
                 91,
                 46
             ],
-            "shininess": 0.2
+            "shininess": 0.0,
+            "specular": [
+                0,
+                0,
+                0
+            ]
         },
         {
             "name": "Color_11",
@@ -714,7 +739,12 @@
                 91,
                 46
             ],
-            "shininess": 0.2
+            "shininess": 0.0,
+            "specular": [
+                0,
+                0,
+                0
+            ]
         },
         {
             "name": "Color_12",
@@ -730,7 +760,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "GU_pheno_color_1",
@@ -746,7 +776,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "GU_pheno_color_2",
@@ -762,7 +792,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "GU_pheno_color_3",
@@ -778,7 +808,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "GU_pheno_color_4",
@@ -794,7 +824,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "GU_pheno_color_5",
@@ -810,7 +840,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "pheno_color_inflo_1",
@@ -826,7 +856,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "pheno_color_inflo_2",
@@ -842,7 +872,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "pheno_color_inflo_3",
@@ -858,7 +888,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "pheno_color_inflo_4",
@@ -874,7 +904,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "pheno_color_flower_1",
@@ -890,7 +920,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "pheno_color_flower_2",
@@ -906,7 +936,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "pheno_color_flower_3",
@@ -922,7 +952,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "pheno_color_flower_4",
@@ -938,7 +968,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "pheno_color_flower_5",
@@ -954,7 +984,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "pheno_color_flower_6",
@@ -970,7 +1000,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "fruit_color_1",
@@ -986,7 +1016,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         },
         {
             "name": "fruit_color_2",
@@ -1002,7 +1032,7 @@
                 0,
                 0
             ],
-            "shininess": 0.2
+            "shininess": 0.0
         }
     ]
 }
