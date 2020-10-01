@@ -33,7 +33,7 @@
                 },
                 {
                     "name": "TEXTURE",
-                    "value": true
+                    "value": false
                 },
                 {
                     "name": "DISTINCT_MI",
@@ -44,7 +44,8 @@
                     "type": "Float",
                     "value": 0.02,
                     "min": 0,
-                    "max": 2
+                    "max": 2,
+                    "step": 0.01
                 },
                 {
                     "name": "EXPORT_TO_MTG",
@@ -684,7 +685,7 @@
             ]
         },
         {
-            "name": "Color_5",
+            "name": "oldwood_color",
             "index": 5,
             "ambient": [
                 51,
@@ -700,7 +701,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_6",
+            "name": "stem_petiole_color",
             "index": 6,
             "ambient": [
                 71,
@@ -762,7 +763,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_14",
+            "name": "GU_pheno_color_1",
             "index": 14,
             "ambient": [
                 62,
@@ -778,7 +779,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_15",
+            "name": "GU_pheno_color_2",
             "index": 15,
             "ambient": [
                 59,
@@ -794,7 +795,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_16",
+            "name": "GU_pheno_color_3",
             "index": 16,
             "ambient": [
                 137,
@@ -810,7 +811,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_17",
+            "name": "GU_pheno_color_4",
             "index": 17,
             "ambient": [
                 55,
@@ -826,7 +827,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_18",
+            "name": "GU_pheno_color_5",
             "index": 18,
             "ambient": [
                 30,
@@ -842,7 +843,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_20",
+            "name": "pheno_color_inflo_1",
             "index": 20,
             "ambient": [
                 30,
@@ -858,7 +859,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_21",
+            "name": "pheno_color_inflo_2",
             "index": 21,
             "ambient": [
                 162,
@@ -874,7 +875,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_22",
+            "name": "pheno_color_inflo_3",
             "index": 22,
             "ambient": [
                 101,
@@ -890,7 +891,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_23",
+            "name": "pheno_color_inflo_4",
             "index": 23,
             "ambient": [
                 2,
@@ -906,7 +907,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_25",
+            "name": "pheno_color_flower_1",
             "index": 25,
             "ambient": [
                 30,
@@ -922,7 +923,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_26",
+            "name": "pheno_color_flower_2",
             "index": 26,
             "ambient": [
                 30,
@@ -938,7 +939,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_27",
+            "name": "pheno_color_flower_3",
             "index": 27,
             "ambient": [
                 39,
@@ -954,7 +955,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_28",
+            "name": "pheno_color_flower_4",
             "index": 28,
             "ambient": [
                 148,
@@ -970,7 +971,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_29",
+            "name": "pheno_color_flower_5",
             "index": 29,
             "ambient": [
                 59,
@@ -986,7 +987,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_30",
+            "name": "pheno_color_flower_6",
             "index": 30,
             "ambient": [
                 2,
@@ -1002,7 +1003,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_32",
+            "name": "fruit_color_1",
             "index": 32,
             "ambient": [
                 41,
@@ -1018,7 +1019,7 @@
             "shininess": 0.0
         },
         {
-            "name": "Color_33",
+            "name": "fruit_color_2",
             "index": 33,
             "ambient": [
                 107,
