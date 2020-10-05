@@ -1,0 +1,87 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Date_MI_Children Burst_Delta_Date_GU_Children Burst_Delta_Date_MI_Children  Burst_Month             Code     Cycle         GU       
+ 108: 66                106 :  1               13     :101                  Min.   : 4.000               2      :239   B10/I/A/1/1  :  1   4:454   Min.   :40820  
+ 109: 24                108 :  6               12     : 94                  1st Qu.: 7.250               1      : 92   B10/I/A/1/2  :  1           1st Qu.:42870  
+ 110:  2                109 :  3               14     : 60                  Median : 8.500               12     : 52   B10/I/A/1/3/0:  1           Median :45028  
+ 111: 18                110 : 21               6      : 50                  Mean   : 8.079               4      : 38   B10/I/A/4/1  :  1           Mean   :46430  
+ 101: 10                111 :  7               15     : 38                  3rd Qu.: 9.000               3      : 15   B10/I/C/1/1  :  1           3rd Qu.:51438  
+ 102:112                103 :  0               11     : 32                  Max.   :10.000               10     : 12   B10/I/C/1/2  :  1           Max.   :53412  
+ 103:222                NA's:416               (Other): 79                  NA's   :416                  (Other):  6   (Other)      :448                          
+ Has_Apical_GU_Child Has_Apical_MI_Child Has_Lateral_GU_Children Has_Lateral_MI_Children MixedInflo_Burst  Mixed_Inflo Nature_F Nb_GU_Children  
+ 0:364               0   :  2            0: 48                   0   : 34                0:416            Min.   :0    0:100    Min.   : 0.000  
+ 1: 90               1   : 36            1:406                   1   :  4                1: 38            1st Qu.:0    1:202    1st Qu.: 1.000  
+                     NA's:416                                    NA's:416                                 Median :0    2:152    Median : 2.000  
+                                                                                                          Mean   :0             Mean   : 2.379  
+                                                                                                          3rd Qu.:0             3rd Qu.: 4.000  
+                                                                                                          Max.   :0             Max.   :10.000  
+                                                                                                                                                
+ Nb_Lateral_GU_Children Nb_Lateral_MI_Children Nb_MI_Children  Position_A Reiteration  Tree     Tree_Fruit_Load Vegetative_Burst
+ Min.   :-1.000         0   : 34               Min.   :1.000   0:207      0:453       B10:146   1:454           0:  0           
+ 1st Qu.: 0.000         1   :  3               1st Qu.:1.000   1:247      1:  1       B12:157                   1:454           
+ Median : 2.000         2   :  1               Median :1.000                          F2 :151                                   
+ Mean   : 2.181         3   :  0               Mean   :1.079                                                                    
+ 3rd Qu.: 4.000         NA's:416               3rd Qu.:1.000                                                                    
+ Max.   :10.000                                Max.   :3.000                                                                    
+                                               NA's   :416                                                                      
+[1] "******** GLM  *************"
+[1] "Formula :Burst_Delta_Date_GU_Children ~ Position_A"
+[1] "***** Summary *****"
+
+Call:
+vglm(formula = formula, family = cumulative(parallel = TRUE), 
+    data = ndata)
+
+Pearson residuals:
+                        Min       1Q   Median       3Q     Max
+logitlink(P[Y<=1])  -1.7477 -0.04615 -0.04008 -0.03476 13.1235
+logitlink(P[Y<=2])  -0.4984 -0.08732 -0.06705 -0.05942  9.5622
+logitlink(P[Y<=3])  -3.5818 -0.16171 -0.11967 -0.10258  2.5884
+logitlink(P[Y<=4])  -2.9462 -0.18643 -0.13165 -0.10767  4.4586
+logitlink(P[Y<=5])  -3.6702 -0.19147 -0.14939 -0.10780  3.9459
+logitlink(P[Y<=6])  -2.5035 -0.23634 -0.17128 -0.11691  4.8295
+logitlink(P[Y<=7])  -1.8913 -0.36698 -0.21116  0.28436  3.8525
+logitlink(P[Y<=8])  -1.1613 -0.41417 -0.23064  0.30444  3.0959
+logitlink(P[Y<=9])  -1.6107 -0.61464  0.17866  0.60337  1.5361
+logitlink(P[Y<=10]) -2.5904  0.09260  0.25219  0.40643  1.0546
+logitlink(P[Y<=11]) -3.6514  0.10608  0.17634  0.29370  1.0461
+logitlink(P[Y<=12]) -8.6224  0.07365  0.08901  0.10751  0.6104
+
+Coefficients: 
+               Estimate Std. Error z value Pr(>|z|)    
+(Intercept):1   -5.1795     0.7126  -7.269 3.62e-13 ***
+(Intercept):2   -3.7770     0.3646 -10.360  < 2e-16 ***
+(Intercept):3   -1.6599     0.1616 -10.272  < 2e-16 ***
+(Intercept):4   -1.4028     0.1517  -9.249  < 2e-16 ***
+(Intercept):5   -1.1394     0.1437  -7.927 2.24e-15 ***
+(Intercept):6   -0.9756     0.1398  -6.977 3.01e-12 ***
+(Intercept):7   -0.7315     0.1354  -5.404 6.50e-08 ***
+(Intercept):8   -0.3896     0.1315  -2.962 0.003052 ** 
+(Intercept):9    0.4774     0.1322   3.612 0.000304 ***
+(Intercept):10   1.4977     0.1489  10.057  < 2e-16 ***
+(Intercept):11   2.4922     0.1867  13.345  < 2e-16 ***
+(Intercept):12   4.3261     0.3725  11.614  < 2e-16 ***
+Position_A1     -0.4974     0.1666  -2.986 0.002830 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Number of linear predictors:  12 
+
+Names of linear predictors: logitlink(P[Y<=1]), logitlink(P[Y<=2]), logitlink(P[Y<=3]), logitlink(P[Y<=4]), logitlink(P[Y<=5]), logitlink(P[Y<=6]), 
+logitlink(P[Y<=7]), logitlink(P[Y<=8]), logitlink(P[Y<=9]), logitlink(P[Y<=10]), logitlink(P[Y<=11]), logitlink(P[Y<=12])
+
+Residual deviance: 1972.098 on 5435 degrees of freedom
+
+Log-likelihood: -986.049 on 5435 degrees of freedom
+
+Number of Fisher scoring iterations: 5 
+
+Warning: Hauck-Donner effect detected in the following estimate(s):
+'(Intercept):1', '(Intercept):2', '(Intercept):12'
+
+
+Exponentiated coefficients:
+Position_A1 
+  0.6080937 
+[1] "******** Likelihood  *************"
+[1] -986.049
+[1] "Estimated -986.04896273755"

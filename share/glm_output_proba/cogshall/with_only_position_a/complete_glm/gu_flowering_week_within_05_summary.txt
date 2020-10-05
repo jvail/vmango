@@ -1,0 +1,85 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Delta_Date_GU_Children  Burst_Month                    Code      Cycle    Flowering Flowering_Week  Fruit_Weight   Fruiting
+ 10  :   0              Min.   : NA                  2-3    :1062   B10/I/A/1/2/0/0/0  :   1   5:1157   0:   0    5      :454    Min.   : 58.0   0:857   
+ 11  :   0              1st Qu.: NA                  1      :  53   B10/I/A/1/2/0/0/1  :   1            1:1157    7      :182    1st Qu.:320.0   1:300   
+ 12  :   0              Median : NA                  8      :  42   B10/I/A/1/2/1/0/0  :   1                      6      :153    Median :375.0           
+ 1   :   0              Mean   :NaN                  6      :   0   B10/I/A/1/3/0/0/0/0:   1                      8      :130    Mean   :372.6           
+ 2   :   0              3rd Qu.: NA                  9      :   0   B10/I/A/4/1/0/0/0  :   1                      4      :104    3rd Qu.:423.5           
+ 3   :   0              Max.   : NA                  10     :   0   B10/I/A/4/1/1      :   1                      9      : 46    Max.   :697.0           
+ NA's:1157              NA's   :1157                 (Other):   0   (Other)            :1151                      (Other): 88    NA's   :857             
+       GU         Harvest_Week    Has_Apical_GU_Child Has_Lateral_GU_Children  Mixed_Inflo Nature_Ancestor_F   Nb_Fruits      Nb_GU_Children Nb_Inflorescences
+ Min.   :40830   Min.   : 0.000   0   :   0           0   :   0               Min.   :0    0:260             Min.   :0.0000   Min.   : NA    Min.   :0.00000  
+ 1st Qu.:43045   1st Qu.: 6.000   1   :   0           1   :   0               1st Qu.:0    1:548             1st Qu.:0.0000   1st Qu.: NA    1st Qu.:0.00000  
+ Median :44969   Median : 7.000   NA's:1157           NA's:1157               Median :0    2:349             Median :0.0000   Median : NA    Median :0.00000  
+ Mean   :46377   Mean   : 7.203                                               Mean   :0                      Mean   :0.3258   Mean   :NaN    Mean   :0.05532  
+ 3rd Qu.:51284   3rd Qu.: 8.000                                               3rd Qu.:0                      3rd Qu.:1.0000   3rd Qu.: NA    3rd Qu.:0.00000  
+ Max.   :53386   Max.   :12.000                                               Max.   :0                      Max.   :4.0000   Max.   : NA    Max.   :5.00000  
+                 NA's   :857                                                                                                  NA's   :1157                    
+ Nb_Lateral_GU_Children Position_A Position_Ancestor_A Reiteration  Tree     Tree_Fruit_Load Vegetative_Burst is_terminal
+ Min.   : NA            0:963      0:392               0:1157      B10:380   1:1157          0:1157           0:   0     
+ 1st Qu.: NA            1:194      1:765                           B12:399                   1:   0           1:1157     
+ Median : NA                                                       F2 :378                                               
+ Mean   :NaN                                                                                                             
+ 3rd Qu.: NA                                                                                                             
+ Max.   : NA                                                                                                             
+ NA's   :1157                                                                                                            
+[1] "******** GLM  *************"
+[1] "Formula :Flowering_Week ~ Position_A"
+[1] "***** Summary *****"
+
+Call:
+vglm(formula = formula, family = cumulative(parallel = TRUE), 
+    data = ndata)
+
+Pearson residuals:
+                         Min       1Q   Median       3Q     Max
+logitlink(P[Y<=1])  -11.4728 -0.06792 -0.06442 -0.06074  5.8052
+logitlink(P[Y<=2])   -2.9040 -0.07424 -0.06926 -0.06461 15.4786
+logitlink(P[Y<=3])   -0.6840 -0.12155 -0.10249 -0.08981  8.0661
+logitlink(P[Y<=4])   -0.5402 -0.53745 -0.27081 -0.15164  3.0644
+logitlink(P[Y<=5])   -1.9586 -0.67602  0.11208  0.99450  0.9945
+logitlink(P[Y<=6])   -1.8550 -0.70078  0.40919  0.41255  1.5740
+logitlink(P[Y<=7])   -2.5065  0.16169  0.22145  0.38486  1.1670
+logitlink(P[Y<=8])   -4.4883  0.12724  0.12815  0.25244  0.9744
+logitlink(P[Y<=9])   -5.4440  0.09074  0.09074  0.13036  1.7427
+logitlink(P[Y<=10]) -11.2584  0.05486  0.05486  0.06405  1.3065
+logitlink(P[Y<=11]) -12.3021  0.04045  0.04045  0.04363  3.7487
+
+Coefficients: 
+               Estimate Std. Error z value Pr(>|z|)    
+(Intercept):1  -3.94654    0.21658 -18.222   <2e-16 ***
+(Intercept):2  -3.81605    0.20360 -18.743   <2e-16 ***
+(Intercept):3  -3.33269    0.16268 -20.486   <2e-16 ***
+(Intercept):4  -1.95395    0.09220 -21.192   <2e-16 ***
+(Intercept):5   0.06433    0.06342   1.014    0.310    
+(Intercept):6   0.61194    0.06597   9.276   <2e-16 ***
+(Intercept):7   1.42368    0.07804  18.243   <2e-16 ***
+(Intercept):8   2.42243    0.11014  21.994   <2e-16 ***
+(Intercept):9   3.13685    0.14929  21.012   <2e-16 ***
+(Intercept):10  4.32928    0.26095  16.591   <2e-16 ***
+(Intercept):11  5.09839    0.37984  13.422   <2e-16 ***
+Position_A1     0.01944    0.14131   0.138    0.891    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Number of linear predictors:  11 
+
+Names of linear predictors: logitlink(P[Y<=1]), logitlink(P[Y<=2]), logitlink(P[Y<=3]), logitlink(P[Y<=4]), logitlink(P[Y<=5]), logitlink(P[Y<=6]), 
+logitlink(P[Y<=7]), logitlink(P[Y<=8]), logitlink(P[Y<=9]), logitlink(P[Y<=10]), logitlink(P[Y<=11])
+
+Residual deviance: 4234.225 on 12715 degrees of freedom
+
+Log-likelihood: -2117.112 on 12715 degrees of freedom
+
+Number of Fisher scoring iterations: 3 
+
+Warning: Hauck-Donner effect detected in the following estimate(s):
+'(Intercept):1', '(Intercept):2', '(Intercept):3', '(Intercept):9', '(Intercept):10', '(Intercept):11'
+
+
+Exponentiated coefficients:
+Position_A1 
+   1.019634 
+[1] "******** Likelihood  *************"
+[1] -2117.112
+[1] "Estimated -2664.66410332608"

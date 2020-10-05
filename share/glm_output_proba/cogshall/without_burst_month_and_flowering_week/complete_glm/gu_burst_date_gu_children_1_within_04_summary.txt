@@ -1,0 +1,68 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Delta_Date_GU_Children  Burst_Month          Code    Cycle  Flowering Flowering_Week  Fruit_Weight Fruiting        GU        Harvest_Week   Has_Apical_GU_Child Has_Lateral_GU_Children
+ 11: 1                  Min.   :1.000                12     :70   B10/I/A/1/3: 1   4:98   0   : 0   Min.   : NA    Min.   : NA   0   : 0   Min.   :40845   Mode:logical   0: 0                0:84                   
+ 12: 4                  1st Qu.:2.000                11     :19   B10/I/E/1/1: 1          1   : 0   1st Qu.: NA    1st Qu.: NA   1   : 0   1st Qu.:41962   NA's:98        1:98                1:14                   
+ 1 :18                  Median :2.000                9-10   : 9   B10/I/E/1/2: 1          NA's:98   Median : NA    Median : NA   NA's:98   Median :42834                                                             
+ 2 :72                  Mean   :2.163                1      : 0   B10/I/E/1/3: 1                    Mean   :NaN    Mean   :NaN             Mean   :44977                                                             
+ 3 : 3                  3rd Qu.:2.000                2      : 0   B10/I/E/1/4: 1                    3rd Qu.: NA    3rd Qu.: NA             3rd Qu.:51622                                                             
+ 4 : 0                  Max.   :5.000                3      : 0   B10/I/E/1/5: 1                    Max.   : NA    Max.   : NA             Max.   :52600                                                             
+ 5 : 0                                               (Other): 0   (Other)    :92                    NA's   :98     NA's   :98                                                                                        
+  Mixed_Inflo Nature_Ancestor_F   Nb_Fruits   Nb_GU_Children   Nb_Inflorescences Nb_Lateral_GU_Children Position_A Position_Ancestor_A Reiteration  Tree    Tree_Fruit_Load Vegetative_Burst is_terminal
+ Min.   :0    0: 0              Min.   : NA   Min.   :0.0000   Min.   : NA       Min.   :-1.0000        0:92       0:50                0:98        B10:71   1:98            0: 0             0:98       
+ 1st Qu.:0    1:98              1st Qu.: NA   1st Qu.:0.0000   1st Qu.: NA       1st Qu.:-1.0000        1: 6       1:48                            B12: 0                   1:98             1: 0       
+ Median :0    2: 0              Median : NA   Median :0.0000   Median : NA       Median :-1.0000                                                   F2 :27                                               
+ Mean   :0                      Mean   :NaN   Mean   :0.1939   Mean   :NaN       Mean   :-0.8061                                                                                                        
+ 3rd Qu.:0                      3rd Qu.: NA   3rd Qu.:0.0000   3rd Qu.: NA       3rd Qu.:-1.0000                                                                                                        
+ Max.   :0                      Max.   : NA   Max.   :3.0000   Max.   : NA       Max.   : 2.0000                                                                                                        
+                                NA's   :98                     NA's   :98                                                                                                                               
+ Burst_Date_GU_Children_1
+ 11: 1                   
+ 12: 4                   
+ 1 :18                   
+ 2 :72                   
+ 3 : 3                   
+ 4 : 0                   
+ 5 : 0                   
+[1] "******** GLM  *************"
+[1] "Formula :Burst_Date_GU_Children_1 ~ Position_A + Position_Ancestor_A"
+[1] "***** Summary *****"
+
+Call:
+vglm(formula = formula, family = cumulative(parallel = TRUE), 
+    data = ndata)
+
+
+Pearson residuals:
+                   Min       1Q   Median       3Q    Max
+logit(P[Y<=1]) -1.0230 -0.07548 -0.07457 -0.04836 8.5714
+logit(P[Y<=2]) -0.5954 -0.16658 -0.16473 -0.10972 6.6733
+logit(P[Y<=3]) -0.9953 -0.63780 -0.40210 -0.14293 2.7148
+logit(P[Y<=4]) -7.3676  0.14144  0.15046  0.23268 0.2327
+
+Coefficients: 
+                     Estimate Std. Error z value Pr(>|z|)    
+(Intercept):1         -4.3177     1.0271  -4.204 2.63e-05 ***
+(Intercept):2         -2.6672     0.5026  -5.307 1.11e-07 ***
+(Intercept):3         -0.8552     0.3127  -2.735  0.00623 ** 
+(Intercept):4          3.9947     0.6751   5.917 3.27e-09 ***
+Position_A1            0.8914     0.8430   1.057  0.29033    
+Position_Ancestor_A1  -0.9441     0.4853  -1.945  0.05174 .  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Number of linear predictors:  4 
+
+Names of linear predictors: logit(P[Y<=1]), logit(P[Y<=2]), logit(P[Y<=3]), logit(P[Y<=4])
+
+Residual deviance: 155.406 on 386 degrees of freedom
+
+Log-likelihood: -77.703 on 386 degrees of freedom
+
+Number of iterations: 6 
+
+Exponentiated coefficients:
+         Position_A1 Position_Ancestor_A1 
+            2.438601             0.389014 
+[1] "******** Likelihood  *************"
+[1] -77.70301
+[1] "Estimated -77.7030148206838"

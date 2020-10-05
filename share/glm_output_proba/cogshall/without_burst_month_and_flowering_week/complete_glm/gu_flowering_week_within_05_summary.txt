@@ -1,0 +1,86 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Delta_Date_GU_Children  Burst_Month                    Code      Cycle    Flowering Flowering_Week  Fruit_Weight   Fruiting
+ 10  :   0              Min.   : NA                  2-3    :1062   B10/I/A/1/2/0/0/0  :   1   5:1157   0:   0    5      :454    Min.   : 58.0   0:857   
+ 11  :   0              1st Qu.: NA                  1      :  53   B10/I/A/1/2/0/0/1  :   1            1:1157    7      :182    1st Qu.:320.0   1:300   
+ 12  :   0              Median : NA                  8      :  42   B10/I/A/1/2/1/0/0  :   1                      6      :153    Median :375.0           
+ 1   :   0              Mean   :NaN                  6      :   0   B10/I/A/1/3/0/0/0/0:   1                      8      :130    Mean   :372.6           
+ 2   :   0              3rd Qu.: NA                  9      :   0   B10/I/A/4/1/0/0/0  :   1                      4      :104    3rd Qu.:423.5           
+ 3   :   0              Max.   : NA                  10     :   0   B10/I/A/4/1/1      :   1                      9      : 46    Max.   :697.0           
+ NA's:1157              NA's   :1157                 (Other):   0   (Other)            :1151                      (Other): 88    NA's   :857             
+       GU         Harvest_Week    Has_Apical_GU_Child Has_Lateral_GU_Children  Mixed_Inflo Nature_Ancestor_F   Nb_Fruits      Nb_GU_Children Nb_Inflorescences
+ Min.   :40830   Min.   : 0.000   0   :   0           0   :   0               Min.   :0    0:260             Min.   :0.0000   Min.   : NA    Min.   :0.00000  
+ 1st Qu.:43045   1st Qu.: 6.000   1   :   0           1   :   0               1st Qu.:0    1:548             1st Qu.:0.0000   1st Qu.: NA    1st Qu.:0.00000  
+ Median :44969   Median : 7.000   NA's:1157           NA's:1157               Median :0    2:349             Median :0.0000   Median : NA    Median :0.00000  
+ Mean   :46377   Mean   : 7.203                                               Mean   :0                      Mean   :0.3258   Mean   :NaN    Mean   :0.05532  
+ 3rd Qu.:51284   3rd Qu.: 8.000                                               3rd Qu.:0                      3rd Qu.:1.0000   3rd Qu.: NA    3rd Qu.:0.00000  
+ Max.   :53386   Max.   :12.000                                               Max.   :0                      Max.   :4.0000   Max.   : NA    Max.   :5.00000  
+                 NA's   :857                                                                                                  NA's   :1157                    
+ Nb_Lateral_GU_Children Position_A Position_Ancestor_A Reiteration  Tree     Tree_Fruit_Load Vegetative_Burst is_terminal
+ Min.   : NA            0:963      0:392               0:1157      B10:380   1:1157          0:1157           0:   0     
+ 1st Qu.: NA            1:194      1:765                           B12:399                   1:   0           1:1157     
+ Median : NA                                                       F2 :378                                               
+ Mean   :NaN                                                                                                             
+ 3rd Qu.: NA                                                                                                             
+ Max.   : NA                                                                                                             
+ NA's   :1157                                                                                                            
+[1] "******** GLM  *************"
+[1] "Formula :Flowering_Week ~ Position_A + Position_Ancestor_A"
+[1] "***** Summary *****"
+
+Call:
+vglm(formula = formula, family = cumulative(parallel = TRUE), 
+    data = ndata)
+
+Pearson residuals:
+                         Min       1Q   Median       3Q    Max
+logitlink(P[Y<=1])  -11.2740 -0.06909 -0.06534 -0.05960  5.936
+logitlink(P[Y<=2])   -3.0058 -0.07550 -0.07095 -0.06342 15.204
+logitlink(P[Y<=3])   -0.6945 -0.12340 -0.10319 -0.08722  8.389
+logitlink(P[Y<=4])   -0.5483 -0.53137 -0.26462 -0.15260  3.185
+logitlink(P[Y<=5])   -1.9902 -0.66562  0.11164  0.97729  1.031
+logitlink(P[Y<=6])   -1.8966 -0.67834  0.39976  0.42002  1.595
+logitlink(P[Y<=7])   -2.5708  0.16043  0.21843  0.38112  1.172
+logitlink(P[Y<=8])   -4.6095  0.12638  0.13189  0.25135  0.981
+logitlink(P[Y<=9])   -5.5965  0.08939  0.09359  0.12862  1.775
+logitlink(P[Y<=10]) -11.5764  0.05395  0.05678  0.06299  1.335
+logitlink(P[Y<=11]) -12.6521  0.03974  0.04196  0.04327  3.848
+
+Coefficients: 
+                     Estimate Std. Error z value Pr(>|z|)    
+(Intercept):1        -4.02810    0.23050 -17.475  < 2e-16 ***
+(Intercept):2        -3.89751    0.21835 -17.850  < 2e-16 ***
+(Intercept):3        -3.41377    0.18080 -18.882  < 2e-16 ***
+(Intercept):4        -2.03400    0.12119 -16.784  < 2e-16 ***
+(Intercept):5        -0.01495    0.09979  -0.150    0.881    
+(Intercept):6         0.53212    0.10106   5.265  1.4e-07 ***
+(Intercept):7         1.34352    0.10889  12.339  < 2e-16 ***
+(Intercept):8         2.34276    0.13352  17.546  < 2e-16 ***
+(Intercept):9         3.05739    0.16721  18.284  < 2e-16 ***
+(Intercept):10        4.25004    0.27158  15.649  < 2e-16 ***
+(Intercept):11        5.01919    0.38722  12.962  < 2e-16 ***
+Position_A1           0.03717    0.14242   0.261    0.794    
+Position_Ancestor_A1  0.11769    0.11228   1.048    0.295    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Number of linear predictors:  11 
+
+Names of linear predictors: logitlink(P[Y<=1]), logitlink(P[Y<=2]), logitlink(P[Y<=3]), logitlink(P[Y<=4]), logitlink(P[Y<=5]), logitlink(P[Y<=6]), 
+logitlink(P[Y<=7]), logitlink(P[Y<=8]), logitlink(P[Y<=9]), logitlink(P[Y<=10]), logitlink(P[Y<=11])
+
+Residual deviance: 4233.114 on 12714 degrees of freedom
+
+Log-likelihood: -2116.557 on 12714 degrees of freedom
+
+Number of Fisher scoring iterations: 3 
+
+Warning: Hauck-Donner effect detected in the following estimate(s):
+'(Intercept):1', '(Intercept):2', '(Intercept):3', '(Intercept):9', '(Intercept):10', '(Intercept):11'
+
+
+Exponentiated coefficients:
+         Position_A1 Position_Ancestor_A1 
+            1.037866             1.124890 
+[1] "******** Likelihood  *************"
+[1] -2116.557
+[1] "Estimated -2664.47605642331"
