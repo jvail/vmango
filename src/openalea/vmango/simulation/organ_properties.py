@@ -26,7 +26,19 @@ def get_realisation(mean, sd, minval, maxval, rfunc = gauss):
 class OrganManager(object):
     def __init__(self, **kwargs):
         self.phyllotaxy = 144  # +randint(-2,2)          # mango phyllotaxie
+        self.colorcache = {}
         pass
+
+    def color_interpolator(self, i, j, r):
+        quantif = (1/360)
+        rindex = int(r // quantif)
+        if not (i,j,rindex) in self.colorcache:
+             mat1 = execContext().turtle.getMaterial(i)
+             mat2 = execContext().turtle.getMaterial(j)
+             imat = Material.interpolate(mat1,mat2,rindex*quantif)
+             self.colorcache[(i,j,rindex)] = imat
+             return imat
+        return self.colorcache[(i,j,rindex)]
 
 class GUManager (OrganManager):
     def __init__(self,  **kwargs):
@@ -101,8 +113,6 @@ class GUManager (OrganManager):
 
       self.max_leafy_diameter = 1.65
       
-      self.colorcache = {}
-
       self.__dict__.update(kwargs)
 
     def set_parameters(self, leafaxis, leafsection, leafwidth, leafwidthgrowth, petioleCurve, resolution):
@@ -137,9 +147,9 @@ class GUManager (OrganManager):
 
     def internode_length_distribution(self, nb_internodes, gu_length):
       """ Internode length distribution """
-
+      if nb_internodes <= 1 : return [ gu_length ]
       lengths = [exp(-2.64 * i / float(nb_internodes-1)) for i in range(nb_internodes)]
-      scaling = old_div(gu_length, sum(lengths))
+      scaling = gu_length/ sum(lengths)
       return [l*scaling for l in lengths]
 
     def internode_length(self, i, nb_internodes, gu_length):
@@ -176,9 +186,10 @@ class GUManager (OrganManager):
 
       ratio, intercept = self.leaf_nb_distrib[position]
       nb_internodes = max(int(round(intercept + ratio*final_length_gu)),1)
+      #nb_internodes = max(nb_internodes-5,1)
 
       mean, sd = self.leaf_length_distrib[position]
-      final_length_leaves = [get_realisation(mean, sd, 5, 34) * self.leaflength(i/float(nb_internodes-1)) for i in range(nb_internodes)]
+      final_length_leaves = [get_realisation(mean, sd, 5, 34) * self.leaflength(i/max(1,float(nb_internodes-1))) for i in range(nb_internodes)]
 
       LEPF = self.length_before_first_leaf(position, final_length_gu)
       final_length_internodes = [LEPF] + self.internode_length_distribution(nb_internodes-1, final_length_gu)
@@ -258,17 +269,6 @@ class GUManager (OrganManager):
 
     def init_plot(self):
         execContext().turtle.setSurface('finalleaf', self.leafSymbol())
-
-    def color_interpolator(self, i, j, r):
-        quantif = 1 if self.resolution == 2 else 3
-        r = round(r,quantif)
-        if not (i,j,r) in self.colorcache:
-             mat1 = execContext().turtle.getMaterial(i)
-             mat2 = execContext().turtle.getMaterial(j)
-             imat = Material.interpolate(mat1,mat2,r)
-             self.colorcache[(i,j,r)] = imat
-             return imat
-        return self.colorcache[(i,j,r)]
     
     def plot(self, p, textured = True, leafy = True, distinct_mi = False):
         def fLeaf(position, radius, size):
@@ -318,7 +318,7 @@ class GUManager (OrganManager):
 
         def Petiole(length,radius):
             if self.resolution > 0:
-                nsproduce([ SetWidth(radius), SetGuide(self.petioleCurve,length), nF(length, old_div(length,self.PetioleRes),radius) ])
+                nsproduce([ SetWidth(radius), SetGuide(self.petioleCurve,length), nF(length, length/self.PetioleRes,radius) ])
             else:
                 nsproduce([ SetWidth(radius),SetGuide(self.petioleCurve,length), F(length) ])
 
@@ -342,7 +342,7 @@ class GUManager (OrganManager):
             else:
                 nsproduce([SetColor(self.oldwood_color)])
           i = 0
-          posnorm = 1./float(p.nb_internodes-1)
+          posnorm = 1./max(1,float(p.nb_internodes-1))
           nsproduce([SetWidth(radius)])
           for ilength, flength in zip(p.final_length_internodes , p.final_length_leaves):
             nsproduce([F(ilength*gu_growth_ratio, radius), RollL(phyllotaxy)])
@@ -362,8 +362,9 @@ class GUManager (OrganManager):
             nsproduce([SetColor(self.oldwood_color)])
           nsproduce([SetWidth(radius)]+[F(l) for l in p.final_length_internodes]+[RollL(phyllotaxy*len(p.final_length_internodes))])
           if not textured: 
-              if self.resolution == 2 : nsproduce([SectionResolution(4) ])
-              nsproduce([Sphere(radius)])
+              if self.resolution >= 3 : 
+                #nsproduce([SectionResolution(4) ])
+                nsproduce([Sphere(radius)])
 
 
 
@@ -511,17 +512,6 @@ class InfloManager (OrganManager):
     def radius(self, n_pheno):
         return 0.05+0.30*(n_pheno/5)
         
-    def color_interpolator(self, i, j, r):
-        quantif = 1 if self.resolution == 2 else 3
-        r = round(r,quantif)
-        if not (i,j,r) in self.colorcache:
-             mat1 = execContext().turtle.getMaterial(i)
-             mat2 = execContext().turtle.getMaterial(j)
-             imat = Material.interpolate(mat1,mat2,r)
-             self.colorcache[(i,j,r)] = imat
-             return imat
-        return self.colorcache[(i,j,r)]
-    
     def plot(self, p, current_date):
         import random
         rstate = random.getstate()
@@ -765,7 +755,8 @@ class FruitManager (OrganManager):
         self.set_parameters(namespace['fruitprofile'], namespace['RESOLUTION'], namespace['FRUIT_MODEL'], namespace['FRUITBRANCHSIZE'], namespace['FRUITMODEL_OUTPUT'], str(namespace['TREE'])+'-'+namespace['treename']+'-seed-'+str(namespace['SEED']),namespace['PARALLELFRUITMODEL'])
 
     def set_dimensions(self, infloparam, current_date):
-        if self.modelenabled:
+        cycle = get_flowering_cycle(current_date)
+        if self.modelenabled  and cycle > 3:
             return ParameterSet(inflo_fullbloom_date=infloparam.fullbloom_date,
                                 growth=infloparam.fruits_growth,
                                 maturity_date=infloparam.fruits_maturity_date,
@@ -783,12 +774,13 @@ class FruitManager (OrganManager):
                                 initial_weight=mass)
 
     def applymodel(self, lstring, current_date):
-        if self.modelenabled :
+        cycle = get_flowering_cycle(current_date)
+        if self.modelenabled  and cycle > 3:
             import openalea.vmango.simulation.fruitmodel.fruitmodel as fm ; reload(fm)
             from openalea.vmango.simulation.fruitmodel.fruitmodel import applymodel
             from openalea.vmango.utilities.util_lstring2mtg import export_to_mtg_light
             cycle = get_flowering_cycle(current_date)
-            #print('Fruit model evaluation', current_date, 'for cycle', cycle)
+            print('Fruit model evaluation', current_date, 'for cycle', cycle)
             lmtg = export_to_mtg_light(lstring, cycle) # , lscene)
             applymodel(lmtg, cycle, self.branchsize, self.outputenabled, self.outputname, self.parallelfruitmodel)
             #from openalea.vmango.utilities.util_tools import dump_obj

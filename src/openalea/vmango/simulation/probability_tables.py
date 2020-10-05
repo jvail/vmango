@@ -132,6 +132,8 @@ class ProbaTable(object):
         from math import sqrt
         probavalue = self.get_proba_value(args)
         if self.family == eBinomial:
+            if not (0 <= probavalue[0] <= 1):
+                raise ValueError('Invalid probability', probavalue[0])
             return bool( binomial(1,probavalue[0]) )
         elif self.family == ePoisson:
             return int( poisson(probavalue[0],1) )
