@@ -6,10 +6,11 @@ channels:
 dependencies:
   - openalea.lpy
   - openalea.mtg
+  - openalea.pgljupyter
   - r
   - toml
   - future
-  - rpy2
+  # - rpy2
   - pandas
   - numpy
   - pip
