@@ -760,7 +760,7 @@ class FruitManager (OrganManager):
             return ParameterSet(inflo_fullbloom_date=infloparam.fullbloom_date,
                                 growth=infloparam.fruits_growth,
                                 maturity_date=infloparam.fruits_maturity_date,
-                                weight = old_div(infloparam.fruits_weight, infloparam.nb_fruits),
+                                weight = infloparam.fruits_weight/ infloparam.nb_fruits,
                                 growth_stage_date=infloparam.fruits_growth_stage_date,
                                 initial_weight=infloparam.fruits_initial_weight)
         else:
@@ -769,7 +769,7 @@ class FruitManager (OrganManager):
             growth_stage_date = todatetime(fruit_growth_tts.find_date_of_accumulation(self.pheno_stade_temp[0], infloparam.fullbloom_date))
             return ParameterSet(inflo_fullbloom_date=infloparam.fullbloom_date,
                                 maturity_date=infloparam.fruits_maturity_date,
-                                weight = old_div(infloparam.fruits_weight, infloparam.nb_fruits),
+                                weight = infloparam.fruits_weight/ infloparam.nb_fruits,
                                 growth_stage_date=growth_stage_date,
                                 initial_weight=mass)
 

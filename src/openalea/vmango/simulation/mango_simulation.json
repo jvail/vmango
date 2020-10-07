@@ -15,7 +15,7 @@
                 {
                     "name": "RESOLUTION",
                     "type": "Integer",
-                    "value": 2,
+                    "value": 1,
                     "min": 0,
                     "max": 3
                 },
