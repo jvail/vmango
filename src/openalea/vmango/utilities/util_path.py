@@ -2,11 +2,11 @@ from builtins import str
 from os.path import join, exists, abspath, dirname
 import os
 import openalea.vmango
-try:
-    from openalea.deploy.shared_data import shared_data
-    share_dir = shared_data(openalea.vmango, share_path = "share")
-except:
-    share_dir = join(dirname(__file__),'..','..','..','..','share')
+#try:
+#    from openalea.deploy.shared_data import shared_data
+#    share_dir = shared_data(openalea.vmango, share_path = "share")
+#except:
+share_dir = join(dirname(__file__),'..','..','..','..','share')
 share_dir = abspath(share_dir)
 
 def data(fname): 

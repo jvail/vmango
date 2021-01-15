@@ -5,6 +5,9 @@ import math
 from .fruit_dry_matter_growth import growth_DM
 from .fruit_fresh_matter_growth import growth_FM
 
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 def growth(
     bloom_date,
     weather_daily_df,
@@ -175,7 +178,7 @@ def growth(
         )
 
         ## -- outputs of the current day :
-        growth_df.loc[i, 9:21] = (*result_FM[0], dd_cum)
+        growth_df.iloc[i, 9:21] = (*result_FM[0], dd_cum)
 
         ## -- outputs of the next day :
         growth_df.loc[i + 1, 0:9] = result_FM[1] + (result_DM[1], result_DM[2])

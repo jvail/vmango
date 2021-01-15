@@ -1,0 +1,95 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Date_MI_Children Burst_Delta_Date_GU_Children Burst_Delta_Date_MI_Children  Burst_Month             Code     Cycle         GU       
+ 108: 66                106 :  1               13     :101                  Min.   : 4.000               2      :239   B10/I/A/1/1  :  1   4:454   Min.   :40820  
+ 109: 24                108 :  6               12     : 94                  1st Qu.: 7.250               1      : 92   B10/I/A/1/2  :  1           1st Qu.:42870  
+ 110:  2                109 :  3               14     : 60                  Median : 8.500               12     : 52   B10/I/A/1/3/0:  1           Median :45028  
+ 111: 18                110 : 21               6      : 50                  Mean   : 8.079               4      : 38   B10/I/A/4/1  :  1           Mean   :46430  
+ 101: 10                111 :  7               15     : 38                  3rd Qu.: 9.000               3      : 15   B10/I/C/1/1  :  1           3rd Qu.:51438  
+ 102:112                103 :  0               11     : 32                  Max.   :10.000               10     : 12   B10/I/C/1/2  :  1           Max.   :53412  
+ 103:222                NA's:416               (Other): 79                  NA's   :416                  (Other):  6   (Other)      :448                          
+ Has_Apical_GU_Child Has_Apical_MI_Child Has_Lateral_GU_Children Has_Lateral_MI_Children MixedInflo_Burst  Mixed_Inflo Nature_F Nb_GU_Children  
+ 0:364               0   :  2            0: 48                   0   : 34                0:416            Min.   :0    0:100    Min.   : 0.000  
+ 1: 90               1   : 36            1:406                   1   :  4                1: 38            1st Qu.:0    1:202    1st Qu.: 1.000  
+                     NA's:416                                    NA's:416                                 Median :0    2:152    Median : 2.000  
+                                                                                                          Mean   :0             Mean   : 2.379  
+                                                                                                          3rd Qu.:0             3rd Qu.: 4.000  
+                                                                                                          Max.   :0             Max.   :10.000  
+                                                                                                                                                
+ Nb_Lateral_GU_Children Nb_Lateral_MI_Children Nb_MI_Children  Position_A Reiteration  Tree     Tree_Fruit_Load Vegetative_Burst
+ Min.   :-1.000         0   : 34               Min.   :1.000   0:207      0:453       B10:146   1:454           0:  0           
+ 1st Qu.: 0.000         1   :  3               1st Qu.:1.000   1:247      1:  1       B12:157                   1:454           
+ Median : 2.000         2   :  1               Median :1.000                          F2 :151                                   
+ Mean   : 2.181         3   :  0               Mean   :1.079                                                                    
+ 3rd Qu.: 4.000         NA's:416               3rd Qu.:1.000                                                                    
+ Max.   :10.000                                Max.   :3.000                                                                    
+                                               NA's   :416                                                                      
+[1] "******** GLM  *************"
+[1] "Formula :Burst_Delta_Date_GU_Children ~ Burst_Month + Position_A + Nature_F"
+[1] "***** Summary *****"
+
+Call:
+vglm(formula = formula, family = cumulative(parallel = TRUE), 
+    data = ndata)
+
+Pearson residuals:
+                         Min        1Q    Median        3Q     Max
+logitlink(P[Y<=1])   -0.5988 -0.012285 -0.006521 -0.001957  5.8930
+logitlink(P[Y<=2])   -0.3397 -0.031143 -0.016111 -0.004886  1.4708
+logitlink(P[Y<=3])   -9.1740 -0.060568 -0.044889 -0.013175  9.8827
+logitlink(P[Y<=4])   -6.0518 -0.077719 -0.055038 -0.003911 23.5946
+logitlink(P[Y<=5])   -7.7730 -0.109142 -0.074640 -0.003982 16.1750
+logitlink(P[Y<=6])  -28.0288 -0.119999 -0.093797 -0.005032 16.1999
+logitlink(P[Y<=7])  -18.3559 -0.190880 -0.058135  0.044287 72.8803
+logitlink(P[Y<=8])   -8.3624 -0.285203 -0.068731  0.053756 20.0129
+logitlink(P[Y<=9])  -18.4654 -0.220857  0.030975  0.450188  3.6183
+logitlink(P[Y<=10]) -15.6517  0.010248  0.101481  0.243957  5.6415
+logitlink(P[Y<=11])  -9.9920  0.013285  0.055873  0.081665  2.0078
+logitlink(P[Y<=12])  -3.7315  0.004587  0.011033  0.028683  0.3918
+
+Coefficients: 
+               Estimate Std. Error z value Pr(>|z|)    
+(Intercept):1  -6.44984    0.77909  -8.279  < 2e-16 ***
+(Intercept):2  -4.74495    0.42999 -11.035  < 2e-16 ***
+(Intercept):3  -1.17061    0.29486  -3.970 7.19e-05 ***
+(Intercept):4  -0.50877    0.29662  -1.715 0.086309 .  
+(Intercept):5   0.18307    0.30198   0.606 0.544345    
+(Intercept):6   0.58468    0.30630   1.909 0.056282 .  
+(Intercept):7   1.08766    0.31258   3.480 0.000502 ***
+(Intercept):8   1.77586    0.32149   5.524 3.32e-08 ***
+(Intercept):9   3.37049    0.34050   9.899  < 2e-16 ***
+(Intercept):10  5.48486    0.38213  14.353  < 2e-16 ***
+(Intercept):11  8.13315    0.47917  16.973  < 2e-16 ***
+(Intercept):12 11.58456    0.68943  16.803  < 2e-16 ***
+Burst_Month.L  10.27181    0.79075  12.990  < 2e-16 ***
+Burst_Month.Q  -5.32926    0.69309  -7.689 1.48e-14 ***
+Burst_Month.C   0.33655    0.52183   0.645 0.518966    
+Burst_Month^4  -0.46870    0.36846  -1.272 0.203360    
+Burst_Month^5  -0.41563    0.35419  -1.173 0.240600    
+Burst_Month^6  -0.40437    0.27822  -1.453 0.146102    
+Position_A1     0.02438    0.19123   0.128 0.898544    
+Nature_F1      -5.26623    0.35007 -15.044  < 2e-16 ***
+Nature_F2      -5.88142    0.38266 -15.370  < 2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Number of linear predictors:  12 
+
+Names of linear predictors: logitlink(P[Y<=1]), logitlink(P[Y<=2]), logitlink(P[Y<=3]), logitlink(P[Y<=4]), logitlink(P[Y<=5]), logitlink(P[Y<=6]), 
+logitlink(P[Y<=7]), logitlink(P[Y<=8]), logitlink(P[Y<=9]), logitlink(P[Y<=10]), logitlink(P[Y<=11]), logitlink(P[Y<=12])
+
+Residual deviance: 1384.968 on 5427 degrees of freedom
+
+Log-likelihood: -692.4838 on 5427 degrees of freedom
+
+Number of Fisher scoring iterations: 30 
+
+Warning: Hauck-Donner effect detected in the following estimate(s):
+'(Intercept):1', '(Intercept):2', '(Intercept):12'
+
+
+Exponentiated coefficients:
+Burst_Month.L Burst_Month.Q Burst_Month.C Burst_Month^4 Burst_Month^5 Burst_Month^6   Position_A1     Nature_F1     Nature_F2 
+ 2.890603e+04  4.847659e-03  1.400110e+00  6.258164e-01  6.599212e-01  6.673969e-01  1.024682e+00  5.163040e-03  2.790807e-03 
+[1] "******** Likelihood  *************"
+[1] -692.4838
+[1] "Estimated -692.483831738031"

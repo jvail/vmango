@@ -1,0 +1,83 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Delta_Date_GU_Children  Burst_Month                   Code       Cycle      Flowering   Flowering_Week  Fruit_Weight   Fruiting  
+ 10  :   0              Min.   : NA                  3      :684   B10/I/A/1/2/0/0/0  :   1   5   :1166   0   :   0   5-6    :610    Min.   : 58.0   0   :865  
+ 11  :   0              1st Qu.: NA                  2      :378   B10/I/A/1/2/0/0/1  :   1   NA's:   1   1   :1166   7-8-9  :363    1st Qu.:320.0   1   :301  
+ 12  :   0              Median : NA                  1      : 53   B10/I/A/1/2/1/0/0  :   1               NA's:   1   4      :105    Median :375.0   NA's:  1  
+ 1   :   0              Mean   :NaN                  8      : 42   B10/I/A/1/3/0/0/0/0:   1                           1-2-3  : 40    Mean   :372.4             
+ 2   :   0              3rd Qu.: NA                  11     :  5   B10/I/A/4/1/0/0/0  :   1                           10     : 33    3rd Qu.:423.0             
+ 3   :   0              Max.   : NA                  (Other):  4   (Other)            :1161                           (Other): 15    Max.   :697.0             
+ NA's:1167              NA's   :1167                 NA's   :  1   NA's               :   1                           NA's   :  1    NA's   :866               
+       GU         Harvest_Week    Has_Apical_GU_Child Has_Lateral_GU_Children  Mixed_Inflo Nature_Ancestor_F   Nb_Fruits      Nb_GU_Children Nb_Inflorescences
+ Min.   :40830   Min.   : 0.000   0   :   0           0   :   0               Min.   :0    0   :267          Min.   :0.0000   Min.   : NA    1   :1129        
+ 1st Qu.:43049   1st Qu.: 6.000   1   :   0           1   :   0               1st Qu.:0    1   :548          1st Qu.:0.0000   1st Qu.: NA    2   :  23        
+ Median :44970   Median : 7.000   NA's:1167           NA's:1167               Median :0    2   :351          Median :0.0000   Median : NA    3   :   7        
+ Mean   :46395   Mean   : 7.206                                               Mean   :0    NA's:  1          Mean   :0.3242   Mean   :NaN    4   :   2        
+ 3rd Qu.:51291   3rd Qu.: 8.000                                               3rd Qu.:0                      3rd Qu.:1.0000   3rd Qu.: NA    5   :   4        
+ Max.   :53386   Max.   :12.000                                               Max.   :0                      Max.   :4.0000   Max.   : NA    6   :   1        
+ NA's   :1       NA's   :866                                                  NA's   :1                      NA's   :1        NA's   :1167   NA's:   1        
+ Nb_Lateral_GU_Children Position_A Position_Ancestor_A Reiteration   Tree     Tree_Fruit_Load Vegetative_Burst is_terminal Flowering_Week_Poisson
+ Min.   : NA            0   :969   0   :398            0   :1166   B10 :381   1   :1166       0   :1166        0   :   0   Min.   : 0.000        
+ 1st Qu.: NA            1   :197   1   :768            NA's:   1   B12 :402   NA's:   1       1   :   0        1   :1166   1st Qu.: 4.000        
+ Median : NA            NA's:  1   NA's:  1                        F2  :383                   NA's:   1        NA's:   1   Median : 4.000        
+ Mean   :NaN                                                       NA's:  1                                                Mean   : 4.973        
+ 3rd Qu.: NA                                                                                                               3rd Qu.: 6.000        
+ Max.   : NA                                                                                                               Max.   :11.000        
+ NA's   :1167                                                                                                              NA's   :1             
+[1] "******** GLM  *************"
+[1] "Formula :Fruiting ~ Flowering_Week + Nature_Ancestor_F + Flowering_Week:Nature_Ancestor_F"
+[1] "Initial :Fruiting ~ Flowering_Week + Position_A + Position_Ancestor_A + Nature_Ancestor_F"
+[1] "***** Summary *****"
+
+Call:
+glm(formula = formula, family = glm.family(myglm), data = data, 
+    subset = subset)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-0.9854  -0.8478  -0.5845   1.3824   2.2649  
+
+Coefficients:
+                                     Estimate Std. Error z value Pr(>|z|)
+(Intercept)                           -6.1040   240.3245  -0.025    0.980
+Flowering_Week.L                     -14.9496   772.2340  -0.019    0.985
+Flowering_Week.Q                      -7.0061   660.3220  -0.011    0.992
+Flowering_Week.C                       2.4593   611.6211   0.004    0.997
+Flowering_Week^4                       6.0998   506.9964   0.012    0.990
+Flowering_Week^5                       3.5706   263.0212   0.014    0.989
+Nature_Ancestor_F1                     2.3574   274.8217   0.009    0.993
+Nature_Ancestor_F2                     2.2745   371.1140   0.006    0.995
+Flowering_Week.L:Nature_Ancestor_F1    5.5112   908.2016   0.006    0.995
+Flowering_Week.Q:Nature_Ancestor_F1   -0.8458   791.4728  -0.001    0.999
+Flowering_Week.C:Nature_Ancestor_F1   -8.5467   680.3938  -0.013    0.990
+Flowering_Week^4:Nature_Ancestor_F1   -8.7894   529.0502  -0.017    0.987
+Flowering_Week^5:Nature_Ancestor_F1   -5.4514   267.8040  -0.020    0.984
+Flowering_Week.L:Nature_Ancestor_F2    4.6825  1274.5693   0.004    0.997
+Flowering_Week.Q:Nature_Ancestor_F2   -0.8255  1137.0325  -0.001    0.999
+Flowering_Week.C:Nature_Ancestor_F2   -7.4067   879.7323  -0.008    0.993
+Flowering_Week^4:Nature_Ancestor_F2   -8.3009   599.8866  -0.014    0.989
+Flowering_Week^5:Nature_Ancestor_F2   -4.6578   283.9094  -0.016    0.987
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 1331.8  on 1165  degrees of freedom
+Residual deviance: 1273.9  on 1148  degrees of freedom
+  (1 observation deleted due to missingness)
+AIC: 1309.9
+
+Number of Fisher Scoring iterations: 15
+
+[1] "***** Anova *****"
+Analysis of Deviance Table
+
+Model: binomial, link: logit
+
+Response: Fruiting
+
+Terms added sequentially (first to last)
+
+
+                                 Df Deviance Resid. Df Resid. Dev
+NULL                                              1165     1331.8
+Flowering_Week                    5   42.521      1160     1289.3
+Nature_Ancestor_F                 2    5.685      1158     1283.6
+Flowering_Week:Nature_Ancestor_F 10    9.746      1148     1273.9

@@ -1,0 +1,5 @@
+set -ex
+
+python setup.py develop
+jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager
+jupyter lab build --dev-build=False --minimize=False

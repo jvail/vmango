@@ -1,0 +1,63 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Date_MI_Children Burst_Delta_Date_GU_Children Burst_Delta_Date_MI_Children Burst_Month            Code    Cycle        GU       
+ 103    :33             106 : 0                Min.   : 6.00                Min.   : 8                   9    : 2    B10/I/A/1/1  : 1   4:89   Min.   :40820  
+ 102    : 9             108 : 0                1st Qu.:11.00                1st Qu.: 9                   10   :11    B10/I/A/1/2  : 1          1st Qu.:43115  
+ 108    : 8             109 : 0                Median :13.00                Median : 9                   12   :14    B10/I/A/1/3/0: 1          Median :44442  
+ 109    : 4             110 : 5                Mean   :11.74                Mean   :10                   1    :13    B10/I/A/6/1  : 1          Mean   :46116  
+ 111    : 2             111 : 1                3rd Qu.:13.00                3rd Qu.: 9                   2    :42    B10/I/E/1/5/0: 1          3rd Qu.:51872  
+ (Other): 2             103 : 1                Max.   :17.00                Max.   :17                   3-4-5: 7    B10/I/E/2/1/1: 1          Max.   :53412  
+ NA's   :31             NA's:82                NA's   :31                   NA's   :82                               (Other)      :83                         
+ Has_Apical_GU_Child Has_Apical_MI_Child Has_Lateral_GU_Children Has_Lateral_MI_Children MixedInflo_Burst  Mixed_Inflo      Nature_F Nb_GU_Children 
+ 0   :47             0   : 1             0   : 7                 0   : 6                 0:82             Min.   :0.00000   0:21     Min.   :0.000  
+ 1   :11             1   : 6             1   :51                 1   : 1                 1: 7             1st Qu.:0.00000   1:43     1st Qu.:0.000  
+ NA's:31             NA's:82             NA's:31                 NA's:82                                  Median :0.00000   2:25     Median :1.500  
+                                                                                                          Mean   :0.02247            Mean   :2.017  
+                                                                                                          3rd Qu.:0.00000            3rd Qu.:3.000  
+                                                                                                          Max.   :1.00000            Max.   :9.000  
+                                                                                                                                     NA's   :31     
+ Nb_Lateral_GU_Children Nb_Lateral_MI_Children Nb_MI_Children Position_A Reiteration  Tree    Tree_Fruit_Load Vegetative_Burst
+ Min.   : 0.000         0   : 6                Min.   :1      0:47       0:88        B10:31   1:89            0:31            
+ 1st Qu.: 1.000         1   : 1                1st Qu.:1      1:42       1: 1        B12:32                   1:58            
+ Median : 2.000         2   : 0                Median :1                             F2 :26                                   
+ Mean   : 2.828         3   : 0                Mean   :1                                                                      
+ 3rd Qu.: 4.000         NA's:82                3rd Qu.:1                                                                      
+ Max.   :10.000                                Max.   :1                                                                      
+ NA's   :31                                    NA's   :82                                                                     
+[1] "******** GLM  *************"
+[1] "Formula :Has_Lateral_GU_Children ~ 1"
+[1] "***** Summary *****"
+
+Call:
+glm(formula = mformula, family = family, data = data, subset = subset)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-2.0565   0.5072   0.5072   0.5072   0.5072  
+
+Coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)   1.9859     0.4031   4.927 8.35e-07 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 42.722  on 57  degrees of freedom
+Residual deviance: 42.722  on 57  degrees of freedom
+  (31 observations deleted due to missingness)
+AIC: 44.722
+
+Number of Fisher Scoring iterations: 4
+
+[1] "***** Anova *****"
+Analysis of Deviance Table
+
+Model: binomial, link: logit
+
+Response: Has_Lateral_GU_Children
+
+Terms added sequentially (first to last)
+
+
+     Df Deviance Resid. Df Resid. Dev
+NULL                    57     42.722

@@ -5,13 +5,15 @@ if (length(localdir) != 0){
     setwd(localdir)
 }
 
+Sys.setlocale("LC_ALL","C")
+
 EXCLUDE_FACTORS = NULL
 EFACTOR_POST_REMOVAL = TRUE
 CONSIDER_FACTORS = NULL
 BASE_FACTORS = c("Burst_Month","Flowering_Week","Position_A","Position_Ancestor_A","Nature_Ancestor_F","Nature_F")
 
 # input and output directory
-share_dir = '../../../../share/'
+share_dir = '../../../../../share/'
 input_dir = paste(share_dir,'glm_estimate_input/cogshall/', sep="")
 output_basedir = paste(share_dir,'glm_output_proba/cogshall/', sep="")
 
@@ -542,8 +544,8 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
   index_nbchild = which(nbchild_selection)
   
   if (length(index_nbchild) > 10){
-    #On choisi une loi de poisson. Néanmoins, pour Poisson la distribution doit commencer à 0 et pas à 1.
-    #On enlève donc 1 au nombre de latérales afin de commencer à 0.
+    #On choisi une loi de poisson. N??anmoins, pour Poisson la distribution doit commencer ?? 0 et pas ?? 1.
+    #On enl??ve donc 1 au nombre de lat??rales afin de commencer ?? 0.
     ####Attention!!!Il ne faudra pas oublier de rajouter 1 ensuite lors de la simulation!!!
     data[[Nb_Children]] = data[,Nb_Children] -1
     
@@ -588,8 +590,8 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
   index_lateral = which(lateral_selection)
   
   if (length(index_lateral) > 10){
-    #On choisi une loi de poisson. Néanmoins, pour Poisson la distribution doit commencer à 0 et pas à 1.
-    #On enlève donc 1 au nombre de latérales afin de commencer à 0.
+    #On choisi une loi de poisson. N??anmoins, pour Poisson la distribution doit commencer ?? 0 et pas ?? 1.
+    #On enl??ve donc 1 au nombre de lat??rales afin de commencer ?? 0.
     ####Attention!!!Il ne faudra pas oublier de rajouter 1 ensuite lors de la simulation!!!
     data[[Nb_Lateral_Children]] = data[,Nb_Lateral_Children] -1
     #data$Nb_Lateral_GU_Children = data$Nb_Lateral_GU_Children -1
@@ -909,7 +911,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     include$Harvest_Week_Poisson = c("Flowering_Week","Nb_Inflorescences")
     exclude$Harvest_Week_Poisson = c("Burst_Month")
     monthgroups$Harvest_Week_Poisson = list( 1:4, 8:9) 
-    # ne marche pas : pas assez d'éléments ?
+    # ne marche pas : pas assez d'??l??ments ?
     datemultimode = FALSE # TRUE
   }
   
@@ -1158,7 +1160,7 @@ gen_constraint_glm = function() {
   EXCLUDE_FACTORS <<- initialvalue
 }
 
-gen_constraint_glm()
+#gen_constraint_glm()
 
 gen_limited_glm = function() {
   initialvalue = CONSIDER_FACTORS
@@ -1170,7 +1172,7 @@ gen_limited_glm = function() {
   CONSIDER_FACTORS <<- initialvalue
 }
 
-gen_limited_glm()
+#gen_limited_glm()
 
 #EXCLUDE_FACTORS <<- 'all'
 #generate_outputdir(EXCLUDE_FACTORS)

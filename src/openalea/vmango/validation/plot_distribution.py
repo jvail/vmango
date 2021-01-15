@@ -5,7 +5,7 @@ from builtins import range, str, zip
 from openalea.vmango.constants import *
 from openalea.vmango.utilities.util_tools import isiterable
 from openalea.vmango.utilities.util_path import common_options
-from openalea.vmango.utils.util_plot import *
+#from openalea.vmango.utils.util_plot import *
 from past.utils import old_div
 
 restrictions = [None, eBurstDateRestriction, ePositionARestriction, ePositionAncestorARestriction, eNatureFRestriction, eAllRestriction, eBurstDateOnlyRestriction, ePositionAOnlyRestriction, ePositionAncestorAOnlyRestriction, eNatureFOnlyRestriction]

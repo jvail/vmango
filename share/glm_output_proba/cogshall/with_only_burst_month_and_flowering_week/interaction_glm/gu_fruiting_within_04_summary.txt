@@ -1,0 +1,89 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Delta_Date_GU_Children Burst_Month            Code     Cycle   Flowering Flowering_Week    Fruit_Weight   Fruiting       GU       
+ 11     :  0            Min.   : NA                  9    :  0   B10/I/A/6/1  :  1   4:569   0:  0     Min.   :0.0000   Min.   : 76.0   0:343    Min.   :40898  
+ 12     :  0            1st Qu.: NA                  10   : 33   B10/I/E/1/2/0:  1           1:569     1st Qu.:0.0000   1st Qu.:336.3   1:226    1st Qu.:43070  
+ 1      :  0            Median : NA                  11   :  0   B10/I/E/1/2/1:  1                     Median :0.0000   Median :396.0            Median :45323  
+ 2      :  0            Mean   :NaN                  12   :101   B10/I/E/2/2/0:  1                     Mean   :0.1667   Mean   :395.3            Mean   :46809  
+ 3      :  0            3rd Qu.: NA                  1-2  :362   B10/I/E/3/2/0:  1                     3rd Qu.:0.0000   3rd Qu.:459.4            3rd Qu.:51596  
+ (Other):  0            Max.   : NA                  3-4-5: 73   B10/I/E/4/1/0:  1                     Max.   :9.0000   Max.   :609.0            Max.   :53418  
+ NA's   :569            NA's   :569                              (Other)      :563                     NA's   :515      NA's   :343                             
+ Harvest_Week   Has_Apical_GU_Child Has_Lateral_GU_Children  Mixed_Inflo Nature_Ancestor_F   Nb_Fruits     Nb_GU_Children Nb_Inflorescences Nb_Lateral_GU_Children
+ Mode:logical   0   :  0            0   :  0                Min.   :0    0:426             Min.   :0.000   Min.   : NA    1   :461          Min.   : NA           
+ NA's:569       1   :  0            1   :  0                1st Qu.:0    1:136             1st Qu.:0.000   1st Qu.: NA    2   : 46          1st Qu.: NA           
+                NA's:569            NA's:569                Median :0    2:  7             Median :0.000   Median : NA    3   : 25          Median : NA           
+                                                            Mean   :0                      Mean   :0.522   Mean   :NaN    4   : 13          Mean   :NaN           
+                                                            3rd Qu.:0                      3rd Qu.:1.000   3rd Qu.: NA    5   : 10          3rd Qu.: NA           
+                                                            Max.   :0                      Max.   :4.000   Max.   : NA    6   :  9          Max.   : NA           
+                                                                                                           NA's   :569    NA's:  5          NA's   :569           
+ Position_A Position_Ancestor_A Reiteration  Tree     Tree_Fruit_Load Vegetative_Burst is_terminal
+ 0:260      0:210               0:569       B10:165   1:569           0:569            0:  0      
+ 1:309      1:359                           B12:194                   1:  0            1:569      
+                                            F2 :210                                               
+                                                                                                  
+                                                                                                  
+                                                                                                  
+                                                                                                  
+[1] "******** GLM  *************"
+[1] "Formula :Fruiting ~ Burst_Month + Nb_Inflorescences + Burst_Month:Nb_Inflorescences"
+[1] "Initial :Fruiting ~ Burst_Month + Nb_Inflorescences"
+[1] "***** Summary *****"
+
+Call:
+glm(formula = formula, family = glm.family(myglm), data = data, 
+    subset = subset)
+
+Deviance Residuals: 
+   Min      1Q  Median      3Q     Max  
+-1.794  -1.010  -0.698   1.355   2.355  
+
+Coefficients: (8 not defined because of singularities)
+                                   Estimate Std. Error z value Pr(>|z|)
+(Intercept)                         17.1197  1810.6651   0.009    0.992
+Burst_Month.L                      -39.6668  4602.9312  -0.009    0.993
+Burst_Month.Q                       25.7005  3517.1460   0.007    0.994
+Burst_Month.C                      -11.5742  1572.9155  -0.007    0.994
+Nb_Inflorescences.L                 30.3262  2937.5849   0.010    0.992
+Nb_Inflorescences.Q                 -0.4697   475.6049  -0.001    0.999
+Nb_Inflorescences.C                  1.1661   427.0024   0.003    0.998
+Nb_Inflorescences^4                 -0.1115   453.4716   0.000    1.000
+Nb_Inflorescences^5                 -7.2494   561.5239  -0.013    0.990
+Burst_Month.L:Nb_Inflorescences.L  -47.7670  8216.3180  -0.006    0.995
+Burst_Month.Q:Nb_Inflorescences.L   44.3799  5885.3110   0.008    0.994
+Burst_Month.C:Nb_Inflorescences.L  -19.1573  2631.9912  -0.007    0.994
+Burst_Month.L:Nb_Inflorescences.Q   39.4545  2126.9700   0.019    0.985
+Burst_Month.Q:Nb_Inflorescences.Q        NA         NA      NA       NA
+Burst_Month.C:Nb_Inflorescences.Q        NA         NA      NA       NA
+Burst_Month.L:Nb_Inflorescences.C   21.9625  1909.6129   0.012    0.991
+Burst_Month.Q:Nb_Inflorescences.C        NA         NA      NA       NA
+Burst_Month.C:Nb_Inflorescences.C        NA         NA      NA       NA
+Burst_Month.L:Nb_Inflorescences^4    8.9758  2027.9868   0.004    0.996
+Burst_Month.Q:Nb_Inflorescences^4        NA         NA      NA       NA
+Burst_Month.C:Nb_Inflorescences^4        NA         NA      NA       NA
+Burst_Month.L:Nb_Inflorescences^5   36.9119  2511.2114   0.015    0.988
+Burst_Month.Q:Nb_Inflorescences^5        NA         NA      NA       NA
+Burst_Month.C:Nb_Inflorescences^5        NA         NA      NA       NA
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 759.48  on 563  degrees of freedom
+Residual deviance: 675.05  on 548  degrees of freedom
+  (5 observations deleted due to missingness)
+AIC: 707.05
+
+Number of Fisher Scoring iterations: 15
+
+[1] "***** Anova *****"
+Analysis of Deviance Table
+
+Model: binomial, link: logit
+
+Response: Fruiting
+
+Terms added sequentially (first to last)
+
+
+                              Df Deviance Resid. Df Resid. Dev
+NULL                                            563     759.48
+Burst_Month                    3   25.098       560     734.38
+Nb_Inflorescences              5   44.055       555     690.33
+Burst_Month:Nb_Inflorescences  7   15.278       548     675.05

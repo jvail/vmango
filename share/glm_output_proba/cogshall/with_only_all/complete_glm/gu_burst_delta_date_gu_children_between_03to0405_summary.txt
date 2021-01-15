@@ -1,0 +1,86 @@
+[1] "******** DATA *************"
+             Burst_Date_GU_Children Burst_Date_MI_Children Burst_Delta_Date_GU_Children Burst_Delta_Date_MI_Children        Code     Cycle         GU       
+ 109                    :11         110 : 13               5      :81                   Min.   :5                    B10/I/A/1:  1   3:210   Min.   :  144  
+ 110                    :81         NA's:197               7      :54                   1st Qu.:5                    B10/I/A/2:  1           1st Qu.:42590  
+ 111-112                :60                                9      :18                   Median :5                    B10/I/A/3:  1           Median :43890  
+ 101-102-103-104        :21                                22     :16                   Mean   :5                    B10/I/A/4:  1           Mean   :45609  
+ 208                    :15                                15     :15                   3rd Qu.:5                    B10/I/A/5:  1           3rd Qu.:51231  
+ 209-210-211-212-201-202: 6                                4      :11                   Max.   :5                    B10/I/A/6:  1           Max.   :53086  
+ 203                    :16                                (Other):15                   NA's   :197                  (Other)  :204                          
+ Has_Apical_GU_Child Has_Apical_MI_Child Has_Lateral_GU_Children Has_Lateral_MI_Children MixedInflo_Burst  Mixed_Inflo Nature_F Nb_GU_Children
+ 0:114               1   : 13            0: 34                   0   : 13                0:197            Min.   :0    0:107    Min.   :0.0   
+ 1: 96               NA's:197            1:176                   NA's:197                1: 13            1st Qu.:0    1: 83    1st Qu.:0.0   
+                                                                                                          Median :0    2: 20    Median :1.0   
+                                                                                                          Mean   :0             Mean   :1.4   
+                                                                                                          3rd Qu.:0             3rd Qu.:2.0   
+                                                                                                          Max.   :0             Max.   :6.0   
+                                                                                                                                              
+ Nb_Lateral_GU_Children Nb_Lateral_MI_Children Nb_MI_Children Position_A Reiteration  Tree    Tree_Fruit_Load Vegetative_Burst
+ Min.   :-1.0000        0   : 13               Min.   :1      0:107      0:210       B10:91   1:210           0:  0           
+ 1st Qu.: 0.0000        NA's:197               1st Qu.:1      1:103                  B12:57                   1:210           
+ Median : 1.0000                               Median :1                             F2 :62                                   
+ Mean   : 0.9429                               Mean   :1                                                                      
+ 3rd Qu.: 2.0000                               3rd Qu.:1                                                                      
+ Max.   : 5.0000                               Max.   :1                                                                      
+                                               NA's   :197                                                                    
+[1] "******** GLM  *************"
+[1] "Formula :Burst_Delta_Date_GU_Children ~ Position_A + Nature_F"
+[1] "***** Summary *****"
+
+Call:
+vglm(formula = formula, family = cumulative(parallel = TRUE), 
+    data = ndata)
+
+Pearson residuals:
+                         Min       1Q   Median      3Q    Max
+logitlink(P[Y<=1])   -0.3897 -0.36382 -0.04419 -0.0382 19.396
+logitlink(P[Y<=2])   -3.9634 -0.24065 -0.07582  0.4120  6.038
+logitlink(P[Y<=3])   -2.4121 -0.45669 -0.08337  0.2390  5.267
+logitlink(P[Y<=4])  -29.2220 -0.18859  0.06157  0.2948  1.539
+logitlink(P[Y<=5])   -7.5117 -0.17889  0.05844  0.1774 22.872
+logitlink(P[Y<=6])  -29.9135  0.03405  0.03677  0.2401  2.750
+logitlink(P[Y<=7])   -2.1956  0.03161  0.03415  0.2170 21.309
+logitlink(P[Y<=8])   -5.5889  0.02009  0.02172  0.1344  1.466
+logitlink(P[Y<=9])   -8.1243  0.01682  0.01819  0.1126  2.587
+logitlink(P[Y<=10])  -9.6291  0.01619  0.01751  0.1084  4.919
+logitlink(P[Y<=11]) -14.0114  0.01585  0.01715  0.1058  8.529
+
+Coefficients: 
+               Estimate Std. Error z value Pr(>|z|)    
+(Intercept):1   -2.2742     0.3478  -6.539 6.18e-11 ***
+(Intercept):2    1.4086     0.2771   5.084 3.70e-07 ***
+(Intercept):3    1.7065     0.2925   5.834 5.42e-09 ***
+(Intercept):4    3.8949     0.4083   9.539  < 2e-16 ***
+(Intercept):5    3.9326     0.4094   9.605  < 2e-16 ***
+(Intercept):6    4.6833     0.4323  10.834  < 2e-16 ***
+(Intercept):7    4.7807     0.4355  10.977  < 2e-16 ***
+(Intercept):8    5.5893     0.4694  11.907  < 2e-16 ***
+(Intercept):9    5.8434     0.4834  12.087  < 2e-16 ***
+(Intercept):10   5.9118     0.4876  12.124  < 2e-16 ***
+(Intercept):11   5.9830     0.4921  12.158  < 2e-16 ***
+Position_A1      0.1590     0.2740   0.580    0.562    
+Nature_F1       -3.8158     0.4057  -9.406  < 2e-16 ***
+Nature_F2       -5.3807     0.5782  -9.306  < 2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Number of linear predictors:  11 
+
+Names of linear predictors: logitlink(P[Y<=1]), logitlink(P[Y<=2]), logitlink(P[Y<=3]), logitlink(P[Y<=4]), logitlink(P[Y<=5]), logitlink(P[Y<=6]), 
+logitlink(P[Y<=7]), logitlink(P[Y<=8]), logitlink(P[Y<=9]), logitlink(P[Y<=10]), logitlink(P[Y<=11])
+
+Residual deviance: 575.9461 on 2296 degrees of freedom
+
+Log-likelihood: -287.9731 on 2296 degrees of freedom
+
+Number of Fisher scoring iterations: 7 
+
+No Hauck-Donner effect found in any of the estimates
+
+
+Exponentiated coefficients:
+Position_A1   Nature_F1   Nature_F2 
+1.172305605 0.022019296 0.004604373 
+[1] "******** Likelihood  *************"
+[1] -287.9731
+[1] "Estimated -287.973062213982"
