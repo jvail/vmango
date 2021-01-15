@@ -1,6 +1,6 @@
 
-library(VGAM)
-library(multcomp)
+require(VGAM)
+require(multcomp)
 
 is.vglm = function(glm){
   # Check whether the glm is a vglm (from VGAM) or not
@@ -123,7 +123,7 @@ glm.family = function(glm) {
 }
 
 glm.counts = function(myglm, data, subset = NULL){
-  # Fonction qui donne les effectifs par combinaison de modalités de facteurs dans les données initiales
+  # Fonction qui donne les effectifs par combinaison de modalit??s de facteurs dans les donn??es initiales
   # Args:
   #  myglm : the glm object to test
   #  data : the data used to build the glm
@@ -141,7 +141,7 @@ glm.counts = function(myglm, data, subset = NULL){
     else { factors = NULL }
 
     if (length(factors) > 0){
-      subdata = data[, variables]  # fichier des combinaisons de modalités des facteurs signifs pour les observations 
+      subdata = data[, variables]  # fichier des combinaisons de modalit??s des facteurs signifs pour les observations 
       
       nb = ftable(subdata, row.vars = factors, col.vars=variables[1] )
       colval = attr(nb, "col.vars")
@@ -201,7 +201,7 @@ glm.table_probability = function(myglm){
       # cas du glm null
       probability = predictvglm(myglm,type="response")[1,] # on predit sans valeur de x
       y_values = colnames(myglm@y) # on recupere le nom des mois (valeur possible de la variable y du glm)
-      # on veut transformer probs en dataframe. Mais plutot en colonne qu'en ligne (du coup on fait une transposé)
+      # on veut transformer probs en dataframe. Mais plutot en colonne qu'en ligne (du coup on fait une transpos??)
       data_probs = t(data.frame(probability))
       colnames(data_probs)= y_values
     }
@@ -243,11 +243,11 @@ glm.table_probability = function(myglm){
   return(data_probs)
 }
 
-# Fonction qui change les valeurs des modalités des facteurs dans un tableau d'effectifs en caractères 
-# et construit une variable code (combcode) qui est la combinaison des modalités des facteurs pour chaque ligne
+# Fonction qui change les valeurs des modalit??s des facteurs dans un tableau d'effectifs en caract??res 
+# et construit une variable code (combcode) qui est la combinaison des modalit??s des facteurs pour chaque ligne
 unique.index = function(mydata, nbparam = -1){
   if (nbparam == -1) { nbparam = (ncol(mydata)-1) }
-  #mydata[,1:nbparam] <- lapply(mydata[,1:nbparam], as.character) # transformation des valeurs en caractères (sinon il prend les niveaux de facteurs et non les valeurs)
+  #mydata[,1:nbparam] <- lapply(mydata[,1:nbparam], as.character) # transformation des valeurs en caract??res (sinon il prend les niveaux de facteurs et non les valeurs)
   
   if(nbparam == 1)  codecomb = mydata[,1]
   else if(nbparam == 2)  codecomb = paste(mydata[,1], mydata[,2], sep="-")
@@ -270,14 +270,14 @@ glm.proba_and_counts = function(myglm, data, subset){
   factors = glm.factors(myglm)
   nbfactors = length(factors)
   
-  # probas estimées par combinaison de modalités des facteurs retenus
+  # probas estim??es par combinaison de modalit??s des facteurs retenus
   probtable = glm.table_probability (myglm)
 
-  # effectifs des données dans chaque modalité croisée des facteurs retenus
+  # effectifs des donn??es dans chaque modalit?? crois??e des facteurs retenus
   nbelements = glm.counts(myglm, data=data, subset=subset)
   
 
-  # rajout des effectifs dans la table des probas estimées par le glm
+  # rajout des effectifs dans la table des probas estim??es par le glm
   if (nbfactors > 0) {
     probtable$number = merge(probtable, nbelements, sort=FALSE, 
                              all.x=TRUE, all.Y=FALSE)$Freq
@@ -303,7 +303,7 @@ vglm.proba_and_counts = function(myglm, data, subset = NULL){
 
   probtable = glm.table_probability(myglm)
   
-  # effectifs des données dans chaque modalité croisée des facteurs retenus
+  # effectifs des donn??es dans chaque modalit?? crois??e des facteurs retenus
   nbelements = glm.counts(myglm, data=data, subset = subset)
   
   if (nbfactors > 0) {
@@ -367,7 +367,7 @@ glm.AIC = function(myglm, data, subset = NULL){
   return(aic)
 }
 
-library(combinat)
+require(combinat)
 
 vglm.step = function(glm, data, subset = NULL) {
   # Make a step on a vglm. Select the model with best AIC

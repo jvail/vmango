@@ -1,0 +1,62 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Delta_Date_GU_Children  Burst_Month                 Code    Cycle  Flowering Flowering_Week  Fruit_Weight Fruiting        GU       
+ 3      :14             Min.   :1.000                10     :25   B10/I/E/1/2/0/0   : 1   4:10   0   : 0   0      : 0     Min.   : NA   0   : 0   Min.   :40985  
+ 12     : 9             1st Qu.:2.000                11     : 7   B10/II/A/1/0      : 1   5:26   1   : 0   1      : 0     1st Qu.: NA   1   : 0   1st Qu.:43407  
+ 2      : 9             Median :4.000                8      : 3   B10/II/B/1/0/0/0/0: 1          NA's:36   2      : 0     Median : NA   NA's:36   Median :45944  
+ 11     : 3             Mean   :3.611                9      : 1   B10/II/B/1/0/1/1/0: 1                    3      : 0     Mean   :NaN             Mean   :47508  
+ 1      : 1             3rd Qu.:5.000                6      : 0   B10/IV/A/4/0/0/1/0: 1                    4      : 0     3rd Qu.: NA             3rd Qu.:52278  
+ 10     : 0             Max.   :7.000                12     : 0   B10/IV/E/1/5/0/0  : 1                    (Other): 0     Max.   : NA             Max.   :53308  
+ (Other): 0                                          (Other): 0   (Other)           :30                    NA's   :36     NA's   :36                             
+  Harvest_Week Has_Apical_GU_Child Has_Lateral_GU_Children  Mixed_Inflo Nature_Ancestor_F   Nb_Fruits   Nb_GU_Children Nb_Inflorescences Nb_Lateral_GU_Children
+ Min.   : NA   0:19                0: 4                    Min.   :1    0: 0              Min.   : NA   Min.   :0.00   Min.   : NA       Min.   :-1.0000       
+ 1st Qu.: NA   1:17                1:32                    1st Qu.:1    1:33              1st Qu.: NA   1st Qu.:0.00   1st Qu.: NA       1st Qu.: 0.0000       
+ Median : NA                                               Median :1    2: 3              Median : NA   Median :1.00   Median : NA       Median : 0.0000       
+ Mean   :NaN                                               Mean   :1                      Mean   :NaN   Mean   :1.25   Mean   :NaN       Mean   : 0.7778       
+ 3rd Qu.: NA                                               3rd Qu.:1                      3rd Qu.: NA   3rd Qu.:2.00   3rd Qu.: NA       3rd Qu.: 1.2500       
+ Max.   : NA                                               Max.   :1                      Max.   : NA   Max.   :5.00   Max.   : NA       Max.   : 4.0000       
+ NA's   :36                                                                               NA's   :36                   NA's   :36                              
+ Position_A Position_Ancestor_A Reiteration  Tree    Tree_Fruit_Load Vegetative_Burst is_terminal
+ 0: 0       0:18                0:36        B10:10   1:36            0: 0             0:36       
+ 1:36       1:18                            B12:11                   1:36             1: 0       
+                                            F2 :15                                               
+                                                                                                 
+                                                                                                 
+                                                                                                 
+                                                                                                 
+[1] "******** GLM  *************"
+[1] "Formula :Burst_Date_GU_Children ~ 1"
+[1] "***** Summary *****"
+
+Call:
+vglm(formula = formula, family = cumulative(parallel = TRUE), 
+    data = ndata)
+
+Pearson residuals:
+                       Min      1Q  Median      3Q   Max
+logitlink(P[Y<=1]) -0.6302 -0.4111 -0.1900 -0.1450 3.250
+logitlink(P[Y<=2]) -3.9391 -0.5758 -0.2956  0.6799 1.317
+logitlink(P[Y<=3]) -0.9629 -0.4905 -0.3331  0.8598 4.352
+logitlink(P[Y<=4]) -1.1628 -1.1628  0.3574  0.8193 1.306
+
+Coefficients: 
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept):1  -2.3979     0.6030  -3.976 6.99e-05 ***
+(Intercept):2  -0.6931     0.3536  -1.961   0.0499 *  
+(Intercept):3  -0.5705     0.3470  -1.644   0.1001    
+(Intercept):4   0.4520     0.3419   1.322   0.1862    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Names of linear predictors: logitlink(P[Y<=1]), logitlink(P[Y<=2]), logitlink(P[Y<=3]), logitlink(P[Y<=4])
+
+Residual deviance: 98.428 on 140 degrees of freedom
+
+Log-likelihood: -49.214 on 140 degrees of freedom
+
+Number of Fisher scoring iterations: 1 
+
+No Hauck-Donner effect found in any of the estimates
+
+[1] "******** Likelihood  *************"
+[1] -49.214
+[1] "Estimated -46.297002370152"

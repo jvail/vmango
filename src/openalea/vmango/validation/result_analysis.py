@@ -16,11 +16,11 @@ from openalea.vmango.constants import *
 from openalea.vmango.utilities.util_tools import *
 from openalea.vmango.utilities.util_date import Month
 from openalea.vmango.utilities.util_path import *
-from openalea.vmango.utils.util_parallel import *
+#from openalea.vmango.utils.util_parallel import *
 from past.builtins import cmp
 from past.utils import old_div
 
-from plot_distribution import *
+from .plot_distribution import *
 
 reload(mm) 
 
@@ -135,6 +135,7 @@ class Evaluator (Invokable):
         valuesset, refvalues = self.compute(nb, force, parallel)
         self.reduce(valuesset, refvalues, saving)
 
+
     def compute(self, nb = None, force = False, parallel = True):
         cachebasename = self.cachebasename()
         import time
@@ -184,6 +185,12 @@ class Evaluator (Invokable):
                 plt.show()
 
         return self
+
+    def applyTo(self, mymtg, mtgtype = eSimulatedMtg):
+        setMtgStyle(mtgtype)
+        refvalues = self.func(mymtg, mtgtype, *self.funcargs, **self.funckwds)
+        for func in self.reducefuncs:
+            func(refvalues, [], *self.reduseargs, **self.reducekwds)
 
     def cachebasename(self):
         return 'cache_'+self.name+'_'+self.target_tree+'.pkl'
@@ -996,7 +1003,6 @@ def heatmap(data, monthrange, xlabelling = True, ylabelling = True, withcolorbar
             ax.set_yticklabels( [ strdate(d) if j == 0 else '' for d in monthrange  for j in range(2)], minor = True )
 
         plt.grid(linestyle='--')
-        print(nbmonth // 12)
         for i in range(0,(nbmonth // 12)+1):
             plt.plot([0,31],[12*i,12*i], color='blue', linewidth=2)
 
@@ -1027,7 +1033,7 @@ def heatmap_colormap(vmin, vmax):
     view = ax.imshow(data) 
 
     vmaxlog = log10(vmax)
-    ticklength = int(old_div(length, vmaxlog))
+    ticklength = int(length // vmaxlog)
     ax.set_yticks([length-1-i*ticklength for i in range(int(floor(vmaxlog))+1)])
     ax.set_xticks([])
 
@@ -1044,7 +1050,8 @@ class stage_evaluator(Evaluator):
     def __init__(self):
         Evaluator.__init__(self, 'stage',self.determine_distribution, self.plot, 'Sensible Phenological Stage Distribution')
         self.begindate = vegetative_cycle_begin(4)
-        self.enddate   = flowering_cycle_end(5)+timedelta(days=1)
+        self.enddate   = vegetative_cycle_end(5)+timedelta(days=1)
+        #self.enddate   = flowering_cycle_end(5)+timedelta(days=1)
         self.monthrange = monthdate_range(self.begindate,self.enddate)
         from openalea.vmango.simulation.temperature import init_temperatures
         init_temperatures()
@@ -1088,6 +1095,7 @@ class stage_evaluator(Evaluator):
         from openalea.vmango.simulation.organ_properties import GUManager, InfloManager
         from random import randint
         result = [0 for m in self.monthrange for i in range(31)]
+        nbdays = len(result)
         gumanager = GUManager()
         inflomanager = InfloManager()
         ucs =  self.get_all_gus(mtg)
@@ -1114,7 +1122,8 @@ class stage_evaluator(Evaluator):
                     gu_pheno_tts     = MultiPhaseThermalTimeAccumulator(gumanager.pheno_base_temp, gumanager.pheno_stade_temp,stagesnames=gumanager.pheno_stadename)
                     enddate = gu_pheno_tts.find_date_of_stage_end('E',begdate)
                     for did in self.daterange_to_dayids(begdate, enddate):
-                        result[did] += 1
+                        if did < nbdays: 
+                            result[did] += 1
         inflos =  self.get_all_inflos(mtg)
         for inflo in inflos:
             try:
@@ -1138,32 +1147,36 @@ class stage_evaluator(Evaluator):
 
     def plot(self, refvalues,kvalues):
         from math import ceil
+        import numpy as np
         from numpy import  amax
-        withref = False
+        withref = True
 
         fig = plt.figure(figsize=(18,8))
         
         nbmonth = int(len(refvalues)/31.)
 
         def toarray(v): 
-            return np.reshape([[old_div(a,1000),a%1000,0] for a in v], (nbmonth,31,3))
+            return np.reshape([[int(a//1000),a%1000,0] for a in v], (nbmonth,31,3))
 
         nbplots = len(kvalues)+withref
         nbcols = ceil(sqrt(nbplots))
-        nbrows = int(ceil(old_div(nbplots,nbcols)))
+        nbrows = int(ceil(nbplots // nbcols))
         nbcols = int(nbcols)
 
         plt.subplot(nbrows, nbcols+1,1)
         if withref:
-            heatmap(toarray(refvalues).astype(float), self.monthrange)
-        for i,(p, valueset) in enumerate(kvalues):
-            plt.subplot(nbrows, nbcols+1,i+1+withref)
-            data = toarray(valueset[0]).astype(float)
-            for v in valueset[1:]:
-                data += toarray(v)
-            data /= len(valueset)*3
-            heatmap(data, self.monthrange) #, xlabelling = i <= nbcols, ylabelling = (((i+1) % nbcols) == 0))
+            data = toarray(refvalues).astype(float)
+            heatmap(data, self.monthrange)
             mx = amax(data)
+        if kvalues:
+            for i,(p, valueset) in enumerate(kvalues):
+                plt.subplot(nbrows, nbcols+1,i+1+withref)
+                data = toarray(valueset[0]).astype(float)
+                for v in valueset[1:]:
+                    data += toarray(v)
+                data /= len(valueset)*3
+                heatmap(data, self.monthrange) #, xlabelling = i <= nbcols, ylabelling = (((i+1) % nbcols) == 0))
+                mx = amax(data)
 
         plt.subplot(nbrows, nbcols+1,nbcols+1)
         heatmap_colormap(0, mx)
@@ -1267,8 +1280,6 @@ def build_cmddict():
     cmdflags.sort(cmp=lambda a,b :cmp(class_lineno(a[1]),class_lineno(b[1])))
     print([class_lineno(a[1]) for a in cmdflags])
     return OrderedDict(cmdflags)
-
-cmdflags = build_cmddict()
 
 
 def saveall(fruitmodel=False, comparison = True, force=False):
@@ -1449,6 +1460,8 @@ def main():
 
 
 if __name__ == '__main__':
+    cmdflags = build_cmddict()
+
     main()
     #test_production()
     pass

@@ -1,0 +1,87 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Delta_Date_GU_Children  Burst_Month                    Code      Cycle    Flowering Flowering_Week  Fruit_Weight   Fruiting
+ 10  :   0              Min.   : NA                  2-3    :1062   B10/I/A/1/2/0/0/0  :   1   5:1157   0:   0    5      :454    Min.   : 58.0   0:857   
+ 11  :   0              1st Qu.: NA                  1      :  53   B10/I/A/1/2/0/0/1  :   1            1:1157    7      :182    1st Qu.:320.0   1:300   
+ 12  :   0              Median : NA                  8      :  42   B10/I/A/1/2/1/0/0  :   1                      6      :153    Median :375.0           
+ 1   :   0              Mean   :NaN                  6      :   0   B10/I/A/1/3/0/0/0/0:   1                      8      :130    Mean   :372.6           
+ 2   :   0              3rd Qu.: NA                  9      :   0   B10/I/A/4/1/0/0/0  :   1                      4      :104    3rd Qu.:423.5           
+ 3   :   0              Max.   : NA                  10     :   0   B10/I/A/4/1/1      :   1                      9      : 46    Max.   :697.0           
+ NA's:1157              NA's   :1157                 (Other):   0   (Other)            :1151                      (Other): 88    NA's   :857             
+       GU         Harvest_Week    Has_Apical_GU_Child Has_Lateral_GU_Children  Mixed_Inflo Nature_Ancestor_F   Nb_Fruits      Nb_GU_Children Nb_Inflorescences
+ Min.   :40830   Min.   : 0.000   0   :   0           0   :   0               Min.   :0    0:260             Min.   :0.0000   Min.   : NA    Min.   :0.00000  
+ 1st Qu.:43045   1st Qu.: 6.000   1   :   0           1   :   0               1st Qu.:0    1:548             1st Qu.:0.0000   1st Qu.: NA    1st Qu.:0.00000  
+ Median :44969   Median : 7.000   NA's:1157           NA's:1157               Median :0    2:349             Median :0.0000   Median : NA    Median :0.00000  
+ Mean   :46377   Mean   : 7.203                                               Mean   :0                      Mean   :0.3258   Mean   :NaN    Mean   :0.05532  
+ 3rd Qu.:51284   3rd Qu.: 8.000                                               3rd Qu.:0                      3rd Qu.:1.0000   3rd Qu.: NA    3rd Qu.:0.00000  
+ Max.   :53386   Max.   :12.000                                               Max.   :0                      Max.   :4.0000   Max.   : NA    Max.   :5.00000  
+                 NA's   :857                                                                                                  NA's   :1157                    
+ Nb_Lateral_GU_Children Position_A Position_Ancestor_A Reiteration  Tree     Tree_Fruit_Load Vegetative_Burst is_terminal
+ Min.   : NA            0:963      0:392               0:1157      B10:380   1:1157          0:1157           0:   0     
+ 1st Qu.: NA            1:194      1:765                           B12:399                   1:   0           1:1157     
+ Median : NA                                                       F2 :378                                               
+ Mean   :NaN                                                                                                             
+ 3rd Qu.: NA                                                                                                             
+ Max.   : NA                                                                                                             
+ NA's   :1157                                                                                                            
+[1] "******** GLM  *************"
+[1] "Formula :Flowering_Week ~ Burst_Month"
+[1] "Initial :Flowering_Week ~ Burst_Month + Position_A + Position_Ancestor_A"
+[1] "***** Summary *****"
+
+Call:
+vglm(formula = formula, family = cumulative(parallel = TRUE), 
+    data = ndata)
+
+Pearson residuals:
+                         Min       1Q   Median       3Q     Max
+logitlink(P[Y<=1])  -11.7467 -0.06625 -0.06237 -0.05944  5.9475
+logitlink(P[Y<=2])   -2.9697 -0.07240 -0.06708 -0.06324 15.8567
+logitlink(P[Y<=3])   -0.6861 -0.11853 -0.09947 -0.08806  8.2681
+logitlink(P[Y<=4])   -0.7459 -0.52570 -0.26586 -0.14970  3.1282
+logitlink(P[Y<=5])   -2.7828 -0.66982  0.11072  0.99850  1.2442
+logitlink(P[Y<=6])   -2.9041 -0.69649  0.41302  0.41302  1.7249
+logitlink(P[Y<=7])   -2.4809  0.14492  0.22109  0.38284  1.2588
+logitlink(P[Y<=8])   -4.4577  0.12779  0.12779  0.25171  0.9659
+logitlink(P[Y<=9])   -5.4082  0.09048  0.09048  0.12956  1.7318
+logitlink(P[Y<=10]) -11.1912  0.05469  0.05469  0.06373  1.2982
+logitlink(P[Y<=11]) -12.2276  0.04032  0.04032  0.04344  3.7273
+
+Coefficients: 
+               Estimate Std. Error z value Pr(>|z|)    
+(Intercept):1   -3.7969     0.2410 -15.752  < 2e-16 ***
+(Intercept):2   -3.6665     0.2295 -15.977  < 2e-16 ***
+(Intercept):3   -3.1839     0.1943 -16.385  < 2e-16 ***
+(Intercept):4   -1.7994     0.1422 -12.654  < 2e-16 ***
+(Intercept):5    0.2474     0.1298   1.906 0.056684 .  
+(Intercept):6    0.8012     0.1314   6.100 1.06e-09 ***
+(Intercept):7    1.6212     0.1378  11.764  < 2e-16 ***
+(Intercept):8    2.6259     0.1581  16.612  < 2e-16 ***
+(Intercept):9    3.3413     0.1874  17.831  < 2e-16 ***
+(Intercept):10   4.5348     0.2845  15.941  < 2e-16 ***
+(Intercept):11   5.3039     0.3964  13.382  < 2e-16 ***
+Burst_Month.L   -0.7562     0.2058  -3.674 0.000239 ***
+Burst_Month.Q    0.8242     0.2324   3.547 0.000390 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Number of linear predictors:  11 
+
+Names of linear predictors: logitlink(P[Y<=1]), logitlink(P[Y<=2]), logitlink(P[Y<=3]), logitlink(P[Y<=4]), logitlink(P[Y<=5]), logitlink(P[Y<=6]), 
+logitlink(P[Y<=7]), logitlink(P[Y<=8]), logitlink(P[Y<=9]), logitlink(P[Y<=10]), logitlink(P[Y<=11])
+
+Residual deviance: 4214.131 on 12714 degrees of freedom
+
+Log-likelihood: -2107.065 on 12714 degrees of freedom
+
+Number of Fisher scoring iterations: 5 
+
+Warning: Hauck-Donner effect detected in the following estimate(s):
+'(Intercept):1', '(Intercept):2', '(Intercept):3', '(Intercept):10', '(Intercept):11'
+
+
+Exponentiated coefficients:
+Burst_Month.L Burst_Month.Q 
+    0.4694321     2.2799594 
+[1] "******** Likelihood  *************"
+[1] -2107.065
+[1] "Estimated -2661.37754704738"

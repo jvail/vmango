@@ -1,0 +1,83 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Delta_Date_GU_Children     Burst_Month             Code     Cycle   Flowering Flowering_Week    Fruit_Weight   Fruiting  
+ 11     :  0            Min.   : NA                  9         :  0   B10/I/A/1/1  :  1   4:720   0:151     Min.   :0.0000   Min.   : 76.0   0   :343  
+ 12     :  0            1st Qu.: NA                  10        : 64   B10/I/A/1/2  :  1           1:569     1st Qu.:0.0000   1st Qu.:336.3   1   :226  
+ 1      :  0            Median : NA                  11        :  0   B10/I/A/1/3/0:  1                     Median :0.0000   Median :396.0   NA's:151  
+ 2      :  0            Mean   :NaN                  12-1-2-3-4:649   B10/I/A/4/1  :  1                     Mean   :0.1667   Mean   :395.3             
+ 3      :  0            3rd Qu.: NA                  5         :  7   B10/I/A/6/1  :  1                     3rd Qu.:0.0000   3rd Qu.:459.4             
+ (Other):  0            Max.   : NA                                   B10/I/A/6/2  :  1                     Max.   :9.0000   Max.   :609.0             
+ NA's   :720            NA's   :720                                   (Other)      :714                     NA's   :666      NA's   :494               
+       GU        Harvest_Week   Has_Apical_GU_Child Has_Lateral_GU_Children  Mixed_Inflo Nature_Ancestor_F   Nb_Fruits     Nb_GU_Children Nb_Inflorescences
+ Min.   :40820   Mode:logical   0   :  0            0   :  0                Min.   :0    0:512             Min.   :0.000   Min.   : NA    Min.   :1.00     
+ 1st Qu.:43004   NA's:720       1   :  0            1   :  0                1st Qu.:0    1:196             1st Qu.:0.000   1st Qu.: NA    1st Qu.:1.00     
+ Median :45178                  NA's:720            NA's:720                Median :0    2: 12             Median :0.000   Median : NA    Median :1.00     
+ Mean   :46613                                                              Mean   :0                      Mean   :0.522   Mean   :NaN    Mean   :1.39     
+ 3rd Qu.:51468                                                              3rd Qu.:0                      3rd Qu.:1.000   3rd Qu.: NA    3rd Qu.:1.00     
+ Max.   :53418                                                              Max.   :0                      Max.   :4.000   Max.   : NA    Max.   :6.00     
+                                                                                                           NA's   :151     NA's   :720    NA's   :156      
+ Nb_Lateral_GU_Children Position_A Position_Ancestor_A Reiteration  Tree     Tree_Fruit_Load Vegetative_Burst is_terminal
+ Min.   : NA            0:375      0:259               0:720       B10:220   1:720           0:720            0:  0      
+ 1st Qu.: NA            1:345      1:461                           B12:248                   1:  0            1:720      
+ Median : NA                                                       F2 :252                                               
+ Mean   :NaN                                                                                                             
+ 3rd Qu.: NA                                                                                                             
+ Max.   : NA                                                                                                             
+ NA's   :720                                                                                                             
+[1] "******** GLM  *************"
+[1] "Formula :Flowering ~ Burst_Month + Position_A + Nature_Ancestor_F + Burst_Month:Position_A + Burst_Month:Nature_Ancestor_F + Position_A:Nature_Ancestor_F"
+[1] "Initial :Flowering ~ Burst_Month + Position_A + Position_Ancestor_A + Nature_Ancestor_F"
+[1] "***** Summary *****"
+
+Call:
+glm(formula = formula, family = glm.family(myglm), data = data, 
+    subset = subset)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-2.2767   0.3946   0.3946   0.5916   1.6651  
+
+Coefficients: (1 not defined because of singularities)
+                                  Estimate Std. Error z value Pr(>|z|)  
+(Intercept)                        -4.6651   343.0405  -0.014    0.989  
+Burst_Month.L                     -10.9479   727.6988  -0.015    0.988  
+Burst_Month.Q                      -7.7395   420.1371  -0.018    0.985  
+Position_A1                         5.4072   343.0408   0.016    0.987  
+Nature_Ancestor_F1                 -0.5601   686.0811  -0.001    0.999  
+Nature_Ancestor_F2                 -1.1433     0.7532  -1.518    0.129  
+Burst_Month.L:Position_A1           9.5977   727.6994   0.013    0.989  
+Burst_Month.Q:Position_A1           5.5694   420.1375   0.013    0.989  
+Burst_Month.L:Nature_Ancestor_F1  -22.1502  1455.3978  -0.015    0.988  
+Burst_Month.Q:Nature_Ancestor_F1    1.3399   840.2743   0.002    0.999  
+Burst_Month.L:Nature_Ancestor_F2   20.2789  1455.3980   0.014    0.989  
+Burst_Month.Q:Nature_Ancestor_F2        NA         NA      NA       NA  
+Position_A1:Nature_Ancestor_F1      1.2083     0.4916   2.458    0.014 *
+Position_A1:Nature_Ancestor_F2     14.1955  1029.1218   0.014    0.989  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 739.57  on 719  degrees of freedom
+Residual deviance: 612.41  on 707  degrees of freedom
+AIC: 638.41
+
+Number of Fisher Scoring iterations: 14
+
+[1] "***** Anova *****"
+Analysis of Deviance Table
+
+Model: binomial, link: logit
+
+Response: Flowering
+
+Terms added sequentially (first to last)
+
+
+                              Df Deviance Resid. Df Resid. Dev
+NULL                                            719     739.57
+Burst_Month                    2   41.932       717     697.63
+Position_A                     1   40.554       716     657.08
+Nature_Ancestor_F              2   32.615       714     624.47
+Burst_Month:Position_A         2    0.844       712     623.62
+Burst_Month:Nature_Ancestor_F  3    4.515       709     619.11
+Position_A:Nature_Ancestor_F   2    6.694       707     612.41

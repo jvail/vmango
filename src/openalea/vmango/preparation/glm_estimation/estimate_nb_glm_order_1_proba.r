@@ -5,6 +5,8 @@ if (length(localdir) != 0){
     setwd(localdir)
 }
 
+Sys.setlocale("LC_ALL","C")
+
 EXCLUDE_FACTORS = NULL
 EFACTOR_POST_REMOVAL = TRUE
 CONSIDER_FACTORS = NULL
@@ -542,8 +544,8 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
   index_nbchild = which(nbchild_selection)
   
   if (length(index_nbchild) > 10){
-    #On choisi une loi de poisson. Néanmoins, pour Poisson la distribution doit commencer à 0 et pas à 1.
-    #On enlève donc 1 au nombre de latérales afin de commencer à 0.
+    #On choisi une loi de poisson. N??anmoins, pour Poisson la distribution doit commencer ?? 0 et pas ?? 1.
+    #On enl??ve donc 1 au nombre de lat??rales afin de commencer ?? 0.
     ####Attention!!!Il ne faudra pas oublier de rajouter 1 ensuite lors de la simulation!!!
     data[[Nb_Children]] = data[,Nb_Children] -1
     
@@ -588,8 +590,8 @@ determine_vegetative_development = function(data, subset_selection, year, yearta
   index_lateral = which(lateral_selection)
   
   if (length(index_lateral) > 10){
-    #On choisi une loi de poisson. Néanmoins, pour Poisson la distribution doit commencer à 0 et pas à 1.
-    #On enlève donc 1 au nombre de latérales afin de commencer à 0.
+    #On choisi une loi de poisson. N??anmoins, pour Poisson la distribution doit commencer ?? 0 et pas ?? 1.
+    #On enl??ve donc 1 au nombre de lat??rales afin de commencer ?? 0.
     ####Attention!!!Il ne faudra pas oublier de rajouter 1 ensuite lors de la simulation!!!
     data[[Nb_Lateral_Children]] = data[,Nb_Lateral_Children] -1
     #data$Nb_Lateral_GU_Children = data$Nb_Lateral_GU_Children -1
@@ -909,7 +911,7 @@ determining_glm_tables_within_cycle = function(data, year, verbose = 0, selectio
     include$Harvest_Week_Poisson = c("Flowering_Week","Nb_Inflorescences")
     exclude$Harvest_Week_Poisson = c("Burst_Month")
     monthgroups$Harvest_Week_Poisson = list( 1:4, 8:9) 
-    # ne marche pas : pas assez d'éléments ?
+    # ne marche pas : pas assez d'??l??ments ?
     datemultimode = FALSE # TRUE
   }
   

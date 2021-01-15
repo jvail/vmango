@@ -1,0 +1,69 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Delta_Date_GU_Children       Burst_Month                 Code     Cycle   Flowering  Flowering_Week  Fruit_Weight Fruiting  
+ 10: 0                  Min.   :1.0                  6           :  0   B10/I/A/1/2/0/0  :  1   5:135   0   :  0   Min.   : NA    Min.   : NA   0   :  0  
+ 11:25                  1st Qu.:2.0                  8-9-10-11-12:119   B10/I/A/1/3/0/0/0:  1           1   :  0   1st Qu.: NA    1st Qu.: NA   1   :  0  
+ 12: 0                  Median :3.0                  1-2         : 16   B10/I/A/1/3/0/2/0:  1           NA's:135   Median : NA    Median : NA   NA's:135  
+ 1 :12                  Mean   :3.2                  3           :  0   B10/I/E/1/1/0/0  :  1                      Mean   :NaN    Mean   :NaN             
+ 2 :58                  3rd Qu.:4.0                                     B10/I/E/1/1/0/0/0:  1                      3rd Qu.: NA    3rd Qu.: NA             
+ 3 :40                  Max.   :7.0                                     B10/I/E/1/1/0/4  :  1                      Max.   : NA    Max.   : NA             
+                                                                        (Other)          :129                      NA's   :135    NA's   :135             
+       GU         Harvest_Week Has_Apical_GU_Child Has_Lateral_GU_Children  Mixed_Inflo Nature_Ancestor_F   Nb_Fruits   Nb_GU_Children  Nb_Inflorescences
+ Min.   :40829   Min.   : NA   0:  3               0:  0                   Min.   :0    0:93              Min.   : NA   Min.   :0.000   Min.   : NA      
+ 1st Qu.:41584   1st Qu.: NA   1:132               1:135                   1st Qu.:0    1:39              1st Qu.: NA   1st Qu.:1.000   1st Qu.: NA      
+ Median :44429   Median : NA                                               Median :0    2: 3              Median : NA   Median :2.000   Median : NA      
+ Mean   :45154   Mean   :NaN                                               Mean   :0                      Mean   :NaN   Mean   :2.274   Mean   :NaN      
+ 3rd Qu.:45783   3rd Qu.: NA                                               3rd Qu.:0                      3rd Qu.: NA   3rd Qu.:3.000   3rd Qu.: NA      
+ Max.   :53332   Max.   : NA                                               Max.   :0                      Max.   : NA   Max.   :8.000   Max.   : NA      
+                 NA's   :135                                                                              NA's   :135                   NA's   :135      
+ Nb_Lateral_GU_Children Position_A Position_Ancestor_A Reiteration  Tree    Tree_Fruit_Load Vegetative_Burst is_terminal
+ Min.   :0.000          0:49       0:56                0:135       B10:61   1:135           0:  0            0:135      
+ 1st Qu.:0.000          1:86       1:79                            B12:45                   1:135            1:  0      
+ Median :1.000                                                     F2 :29                                               
+ Mean   :1.296                                                                                                          
+ 3rd Qu.:2.000                                                                                                          
+ Max.   :7.000                                                                                                          
+                                                                                                                        
+[1] "******** GLM  *************"
+[1] "Formula :Nb_Lateral_GU_Children ~ Burst_Month + Position_Ancestor_A + Nature_Ancestor_F"
+[1] "***** Summary *****"
+
+Call:
+glm(formula = mformula, family = family, data = data, subset = subset)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-2.3543  -1.3782  -0.1984   0.6541   3.9829  
+
+Coefficients:
+                     Estimate Std. Error z value Pr(>|z|)    
+(Intercept)           0.31334    0.15192   2.063 0.039156 *  
+Burst_Month.L         0.51602    0.13286   3.884 0.000103 ***
+Position_Ancestor_A1  0.24363    0.16050   1.518 0.129039    
+Nature_Ancestor_F1    0.09749    0.16583   0.588 0.556610    
+Nature_Ancestor_F2    0.31874    0.46248   0.689 0.490702    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for poisson family taken to be 1)
+
+    Null deviance: 216.15  on 134  degrees of freedom
+Residual deviance: 197.67  on 130  degrees of freedom
+AIC: 420.57
+
+Number of Fisher Scoring iterations: 5
+
+[1] "***** Anova *****"
+Analysis of Deviance Table
+
+Model: poisson, link: log
+
+Response: Nb_Lateral_GU_Children
+
+Terms added sequentially (first to last)
+
+
+                    Df Deviance Resid. Df Resid. Dev
+NULL                                  134     216.15
+Burst_Month          1  14.9875       133     201.16
+Position_Ancestor_A  1   2.7931       132     198.37
+Nature_Ancestor_F    2   0.7053       130     197.66

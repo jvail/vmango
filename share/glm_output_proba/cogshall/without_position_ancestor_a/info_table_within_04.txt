@@ -1,0 +1,27 @@
+[1] "******** R *************"
+[1] "R version 3.5.1 (2018-07-02)"
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Delta_Date_GU_Children  Burst_Month             Code      Cycle    Flowering  Flowering_Week    Fruit_Weight   Fruiting  
+ 2      :172            Min.   :1.000                12     :328   B10/I/A/1/1  :   1   4:1196   0   :159   Min.   :0.0000   Min.   : 76.0   0   :343  
+ 12     :151            1st Qu.:2.000                2      :322   B10/I/A/1/2  :   1            1   :569   1st Qu.:0.0000   1st Qu.:336.3   1   :226  
+ 1      : 72            Median :2.000                10     :235   B10/I/A/1/3  :   1            NA's:468   Median :0.0000   Median :396.0   NA's:627  
+ 11     : 30            Mean   :2.162                1      :126   B10/I/A/1/3/0:   1                       Mean   :0.1667   Mean   :395.3             
+ 4      : 25            3rd Qu.:2.000                11     : 71   B10/I/A/4/1  :   1                       3rd Qu.:0.0000   3rd Qu.:459.4             
+ (Other): 18            Max.   :5.000                4      : 61   B10/I/A/6/1  :   1                       Max.   :9.0000   Max.   :609.0             
+ NA's   :728            NA's   :728                  (Other): 53   (Other)      :1190                       NA's   :1142     NA's   :970               
+       GU        Harvest_Week   Has_Apical_GU_Child Has_Lateral_GU_Children  Mixed_Inflo      Nature_Ancestor_F   Nb_Fruits     Nb_GU_Children  Nb_Inflorescences
+ Min.   :40820   Mode:logical   0   : 14            0   :307                Min.   :0.00000   0:867             Min.   :0.000   Min.   :1.000   Min.   :1.00     
+ 1st Qu.:42977   NA's:1196      1   :454            1   :161                1st Qu.:0.00000   1:314             1st Qu.:0.000   1st Qu.:1.000   1st Qu.:1.00     
+ Median :45176                  NA's:728            NA's:728                Median :0.00000   2: 15             Median :0.000   Median :1.000   Median :1.00     
+ Mean   :46697                                                              Mean   :0.01505                     Mean   :0.522   Mean   :1.617   Mean   :1.39     
+ 3rd Qu.:51550                                                              3rd Qu.:0.00000                     3rd Qu.:1.000   3rd Qu.:2.000   3rd Qu.:1.00     
+ Max.   :53418                                                              Max.   :1.00000                     Max.   :4.000   Max.   :7.000   Max.   :6.00     
+                                                                                                                NA's   :627     NA's   :728     NA's   :632      
+ Nb_Lateral_GU_Children Position_A Position_Ancestor_A Reiteration  Tree     Tree_Fruit_Load Vegetative_Burst is_terminal
+ Min.   :0.0000         0:628      0:437               0:1196      B10:359   1:1196          0:728            0:468      
+ 1st Qu.:0.0000         1:568      1:759                           B12:406                   1:468            1:728      
+ Median :0.0000                                                    F2 :431                                               
+ Mean   :0.6474                                                                                                          
+ 3rd Qu.:1.0000                                                                                                          
+ Max.   :6.0000                                                                                                          
+ NA's   :728                                                                                                             

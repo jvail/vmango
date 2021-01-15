@@ -1,0 +1,83 @@
+[1] "******** DATA *************"
+ Burst_Date_GU_Children Burst_Date_MI_Children Burst_Delta_Date_GU_Children Burst_Delta_Date_MI_Children    Burst_Month             Code     Cycle  
+ 103    :222            106 :  1               Min.   : 3.00                Min.   : 4.000               9-10     : 84   B10/I/A/1/1  :  1   4:741  
+ 102    :112            108 :  7               1st Qu.:10.00                1st Qu.: 7.000               12       :126   B10/I/A/1/2  :  1          
+ 108    : 66            109 :  4               Median :12.00                Median : 9.000               1-2-3-4-5:531   B10/I/A/1/3/0:  1          
+ 109    : 24            110 : 23               Mean   :11.49                Mean   : 8.489                               B10/I/A/4/1  :  1          
+ 111    : 18            111 :  8               3rd Qu.:13.00                3rd Qu.: 9.000                               B10/I/A/6/1  :  1          
+ (Other): 12            103 :  2               Max.   :17.00                Max.   :17.000                               B10/I/A/6/2  :  1          
+ NA's   :287            NA's:696               NA's   :287                  NA's   :696                                  (Other)      :735          
+       GU        Has_Apical_GU_Child Has_Apical_MI_Child Has_Lateral_GU_Children Has_Lateral_MI_Children MixedInflo_Burst  Mixed_Inflo     Nature_F
+ Min.   :40820   0   :364            0   :  4            0   : 48                0   : 39                0:696            Min.   :0.0000   0:163   
+ 1st Qu.:43006   1   : 90            1   : 41            1   :406                1   :  6                1: 45            1st Qu.:0.0000   1:350   
+ Median :45190   NA's:287            NA's:696            NA's:287                NA's:696                                 Median :0.0000   2:228   
+ Mean   :46640                                                                                                            Mean   :0.0108           
+ 3rd Qu.:51479                                                                                                            3rd Qu.:0.0000           
+ Max.   :53421                                                                                                            Max.   :1.0000           
+                                                                                                                                                   
+ Nb_GU_Children   Nb_Lateral_GU_Children Nb_Lateral_MI_Children Nb_MI_Children  Position_A Reiteration  Tree     Tree_Fruit_Load Vegetative_Burst
+ Min.   : 1.000   Min.   : 0.000         0   : 39               Min.   :1.000   0:385      0:731       B10:228   1:741           0:287           
+ 1st Qu.: 2.000   1st Qu.: 1.000         1   :  4               1st Qu.:1.000   1:356      1: 10       B12:250                   1:454           
+ Median : 3.000   Median : 3.000         2   :  1               Median :1.000                          F2 :263                                   
+ Mean   : 3.379   Mean   : 3.181         3   :  1               Mean   :1.111                                                                    
+ 3rd Qu.: 5.000   3rd Qu.: 5.000         NA's:696               3rd Qu.:1.000                                                                    
+ Max.   :11.000   Max.   :11.000                                Max.   :3.000                                                                    
+ NA's   :287      NA's   :287                                   NA's   :696                                                                      
+[1] "******** GLM  *************"
+[1] "Formula :Vegetative_Burst ~ Burst_Month + Position_A + Nature_F + Burst_Month:Position_A + Burst_Month:Nature_F + Position_A:Nature_F"
+[1] "Initial :Vegetative_Burst ~ Burst_Month + Position_A + Nature_F"
+[1] "***** Summary *****"
+
+Call:
+glm(formula = formula, family = glm.family(myglm), data = data, 
+    subset = subset)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-2.4406  -0.7680   0.6931   0.7977   1.9958  
+
+Coefficients:
+                          Estimate Std. Error z value Pr(>|z|)    
+(Intercept)                -0.1578     0.2487  -0.634   0.5259    
+Burst_Month.L               2.4862     0.3933   6.322 2.59e-10 ***
+Burst_Month.Q               0.6951     0.4249   1.636   0.1019    
+Position_A1                 0.9940     0.5888   1.688   0.0913 .  
+Nature_F1                  -0.5030     0.3352  -1.501   0.1334    
+Nature_F2                  -4.7489   144.0984  -0.033   0.9737    
+Burst_Month.L:Position_A1   0.5332     0.6370   0.837   0.4026    
+Burst_Month.Q:Position_A1  -0.8060     0.5069  -1.590   0.1118    
+Burst_Month.L:Nature_F1    -0.5222     0.5400  -0.967   0.3335    
+Burst_Month.Q:Nature_F1    -0.1938     0.5268  -0.368   0.7129    
+Burst_Month.L:Nature_F2     7.9118   305.6781   0.026   0.9794    
+Burst_Month.Q:Nature_F2    -6.4410   176.4841  -0.036   0.9709    
+Position_A1:Nature_F1      -0.9926     0.7266  -1.366   0.1719    
+Position_A1:Nature_F2      -0.1333     0.7690  -0.173   0.8624    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 989.28  on 740  degrees of freedom
+Residual deviance: 803.86  on 727  degrees of freedom
+AIC: 831.86
+
+Number of Fisher Scoring iterations: 13
+
+[1] "***** Anova *****"
+Analysis of Deviance Table
+
+Model: binomial, link: logit
+
+Response: Vegetative_Burst
+
+Terms added sequentially (first to last)
+
+
+                       Df Deviance Resid. Df Resid. Dev
+NULL                                     740     989.28
+Burst_Month             2  134.918       738     854.36
+Position_A              1    5.796       737     848.57
+Nature_F                2   15.517       735     833.05
+Burst_Month:Position_A  2    9.592       733     823.46
+Burst_Month:Nature_F    4   13.922       729     809.54
+Position_A:Nature_F     2    5.678       727     803.86
