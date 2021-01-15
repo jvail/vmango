@@ -27,7 +27,7 @@ def ProfileInterpolation(curves, knotlist = None, degree = 3, resolution = 10):
     k = [knotlist[0] for i in range(degree-1)]+knotlist+[knotlist[-1] for i in range(degree-1)]
     pts = [[(i.x,i.y,0,1) for i in c.ctrlPointList] for c in curves]
     ppts = Point4Matrix(pts)
-    p = NurbsPatch(ctrlPointList=ppts,udegree=degree,vdegree=3)
+    p = NurbsPatch(ppts,udegree=degree,vdegree=3)
     def getSectionAt(t): 
       section = p.getIsoUSectionAt(t)
       res = NurbsCurve2D([(i.x,i.y,i.w) for i in section.ctrlPointList], section.knotList,section.degree)
